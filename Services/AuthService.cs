@@ -68,7 +68,7 @@ public class AuthService(
 	}
 
 	public async Task<UResponse<LoginResponse?>> RefreshToken(RefreshTokenParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token!);
+		JwtClaimData? userData = ts.GetTokenClaim();
 		if (userData == null) return new UResponse<LoginResponse?>(null, USC.UnAuthorized);
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(u => u.RefreshToken == p.RefreshToken && u.Id == userData.Guid, ct);
 

@@ -1,3 +1,5 @@
+using Swashbuckle.AspNetCore.SwaggerGen;
+
 namespace SinaMN75U.Utils;
 
 public static class SwaggerSetup {
@@ -31,6 +33,8 @@ public static class SwaggerSetup {
 				{ new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "apiKey" } }, Array.Empty<string>() },
 				{ new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "locale" } }, Array.Empty<string>() }
 			});
+			
+			c.OperationFilter<AddApiKeyAndTokenOperationFilter>();
 		});
 	}
 
@@ -39,6 +43,43 @@ public static class SwaggerSetup {
 		app.UseSwaggerUI(c => {
 			c.DocExpansion(DocExpansion.None);
 			c.DefaultModelsExpandDepth(2);
+		});
+	}
+}
+
+public class AddApiKeyAndTokenOperationFilter : IOperationFilter
+{
+	public void Apply(OpenApiOperation operation, OperationFilterContext context)
+	{
+		if (operation.Parameters == null)
+		{
+			operation.Parameters = new List<OpenApiParameter>();
+		}
+
+		// Add apiKey as a query parameter
+		operation.Parameters.Add(new OpenApiParameter
+		{
+			Name = "apiKey",
+			In = ParameterLocation.Query,
+			Description = "API Key for authentication",
+			Required = true, // Set to false if optional
+			Schema = new OpenApiSchema
+			{
+				Type = "string"
+			}
+		});
+
+		// Add token as a header parameter
+		operation.Parameters.Add(new OpenApiParameter
+		{
+			Name = "token",
+			In = ParameterLocation.Header,
+			Description = "JWT Token for authorization",
+			Required = true, // Set to false if optional
+			Schema = new OpenApiSchema
+			{
+				Type = "string"
+			}
 		});
 	}
 }

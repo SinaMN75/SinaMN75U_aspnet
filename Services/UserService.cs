@@ -15,7 +15,7 @@ public class UserService(
 	ICategoryService categoryService
 ) : IUserService {
 	public async Task<UResponse<UserResponse?>> Create(UserCreateParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token!);
+		JwtClaimData? userData = ts.GetTokenClaim();
 		if (userData == null) return new UResponse<UserResponse?>(null, USC.UnAuthorized);
 		UserEntity e = new() {
 			Id = Guid.CreateVersion7(),

@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Params.User;
 
-public class UserCreateParams : BaseParam {
+public class UserCreateParams {
 	public required string UserName { get; set; }
 	public required string Password { get; set; }
 	public string? PhoneNumber { get; set; }
@@ -28,7 +28,7 @@ public class UserFilterParams : BaseFilterParams {
 	public IEnumerable<Guid>? Categories { get; set; }
 }
 
-public class UserUpdateParams : BaseParam {
+public class UserUpdateParams {
 	public required Guid Id { get; set; }
 	public string? Password { get; set; }
 	public string? FirstName { get; set; }

@@ -2,7 +2,7 @@ namespace SinaMN75U.Services;
 
 public interface ICategoryService {
 	Task<UResponse<CategoryResponse>> Create(CategoryCreateParams p, CancellationToken ct);
-	Task<UResponse<IEnumerable<CategoryResponse>>> Read(BaseParam p, CancellationToken ct);
+	Task<UResponse<IEnumerable<CategoryResponse>>> Read(CancellationToken ct);
 	Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	Task<UResponse> DeleteRange(IEnumerable<Guid> idList, CancellationToken ct);
@@ -26,7 +26,7 @@ public class CategoryService(DbContext db, ILocalizationService ls, ITokenServic
 		return new UResponse<CategoryResponse>(e.MapToResponse());
 	}
 
-	public async Task<UResponse<IEnumerable<CategoryResponse>>> Read(BaseParam p, CancellationToken ct) {
+	public async Task<UResponse<IEnumerable<CategoryResponse>>> Read(CancellationToken ct) {
 		List<CategoryResponse> categories = await db.Set<CategoryEntity>()
 			.Include(i => i.Children)
 			.AsNoTracking()
