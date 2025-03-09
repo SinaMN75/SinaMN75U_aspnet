@@ -7,7 +7,7 @@ public class CategoryResponse {
 
 	public required List<TagCategory> Tags { get; set; }
 	public IEnumerable<CategoryResponse>? Children { get; set; }
-	public IEnumerable<UserResponse>? Users { get; set; }
+	public IEnumerable<UserEntity>? Users { get; set; }
 
 	public string? Subtitle { get; set; }
 }

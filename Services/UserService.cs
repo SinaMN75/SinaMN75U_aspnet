@@ -1,8 +1,3 @@
-using SinaMN75U.Data.Entities;
-using SinaMN75U.Data.Params.User;
-using SinaMN75U.Data.Responses.UserManagement;
-using SinaMN75U.InnerServices;
-
 namespace SinaMN75U.Services;
 
 public interface IUserService {

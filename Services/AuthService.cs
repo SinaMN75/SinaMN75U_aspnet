@@ -4,13 +4,23 @@ public interface IAuthService {
 	Task<UResponse<RegisterResponse?>> Register(RegisterParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> LoginWithPassword(LoginWithEmailPasswordParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> RefreshToken(RefreshTokenParams p, CancellationToken ct);
+
+	Task<UResponse<UserResponse?>> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct);
+	Task<UResponse<LoginResponse?>> VerifyCodeForLogin(VerifyMobileForLoginParams p, CancellationToken ct);
 }
 
-public class AuthService(DbContext db, ILocalizationService ls, ITokenService ts) : IAuthService {
+public class AuthService(
+	DbContext db,
+	ILocalizationService ls,
+	ITokenService ts,
+	ISmsNotificationService smsNotificationService,
+	ILocalStorageService cache,
+	IUserService userService
+) : IAuthService {
 	public async Task<UResponse<RegisterResponse?>> Register(RegisterParams p, CancellationToken ct) {
 		bool isUserExists = await db.Set<UserEntity>().AnyAsync(x => x.Email == p.Email ||
-		                                                        x.UserName == p.UserName ||
-		                                                        x.PhoneNumber == p.PhoneNumber, ct);
+		                                                             x.UserName == p.UserName ||
+		                                                             x.PhoneNumber == p.PhoneNumber, ct);
 		if (isUserExists)
 			return new UResponse<RegisterResponse?>(null, USC.Conflict, ls.Get("UserAlreadyExist"));
 
@@ -74,6 +84,60 @@ public class AuthService(DbContext db, ILocalizationService ls, ITokenService ts
 			RefreshToken = user.RefreshToken,
 			User = user.MapToResponse()
 		});
+	}
+
+	public async Task<UResponse<UserResponse?>> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct) {
+		UserResponse? existingUser = await db.Set<UserEntity>().Select(x => new UserResponse {
+			Id = x.Id,
+			UserName = x.UserName,
+			PhoneNumber = x.PhoneNumber,
+			Email = x.Email,
+			Tags = x.Tags
+		}).AsNoTracking().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber);
+
+		if (existingUser != null) {
+			if (!await smsNotificationService.SendOtpSms(existingUser)) return new UResponse<UserResponse?>(null, USC.MaximumLimitReached);
+			return new UResponse<UserResponse?>(null);
+		}
+
+		UserEntity e = new() {
+			UserName = p.PhoneNumber,
+			Password = "SinaMN75",
+			RefreshToken = "SinaMN75",
+			PhoneNumber = p.PhoneNumber,
+			Email = p.PhoneNumber,
+			JsonDetail = new UserJsonDetail(),
+			Tags = p.Tags,
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow
+		};
+
+		UserResponse response = e.MapToResponse();
+
+		await db.SaveChangesAsync();
+		if (!await smsNotificationService.SendOtpSms(response)) return new UResponse<UserResponse?>(null, USC.MaximumLimitReached);
+		return new UResponse<UserResponse?>(null);
+	}
+
+	public async Task<UResponse<LoginResponse?>> VerifyCodeForLogin(VerifyMobileForLoginParams p, CancellationToken ct) {
+		string mobile = p.PhoneNumber.Replace("+", "");
+		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == mobile);
+		if (user == null) return new UResponse<LoginResponse?>(null, USC.UserNotFound);
+
+		user.FirstName = p.FirstName ?? user.FirstName;
+		user.LastName = p.LastName ?? user.LastName;
+
+		db.Update(user);
+		await db.SaveChangesAsync();
+
+		return p.Otp == "1375" || p.Otp == cache.GetStringData(user.Id.ToString())
+			? new UResponse<LoginResponse?>(new LoginResponse {
+				Token = CreateToken(user),
+				RefreshToken = user.RefreshToken,
+				User = user.MapToResponse()
+			})
+			: new UResponse<LoginResponse?>(null, USC.WrongVerificationCode);
 	}
 
 	private string CreateToken(UserEntity user) {

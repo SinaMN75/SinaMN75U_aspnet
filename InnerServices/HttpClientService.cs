@@ -3,25 +3,27 @@ namespace SinaMN75U.InnerServices;
 public interface IHttpClientService {
 	Task<string> Get(
 		string uri,
-		TimeSpan? cacheDuration = null,
-		Action<HttpRequestHeaders>? configureHeaders = null);
+		Dictionary<string, string>? headers = null,
+		TimeSpan? cacheDuration = null
+	);
 
 	Task<string> Post(
 		string uri,
 		object? body,
-		TimeSpan? cacheDuration = null,
-		Action<HttpRequestHeaders>? configureHeaders = null);
+		Dictionary<string, string>? headers = null,
+		TimeSpan? cacheDuration = null
+	);
 
 	Task<string> Put(
 		string uri,
 		object? body,
-		TimeSpan? cacheDuration = null,
-		Action<HttpRequestHeaders>? configureHeaders = null);
+		Dictionary<string, string>? headers = null
+	);
 
 	Task<string> Delete(
 		string uri,
-		TimeSpan? cacheDuration = null,
-		Action<HttpRequestHeaders>? configureHeaders = null);
+		Dictionary<string, string>? headers = null
+	);
 }
 
 public class HttpClientService(HttpClient httpClient, IMemoryCache cache) : IHttpClientService {
@@ -30,32 +32,34 @@ public class HttpClientService(HttpClient httpClient, IMemoryCache cache) : IHtt
 
 	public async Task<string> Get(
 		string uri,
-		TimeSpan? cacheDuration = null,
-		Action<HttpRequestHeaders>? configureHeaders = null) {
-		return await Send(HttpMethod.Get, uri, null, cacheDuration, configureHeaders);
+		Dictionary<string, string>? headers = null,
+		TimeSpan? cacheDuration = null
+	) {
+		return await Send(HttpMethod.Get, uri, null, cacheDuration, headers);
 	}
 
 	public async Task<string> Post(
 		string uri,
 		object? body,
-		TimeSpan? cacheDuration = null,
-		Action<HttpRequestHeaders>? configureHeaders = null) {
-		return await Send(HttpMethod.Post, uri, body, cacheDuration, configureHeaders);
+		Dictionary<string, string>? headers = null,
+		TimeSpan? cacheDuration = null
+	) {
+		return await Send(HttpMethod.Post, uri, body, cacheDuration, headers);
 	}
 
 	public async Task<string> Put(
 		string uri,
 		object? body,
-		TimeSpan? cacheDuration = null,
-		Action<HttpRequestHeaders>? configureHeaders = null) {
-		return await Send(HttpMethod.Put, uri, body, cacheDuration, configureHeaders);
+		Dictionary<string, string>? headers = null
+	) {
+		return await Send(HttpMethod.Put, uri, body, null, headers);
 	}
 
 	public async Task<string> Delete(
 		string uri,
-		TimeSpan? cacheDuration = null,
-		Action<HttpRequestHeaders>? configureHeaders = null) {
-		return await Send(HttpMethod.Delete, uri, null, cacheDuration, configureHeaders);
+		Dictionary<string, string>? headers = null
+	) {
+		return await Send(HttpMethod.Delete, uri, null, null, headers);
 	}
 
 	private async Task<string> Send(
@@ -63,13 +67,12 @@ public class HttpClientService(HttpClient httpClient, IMemoryCache cache) : IHtt
 		string uri,
 		object? body = null,
 		TimeSpan? cacheDuration = null,
-		Action<HttpRequestHeaders>? configureHeaders = null) {
+		Dictionary<string, string>? headers = null) {
 		if (string.IsNullOrEmpty(uri)) throw new ArgumentException("URI cannot be null or empty.", nameof(uri));
 
 		string? cacheKey = cacheDuration.HasValue ? $"{method}-{uri}" : null;
-		if (cacheKey != null && _cache.TryGetValue(cacheKey, out string? cachedResponse) && cachedResponse != null) {
+		if (cacheKey != null && _cache.TryGetValue(cacheKey, out string? cachedResponse) && cachedResponse != null)
 			return cachedResponse;
-		}
 
 		using HttpRequestMessage request = new(method, uri);
 		if (body != null) {
@@ -77,7 +80,11 @@ public class HttpClientService(HttpClient httpClient, IMemoryCache cache) : IHtt
 			request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 		}
 
-		configureHeaders?.Invoke(request.Headers);
+		if (headers != null)
+			foreach (KeyValuePair<string, string> header in headers)
+				request.Headers.Add(header.Key, header.Value);
+
+
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
 		if (!response.IsSuccessStatusCode) {
 			throw new HttpRequestException($"Request failed with status code {response.StatusCode}");

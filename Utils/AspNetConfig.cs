@@ -50,6 +50,7 @@ public static class AspNetConfig {
 		Server.Configure(builder.Services.BuildServiceProvider().GetService<IServiceProvider>()?.GetService<IHttpContextAccessor>());
 		
 		builder.Services.AddScoped<IHttpClientService, HttpClientService>();
+		builder.Services.AddScoped<ILocalStorageService, MemoryCacheService>();
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
 		builder.Services.AddSingleton<ITokenService, TokenService>();
 		builder.Services.AddScoped<IUserService, UserService>();
