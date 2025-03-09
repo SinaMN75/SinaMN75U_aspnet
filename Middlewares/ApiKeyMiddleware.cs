@@ -20,6 +20,10 @@ public class ApiKeyMiddleware(RequestDelegate next, IConfiguration config) {
 				await context.Response.WriteAsync("Invalid API key");
 				return;
 			}
+			if (json.TryGetProperty("token", out JsonElement tokenProperty)) {
+				string? token = tokenProperty.GetString();
+				context.Items["JwtToken"] = token;
+			}
 		}
 
 		await next(context);

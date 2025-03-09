@@ -3,11 +3,12 @@ namespace SinaMN75U.InnerServices;
 public interface ITokenService {
 	public string GenerateRefreshToken();
 	public string GenerateJwt(IEnumerable<Claim> claims);
-	public JwtClaimData? ExtractClaims(string token);
-	public bool ValidateApiKey(string apiKey);
+	public JwtClaimData? ExtractClaims(string? token);
+	public JwtClaimData? GetTokenClaim();
+	public string? GetRawToken();
 }
 
-public class TokenService(IConfiguration config) : ITokenService {
+public class TokenService(IConfiguration config, IHttpContextAccessor httpContext) : ITokenService {
 	public string GenerateRefreshToken() {
 		byte[] randomNumber = new byte[64];
 		using RandomNumberGenerator rng = RandomNumberGenerator.Create();
@@ -26,7 +27,7 @@ public class TokenService(IConfiguration config) : ITokenService {
 		);
 	}
 
-	public JwtClaimData? ExtractClaims(string token) {
+	public JwtClaimData? ExtractClaims(string? token) {
 		try {
 			IEnumerable<Claim> claims = new JwtSecurityTokenHandler().ReadJwtToken(token).Claims.ToList();
 			return new JwtClaimData {
@@ -40,12 +41,24 @@ public class TokenService(IConfiguration config) : ITokenService {
 				Tags = claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? ""
 			};
 		}
-		catch (Exception e) {
+		catch (Exception) {
 			return null;
 		}
 	}
 
-	public bool ValidateApiKey(string apiKey) {
-		return apiKey == config["ApiKey"];
+	public JwtClaimData? GetTokenClaim() {
+		HttpContext? context = httpContext.HttpContext;
+		if (context != null && context.Items.TryGetValue("JwtToken", out object? item))
+			return ExtractClaims(item?.ToString());
+		return null;
+	}
+
+	public string? GetRawToken() {
+		HttpContext? context = httpContext.HttpContext;
+		if (context != null && context.Items.TryGetValue("JwtToken", out object? item)) {
+			return item?.ToString();
+		}
+
+		return null;
 	}
 }

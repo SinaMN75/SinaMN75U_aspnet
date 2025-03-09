@@ -31,7 +31,6 @@ global using SinaMN75U.Constants;
 global using SinaMN75U.Data.Params;
 global using SinaMN75U.Data.Responses;
 global using SinaMN75U.Utils;
-global using SinaMN75U.Constants;
 global using SinaMN75U.Data.Entities;
 global using SinaMN75U.Data.Params.Category;
 global using SinaMN75U.Data.Responses.UserManagement;

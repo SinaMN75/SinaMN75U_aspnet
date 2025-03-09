@@ -54,10 +54,13 @@ public static class AspNetConfig {
 		builder.Services.AddScoped<IHttpClientService, HttpClientService>();
 		builder.Services.AddScoped<ILocalStorageService, MemoryCacheService>();
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
+		builder.Services.AddScoped<ITokenService, TokenService>();
 		builder.Services.AddSingleton<ITokenService, TokenService>();
 		builder.Services.AddScoped<IUserService, UserService>();
 		builder.Services.AddScoped<IAuthService, AuthService>();
 		builder.Services.AddScoped<ICategoryService, CategoryService>();
+		builder.Services.AddScoped<ISmsNotificationService, SmsNotificationService>();
+		builder.Services.AddScoped<IMediaService, MediaService>();
 	}
 
 	public static void UseUServices(this WebApplication app) {

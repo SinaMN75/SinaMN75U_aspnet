@@ -14,8 +14,7 @@ public class AuthService(
 	ILocalizationService ls,
 	ITokenService ts,
 	ISmsNotificationService smsNotificationService,
-	ILocalStorageService cache,
-	IUserService userService
+	ILocalStorageService cache
 ) : IAuthService {
 	public async Task<UResponse<RegisterResponse?>> Register(RegisterParams p, CancellationToken ct) {
 		bool isUserExists = await db.Set<UserEntity>().AnyAsync(x => x.Email == p.Email ||
@@ -87,6 +86,9 @@ public class AuthService(
 	}
 
 	public async Task<UResponse<UserResponse?>> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct) {
+
+		Console.WriteLine("JJJJJJJJ");
+		Console.WriteLine(ts.GetRawToken());
 		UserResponse? existingUser = await db.Set<UserEntity>().Select(x => new UserResponse {
 			Id = x.Id,
 			UserName = x.UserName,

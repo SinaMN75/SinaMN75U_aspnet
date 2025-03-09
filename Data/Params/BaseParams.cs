@@ -17,8 +17,5 @@ public class BaseFilterParams : BaseParam {
 }
 
 public class BaseParam {
-	[Required]
-	public required string ApiKey { get; set; }
-
 	public string? Token { get; set; }
 }
