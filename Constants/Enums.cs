@@ -20,7 +20,7 @@ public enum USC {
 	OrderPayed = 608,
 	OutOfStock = 610,
 	NotEnoughMoney = 611,
-	UserRecieverBlocked = 612,
+	UserReceiverBlocked = 612,
 	UserSenderBlocked = 613,
 	MoreThan2UserIsInPrivateChat = 614,
 	Overused = 615,

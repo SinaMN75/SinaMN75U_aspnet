@@ -1,8 +1,8 @@
 namespace SinaMN75U.Utils;
 
 public static class OutputCache {
-	public static void AddUOutputCache(this WebApplicationBuilder builder) {
-		builder.Services.AddOutputCache(x => x.AddPolicy("default", y => {
+	public static void AddUOutputCache(this IServiceCollection services) {
+		services.AddOutputCache(x => x.AddPolicy("default", y => {
 			y.Cache();
 			y.SetVaryByHeader("*");
 			y.SetVaryByQuery("*");
