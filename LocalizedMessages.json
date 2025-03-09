@@ -1,0 +1,28 @@
+{
+  "en": {
+    "EmailRequired": "Email is required.",
+    "UserNotFound": "User Not Found.",
+    "EmailInvalid": "Email is invalid.",
+    "UserNameInvalid": "UserName is invalid.",
+    "PasswordMinLength": "Password length must be more than 6.",
+    "PasswordMaxLength": "Password length must be less than 100.",
+    "PasswordRequired": "Password is required.",
+    "PasswordInvalid": "Password must be between 6 and 100 characters.",
+    "UserAlreadyExist": "A User with this information already exist.",
+    "CategoryNotFound": "Category not found.",
+    "UserDeleted": "User Deleted"
+  },
+  "fa": {
+    "EmailRequired": "ایمیل الزامی است.",
+    "UserNotFound": "کاربر یافت نشد.",
+    "UserNameInvalid": "نام کاربری صحیح نیست.",
+    "EmailInvalid": "ایمیل معتبر نیست.",
+    "PasswordRequired": "رمز عبور الزامی است.",
+    "PasswordMinLength": "رمز عبور باید حداقل ۶ کاراکتر باشد.",
+    "PasswordMaxLength": "رمز عبور باید حداکثر ۱۰۰ کاراکتر باشد.",
+    "PasswordInvalid": "رمز عبور باید بین ۶ تا ۱۰۰ کاراکتر باشد.",
+    "UserAlreadyExist": "کاربری با این مشخصات قبلا در سیستم ثبت شده است.",
+    "CategoryNotFound": "دسته بندی یافت نشد.",
+    "UserDeleted": "کاربر حذف شد."
+  }
+}
