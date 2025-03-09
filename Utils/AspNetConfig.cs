@@ -1,3 +1,5 @@
+using SinaMN75U.Middlewares;
+
 namespace SinaMN75U.Utils;
 
 public static class AspNetConfig {
@@ -67,7 +69,7 @@ public static class AspNetConfig {
 		app.UseUSwagger();
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
-		// app.UseMiddleware<ApiKeyMiddleware>();
+		app.UseMiddleware<ApiKeyMiddleware>();
 		
 		app.MapAuthRoutes("Auth");
 		app.MapUserRoutes("User");
