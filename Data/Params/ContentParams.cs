@@ -1,6 +1,5 @@
 namespace SinaMN75U.Data.Params;
 
-
 public class ContentCreateParams: BaseParams {
 	public required string Title { get; set; }
 	public required string Description { get; set; }
@@ -17,4 +16,9 @@ public class ContentUpdateParams: BaseParams {
 	public string? Instagram { get; set; }
 	public List<int>? AddTags { get; set; }
 	public List<int>? RemoveTags { get; set; }
+}
+
+public class ContentFilterParams: BaseParams {
+	public List<int>? Tags { get; set; }
+	public bool ShowMedia { get; set; } = false;
 }
