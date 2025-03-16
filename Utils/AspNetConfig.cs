@@ -1,3 +1,4 @@
+using FluentValidation.AspNetCore;
 using SinaMN75U.Middlewares;
 
 namespace SinaMN75U.Utils;
@@ -35,6 +36,9 @@ public static class AspNetConfig {
 			)
 		);
 
+		builder.Services.AddFluentValidationAutoValidation();
+		builder.Services.AddValidatorsFromAssemblyContaining<RegisterParamsValidator>();
+		builder.Services.AddValidatorsFromAssemblyContaining<LoginParamsValidator>();
 		builder.Services.AddResponseCompression(o => o.EnableForHttps = true);
 		builder.Services.AddScoped<DbContext, T>();
 		builder.Services.AddDbContextPool<T>(b => {
