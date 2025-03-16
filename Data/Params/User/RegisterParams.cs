@@ -27,6 +27,6 @@ public class RegisterParamsValidator : AbstractValidator<RegisterParams> {
 		
 		RuleFor(x => x.PhoneNumber)
 			.Must(username => username.MinMaxLenght(9, 15))
-			.WithMessage(l.Get("UserNameInvalid"));
+			.WithMessage(l.Get("PhoneNumberInvalid"));
 	}
 }
