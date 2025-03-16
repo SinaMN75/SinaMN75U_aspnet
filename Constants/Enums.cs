@@ -44,3 +44,17 @@ public enum TagCategory {
 public enum TagMedia {
 	Image = 100
 }
+
+public enum TagContent {
+	Terms = 101,
+	AboutUs = 102,
+	HomeBanner1 = 103,
+	HomeBanner2 = 104,
+	Qa = 105,
+	HomeBannerSmall1 = 106,
+	HomeBannerSmall2 = 107,
+	ContactInfo = 108,
+	SmallDetail1 = 109,
+	SmallDetail2 = 110,
+	News = 111,
+}

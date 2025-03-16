@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Params.Category;
 
-public class CategoryCreateParams {
+public class CategoryCreateParams: BaseParams {
 	public required string Title { get; set; }
 	public string? TitleTr1 { get; set; }
 	public string? TitleTr2 { get; set; }
@@ -8,7 +8,7 @@ public class CategoryCreateParams {
 	public required List<TagCategory> Tags { get; set; }
 }
 
-public class CategoryUpdateParams {
+public class CategoryUpdateParams: BaseParams {
 	public required Guid Id { get; set; }
 	public string? Title { get; set; }
 	public string? TitleTr1 { get; set; }

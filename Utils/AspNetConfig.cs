@@ -51,16 +51,16 @@ public static class AspNetConfig {
 
 		Server.Configure(builder.Services.BuildServiceProvider().GetService<IServiceProvider>()?.GetService<IHttpContextAccessor>());
 		
-		builder.Services.AddScoped<IHttpClientService, HttpClientService>();
-		builder.Services.AddScoped<ILocalStorageService, MemoryCacheService>();
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
+		builder.Services.AddSingleton<IHttpClientService, HttpClientService>();
+		builder.Services.AddSingleton<ILocalStorageService, MemoryCacheService>();
 		builder.Services.AddScoped<ITokenService, TokenService>();
-		builder.Services.AddSingleton<ITokenService, TokenService>();
 		builder.Services.AddScoped<IUserService, UserService>();
 		builder.Services.AddScoped<IAuthService, AuthService>();
 		builder.Services.AddScoped<ICategoryService, CategoryService>();
 		builder.Services.AddScoped<ISmsNotificationService, SmsNotificationService>();
 		builder.Services.AddScoped<IMediaService, MediaService>();
+		builder.Services.AddScoped<IContentService, ContentService>();
 	}
 
 	public static void UseUServices(this WebApplication app) {
@@ -78,5 +78,6 @@ public static class AspNetConfig {
 		app.MapUserRoutes("User");
 		app.MapCategoryRoutes("Category");
 		app.MapMediaRoutes("Media");
+		app.MapContentRoutes("Content");
 	}
 }

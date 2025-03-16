@@ -1,8 +1,6 @@
-using SinaMN75U.InnerServices;
-
 namespace SinaMN75U.Data.Params.User;
 
-public class RegisterParams {
+public class RegisterParams: BaseParams {
 	public required string UserName { get; set; }
 	public required string Email { get; set; }
 	public required string PhoneNumber { get; set; }

@@ -1,8 +1,6 @@
-using SinaMN75U.InnerServices;
-
 namespace SinaMN75U.Data.Params.User;
 
-public class LoginWithEmailPasswordParams {
+public class LoginWithEmailPasswordParams: BaseParams {
 	[Required]
 	[MinLength(5)]
 	[MaxLength(100)]

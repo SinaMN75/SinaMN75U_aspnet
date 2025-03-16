@@ -1,29 +1,10 @@
 namespace SinaMN75U.InnerServices;
 
 public interface IHttpClientService {
-	Task<string> Get(
-		string uri,
-		Dictionary<string, string>? headers = null,
-		TimeSpan? cacheDuration = null
-	);
-
-	Task<string> Post(
-		string uri,
-		object? body,
-		Dictionary<string, string>? headers = null,
-		TimeSpan? cacheDuration = null
-	);
-
-	Task<string> Put(
-		string uri,
-		object? body,
-		Dictionary<string, string>? headers = null
-	);
-
-	Task<string> Delete(
-		string uri,
-		Dictionary<string, string>? headers = null
-	);
+	Task<string> Get(string uri, Dictionary<string, string>? headers = null, TimeSpan? cacheDuration = null);
+	Task<string> Post(string uri,object? body,Dictionary<string, string>? headers = null,TimeSpan? cacheDuration = null);
+	Task<string> Put(string uri, object? body, Dictionary<string, string>? headers = null);
+	Task<string> Delete(string uri, Dictionary<string, string>? headers = null);
 }
 
 public class HttpClientService(HttpClient httpClient, IMemoryCache cache) : IHttpClientService {
