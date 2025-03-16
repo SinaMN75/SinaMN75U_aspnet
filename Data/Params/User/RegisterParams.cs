@@ -22,7 +22,11 @@ public class RegisterParamsValidator : AbstractValidator<RegisterParams> {
 			.MaximumLength(100).WithMessage(l.Get("PasswordMaxLength"));
 
 		RuleFor(x => x.UserName)
-			.Must(username => username.MinMaxLenght(4, 40))
+			.Must(username => username.MinMaxLenght(2, 40))
+			.WithMessage(l.Get("UserNameInvalid"));
+		
+		RuleFor(x => x.PhoneNumber)
+			.Must(username => username.MinMaxLenght(9, 15))
 			.WithMessage(l.Get("UserNameInvalid"));
 	}
 }

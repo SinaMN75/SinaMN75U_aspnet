@@ -18,7 +18,7 @@ public static class StringExtension {
 	}
 
 	public static bool MinMaxLenght(this string? s, int min, int max) {
-		return s.IsNotNull() && s!.Length < min && s.Length > max;
+		return s.IsNotNull() && s!.Length >= min && s.Length <= max;
 	}
 
 	public static bool IsEmail(this string email) {

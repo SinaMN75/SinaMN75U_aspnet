@@ -10,6 +10,7 @@
     "PasswordInvalid": "Password must be between 6 and 100 characters.",
     "UserAlreadyExist": "A User with this information already exist.",
     "CategoryNotFound": "Category not found.",
+    "PhoneNumberInvalid": "Phone Number is Not Valid.",
     "UserDeleted": "User Deleted"
   },
   "fa": {
@@ -23,6 +24,7 @@
     "PasswordInvalid": "رمز عبور باید بین ۶ تا ۱۰۰ کاراکتر باشد.",
     "UserAlreadyExist": "کاربری با این مشخصات قبلا در سیستم ثبت شده است.",
     "CategoryNotFound": "دسته بندی یافت نشد.",
+    "PhoneNumberInvalid": "شماره موبایل وارد شده صحیح نیست.",
     "UserDeleted": "کاربر حذف شد."
   }
 }
