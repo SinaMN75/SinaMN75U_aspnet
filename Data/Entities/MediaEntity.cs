@@ -1,5 +1,4 @@
 using SinaMN75U.Data.Responses.Media;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SinaMN75U.Data.Entities;
 

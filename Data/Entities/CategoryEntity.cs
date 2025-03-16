@@ -1,6 +1,3 @@
-using SinaMN75U.Data.Responses.UserManagement;
-using System.ComponentModel.DataAnnotations.Schema;
-
 namespace SinaMN75U.Data.Entities;
 
 [Table("Categories")]

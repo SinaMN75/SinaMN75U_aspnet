@@ -17,3 +17,9 @@ public class CategoryUpdateParams: BaseParams {
 	public List<TagCategory>? AddTags { get; set; }
 	public List<TagCategory>? RemoveTags { get; set; }
 }
+
+public class CategoryFilterParams: BaseParams {
+	public List<Guid>? Ids { get; set; }
+	public List<TagCategory>? Tags { get; set; }
+	public bool ShowMedia { get; set; } = false;
+}

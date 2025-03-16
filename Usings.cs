@@ -22,7 +22,7 @@ global using System.Security.Claims;
 global using System.Text.Json.Serialization;
 global using System.Threading.RateLimiting;
 global using System.Text.RegularExpressions;
-global using System.Net.Http.Headers;
+global using System.ComponentModel.DataAnnotations.Schema;
 global using System.Text;
 global using System.Security.Cryptography;
 global using System.Diagnostics;

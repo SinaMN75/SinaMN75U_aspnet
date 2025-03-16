@@ -17,7 +17,7 @@ public class ContentEntity : BaseEntity {
 	public required string Description { get; set; }
 
 	[MaxLength(100)]
-	public required List<TagContent> Tags { get; set; }
+	public required List<int> Tags { get; set; }
 
 	[Required]
 	public required ContentJsonDetail JsonDetail { get; set; }
