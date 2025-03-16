@@ -104,7 +104,7 @@ public class AuthService(
 			PhoneNumber = p.PhoneNumber,
 			Email = p.PhoneNumber,
 			JsonDetail = new UserJsonDetail(),
-			Tags = p.Tags,
+			Tags = [],
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow
