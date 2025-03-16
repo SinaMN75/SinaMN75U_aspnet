@@ -38,7 +38,6 @@ public static class AspNetConfig {
 
 		builder.Services.AddFluentValidationAutoValidation();
 		builder.Services.AddValidatorsFromAssemblyContaining<RegisterParamsValidator>();
-		builder.Services.AddValidatorsFromAssemblyContaining<LoginParamsValidator>();
 		builder.Services.AddResponseCompression(o => o.EnableForHttps = true);
 		builder.Services.AddScoped<DbContext, T>();
 		builder.Services.AddDbContextPool<T>(b => {
