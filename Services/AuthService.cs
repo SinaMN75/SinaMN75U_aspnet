@@ -124,7 +124,7 @@ public class AuthService(
 
 	public async Task<UResponse<LoginResponse?>> VerifyCodeForLogin(VerifyMobileForLoginParams p, CancellationToken ct) {
 		string mobile = p.PhoneNumber.Replace("+", "");
-		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == mobile);
+		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == mobile, ct);
 		if (user == null) return new UResponse<LoginResponse?>(null, USC.UserNotFound);
 
 		user.FirstName = p.FirstName ?? user.FirstName;

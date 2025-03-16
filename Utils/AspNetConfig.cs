@@ -23,23 +23,29 @@ public static class AspNetConfig {
 				options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 				options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 			});
-		builder.Services.AddRateLimiter(o => o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-			RateLimitPartition.GetFixedWindowLimiter(
-				context.Request.Headers.Host.ToString(),
-				_ => new FixedWindowRateLimiterOptions {
-					AutoReplenishment = true,
-					PermitLimit = 100,
-					Window = TimeSpan.FromMinutes(1)
-				})));
+		builder.Services.AddRateLimiter(o => o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(c =>
+				RateLimitPartition.GetFixedWindowLimiter(
+					c.Request.Headers.Host.ToString(),
+					_ => new FixedWindowRateLimiterOptions {
+						AutoReplenishment = true,
+						PermitLimit = 100,
+						Window = TimeSpan.FromMinutes(1)
+					}
+				)
+			)
+		);
 
 		builder.Services.AddResponseCompression(o => o.EnableForHttps = true);
 		builder.Services.AddScoped<DbContext, T>();
-		builder.Services.AddDbContextPool<T>(b => b.UseNpgsql(builder.Configuration.GetConnectionString("ServerPostgres"), o => {
-			AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-			o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-			o.EnableRetryOnFailure(5, TimeSpan.FromSeconds(30), null);
-		}));
-		
+		builder.Services.AddDbContextPool<T>(b => {
+			b.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+			b.UseNpgsql(builder.Configuration.GetConnectionString("ServerPostgres"), o => {
+				AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+				o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+				o.EnableRetryOnFailure(5, TimeSpan.FromSeconds(30), null);
+			});
+		});
+
 		builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 		builder.Services.AddSingleton<IFileProvider>(new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")));
 		builder.Services.Configure<FormOptions>(x => {
@@ -49,7 +55,7 @@ public static class AspNetConfig {
 		});
 
 		Server.Configure(builder.Services.BuildServiceProvider().GetService<IServiceProvider>()?.GetService<IHttpContextAccessor>());
-		
+
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
 		builder.Services.AddSingleton<IHttpClientService, HttpClientService>();
 		builder.Services.AddSingleton<ILocalStorageService, MemoryCacheService>();
@@ -72,7 +78,7 @@ public static class AspNetConfig {
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
 		app.UseMiddleware<ApiKeyMiddleware>();
-		
+
 		app.MapAuthRoutes("Auth");
 		app.MapUserRoutes("User");
 		app.MapCategoryRoutes("Category");
