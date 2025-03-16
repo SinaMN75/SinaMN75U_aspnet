@@ -1,6 +1,5 @@
 using SinaMN75U.Data.Entities;
 using SinaMN75U.Data.Params.Media;
-using SinaMN75U.Data.Responses.Media;
 
 namespace SinaMN75U.Services;
 
@@ -12,7 +11,7 @@ public interface IMediaService {
 
 public class MediaService(IWebHostEnvironment env, DbContext dbContext) : IMediaService {
 	public async Task<UResponse<MediaResponse?>> Create(MediaCreateParams p, CancellationToken ct) {
-		List<string> allowedExtensions = [".png", ".gif", ".jpg", ".jpeg", ".svg", ".mp4", ".mov", ".mp3", ".pdf", ".aac", ".apk", ".zip", ".rar", ".mkv"];
+		IEnumerable<string> allowedExtensions = [".png", ".gif", ".jpg", ".jpeg", ".svg", ".mp4", ".mov", ".mp3", ".pdf", ".aac", ".apk", ".zip", ".rar", ".mkv"];
 		if (!allowedExtensions.Contains(Path.GetExtension(p.File.FileName.ToLower())))
 			return new UResponse<MediaResponse?>(null, USC.BadRequest);
 

@@ -10,6 +10,6 @@ public class JwtClaimData {
 	public required string Tags { get; set; }
 	public DateTime? Expiration { get; set; }
 	public bool IsExpired => Expiration.HasValue && Expiration.Value < DateTime.UtcNow;
-	public List<TagUser> TagsList => Tags!.Split(',').Select(Enum.Parse<TagUser>).ToList();
+	public IEnumerable<TagUser> TagsList => Tags!.Split(',').Select(Enum.Parse<TagUser>);
 	public Guid Guid => Guid.Parse(Id);
 }

@@ -14,12 +14,12 @@ public class CategoryUpdateParams: BaseParams {
 	public string? TitleTr1 { get; set; }
 	public string? TitleTr2 { get; set; }
 	public string? Subtitle { get; set; }
-	public List<TagCategory>? AddTags { get; set; }
-	public List<TagCategory>? RemoveTags { get; set; }
+	public IEnumerable<TagCategory>? AddTags { get; set; }
+	public IEnumerable<TagCategory>? RemoveTags { get; set; }
 }
 
 public class CategoryFilterParams: BaseParams {
-	public List<Guid>? Ids { get; set; }
-	public List<TagCategory>? Tags { get; set; }
+	public IEnumerable<Guid>? Ids { get; set; }
+	public IEnumerable<TagCategory>? Tags { get; set; }
 	public bool ShowMedia { get; set; } = false;
 }

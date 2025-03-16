@@ -37,8 +37,12 @@ public class UserEntity : BaseEntity {
 
 	public DateTime? Birthdate { get; set; }
 
+	[Required]
 	public required UserJsonDetail JsonDetail { get; set; }
+	
+	[Required]
 	public required List<TagUser> Tags { get; set; }
+	
 	public IEnumerable<CategoryEntity>? Categories { get; set; }
 }
 
@@ -47,7 +51,7 @@ public class UserJsonDetail {
 }
 
 public static class UserModelExtensions {
-	public static UserResponse MapToResponse(this UserEntity e) {
+	public static UserResponse MapToResponse(this UserEntity e, bool showCategories = false) {
 		return new UserResponse {
 			Id = e.Id,
 			UserName = e.UserName,
@@ -57,7 +61,7 @@ public static class UserModelExtensions {
 			Birthdate = e.Birthdate,
 			Tags = e.Tags,
 			FcmToken = e.JsonDetail.FcmToken,
-			Categories = e.Categories?.Select(u => u.MapToResponse()).ToList()
+			Categories = showCategories ? e.Categories?.Select(u => u.MapToResponse()) : null
 		};
 	}
 }

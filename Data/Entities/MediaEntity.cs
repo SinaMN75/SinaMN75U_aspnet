@@ -1,5 +1,3 @@
-using SinaMN75U.Data.Responses.Media;
-
 namespace SinaMN75U.Data.Entities;
 
 [Table("Media")]
@@ -28,7 +26,6 @@ public static class MediaModelExtensions {
 		return new MediaResponse {
 			Path = $"{Server.ServerAddress}/Medias/{e.Path}",
 			Tags = e.Tags,
-			UserId = e.UserId,
 			Title = e.JsonDetail.Title,
 			Description = e.JsonDetail.Description
 		};

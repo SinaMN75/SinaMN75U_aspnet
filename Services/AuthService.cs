@@ -1,10 +1,9 @@
 namespace SinaMN75U.Services;
 
 public interface IAuthService {
-	Task<UResponse<RegisterResponse?>> Register(RegisterParams p, CancellationToken ct);
+	Task<UResponse<LoginResponse?>> Register(RegisterParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> LoginWithPassword(LoginWithEmailPasswordParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> RefreshToken(RefreshTokenParams p, CancellationToken ct);
-
 	Task<UResponse<UserResponse?>> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> VerifyCodeForLogin(VerifyMobileForLoginParams p, CancellationToken ct);
 }
@@ -16,12 +15,12 @@ public class AuthService(
 	ISmsNotificationService smsNotificationService,
 	ILocalStorageService cache
 ) : IAuthService {
-	public async Task<UResponse<RegisterResponse?>> Register(RegisterParams p, CancellationToken ct) {
+	public async Task<UResponse<LoginResponse?>> Register(RegisterParams p, CancellationToken ct) {
 		bool isUserExists = await db.Set<UserEntity>().AnyAsync(x => x.Email == p.Email ||
 		                                                             x.UserName == p.UserName ||
 		                                                             x.PhoneNumber == p.PhoneNumber, ct);
 		if (isUserExists)
-			return new UResponse<RegisterResponse?>(null, USC.Conflict, ls.Get("UserAlreadyExist"));
+			return new UResponse<LoginResponse?>(null, USC.Conflict, ls.Get("UserAlreadyExist"));
 
 		UserEntity user = new() {
 			Id = Guid.CreateVersion7(),
@@ -41,9 +40,10 @@ public class AuthService(
 		await db.Set<UserEntity>().AddAsync(user, ct);
 		await db.SaveChangesAsync(ct);
 
-		return new UResponse<RegisterResponse?>(new RegisterResponse {
+		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = CreateToken(user),
-			RefreshToken = user.RefreshToken
+			RefreshToken = user.RefreshToken,
+			User = user.MapToResponse()
 		});
 	}
 
@@ -81,13 +81,12 @@ public class AuthService(
 	}
 
 	public async Task<UResponse<UserResponse?>> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct) {
-
-		Console.WriteLine("JJJJJJJJ");
-		Console.WriteLine(ts.GetRawToken());
 		UserResponse? existingUser = await db.Set<UserEntity>().Select(x => new UserResponse {
 			Id = x.Id,
 			UserName = x.UserName,
 			PhoneNumber = x.PhoneNumber,
+			FirstName = x.FirstName,
+			LastName = x.LastName,
 			Email = x.Email,
 			Tags = x.Tags
 		}).AsNoTracking().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber);

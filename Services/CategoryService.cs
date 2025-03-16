@@ -1,7 +1,7 @@
 namespace SinaMN75U.Services;
 
 public interface ICategoryService {
-	Task<UResponse<CategoryResponse>> Create(CategoryCreateParams p, CancellationToken ct);
+	Task<UResponse<CategoryResponse?>> Create(CategoryCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<CategoryResponse>>> Read(CancellationToken ct);
 	Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
@@ -9,7 +9,9 @@ public interface ICategoryService {
 }
 
 public class CategoryService(DbContext db, ILocalizationService ls, ITokenService ts) : ICategoryService {
-	public async Task<UResponse<CategoryResponse>> Create(CategoryCreateParams p, CancellationToken ct) {
+	public async Task<UResponse<CategoryResponse?>> Create(CategoryCreateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<CategoryResponse?>(null, USC.UnAuthorized, ls.Get("AuthorizationRequired"));
 		CategoryEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			Title = p.Title,
@@ -27,7 +29,7 @@ public class CategoryService(DbContext db, ILocalizationService ls, ITokenServic
 	}
 
 	public async Task<UResponse<IEnumerable<CategoryResponse>>> Read(CancellationToken ct) {
-		List<CategoryResponse> categories = await db.Set<CategoryEntity>()
+		IEnumerable<CategoryResponse> categories = await db.Set<CategoryEntity>()
 			.Include(i => i.Children)
 			.AsNoTracking()
 			.Select(i => i.MapToResponse())

@@ -10,8 +10,8 @@ public class MediaCreateParams: BaseParams {
 
 public class MediaUpdateParams: BaseParams {
 	public required Guid Id { get; set; }
-	public List<TagMedia>? AddTags { get; set; }
-	public List<TagMedia>? RemoveTags { get; set; }
+	public IEnumerable<TagMedia>? AddTags { get; set; }
+	public IEnumerable<TagMedia>? RemoveTags { get; set; }
 	public string? Title { get; set; }
 	public string? Description { get; set; }
 }

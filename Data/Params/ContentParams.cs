@@ -14,11 +14,11 @@ public class ContentUpdateParams: BaseParams {
 	public string? SubTitle { get; set; }
 	public string? Description { get; set; }
 	public string? Instagram { get; set; }
-	public List<int>? AddTags { get; set; }
-	public List<int>? RemoveTags { get; set; }
+	public IEnumerable<int>? AddTags { get; set; }
+	public IEnumerable<int>? RemoveTags { get; set; }
 }
 
 public class ContentFilterParams: BaseParams {
-	public List<int>? Tags { get; set; }
+	public IEnumerable<int>? Tags { get; set; }
 	public bool ShowMedia { get; set; } = false;
 }

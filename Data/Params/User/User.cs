@@ -24,7 +24,7 @@ public class UserFilterParams : BaseFilterParams {
 	public string? Bio { get; set; }
 	public DateTime? StartBirthDate { get; set; }
 	public DateTime? EndBirthDate { get; set; }
-	public List<TagUser>? Tags { get; set; }
+	public IEnumerable<TagUser>? Tags { get; set; }
 	public IEnumerable<Guid>? Categories { get; set; }
 }
 
@@ -42,7 +42,7 @@ public class UserUpdateParams {
 	public string? Bio { get; set; }
 	public string? FcmToken { get; set; }
 	public DateTime? Birthdate { get; set; }
-	public List<TagUser>? AddTags { get; set; }
-	public List<TagUser>? RemoveTags { get; set; }
+	public IEnumerable<TagUser>? AddTags { get; set; }
+	public IEnumerable<TagUser>? RemoveTags { get; set; }
 	public IEnumerable<Guid>? Categories { get; set; }
 }

@@ -1,7 +1,3 @@
-using Microsoft.AspNetCore.Routing;
-using SinaMN75U.Data.Params.User;
-using SinaMN75U.Services;
-
 namespace SinaMN75U.Routes;
 
 public static class AuthRoutes {

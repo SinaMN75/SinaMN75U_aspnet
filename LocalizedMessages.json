@@ -11,6 +11,7 @@
     "UserAlreadyExist": "A User with this information already exist.",
     "CategoryNotFound": "Category not found.",
     "PhoneNumberInvalid": "Phone Number is Not Valid.",
+    "AuthorizationRequired": "Authorization Required",
     "UserDeleted": "User Deleted"
   },
   "fa": {
@@ -25,6 +26,7 @@
     "UserAlreadyExist": "کاربری با این مشخصات قبلا در سیستم ثبت شده است.",
     "CategoryNotFound": "دسته بندی یافت نشد.",
     "PhoneNumberInvalid": "شماره موبایل وارد شده صحیح نیست.",
+    "AuthorizationRequired": "نیاز به احراز هویت است.",
     "UserDeleted": "کاربر حذف شد."
   }
 }
