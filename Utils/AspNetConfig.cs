@@ -77,7 +77,6 @@ public static class AspNetConfig {
 		app.UseUSwagger();
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
-		app.UseMiddleware<ApiKeyMiddleware>();
 
 		app.MapAuthRoutes("Auth");
 		app.MapUserRoutes("User");
