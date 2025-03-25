@@ -1,5 +1,3 @@
-using Swashbuckle.AspNetCore.SwaggerGen;
-
 namespace SinaMN75U.Utils;
 
 public static class SwaggerSetup {

@@ -1,6 +1,3 @@
-using System.Linq.Expressions;
-using System.Reflection;
-
 namespace SinaMN75U.Services;
 
 public interface ICategoryService {

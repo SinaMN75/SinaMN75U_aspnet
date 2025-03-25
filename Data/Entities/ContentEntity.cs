@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations.Schema;
-
 namespace SinaMN75U.Data.Entities;
 
 [Table("Contents")]
