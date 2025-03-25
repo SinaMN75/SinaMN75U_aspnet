@@ -12,6 +12,7 @@
     "CategoryNotFound": "Category not found.",
     "PhoneNumberInvalid": "Phone Number is Not Valid.",
     "AuthorizationRequired": "Authorization Required",
+    "MaxOtpReached": "Maximum number of OTP request has reached, please wait a while before requesting again.",
     "UserDeleted": "User Deleted"
   },
   "fa": {
@@ -27,6 +28,7 @@
     "CategoryNotFound": "دسته بندی یافت نشد.",
     "PhoneNumberInvalid": "شماره موبایل وارد شده صحیح نیست.",
     "AuthorizationRequired": "نیاز به احراز هویت است.",
+    "MaxOtpReached": "تعداد دفعات مجاز برای درخواست کد تایید رد شد.",
     "UserDeleted": "کاربر حذف شد."
   }
 }

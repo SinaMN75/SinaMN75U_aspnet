@@ -14,20 +14,18 @@ public class MediaEntity : BaseEntity {
 
 	public Guid? UserId { get; set; }
 	public UserEntity? User { get; set; }
+	
+	public MediaResponse MapToResponse() {
+		return new MediaResponse {
+			Path = $"{Server.ServerAddress}/Medias/{Path}",
+			Tags = Tags,
+			Title = JsonDetail.Title,
+			Description = JsonDetail.Description
+		};
+	}
 }
 
 public class MediaJsonDetail {
 	public string? Title { get; set; }
 	public string? Description { get; set; }
-}
-
-public static class MediaModelExtensions {
-	public static MediaResponse MapToResponse(this MediaEntity e) {
-		return new MediaResponse {
-			Path = $"{Server.ServerAddress}/Medias/{e.Path}",
-			Tags = e.Tags,
-			Title = e.JsonDetail.Title,
-			Description = e.JsonDetail.Description
-		};
-	}
 }

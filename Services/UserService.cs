@@ -56,7 +56,7 @@ public class UserService(
 	}
 
 	public async Task<UResponse<IEnumerable<UserResponse>>> Filter(UserFilterParams p, CancellationToken ct) {
-		IQueryable<UserEntity> q = db.Set<UserEntity>().AsNoTracking();
+		IQueryable<UserEntity> q = db.Set<UserEntity>();
 
 		if (p.UserName.IsNotNull()) q = q.Where(u => u.UserName.Contains(p.UserName!));
 		if (p.PhoneNumber.IsNotNull()) q = q.Where(u => u.PhoneNumber == p.PhoneNumber);

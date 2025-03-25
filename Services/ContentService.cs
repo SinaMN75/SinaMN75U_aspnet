@@ -51,7 +51,9 @@ public class ContentService(DbContext context) : IContentService {
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
-		ContentEntity e = (await context.Set<ContentEntity>().Include(x => x.Media).FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
+		ContentEntity e = (await context.Set<ContentEntity>()
+			.Include(x => x.Media)
+			.FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
 		context.Set<ContentEntity>().Remove(e);
 		await context.SaveChangesAsync(ct);
 		return new UResponse();

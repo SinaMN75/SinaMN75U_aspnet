@@ -1,3 +1,6 @@
+using System.Linq.Expressions;
+using System.Reflection;
+
 namespace SinaMN75U.Services;
 
 public interface ICategoryService {
@@ -5,10 +8,15 @@ public interface ICategoryService {
 	Task<UResponse<IEnumerable<CategoryResponse>>> Read(CancellationToken ct);
 	Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
-	Task<UResponse> DeleteRange(IEnumerable<Guid> idList, CancellationToken ct);
+	Task<UResponse> DeleteRange(IEnumerable<Guid> p, CancellationToken ct);
 }
 
-public class CategoryService(DbContext db, ILocalizationService ls, ITokenService ts) : ICategoryService {
+public class CategoryService(
+	DbContext db,
+	IMediaService mediaService,
+	ILocalizationService ls,
+	ITokenService ts
+) : ICategoryService {
 	public async Task<UResponse<CategoryResponse?>> Create(CategoryCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<CategoryResponse?>(null, USC.UnAuthorized, ls.Get("AuthorizationRequired"));
@@ -25,7 +33,7 @@ public class CategoryService(DbContext db, ILocalizationService ls, ITokenServic
 
 		db.Set<CategoryEntity>().Add(e);
 		await db.SaveChangesAsync(ct);
-		return new UResponse<CategoryResponse>(e.MapToResponse());
+		return new UResponse<CategoryResponse?>(e.MapToResponse());
 	}
 
 	public async Task<UResponse<IEnumerable<CategoryResponse>>> Read(CancellationToken ct) {
@@ -39,6 +47,8 @@ public class CategoryService(DbContext db, ILocalizationService ls, ITokenServic
 	}
 
 	public async Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<CategoryResponse?>(null, USC.UnAuthorized, ls.Get("AuthorizationRequired"));
 		CategoryEntity? e = await db.Set<CategoryEntity>()
 			.Include(i => i.Tags)
 			.FirstOrDefaultAsync(i => i.Id == p.Id);
@@ -59,17 +69,27 @@ public class CategoryService(DbContext db, ILocalizationService ls, ITokenServic
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
-		CategoryEntity? category = await db.Set<CategoryEntity>().FindAsync(p.Id, ct);
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null)
+			return new UResponse<CategoryResponse?>(null, USC.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		CategoryEntity? category = await db.Set<CategoryEntity>()
+			.Include(x => x.Media)
+			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+
 		if (category == null)
 			return new UResponse(USC.NotFound, ls.Get("CategoryNotFound"));
+
+		if (category.Media.IsNotNullOrEmpty())
+			await mediaService.DeleteRange(category.Media.Select(x => x.Id), ct);
 
 		db.Set<CategoryEntity>().Remove(category);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
 
-	public async Task<UResponse> DeleteRange(IEnumerable<Guid> idList, CancellationToken ct) {
-		await db.Set<CategoryEntity>().Where(x => idList.Contains(x.Id)).ExecuteDeleteAsync();
+	public async Task<UResponse> DeleteRange(IEnumerable<Guid> p, CancellationToken ct) {
+		await db.Set<CategoryEntity>().WhereIn(u => u.Id, p).ExecuteDeleteAsync(ct);
 		return new UResponse();
 	}
 }

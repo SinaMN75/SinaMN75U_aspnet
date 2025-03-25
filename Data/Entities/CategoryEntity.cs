@@ -25,21 +25,21 @@ public class CategoryEntity : BaseEntity {
 	public IEnumerable<CategoryEntity>? Children { get; set; }
 
 	public IEnumerable<UserEntity>? Users { get; set; }
+	
+	public IEnumerable<MediaEntity>? Media { get; set; }
+	
+	public CategoryResponse MapToResponse() {
+		return new CategoryResponse {
+			Title = Title,
+			TitleTr1 = TitleTr1,
+			TitleTr2 = TitleTr2,
+			Subtitle = JsonDetail.Subtitle,
+			Tags = Tags,
+			Children = Children?.Select(x => x.MapToResponse()).ToList(),
+		};
+	}
 }
 
 public class CategoryJsonDetail {
 	public string? Subtitle { get; set; }
-}
-
-public static class CategoryExtensions {
-	public static CategoryResponse MapToResponse(this CategoryEntity e) {
-		return new CategoryResponse {
-			Title = e.Title,
-			TitleTr1 = e.TitleTr1,
-			TitleTr2 = e.TitleTr2,
-			Subtitle = e.JsonDetail.Subtitle,
-			Tags = e.Tags,
-			Children = e.Children?.Select(MapToResponse).ToList(),
-		};
-	}
 }

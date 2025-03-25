@@ -16,4 +16,8 @@ public class UResponse(USC status = USC.Success, string message = "") {
 	public int? PageCount { get; set; }
 	public int? TotalCount { get; set; }
 	public string Message { get; set; } = message;
+	
+	public IResult ToResult() {
+		return TypedResults.Json(this, statusCode: Status.Value());
+	}
 }

@@ -23,21 +23,19 @@ public class ContentEntity : BaseEntity {
 	public required ContentJsonDetail JsonDetail { get; set; }
 
 	public IEnumerable<MediaEntity>? Media { get; set; }
+	
+	public ContentResponse MapToResponse(bool showMedia = false) {
+		return new ContentResponse {
+			Title = Title,
+			SubTitle = SubTitle,
+			Description = Description,
+			Tags = Tags,
+			Instagram = JsonDetail.Instagram,
+			Media = showMedia ? Media?.Select(x => x.MapToResponse()) : null,
+		};
+	}
 }
 
 public class ContentJsonDetail {
 	public string? Instagram { get; set; }
-}
-
-public static class ContentEntityExtensions {
-	public static ContentResponse MapToResponse(this ContentEntity e, bool showMedia = false) {
-		return new ContentResponse {
-			Title = e.Title,
-			SubTitle = e.SubTitle,
-			Description = e.Description,
-			Tags = e.Tags,
-			Instagram = e.JsonDetail.Instagram,
-			Media = showMedia ? e.Media?.Select(x => x.MapToResponse()) : null,
-		};
-	}
 }

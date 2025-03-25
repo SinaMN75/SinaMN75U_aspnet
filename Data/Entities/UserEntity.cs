@@ -44,24 +44,22 @@ public class UserEntity : BaseEntity {
 	public required List<TagUser> Tags { get; set; }
 	
 	public IEnumerable<CategoryEntity>? Categories { get; set; }
+	
+	public UserResponse MapToResponse(bool showCategories = false) {
+		return new UserResponse {
+			Id = Id,
+			UserName = UserName,
+			PhoneNumber = PhoneNumber,
+			Email = Email,
+			Bio = Bio,
+			Birthdate = Birthdate,
+			Tags = Tags,
+			FcmToken = JsonDetail.FcmToken,
+			Categories = showCategories ? Categories?.Select(u => u.MapToResponse()) : null
+		};
+	}
 }
 
 public class UserJsonDetail {
 	public string? FcmToken { get; set; }
-}
-
-public static class UserModelExtensions {
-	public static UserResponse MapToResponse(this UserEntity e, bool showCategories = false) {
-		return new UserResponse {
-			Id = e.Id,
-			UserName = e.UserName,
-			PhoneNumber = e.PhoneNumber,
-			Email = e.Email,
-			Bio = e.Bio,
-			Birthdate = e.Birthdate,
-			Tags = e.Tags,
-			FcmToken = e.JsonDetail.FcmToken,
-			Categories = showCategories ? e.Categories?.Select(u => u.MapToResponse()) : null
-		};
-	}
 }

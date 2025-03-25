@@ -1,24 +1,26 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace SinaMN75U.Utils;
 
 public static class StringExtension {
-	public static bool IsNotNullOrEmpty(this string? s) {
+	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this string? s) {
 		return s is { Length: > 0 };
 	}
 
-	public static bool IsNotNull(this string? s) {
+	public static bool IsNotNull([NotNullWhen(true)] this string? s) {
 		return s != null;
 	}
 
-	public static bool IsNullOrEmpty(this string? s) {
+	public static bool IsNullOrEmpty([NotNullWhen(false)] this string? s) {
 		return string.IsNullOrEmpty(s);
 	}
 
-	public static bool IsNull(this string? s) {
+	public static bool IsNull([NotNullWhen(false)] this string? s) {
 		return s == null;
 	}
 
 	public static bool MinMaxLenght(this string? s, int min, int max) {
-		return s.IsNotNull() && s!.Length >= min && s.Length <= max;
+		return s.IsNotNull() && s.Length >= min && s.Length <= max;
 	}
 
 	public static bool IsEmail(this string email) {
@@ -52,21 +54,19 @@ public static class UtilitiesStatusCodesExtension {
 }
 
 public static class EnumerableExtension {
-	public static bool IsNotNullOrEmpty<T>(this IEnumerable<T>? list) {
+	public static bool IsNotNullOrEmpty<T>([NotNullWhen(true)] this IEnumerable<T>? list) {
 		return list != null && list.Any();
 	}
 
-	public static bool IsNotNull<T>(this IEnumerable<T>? list) {
+	public static bool IsNotNull<T>([NotNullWhen(true)] this IEnumerable<T>? list) {
 		return list != null;
 	}
 
-	public static bool IsNullOrEmpty<T>(this IEnumerable<T>? list) {
+	public static bool IsNullOrEmpty<T>([NotNullWhen(false)] this IEnumerable<T>? list) {
 		return list == null || list.Any();
 	}
-}
 
-public static class GenericResponseExtensions {
-	public static IResult ToResult(this UResponse response) {
-		return TypedResults.Json(response, statusCode: response.Status.Value());
+	public static bool ContainsAny<T>(this IEnumerable<T> source, IEnumerable<T> target) {
+		return source.Any(target.Contains);
 	}
 }

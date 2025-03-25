@@ -4,7 +4,7 @@ public interface IAuthService {
 	Task<UResponse<LoginResponse?>> Register(RegisterParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> LoginWithPassword(LoginWithEmailPasswordParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> RefreshToken(RefreshTokenParams p, CancellationToken ct);
-	Task<UResponse<UserResponse?>> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct);
+	Task<UResponse> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> VerifyCodeForLogin(VerifyMobileForLoginParams p, CancellationToken ct);
 }
 
@@ -80,7 +80,7 @@ public class AuthService(
 		});
 	}
 
-	public async Task<UResponse<UserResponse?>> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct) {
+	public async Task<UResponse> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct) {
 		UserResponse? existingUser = await db.Set<UserEntity>().Select(x => new UserResponse {
 			Id = x.Id,
 			UserName = x.UserName,
@@ -89,11 +89,11 @@ public class AuthService(
 			LastName = x.LastName,
 			Email = x.Email,
 			Tags = x.Tags
-		}).AsNoTracking().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber);
+		}).AsNoTracking().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
 
 		if (existingUser != null) {
-			if (!await smsNotificationService.SendOtpSms(existingUser)) return new UResponse<UserResponse?>(null, USC.MaximumLimitReached);
-			return new UResponse<UserResponse?>(null);
+			if (!await smsNotificationService.SendOtpSms(existingUser)) return new UResponse(USC.MaximumLimitReached, ls.Get("MaxOtpReached"));
+			return new UResponse();
 		}
 
 		UserEntity e = new() {
@@ -111,9 +111,9 @@ public class AuthService(
 
 		UserResponse response = e.MapToResponse();
 
-		await db.SaveChangesAsync();
-		if (!await smsNotificationService.SendOtpSms(response)) return new UResponse<UserResponse?>(null, USC.MaximumLimitReached);
-		return new UResponse<UserResponse?>(null);
+		await db.SaveChangesAsync(ct);
+		if (!await smsNotificationService.SendOtpSms(response)) return new UResponse(USC.MaximumLimitReached, ls.Get("MaxOtpReached"));
+		return new UResponse();
 	}
 
 	public async Task<UResponse<LoginResponse?>> VerifyCodeForLogin(VerifyMobileForLoginParams p, CancellationToken ct) {
