@@ -19,10 +19,10 @@ public static class AspNetConfig {
 			o.SerializerOptions.WriteIndented = false;
 		});
 		builder.Services.AddControllersWithViews(options => options.EnableEndpointRouting = false)
-			.AddJsonOptions(options => {
-				options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-				options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-				options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+			.AddJsonOptions(o => {
+				o.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+				o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+				o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 			});
 		builder.Services.AddRateLimiter(o => o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(c =>
 				RateLimitPartition.GetFixedWindowLimiter(
