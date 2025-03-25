@@ -4,8 +4,7 @@ namespace SinaMN75U.Middlewares;
 
 public class ApiRequestLoggingMiddleware(
 	RequestDelegate next,
-	ILogger<ApiRequestLoggingMiddleware> logger,
-	string logFilePath = "api_logs.txt") {
+	ILogger<ApiRequestLoggingMiddleware> logger) {
 	public async Task InvokeAsync(HttpContext context) {
 		HttpRequest request = context.Request;
 
@@ -20,7 +19,7 @@ public class ApiRequestLoggingMiddleware(
 		string requestBody = "";
 		try {
 			request.EnableBuffering();
-			using StreamReader reader = new StreamReader(request.Body, Encoding.UTF8, true, 1024, true);
+			using StreamReader reader = new(request.Body, Encoding.UTF8, true, 1024, true);
 			requestBody = await reader.ReadToEndAsync();
 			request.Body.Position = 0;
 		}
@@ -29,7 +28,7 @@ public class ApiRequestLoggingMiddleware(
 		}
 
 		Stream originalResponseBodyStream = context.Response.Body;
-		using MemoryStream responseBodyStream = new MemoryStream();
+		using MemoryStream responseBodyStream = new();
 		context.Response.Body = responseBodyStream;
 		await next(context);
 
@@ -47,22 +46,41 @@ public class ApiRequestLoggingMiddleware(
 		stopwatch.Stop();
 		long elapsedMs = stopwatch.ElapsedMilliseconds;
 
-		StringBuilder logEntry = new StringBuilder();
-		logEntry.AppendLine($"{request.Method} - {request.Path} - {context.Response.StatusCode} | {elapsedMs}ms");
-		logEntry.AppendLine("Headers:");
-		foreach (KeyValuePair<string, StringValues> header in request.Headers) {
-			logEntry.AppendLine($"  {header.Key}: {header.Value}");
-		}
+		string cleanRequestBody = TryMinifyJson(requestBody);
+		string cleanResponseBody = TryMinifyJson(responseBody);
 
-		logEntry.AppendLine($"Request Body: {requestBody}");
-		logEntry.AppendLine($"Response Body: {responseBody}");
-		logEntry.AppendLine(new string('-', 50));
+		string logEntry =
+			$"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - {request.Method} - {request.Path} - {context.Response.StatusCode} - {elapsedMs}ms\n" +
+			$"{JsonSerializer.Serialize(request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString()))}\n" +
+			$"{JsonSerializer.Serialize(context.Response.Headers.ToDictionary(h => h.Key, h => h.Value.ToString()))}\n" +
+			$"{cleanRequestBody}\n" +
+			$"{cleanResponseBody}\n" +
+			new string('-', 50) + "\n";
 
 		try {
-			await File.AppendAllTextAsync(logFilePath, logEntry.ToString());
+			DateTime now = DateTime.Now;
+			string logDirectory = Path.Combine("Logs", now.Year.ToString(), now.Month.ToString("00"));
+			string logFileName = $"{now:dd}.txt";
+			string logFilePath = Path.Combine(logDirectory, logFileName);
+
+			Directory.CreateDirectory(logDirectory);
+			await File.AppendAllTextAsync(logFilePath, logEntry);
 		}
 		catch (Exception ex) {
 			logger.LogError(ex, "Failed to write to log file");
+		}
+	}
+
+	private static string TryMinifyJson(string json) {
+		try {
+			using JsonDocument doc = JsonDocument.Parse(json);
+			return JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions {
+				WriteIndented = false,
+				Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+			});
+		}
+		catch {
+			return json;
 		}
 	}
 }
