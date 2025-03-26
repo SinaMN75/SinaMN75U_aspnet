@@ -26,7 +26,7 @@ public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService
 			JsonDetail = new MediaJsonDetail {
 				Title = p.Title,
 				Description = p.Description
-			},
+			}
 		};
 		await db.Set<MediaEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);

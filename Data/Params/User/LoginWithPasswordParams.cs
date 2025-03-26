@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Params.User;
 
-public class LoginWithEmailPasswordParams: BaseParams {
+public class LoginWithEmailPasswordParams : BaseParams {
 	public required string Email { get; set; }
 	public required string Password { get; set; }
 }

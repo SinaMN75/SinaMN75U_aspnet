@@ -32,11 +32,11 @@ public class UserService(
 			City = p.City,
 			Birthdate = p.Birthdate,
 			JsonDetail = new UserJsonDetail {
-				FcmToken = p.FcmToken,
+				FcmToken = p.FcmToken
 			},
 			Tags = p.Tags,
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow
 		};
 
 		if (p.Categories.IsNotNullOrEmpty()) {

@@ -22,19 +22,17 @@ public class CategoryEntity : BaseEntity<TagCategory> {
 	public IEnumerable<CategoryEntity>? Children { get; set; }
 
 	public IEnumerable<UserEntity>? Users { get; set; }
-	
+
 	public IEnumerable<MediaEntity>? Media { get; set; }
-	
-	public CategoryResponse MapToResponse() {
-		return new CategoryResponse {
-			Title = Title,
-			TitleTr1 = TitleTr1,
-			TitleTr2 = TitleTr2,
-			Subtitle = JsonDetail.Subtitle,
-			Tags = Tags,
-			Children = Children?.Select(x => x.MapToResponse()).ToList(),
-		};
-	}
+
+	public CategoryResponse MapToResponse() => new() {
+		Title = Title,
+		TitleTr1 = TitleTr1,
+		TitleTr2 = TitleTr2,
+		Subtitle = JsonDetail.Subtitle,
+		Tags = Tags,
+		Children = Children?.Select(x => x.MapToResponse()).ToList()
+	};
 }
 
 public class CategoryJsonDetail {

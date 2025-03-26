@@ -1,6 +1,6 @@
-using Microsoft.Extensions.Logging;
-
 namespace SinaMN75U.Middlewares;
+
+using Microsoft.Extensions.Logging;
 
 public sealed class ApiRequestLoggingMiddleware(
 	RequestDelegate next,
@@ -23,9 +23,9 @@ public sealed class ApiRequestLoggingMiddleware(
 				using StreamReader reader = new(
 					request.Body,
 					Encoding.UTF8,
-					detectEncodingFromByteOrderMarks: true,
-					bufferSize: 1024,
-					leaveOpen: true);
+					true,
+					1024,
+					true);
 
 				requestBody = await reader.ReadToEndAsync();
 				request.Body.Position = 0;

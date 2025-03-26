@@ -25,7 +25,7 @@ public class SmsNotificationService(
 						template = config["sms.pattern"]!,
 						param1,
 						param2,
-						param3,
+						param3
 					},
 					new Dictionary<string, string> { { "apikey", config["sms.apiKey"]! } }
 				);
@@ -37,7 +37,7 @@ public class SmsNotificationService(
 						template,
 						token = param1,
 						token2 = param2,
-						token3 = param3,
+						token3 = param3
 					},
 					new Dictionary<string, string> { { "apikey", config["sms.apiKey"]! } }
 				);
@@ -47,7 +47,7 @@ public class SmsNotificationService(
 
 		return new UResponse();
 	}
-	
+
 	public async Task<bool> SendOtpSms(UserResponse user) {
 		string? cachedData = cache.GetStringData($"otp_{user.Id}");
 		if (cachedData != null) return false;

@@ -18,17 +18,15 @@ public class ContentEntity : BaseEntity<int> {
 	public required ContentJsonDetail JsonDetail { get; set; }
 
 	public IEnumerable<MediaEntity>? Media { get; set; }
-	
-	public ContentResponse MapToResponse(bool showMedia = false) {
-		return new ContentResponse {
-			Title = Title,
-			SubTitle = SubTitle,
-			Description = Description,
-			Tags = Tags,
-			Instagram = JsonDetail.Instagram,
-			Media = showMedia ? Media?.Select(x => x.MapToResponse()) : null,
-		};
-	}
+
+	public ContentResponse MapToResponse(bool showMedia = false) => new() {
+		Title = Title,
+		SubTitle = SubTitle,
+		Description = Description,
+		Tags = Tags,
+		Instagram = JsonDetail.Instagram,
+		Media = showMedia ? Media?.Select(x => x.MapToResponse()) : null
+	};
 }
 
 public class ContentJsonDetail {

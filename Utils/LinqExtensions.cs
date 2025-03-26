@@ -79,9 +79,7 @@ public static class LinqExtensions {
 
 	public static IQueryable<TResult> SelectPartial<T, TResult>(
 		this IQueryable<T> query,
-		Expression<Func<T, TResult>> selector) {
-		return query.Select(selector);
-	}
+		Expression<Func<T, TResult>> selector) => query.Select(selector);
 
 	// var partialResults = context.Products.SelectPartial(p => new { p.Id, p.Name });
 
@@ -89,9 +87,7 @@ public static class LinqExtensions {
 		this IQueryable<T> query,
 		bool condition,
 		Expression<Func<T, TProperty>> navigationPropertyPath)
-		where T : class {
-		return condition ? query.Include(navigationPropertyPath) : query;
-	}
+		where T : class => condition ? query.Include(navigationPropertyPath) : query;
 
 	// var results = context.Products.IncludeIf(includeCategory, p => p.Category);
 
@@ -112,9 +108,7 @@ public static class LinqExtensions {
 	public static async Task<int> BatchDeleteAsync<T>(
 		this IQueryable<T> query,
 		CancellationToken cancellationToken = default)
-		where T : class {
-		return await query.ExecuteDeleteAsync(cancellationToken);
-	}
+		where T : class => await query.ExecuteDeleteAsync(cancellationToken);
 
 	// await context.Products.Where(p => p.IsDeleted).BatchDeleteAsync();
 }

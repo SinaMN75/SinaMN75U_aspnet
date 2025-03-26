@@ -46,17 +46,15 @@ public class CategoryService(
 	public async Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<CategoryResponse?>(null, USC.UnAuthorized, ls.Get("AuthorizationRequired"));
-		CategoryEntity? e = await db.Set<CategoryEntity>()
-			.Include(i => i.Tags)
-			.FirstOrDefaultAsync(i => i.Id == p.Id);
-
+		CategoryEntity? e = await db.Set<CategoryEntity>().FindAsync(p.Id, ct);
 		if (e == null)
 			return new UResponse<CategoryResponse?>(null, USC.NotFound, "Category not found");
 
-		if (!string.IsNullOrEmpty(p.Title)) e.Title = p.Title;
-		if (!string.IsNullOrEmpty(p.TitleTr1)) e.TitleTr1 = p.TitleTr1;
-		if (!string.IsNullOrEmpty(p.TitleTr2)) e.TitleTr2 = p.TitleTr2;
-		if (!string.IsNullOrEmpty(p.Subtitle)) e.JsonDetail.Subtitle = p.Subtitle;
+		e.UpdatedAt = DateTime.UtcNow;
+		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
+		if (p.TitleTr1.IsNotNullOrEmpty()) e.TitleTr1 = p.TitleTr1;
+		if (p.TitleTr2.IsNotNullOrEmpty()) e.TitleTr2 = p.TitleTr2;
+		if (p.Subtitle.IsNotNullOrEmpty()) e.JsonDetail.Subtitle = p.Subtitle;
 
 		if (p.AddTags != null) e.Tags.AddRange(p.AddTags);
 		if (p.RemoveTags != null) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));

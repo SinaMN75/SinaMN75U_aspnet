@@ -42,24 +42,22 @@ public class UserEntity : BaseEntity<TagUser> {
 
 	[Required]
 	public required UserJsonDetail JsonDetail { get; set; }
-	
+
 	public IEnumerable<CategoryEntity>? Categories { get; set; }
-	
+
 	public IEnumerable<MediaEntity>? Media { get; set; }
-	
-	public UserResponse MapToResponse(bool showCategories = false) {
-		return new UserResponse {
-			Id = Id,
-			UserName = UserName,
-			PhoneNumber = PhoneNumber,
-			Email = Email,
-			Bio = Bio,
-			Birthdate = Birthdate,
-			Tags = Tags,
-			FcmToken = JsonDetail.FcmToken,
-			Categories = showCategories ? Categories?.Select(u => u.MapToResponse()) : null
-		};
-	}
+
+	public UserResponse MapToResponse(bool showCategories = false) => new() {
+		Id = Id,
+		UserName = UserName,
+		PhoneNumber = PhoneNumber,
+		Email = Email,
+		Bio = Bio,
+		Birthdate = Birthdate,
+		Tags = Tags,
+		FcmToken = JsonDetail.FcmToken,
+		Categories = showCategories ? Categories?.Select(u => u.MapToResponse()) : null
+	};
 }
 
 public class UserJsonDetail {

@@ -18,7 +18,7 @@ public class ContentService(DbContext context) : IContentService {
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
 			JsonDetail = new ContentJsonDetail {
-				Instagram = p.Instagram,
+				Instagram = p.Instagram
 			}
 		}, ct);
 		await context.SaveChangesAsync(ct);

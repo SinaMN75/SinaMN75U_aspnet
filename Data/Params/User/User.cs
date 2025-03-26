@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Params.User;
 
-public class UserCreateParams: BaseParams {
+public class UserCreateParams : BaseParams {
 	public required string UserName { get; set; }
 	public required string Password { get; set; }
 	public string? PhoneNumber { get; set; }

@@ -2,7 +2,7 @@ namespace SinaMN75U.InnerServices;
 
 public interface IHttpClientService {
 	Task<string> Get(string uri, Dictionary<string, string>? headers = null, TimeSpan? cacheDuration = null);
-	Task<string> Post(string uri,object? body,Dictionary<string, string>? headers = null,TimeSpan? cacheDuration = null);
+	Task<string> Post(string uri, object? body, Dictionary<string, string>? headers = null, TimeSpan? cacheDuration = null);
 	Task<string> Put(string uri, object? body, Dictionary<string, string>? headers = null);
 	Task<string> Delete(string uri, Dictionary<string, string>? headers = null);
 }
@@ -15,33 +15,25 @@ public class HttpClientService(HttpClient httpClient, IMemoryCache cache) : IHtt
 		string uri,
 		Dictionary<string, string>? headers = null,
 		TimeSpan? cacheDuration = null
-	) {
-		return await Send(HttpMethod.Get, uri, null, cacheDuration, headers);
-	}
+	) => await Send(HttpMethod.Get, uri, null, cacheDuration, headers);
 
 	public async Task<string> Post(
 		string uri,
 		object? body,
 		Dictionary<string, string>? headers = null,
 		TimeSpan? cacheDuration = null
-	) {
-		return await Send(HttpMethod.Post, uri, body, cacheDuration, headers);
-	}
+	) => await Send(HttpMethod.Post, uri, body, cacheDuration, headers);
 
 	public async Task<string> Put(
 		string uri,
 		object? body,
 		Dictionary<string, string>? headers = null
-	) {
-		return await Send(HttpMethod.Put, uri, body, null, headers);
-	}
+	) => await Send(HttpMethod.Put, uri, body, null, headers);
 
 	public async Task<string> Delete(
 		string uri,
 		Dictionary<string, string>? headers = null
-	) {
-		return await Send(HttpMethod.Delete, uri, null, null, headers);
-	}
+	) => await Send(HttpMethod.Delete, uri, null, null, headers);
 
 	private async Task<string> Send(
 		HttpMethod method,
@@ -67,9 +59,7 @@ public class HttpClientService(HttpClient httpClient, IMemoryCache cache) : IHtt
 
 
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
-		if (!response.IsSuccessStatusCode) {
-			throw new HttpRequestException($"Request failed with status code {response.StatusCode}");
-		}
+		if (!response.IsSuccessStatusCode) throw new HttpRequestException($"Request failed with status code {response.StatusCode}");
 
 		string responseContent = await response.Content.ReadAsStringAsync();
 		if (!cacheDuration.HasValue || cacheKey == null) return responseContent;

@@ -13,10 +13,8 @@ public class MemoryCacheService(IMemoryCache cache) : ILocalStorageService {
 		if (slidingExpireTime.HasValue) cacheEntryOptions.SetSlidingExpiration(slidingExpireTime.Value);
 		cache.Set(key, value, cacheEntryOptions);
 	}
-	
-	public string? GetStringData(string key) {
-		return cache.Get<string>(key) ?? null;
-	}
+
+	public string? GetStringData(string key) => cache.Get<string>(key) ?? null;
 
 	public void DeleteStringData(string key) {
 		if (string.IsNullOrEmpty(key)) return;

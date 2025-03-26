@@ -14,21 +14,19 @@ public class MediaEntity : BaseEntity<TagMedia> {
 
 	public Guid? UserId { get; set; }
 	public UserEntity? User { get; set; }
-	
+
 	public Guid? ContentId { get; set; }
-	public ContentEntity? Content { get; set; }	
-	
+	public ContentEntity? Content { get; set; }
+
 	public Guid? CategoryId { get; set; }
 	public CategoryEntity? Category { get; set; }
-	
-	public MediaResponse MapToResponse() {
-		return new MediaResponse {
-			Path = $"{Server.ServerAddress}/Media/{Path}",
-			Tags = Tags,
-			Title = JsonDetail.Title,
-			Description = JsonDetail.Description
-		};
-	}
+
+	public MediaResponse MapToResponse() => new() {
+		Path = $"{Server.ServerAddress}/Media/{Path}",
+		Tags = Tags,
+		Title = JsonDetail.Title,
+		Description = JsonDetail.Description
+	};
 }
 
 public class MediaJsonDetail {

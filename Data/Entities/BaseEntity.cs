@@ -12,7 +12,7 @@ public class BaseEntity<T> {
 
 	[Required]
 	public required DateTime UpdatedAt { get; set; }
-	
+
 	[Required]
 	public required List<T> Tags { get; set; }
 }

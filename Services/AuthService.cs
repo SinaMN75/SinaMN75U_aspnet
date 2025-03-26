@@ -34,7 +34,7 @@ public class AuthService(
 			FirstName = p.FirstName,
 			LastName = p.LastName,
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow
 		};
 
 		await db.Set<UserEntity>().AddAsync(user, ct);
@@ -136,17 +136,15 @@ public class AuthService(
 			: new UResponse<LoginResponse?>(null, USC.WrongVerificationCode);
 	}
 
-	private string CreateToken(UserEntity user) {
-		return ts.GenerateJwt([
-			new Claim(JwtRegisteredClaimNames.Jti, user.Id.ToString()),
-			new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName),
-			new Claim(JwtRegisteredClaimNames.Email, user.Email),
-			new Claim(JwtRegisteredClaimNames.PhoneNumber, user.PhoneNumber),
-			new Claim(JwtRegisteredClaimNames.Name, user.FirstName ?? ""),
-			new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName ?? ""),
-			new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()),
-			new Claim(ClaimTypes.Expiration, DateTime.UtcNow.Add(TimeSpan.FromSeconds(60)).ToString(CultureInfo.InvariantCulture)),
-			new Claim(ClaimTypes.Role, string.Join(",", user.Tags))
-		]);
-	}
+	private string CreateToken(UserEntity user) => ts.GenerateJwt([
+		new Claim(JwtRegisteredClaimNames.Jti, user.Id.ToString()),
+		new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName),
+		new Claim(JwtRegisteredClaimNames.Email, user.Email),
+		new Claim(JwtRegisteredClaimNames.PhoneNumber, user.PhoneNumber),
+		new Claim(JwtRegisteredClaimNames.Name, user.FirstName ?? ""),
+		new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName ?? ""),
+		new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()),
+		new Claim(ClaimTypes.Expiration, DateTime.UtcNow.Add(TimeSpan.FromSeconds(60)).ToString(CultureInfo.InvariantCulture)),
+		new Claim(ClaimTypes.Role, string.Join(",", user.Tags))
+	]);
 }

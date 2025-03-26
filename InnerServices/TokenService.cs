@@ -16,16 +16,14 @@ public class TokenService(IConfiguration config, IHttpContextAccessor httpContex
 		return Convert.ToBase64String(randomNumber);
 	}
 
-	public string GenerateJwt(IEnumerable<Claim> claims) {
-		return new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
-				config["Jwt:Issuer"]!,
-				config["Jwt:Audience"]!,
-				claims,
-				expires: DateTime.UtcNow.Add(TimeSpan.FromSeconds(60)),
-				signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]!)), SecurityAlgorithms.HmacSha256)
-			)
-		);
-	}
+	public string GenerateJwt(IEnumerable<Claim> claims) => new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
+			config["Jwt:Issuer"]!,
+			config["Jwt:Audience"]!,
+			claims,
+			expires: DateTime.UtcNow.Add(TimeSpan.FromSeconds(60)),
+			signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]!)), SecurityAlgorithms.HmacSha256)
+		)
+	);
 
 	public JwtClaimData? ExtractClaims(string? token) {
 		try {
@@ -55,9 +53,7 @@ public class TokenService(IConfiguration config, IHttpContextAccessor httpContex
 
 	public string? GetRawToken() {
 		HttpContext? context = httpContext.HttpContext;
-		if (context != null && context.Items.TryGetValue("JwtToken", out object? item)) {
-			return item?.ToString();
-		}
+		if (context != null && context.Items.TryGetValue("JwtToken", out object? item)) return item?.ToString();
 
 		return null;
 	}

@@ -13,9 +13,7 @@ public class Server {
 		}
 	}
 
-	public static void Configure(IHttpContextAccessor? accessor) {
-		_httpContextAccessor = accessor;
-	}
+	public static void Configure(IHttpContextAccessor? accessor) => _httpContextAccessor = accessor;
 
 
 	public static string GetAppLanguage() {
