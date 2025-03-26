@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Media")]
-public class MediaEntity : BaseEntity {
+public class MediaEntity : BaseEntity<TagMedia> {
 	[Required]
 	[MaxLength(200)]
 	public required string Path { get; set; }
@@ -9,15 +9,12 @@ public class MediaEntity : BaseEntity {
 	[Required]
 	public required MediaJsonDetail JsonDetail { get; set; }
 
-	[Required]
-	public required List<TagMedia> Tags { get; set; }
-
 	public Guid? UserId { get; set; }
 	public UserEntity? User { get; set; }
 	
 	public MediaResponse MapToResponse() {
 		return new MediaResponse {
-			Path = $"{Server.ServerAddress}/Medias/{Path}",
+			Path = $"{Server.ServerAddress}/Media/{Path}",
 			Tags = Tags,
 			Title = JsonDetail.Title,
 			Description = JsonDetail.Description

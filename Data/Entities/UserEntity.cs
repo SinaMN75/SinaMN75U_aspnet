@@ -4,8 +4,7 @@ namespace SinaMN75U.Data.Entities;
 [Index(nameof(Email), IsUnique = true, Name = "IX_Users_Email")]
 [Index(nameof(UserName), IsUnique = true, Name = "IX_Users_UserName")]
 [Index(nameof(PhoneNumber), IsUnique = true, Name = "IX_Users_PhoneNumber")]
-[Index(nameof(Tags), Name = "IX_Users_Tags")]
-public class UserEntity : BaseEntity {
+public class UserEntity : BaseEntity<TagUser> {
 	[MaxLength(100)]
 	public required string UserName { get; set; }
 
@@ -43,9 +42,6 @@ public class UserEntity : BaseEntity {
 
 	[Required]
 	public required UserJsonDetail JsonDetail { get; set; }
-	
-	[Required]
-	public required List<TagUser> Tags { get; set; }
 	
 	public IEnumerable<CategoryEntity>? Categories { get; set; }
 	

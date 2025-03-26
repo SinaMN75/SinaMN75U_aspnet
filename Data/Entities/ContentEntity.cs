@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Contents")]
-public class ContentEntity : BaseEntity {
+public class ContentEntity : BaseEntity<int> {
 	[Required]
 	[MaxLength(100)]
 	public required string Title { get; set; }
@@ -13,9 +13,6 @@ public class ContentEntity : BaseEntity {
 	[Required]
 	[MaxLength(5000)]
 	public required string Description { get; set; }
-
-	[Required]
-	public required List<int> Tags { get; set; }
 
 	[Required]
 	public required ContentJsonDetail JsonDetail { get; set; }

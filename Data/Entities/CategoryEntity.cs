@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Categories")]
-public class CategoryEntity : BaseEntity {
+public class CategoryEntity : BaseEntity<TagCategory> {
 	[Required]
 	[MaxLength(100)]
 	public required string Title { get; set; }
@@ -14,9 +14,6 @@ public class CategoryEntity : BaseEntity {
 
 	[Required]
 	public required CategoryJsonDetail JsonDetail { get; set; }
-	
-	[Required]
-	public required List<TagCategory> Tags { get; set; }
 
 	public Guid? ParentId { get; set; }
 	public CategoryEntity? Parent { get; set; }
