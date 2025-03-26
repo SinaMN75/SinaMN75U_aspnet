@@ -1,6 +1,9 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Media")]
+[Index(nameof(UserId), Name = "IX_Media_UserId")]
+[Index(nameof(ContentId), Name = "IX_Media_ContentId")]
+[Index(nameof(CategoryId), Name = "IX_Media_CategoryId")]
 public class MediaEntity : BaseEntity<TagMedia> {
 	[Required]
 	[MaxLength(200)]
@@ -11,6 +14,12 @@ public class MediaEntity : BaseEntity<TagMedia> {
 
 	public Guid? UserId { get; set; }
 	public UserEntity? User { get; set; }
+	
+	public Guid? ContentId { get; set; }
+	public ContentEntity? Content { get; set; }	
+	
+	public Guid? CategoryId { get; set; }
+	public CategoryEntity? Category { get; set; }
 	
 	public MediaResponse MapToResponse() {
 		return new MediaResponse {

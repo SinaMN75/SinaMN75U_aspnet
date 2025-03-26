@@ -45,6 +45,8 @@ public class UserEntity : BaseEntity<TagUser> {
 	
 	public IEnumerable<CategoryEntity>? Categories { get; set; }
 	
+	public IEnumerable<MediaEntity>? Media { get; set; }
+	
 	public UserResponse MapToResponse(bool showCategories = false) {
 		return new UserResponse {
 			Id = Id,
