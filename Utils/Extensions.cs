@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace SinaMN75U.Utils;
 
 public static class StringExtension {

@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.ChangeTracking;
-
-namespace SinaMN75U.Services;
+﻿namespace SinaMN75U.Services;
 
 public interface IContentService {
 	Task<UResponse<ContentResponse>> Create(ContentCreateParams p, CancellationToken ct);

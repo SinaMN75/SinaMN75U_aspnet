@@ -1,6 +1,3 @@
-using FluentValidation.AspNetCore;
-using SinaMN75U.Middlewares;
-
 namespace SinaMN75U.Utils;
 
 public static class AspNetConfig {
