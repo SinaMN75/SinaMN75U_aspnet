@@ -1,6 +1,10 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Users")]
+[Index(nameof(Email), IsUnique = true, Name = "IX_Users_Email")]
+[Index(nameof(UserName), IsUnique = true, Name = "IX_Users_UserName")]
+[Index(nameof(PhoneNumber), IsUnique = true, Name = "IX_Users_PhoneNumber")]
+[Index(nameof(Tags), Name = "IX_Users_Tags")]
 public class UserEntity : BaseEntity {
 	[MaxLength(100)]
 	public required string UserName { get; set; }
