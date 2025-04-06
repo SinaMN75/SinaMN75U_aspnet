@@ -19,3 +19,22 @@ public class UResponse(USC status = USC.Success, string message = "") {
 
 	public IResult ToResult() => TypedResults.Json(this, statusCode: Status.Value());
 }
+
+public static class UResponseExtensions {
+	public static async Task<UResponse<List<T>>> ToPaginatedResponse<T>(this IQueryable<T> query, int pageNumber, int pageSize, CancellationToken ct) {
+		if (pageNumber < 1) pageNumber = 1;
+		if (pageSize < 1) pageSize = 10;
+
+		int totalCount = await query.CountAsync(ct);
+		List<T> items = await query
+			.Skip((pageNumber - 1) * pageSize)
+			.Take(pageSize)
+			.ToListAsync(ct);
+
+		return new UResponse<List<T>>(items) {
+			TotalCount = totalCount,
+			PageCount = (int)Math.Ceiling(totalCount / (double)pageSize),
+			PageSize = pageSize
+		};
+	}
+}

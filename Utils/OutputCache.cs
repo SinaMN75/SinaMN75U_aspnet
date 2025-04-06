@@ -6,7 +6,7 @@ public static class OutputCache {
 		y.SetVaryByHeader("*");
 		y.SetVaryByQuery("*");
 		y.Expire(TimeSpan.FromHours(1));
-		y.AddPolicy<CustomCachePolicy>().VaryByValue(context => {
+		y.AddPolicy<UCachePolicy>().VaryByValue(context => {
 				context.Request.EnableBuffering();
 				using StreamReader reader = new(context.Request.Body, leaveOpen: true);
 				Task<string> body = reader.ReadToEndAsync();
@@ -17,7 +17,7 @@ public static class OutputCache {
 		);
 	}));
 
-	internal class CustomCachePolicy : IOutputCachePolicy {
+	internal class UCachePolicy : IOutputCachePolicy {
 		public ValueTask CacheRequestAsync(OutputCacheContext context, CancellationToken cancellation) {
 			context.AllowCacheLookup = true;
 			context.AllowCacheStorage = true;

@@ -17,6 +17,9 @@ public class CategoryEntity : BaseEntity<TagCategory> {
 
 	public Guid? ParentId { get; set; }
 	public CategoryEntity? Parent { get; set; }
+	
+	public Guid? ProductId { get; set; }
+	public ProductEntity? Product { get; set; }
 
 	[InverseProperty("Parent")]
 	public IEnumerable<CategoryEntity>? Children { get; set; }
@@ -24,7 +27,7 @@ public class CategoryEntity : BaseEntity<TagCategory> {
 	public IEnumerable<UserEntity>? Users { get; set; }
 
 	public IEnumerable<MediaEntity>? Media { get; set; }
-
+	
 	public CategoryResponse MapToResponse() => new() {
 		Title = Title,
 		TitleTr1 = TitleTr1,

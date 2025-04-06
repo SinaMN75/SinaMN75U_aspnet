@@ -3,6 +3,8 @@ namespace SinaMN75U.Utils;
 public static class StringExtension {
 	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this string? s) => s is { Length: > 0 };
 
+	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this Guid? s) => s != null;
+
 	public static bool IsNotNull([NotNullWhen(true)] this string? s) => s != null;
 
 	public static bool IsNullOrEmpty([NotNullWhen(false)] this string? s) => string.IsNullOrEmpty(s);
@@ -16,6 +18,11 @@ public static class StringExtension {
 	public static string EncodeJson<T>(this T obj) => JsonSerializer.Serialize(obj, Core.JsonSettings);
 
 	public static T DecodeJson<T>(this string json) => JsonSerializer.Deserialize<T>(json, Core.JsonSettings)!;
+}
+
+public static class NumberExtension {
+	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this double? s) => s != null;
+	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this int? s) => s != null;
 }
 
 public static class Core {

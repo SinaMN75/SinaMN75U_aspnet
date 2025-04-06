@@ -84,5 +84,6 @@ public static class AspNetConfig {
 		app.MapCategoryRoutes("Category");
 		app.MapMediaRoutes("Media");
 		app.MapContentRoutes("Content");
+		app.MapContentRoutes("Product");
 	}
 }
