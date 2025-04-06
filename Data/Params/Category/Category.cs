@@ -18,8 +18,8 @@ public class CategoryUpdateParams : BaseParams {
 	public IEnumerable<TagCategory>? RemoveTags { get; set; }
 }
 
-public class CategoryFilterParams : BaseParams {
+public class CategoryReadParams : BaseParams {
 	public IEnumerable<Guid>? Ids { get; set; }
 	public IEnumerable<TagCategory>? Tags { get; set; }
-	public bool ShowMedia { get; set; } = false;
+	public bool Media { get; set; } = false;
 }

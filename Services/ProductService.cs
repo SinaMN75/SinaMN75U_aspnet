@@ -32,10 +32,10 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 				Details = p.Details,
 				VisitCounts = [],
 				RelatedProducts = []
-			},
+			}
 		};
-		await db.Set<ProductEntity>().AddAsync(e);
-		await db.SaveChangesAsync();
+		await db.Set<ProductEntity>().AddAsync(e, ct);
+		await db.SaveChangesAsync(ct);
 		return new UResponse<ProductResponse?>(e.MapToResponse());
 	}
 
@@ -108,7 +108,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 		if (p.RemoveRelatedProducts.IsNotNullOrEmpty()) e.JsonDetail.RelatedProducts.RemoveAll(x => p.RemoveRelatedProducts.Contains(x));
 
 		db.Set<ProductEntity>().Update(e);
-		await db.SaveChangesAsync();
+		await db.SaveChangesAsync(ct);
 		return new UResponse<ProductResponse?>(e.MapToResponse());
 	}
 
@@ -116,7 +116,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ProductResponse?>(null, USC.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		int count = await db.Set<ProductEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync();
+		int count = await db.Set<ProductEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 		return count > 0 ? new UResponse(USC.Deleted, ls.Get("ProductDeleted")) : new UResponse(USC.NotFound, ls.Get("ProductNotFound"));
 	}
 }

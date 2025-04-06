@@ -67,7 +67,7 @@ public static class LinqExtensions {
 		MethodCallExpression methodCall = Expression.Call(
 			typeof(Queryable),
 			methodName,
-			new[] { entityType, propertyInfo.PropertyType },
+			[entityType, propertyInfo.PropertyType],
 			query.Expression,
 			lambda
 		);

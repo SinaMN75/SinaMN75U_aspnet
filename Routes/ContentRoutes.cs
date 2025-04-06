@@ -8,7 +8,7 @@ public static class ContentRoutes {
 			return (await s.Create(d, c)).ToResult();
 		}).Produces<UResponse<ContentResponse>>();
 		
-		r.MapPost("Read", async (ContentFilterParams p, IContentService s, IOutputCacheStore store, CancellationToken c) => (await s.Filter(p, c)).ToResult()).WithTags(name).CacheOutput(o => {
+		r.MapPost("Read", async (ContentReadParams p, IContentService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).WithTags(name).CacheOutput(o => {
 			o.Tag(name);
 			o.Expire(TimeSpan.FromDays(1));
 		}).Produces<UResponse<IEnumerable<ContentResponse>>>();

@@ -60,7 +60,7 @@ public class ProductEntity : BaseEntity<TagProduct> {
 		Children = Children?.Select(x => x.MapToResponse()),
 		Media = Media?.Select(x => x.MapToResponse()),
 		Categories = Categories?.Select(x => x.MapToResponse()),
-		User = User!.MapToResponse(),
+		User = User!.MapToResponse()
 	};
 }
 

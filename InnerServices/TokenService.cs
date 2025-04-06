@@ -5,7 +5,6 @@ public interface ITokenService {
 	public string GenerateJwt(IEnumerable<Claim> claims);
 	public JwtClaimData? ExtractClaims(string? token);
 	public JwtClaimData? GetTokenClaim();
-	public string? GetRawToken();
 }
 
 public class TokenService(IConfiguration config, IHttpContextAccessor httpContext) : ITokenService {
@@ -36,7 +35,7 @@ public class TokenService(IConfiguration config, IHttpContextAccessor httpContex
 				LastName = claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.FamilyName)?.Value ?? "",
 				FullName = claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.GivenName)?.Value ?? "",
 				Expiration = DateTime.Parse(claims.FirstOrDefault(c => c.Type == ClaimTypes.Expiration)?.Value ?? ""),
-				Tags = (claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "").Split(',').Select(Enum.Parse<TagUser>),
+				Tags = (claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "").Split(',').Select(Enum.Parse<TagUser>)
 			};
 		}
 		catch (Exception) {
@@ -48,13 +47,6 @@ public class TokenService(IConfiguration config, IHttpContextAccessor httpContex
 		HttpContext? context = httpContext.HttpContext;
 		if (context != null && context.Items.TryGetValue("JwtToken", out object? item))
 			return ExtractClaims(item?.ToString());
-		return null;
-	}
-
-	public string? GetRawToken() {
-		HttpContext? context = httpContext.HttpContext;
-		if (context != null && context.Items.TryGetValue("JwtToken", out object? item)) return item?.ToString();
-
 		return null;
 	}
 }

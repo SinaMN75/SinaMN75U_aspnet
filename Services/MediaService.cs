@@ -58,12 +58,12 @@ public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService
 		}
 
 		db.Set<MediaEntity>().Remove(media);
-		await db.SaveChangesAsync();
+		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
 
 	public async Task<UResponse> DeleteRange(IEnumerable<Guid> ids, CancellationToken ct) {
-		await db.Set<MediaEntity>().Where(x => ids.Contains(x.Id)).ExecuteDeleteAsync();
+		await db.Set<MediaEntity>().Where(x => ids.Contains(x.Id)).ExecuteDeleteAsync(ct);
 		return new UResponse();
 	}
 

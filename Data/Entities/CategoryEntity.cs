@@ -28,13 +28,15 @@ public class CategoryEntity : BaseEntity<TagCategory> {
 
 	public IEnumerable<MediaEntity>? Media { get; set; }
 	
-	public CategoryResponse MapToResponse() => new() {
+	public CategoryResponse MapToResponse(bool media = false) => new() {
+		Id = Id,
 		Title = Title,
 		TitleTr1 = TitleTr1,
 		TitleTr2 = TitleTr2,
 		Subtitle = JsonDetail.Subtitle,
 		Tags = Tags,
-		Children = Children?.Select(x => x.MapToResponse()).ToList()
+		Children = Children?.Select(x => x.MapToResponse()).ToList(),
+		Media = media ? Media?.Select(x => x.MapToResponse()) : null
 	};
 }
 
