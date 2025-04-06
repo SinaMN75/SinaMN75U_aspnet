@@ -6,12 +6,6 @@ public class CategoryEntity : BaseEntity<TagCategory> {
 	[MaxLength(100)]
 	public required string Title { get; set; }
 
-	[MaxLength(100)]
-	public string? TitleTr1 { get; set; }
-
-	[MaxLength(100)]
-	public string? TitleTr2 { get; set; }
-
 	[Required]
 	public required CategoryJsonDetail JsonDetail { get; set; }
 
@@ -31,8 +25,6 @@ public class CategoryEntity : BaseEntity<TagCategory> {
 	public CategoryResponse MapToResponse(bool media = false) => new() {
 		Id = Id,
 		Title = Title,
-		TitleTr1 = TitleTr1,
-		TitleTr2 = TitleTr2,
 		Subtitle = JsonDetail.Subtitle,
 		Tags = Tags,
 		Children = Children?.Select(x => x.MapToResponse()).ToList(),

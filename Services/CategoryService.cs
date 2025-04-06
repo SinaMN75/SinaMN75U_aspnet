@@ -20,8 +20,6 @@ public class CategoryService(
 		CategoryEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			Title = p.Title,
-			TitleTr1 = p.TitleTr1,
-			TitleTr2 = p.TitleTr2,
 			JsonDetail = new CategoryJsonDetail { Subtitle = p.Subtitle },
 			Tags = p.Tags,
 			CreatedAt = DateTime.UtcNow,
@@ -53,8 +51,6 @@ public class CategoryService(
 
 		e.UpdatedAt = DateTime.UtcNow;
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
-		if (p.TitleTr1.IsNotNullOrEmpty()) e.TitleTr1 = p.TitleTr1;
-		if (p.TitleTr2.IsNotNullOrEmpty()) e.TitleTr2 = p.TitleTr2;
 		if (p.Subtitle.IsNotNullOrEmpty()) e.JsonDetail.Subtitle = p.Subtitle;
 
 		if (p.AddTags != null) e.Tags.AddRange(p.AddTags);
