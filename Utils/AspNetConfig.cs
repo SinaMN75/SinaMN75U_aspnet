@@ -66,6 +66,7 @@ public static class AspNetConfig {
 		builder.Services.AddScoped<ISmsNotificationService, SmsNotificationService>();
 		builder.Services.AddScoped<IMediaService, MediaService>();
 		builder.Services.AddScoped<IContentService, ContentService>();
+		builder.Services.AddScoped<IProductService, ProductService>();
 	}
 
 	public static void UseUServices(this WebApplication app) {
