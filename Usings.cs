@@ -40,7 +40,5 @@ global using SinaMN75U.Routes;
 global using SinaMN75U.Services;
 global using SinaMN75U.Utils;
 global using SinaMN75U.Middlewares;
-global using FluentValidation;
-global using FluentValidation.AspNetCore;
 global using Scalar.AspNetCore;
 global using Swashbuckle.AspNetCore.SwaggerUI;
