@@ -1,8 +1,8 @@
 namespace SinaMN75U.Routes;
 
 public static class UserRoutes {
-	public static void MapUserRoutes(this IEndpointRouteBuilder app, string name) {
-		RouteGroupBuilder route = app.MapGroup("api/user/").WithTags(name);
+	public static void MapUserRoutes(this IEndpointRouteBuilder app, string tag) {
+		RouteGroupBuilder route = app.MapGroup("api/user/").WithTags(tag).AddEndpointFilter<ValidationFilter>();
 		
 		route.MapPost("Create", async (UserCreateParams d, IUserService s, CancellationToken c) => (await s.Create(d, c)).ToResult()).Produces<UResponse<UserEntity>>();
 		
