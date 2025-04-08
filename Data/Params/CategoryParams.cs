@@ -24,5 +24,5 @@ public class CategoryUpdateParams : BaseParams {
 public class CategoryReadParams : BaseParams {
 	public IEnumerable<Guid>? Ids { get; set; }
 	public IEnumerable<TagCategory>? Tags { get; set; }
-	public bool Media { get; set; } = false;
+	public bool ShowMedia { get; set; } = false;
 }

@@ -60,7 +60,7 @@ public class ProductReadParams : BaseReadParams {
 	public Guid? ParentId { get; set; }
 	public Guid? UserId { get; set; }
 
-	public bool Categories { get; set; } = false;
-	public bool Media { get; set; } = false;
-	public bool User { get; set; } = false;
+	public bool ShowCategories { get; set; } = false;
+	public bool ShowMedia { get; set; } = false;
+	public bool ShowUser { get; set; } = false;
 }

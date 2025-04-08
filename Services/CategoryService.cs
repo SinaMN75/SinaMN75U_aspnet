@@ -34,7 +34,7 @@ public class CategoryService(
 	public async Task<UResponse<IEnumerable<CategoryResponse>>> Read(CategoryReadParams p, CancellationToken ct) {
 		IQueryable<CategoryResponse> q = db.Set<CategoryEntity>()
 			.Include(i => i.Children)
-			.Select(i => i.MapToResponse(p.Media));
+			.Select(i => i.MapToResponse(p.ShowMedia));
 		
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));

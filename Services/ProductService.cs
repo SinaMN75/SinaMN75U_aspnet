@@ -53,11 +53,11 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(x => x.UserId == p.UserId);
 		if (p.ParentId.IsNotNullOrEmpty()) q = q.Where(x => x.ParentId == p.ParentId);
 		
-		if (p.User) q = q.Include(x => x.User);
-		if (p.Media) q = q.Include(x => x.Media);
-		if (p.Categories) q = q.Include(x => x.Categories);
+		if (p.ShowUser) q = q.Include(x => x.User);
+		if (p.ShowMedia) q = q.Include(x => x.Media);
+		if (p.ShowCategories) q = q.Include(x => x.Categories);
 		
-		return await q.Select(x => x.MapToResponse(p.Media, p.Categories,p.User)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		return await q.Select(x => x.MapToResponse(p.ShowMedia, p.ShowCategories,p.ShowUser)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse<ProductResponse?>> ReadById(IdParams p, CancellationToken ct) {
