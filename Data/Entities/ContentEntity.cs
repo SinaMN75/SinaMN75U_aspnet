@@ -25,7 +25,10 @@ public class ContentEntity : BaseEntity<int> {
 		Description = Description,
 		Tags = Tags,
 		Instagram = JsonDetail.Instagram,
-		Media = showMedia ? Media?.Select(x => x.MapToResponse()) : null
+		Media = showMedia ? Media?.Select(x => x.MapToResponse()) : null,
+		Id = Id,
+		CreatedAt = CreatedAt,
+		UpdatedAt = UpdatedAt,
 	};
 }
 

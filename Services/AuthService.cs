@@ -94,7 +94,9 @@ public class AuthService(
 			FirstName = x.FirstName,
 			LastName = x.LastName,
 			Email = x.Email,
-			Tags = x.Tags
+			Tags = x.Tags,
+			CreatedAt = x.CreatedAt,
+			UpdatedAt = x.UpdatedAt
 		}).AsNoTracking().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
 
 		if (existingUser != null) {

@@ -1,16 +1,17 @@
 namespace SinaMN75U.Data.Responses;
 
-public class UserResponse {
-	public required Guid Id { get; set; }
+public class UserResponse: BaseResponse<TagUser> {
 	public required string UserName { get; set; }
 	public required string PhoneNumber { get; set; }
 	public required string? Email { get; set; }
 	public string? FirstName { get; set; }
 	public string? LastName { get; set; }
+	public string? Country { get; set; }
+	public string? State { get; set; }
+	public string? City { get; set; }
 	public string? Bio { get; set; }
 	public string? FcmToken { get; set; }
 	public DateTime? Birthdate { get; set; }
-	public required IEnumerable<TagUser> Tags { get; set; }
 	public IEnumerable<CategoryResponse>? Categories { get; set; }
 }
 

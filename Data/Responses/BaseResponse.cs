@@ -1,5 +1,12 @@
 namespace SinaMN75U.Data.Responses;
 
+public class BaseResponse<T> {
+	public required Guid Id { get; set; }
+	public required DateTime CreatedAt { get; set; }
+	public required DateTime UpdatedAt { get; set; }
+	public required List<T> Tags { get; set; }
+}
+
 public class UResponse<T> : UResponse {
 	public UResponse(T result, USC status = USC.Success, string message = "") {
 		Result = result;

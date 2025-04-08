@@ -63,7 +63,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 	public async Task<UResponse<ProductResponse?>> ReadById(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 
-		ProductEntity? e = await db.Set<ProductEntity>().Select(x => x)
+		ProductEntity? e = await db.Set<ProductEntity>()
 			.Include(x => x.Media)
 			.Include(x => x.Categories)
 			.Include(x => x.User)
@@ -78,7 +78,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 		db.Set<ProductEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
 
-		return new UResponse<ProductResponse?>(e.MapToResponse());
+		return new UResponse<ProductResponse?>(e.MapToResponse(true, true, true));
 	}
 
 	public async Task<UResponse<ProductResponse?>> Update(ProductUpdateParams p, CancellationToken ct) {

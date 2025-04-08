@@ -37,12 +37,13 @@ public class ProductEntity : BaseEntity<TagProduct> {
 
 	public IEnumerable<MediaEntity>? Media { get; set; }
 	public IEnumerable<CategoryEntity>? Categories { get; set; }
-	
+
 	public ProductResponse MapToResponse(
 		bool media = false,
 		bool categories = false,
 		bool user = false
 	) => new() {
+		Id = Id,
 		Title = Title,
 		Code = Code,
 		Subtitle = Subtitle,
@@ -57,9 +58,49 @@ public class ProductEntity : BaseEntity<TagProduct> {
 		VisitCounts = JsonDetail.VisitCounts,
 		RelatedProducts = JsonDetail.RelatedProducts,
 		Children = Children?.Select(x => x.MapToResponse()),
-		Media = media ? Media?.Select(x => x.MapToResponse()) : null,
-		Categories = categories ? Categories?.Select(x => x.MapToResponse()) : null,
-		User = user ? User!.MapToResponse() : null
+		Media = media
+			? Media?.Select(x => x.MapToResponse())
+			: null,
+		Categories = categories
+			? Categories?.Select(x => x.MapToResponse())
+			: null,
+		User = user
+			? User!.MapToResponse()
+			: null,
+		CreatedAt = CreatedAt,
+		UpdatedAt = UpdatedAt
+	};
+
+	public ProductEntity MapToEntity(
+		bool media = false,
+		bool categories = false,
+		bool user = false
+	) => new() {
+		Id = Id,
+		Title = Title,
+		Code = Code,
+		Subtitle = Subtitle,
+		Description = Description,
+		Latitude = Latitude,
+		Longitude = Longitude,
+		Stock = Stock,
+		Price = Price,
+		ParentId = ParentId,
+		Tags = Tags,
+		UserId = UserId,
+		CreatedAt = CreatedAt,
+		UpdatedAt = UpdatedAt,
+		JsonDetail = JsonDetail,
+		Children = Children?.Select(x => x.MapToEntity()),
+		Media = media
+			? Media?.Select(x => x.MapToEntity())
+			: null,
+		Categories = categories
+			? Categories?.Select(x => x.MapToEntity())
+			: null,
+		User = user
+			? User!.MapToEntity()
+			: null,
 	};
 }
 

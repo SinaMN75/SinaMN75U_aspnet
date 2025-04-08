@@ -56,7 +56,37 @@ public class UserEntity : BaseEntity<TagUser> {
 		Birthdate = Birthdate,
 		Tags = Tags,
 		FcmToken = JsonDetail.FcmToken,
+		CreatedAt = CreatedAt,
+		UpdatedAt = UpdatedAt,
+		City = City,
+		Country = Country,
+		State = State,
+		FirstName = FirstName,
+		LastName = LastName,
 		Categories = showCategories ? Categories?.Select(u => u.MapToResponse()) : null
+	};
+
+	public UserEntity MapToEntity(bool showCategories = false) => new() {
+		Id = Id,
+		UserName = UserName,
+		PhoneNumber = PhoneNumber,
+		Email = Email,
+		Bio = Bio,
+		Birthdate = Birthdate,
+		Tags = Tags,
+		CreatedAt = CreatedAt,
+		UpdatedAt = UpdatedAt,
+		City = City,
+		Country = Country,
+		State = State,
+		FirstName = FirstName,
+		LastName = LastName,
+		JsonDetail = JsonDetail,
+		Categories = showCategories
+			? Categories?.Select(u => u.MapToEntity())
+			: null,
+		Password = "",
+		RefreshToken = ""
 	};
 }
 

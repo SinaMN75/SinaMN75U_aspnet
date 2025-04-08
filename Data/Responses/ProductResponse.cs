@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Responses;
 
-public class ProductResponse {
+public class ProductResponse: BaseResponse<TagProduct> {
 	public required string Title { get; set; }
 	public required string Code { get; set; }
 	public string? Subtitle { get; set; }
@@ -14,14 +14,12 @@ public class ProductResponse {
 
 	public string? Details { get; set; }
 	
-	public List<TagProduct>? Tags { get; set; }
 	public required List<VisitCount> VisitCounts { get; set; }
 	public List<Guid>? RelatedProducts { get; set; }
 
 	public UserResponse? User { get; set; }
 
 	public IEnumerable<ProductResponse>? Children { get; set; }
-
 	public IEnumerable<MediaResponse>? Media { get; set; }
 	public IEnumerable<CategoryResponse>? Categories { get; set; }
 }

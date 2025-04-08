@@ -22,10 +22,25 @@ public class MediaEntity : BaseEntity<TagMedia> {
 	public CategoryEntity? Category { get; set; }
 
 	public MediaResponse MapToResponse() => new() {
+		Id = Id,
 		Path = $"{Server.ServerAddress}/Media/{Path}",
 		Tags = Tags,
 		Title = JsonDetail.Title,
-		Description = JsonDetail.Description
+		Description = JsonDetail.Description,
+		CreatedAt = CreatedAt,
+		UpdatedAt = UpdatedAt,
+	};
+	
+	public MediaEntity MapToEntity() => new() {
+		Path = $"{Server.ServerAddress}/Media/{Path}",
+		Tags = Tags,
+		CreatedAt = CreatedAt,
+		UpdatedAt = CreatedAt,
+		JsonDetail = JsonDetail,
+		Id = Id,
+		CategoryId = CategoryId,
+		UserId = UserId,
+		ContentId = ContentId,
 	};
 }
 

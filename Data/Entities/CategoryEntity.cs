@@ -11,24 +11,37 @@ public class CategoryEntity : BaseEntity<TagCategory> {
 
 	public Guid? ParentId { get; set; }
 	public CategoryEntity? Parent { get; set; }
-	
-	public Guid? ProductId { get; set; }
-	public ProductEntity? Product { get; set; }
 
 	[InverseProperty("Parent")]
 	public IEnumerable<CategoryEntity>? Children { get; set; }
 
+	public IEnumerable<ProductEntity>? Products { get; set; }
+	
 	public IEnumerable<UserEntity>? Users { get; set; }
 
 	public IEnumerable<MediaEntity>? Media { get; set; }
-	
+
 	public CategoryResponse MapToResponse(bool media = false) => new() {
 		Id = Id,
 		Title = Title,
 		Subtitle = JsonDetail.Subtitle,
 		Tags = Tags,
 		Children = Children?.Select(x => x.MapToResponse()).ToList(),
-		Media = media ? Media?.Select(x => x.MapToResponse()) : null
+		Media = media ? Media?.Select(x => x.MapToResponse()) : null,
+		CreatedAt = CreatedAt,
+		UpdatedAt = UpdatedAt
+	};
+
+	public CategoryEntity MapToEntity(bool media = false) => new() {
+		Id = Id,
+		Title = Title,
+		JsonDetail = JsonDetail,
+		CreatedAt = CreatedAt,
+		UpdatedAt = UpdatedAt,
+		Tags = Tags,
+		Children = Children?.Select(x => x.MapToEntity()),
+		Media = media ? Media?.Select(x => x.MapToEntity()) : null,
+		ParentId = ParentId,
 	};
 }
 
