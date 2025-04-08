@@ -2,7 +2,7 @@ namespace SinaMN75U.Routes;
 
 public static class ContentRoutes {
 	public static void MapContentRoutes(this IEndpointRouteBuilder app, string tag) {
-		RouteGroupBuilder r = app.MapGroup("api/content/").WithTags(tag).AddEndpointFilter<ValidationFilter>();
+		RouteGroupBuilder r = app.MapGroup("api/content/").WithTags(tag).AddEndpointFilter<UValidationFilter>();
 		r.MapPost("Create", async (ContentCreateParams d, IContentService s, IOutputCacheStore store, CancellationToken c) => {
 			await store.EvictByTagAsync(tag, c);
 			return (await s.Create(d, c)).ToResult();

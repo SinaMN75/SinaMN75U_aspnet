@@ -2,7 +2,7 @@ namespace SinaMN75U.Routes;
 
 public static class CategoryRoutes {
 	public static void MapCategoryRoutes(this IEndpointRouteBuilder app, string tag) {
-		RouteGroupBuilder route = app.MapGroup("api/Category/").WithTags(tag).AddEndpointFilter<ValidationFilter>();
+		RouteGroupBuilder route = app.MapGroup("api/Category/").WithTags(tag).AddEndpointFilter<UValidationFilter>();
 
 		route.MapPost("Create", async (CategoryCreateParams d, ICategoryService s, IOutputCacheStore store, CancellationToken c) => {
 			await store.EvictByTagAsync(tag, c);

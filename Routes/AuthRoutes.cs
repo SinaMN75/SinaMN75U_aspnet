@@ -2,7 +2,7 @@ namespace SinaMN75U.Routes;
 
 public static class AuthRoutes {
 	public static void MapAuthRoutes(this IEndpointRouteBuilder app, string tag) {
-		RouteGroupBuilder route = app.MapGroup("api/auth/").WithTags(tag).AddEndpointFilter<ValidationFilter>();
+		RouteGroupBuilder route = app.MapGroup("api/auth/").WithTags(tag).AddEndpointFilter<UValidationFilter>();
 
 		route.MapPost("Register", async (RegisterParams d, IAuthService s, CancellationToken c) => (await s.Register(d, c)).ToResult()).Produces<UResponse<LoginResponse>>();
 		route.MapPost("LoginWithPassword", async (LoginWithEmailPasswordParams d, IAuthService s, CancellationToken c) => (await s.LoginWithPassword(d, c)).ToResult()).Produces<UResponse<LoginResponse>>();

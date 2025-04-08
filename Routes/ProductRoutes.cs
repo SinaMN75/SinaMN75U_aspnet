@@ -2,7 +2,7 @@ namespace SinaMN75U.Routes;
 
 public static class ProductRoutes {
 	public static void MapProductRoutes(this IEndpointRouteBuilder app, string tag) {
-		RouteGroupBuilder route = app.MapGroup("api/Product/").WithTags(tag).AddEndpointFilter<ValidationFilter>();;
+		RouteGroupBuilder route = app.MapGroup("api/Product/").WithTags(tag).AddEndpointFilter<UValidationFilter>();;
 
 		route.MapPost("Create", async (ProductCreateParams d, IProductService s, IOutputCacheStore store, CancellationToken c) => {
 			await store.EvictByTagAsync(tag, c);

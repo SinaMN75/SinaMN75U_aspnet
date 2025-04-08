@@ -1,11 +1,20 @@
 {
   "en": {
+    "PhoneNumberNotValid": "Phone number is not valid.",
+    "PhoneNumberRequired": "Phone number is required.",
     "EmailRequired": "Email is required.",
+    "UserNameRequired": "UserName is required.",
+    "UserNameMinLenght": "UserName is not valid.",
+    "TagsRequired": "Tags is Required",
+    "IdRequired": "Id is Required",
+    "OtpRequired": "Otp is Required",
+    "TitleRequired": "Title is Required",
+    "DescriptionRequired": "Description is Required",
+    "SubTitleRequired": "Subtitle is Required",
     "UserNotFound": "Account not found. Please check your details.",
     "EmailInvalid": "Please enter a valid email.",
     "UserNameInvalid": "Username is invalid. Please try another.",
     "PasswordMinLength": "Password must be at least 6 characters.",
-    "PasswordMaxLength": "Password must be under 100 characters.",
     "PasswordRequired": "Please enter a password.",
     "PasswordInvalid": "Password must be 6-100 characters.",
     "UserAlreadyExist": "Account already exists. Would you like to log in?",
@@ -17,24 +26,5 @@
     "AuthorizationRequired": "Please sign in to continue.",
     "MaxOtpReached": "Too many OTP requests. Please wait and try again.",
     "UserDeleted": "Account deleted successfully."
-  },
-  "fa": {
-    "EmailRequired": "لطفا ایمیل را وارد کنید.",
-    "UserNotFound": "حساب کاربری یافت نشد. لطفا اطلاعات را بررسی کنید.",
-    "UserNameInvalid": "نام کاربری معتبر نیست. لطفا نام دیگری انتخاب کنید.",
-    "EmailInvalid": "لطفا یک ایمیل معتبر وارد کنید.",
-    "PasswordRequired": "لطفا رمز عبور را وارد کنید.",
-    "PasswordMinLength": "رمز عبور باید حداقل ۶ کاراکتر باشد.",
-    "PasswordMaxLength": "رمز عبور باید کمتر از ۱۰۰ کاراکتر باشد.",
-    "PasswordInvalid": "رمز عبور باید بین ۶ تا ۱۰۰ کاراکتر باشد.",
-    "UserAlreadyExist": "حساب کاربری از قبل وجود دارد. آیا مایل به ورود هستید؟",
-    "CategoryNotFound": "دسته‌بندی یافت نشد. لطفا گزینه دیگری انتخاب کنید.",
-    "ProductNotFound": "محصول یافت نشد. لطفا اطلاعات را بررسی کنید.",
-    "ProductDeleted": "محصول با موفقیت حذف شد.",
-    "ProductDeleteFailed": "حذف محصول ناموفق بود. لطفا بعدا تلاش کنید.",
-    "PhoneNumberInvalid": "لطفا شماره موبایل معتبر وارد کنید.",
-    "AuthorizationRequired": "لطفا برای ادامه وارد شوید.",
-    "MaxOtpReached": "درخواست‌های کد تایید بیش از حد است. لطفا صبر کنید و مجددا تلاش کنید.",
-    "UserDeleted": "حساب کاربری با موفقیت حذف شد."
   }
 }
