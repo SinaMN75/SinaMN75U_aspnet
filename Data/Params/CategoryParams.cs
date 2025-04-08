@@ -1,4 +1,4 @@
-namespace SinaMN75U.Data.Params.Category;
+namespace SinaMN75U.Data.Params;
 
 public class CategoryCreateParams : BaseParams {
 	public required string Title { get; set; }

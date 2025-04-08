@@ -96,7 +96,7 @@ public sealed class ApiRequestLoggingMiddleware(
 		try {
 			return JsonSerializer.Serialize(
 				headers.ToDictionary(h => h.Key, h => h.Value.ToString()),
-				UJsonOptions.JsonOptions
+				UJsonOptions.Default
 			);
 		}
 		catch {
@@ -106,7 +106,7 @@ public sealed class ApiRequestLoggingMiddleware(
 
 	private static string TryMinifyJson(string json) {
 		try {
-			return JsonSerializer.Serialize(JsonDocument.Parse(json).RootElement, UJsonOptions.JsonOptions);
+			return JsonSerializer.Serialize(JsonDocument.Parse(json).RootElement, UJsonOptions.Default);
 		}
 		catch {
 			return json;

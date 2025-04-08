@@ -13,8 +13,11 @@ public class AuthService(
 	ILocalizationService ls,
 	ITokenService ts,
 	ISmsNotificationService smsNotificationService,
-	ILocalStorageService cache
+	ILocalStorageService cache,
+	IConfiguration config
 ) : IAuthService {
+	private readonly DateTime _tokenExpireDate = DateTime.UtcNow.AddMinutes(config["Jwt:Expires"].ToInt());
+
 	public async Task<UResponse<LoginResponse?>> Register(RegisterParams p, CancellationToken ct) {
 		bool isUserExists = await db.Set<UserEntity>().AnyAsync(x => x.Email == p.Email ||
 		                                                             x.UserName == p.UserName ||
@@ -41,8 +44,9 @@ public class AuthService(
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse<LoginResponse?>(new LoginResponse {
-			Token = CreateToken(user),
+			Token = CreateToken(user, _tokenExpireDate),
 			RefreshToken = user.RefreshToken,
+			Expires = config["Jwt:Expires"] ?? "60",
 			User = user.MapToResponse()
 		});
 	}
@@ -56,14 +60,15 @@ public class AuthService(
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse<LoginResponse?>(new LoginResponse {
-			Token = CreateToken(user),
+			Token = CreateToken(user, _tokenExpireDate),
 			RefreshToken = user.RefreshToken,
+			Expires = config["Jwt:Expires"] ?? "60",
 			User = user.MapToResponse()
 		});
 	}
 
 	public async Task<UResponse<LoginResponse?>> RefreshToken(RefreshTokenParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.GetTokenClaim();
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<LoginResponse?>(null, USC.UnAuthorized);
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(u => u.RefreshToken == p.RefreshToken && u.Id == userData.Id, ct);
 
@@ -74,8 +79,9 @@ public class AuthService(
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse<LoginResponse?>(new LoginResponse {
-			Token = CreateToken(user),
+			Token = CreateToken(user, _tokenExpireDate),
 			RefreshToken = user.RefreshToken,
+			Expires = config["Jwt:Expires"] ?? "60",
 			User = user.MapToResponse()
 		});
 	}
@@ -129,22 +135,25 @@ public class AuthService(
 
 		return p.Otp == "1375" || p.Otp == cache.GetStringData(user.Id.ToString())
 			? new UResponse<LoginResponse?>(new LoginResponse {
-				Token = CreateToken(user),
+				Token = CreateToken(user, _tokenExpireDate),
 				RefreshToken = user.RefreshToken,
-				User = user.MapToResponse()
+				User = user.MapToResponse(),
+				Expires = config["Jwt:Expires"] ?? "60"
 			})
 			: new UResponse<LoginResponse?>(null, USC.WrongVerificationCode);
 	}
 
-	private string CreateToken(UserEntity user) => ts.GenerateJwt([
-		new Claim(JwtRegisteredClaimNames.Jti, user.Id.ToString()),
-		new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName),
-		new Claim(JwtRegisteredClaimNames.Email, user.Email),
-		new Claim(JwtRegisteredClaimNames.PhoneNumber, user.PhoneNumber),
-		new Claim(JwtRegisteredClaimNames.Name, user.FirstName ?? ""),
-		new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName ?? ""),
-		new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()),
-		new Claim(ClaimTypes.Expiration, DateTime.UtcNow.Add(TimeSpan.FromSeconds(60)).ToString(CultureInfo.InvariantCulture)),
-		new Claim(ClaimTypes.Role, string.Join(",", user.Tags))
-	]);
+	private string CreateToken(UserEntity user, DateTime expires) => ts.GenerateJwt([
+			new Claim(JwtRegisteredClaimNames.Jti, user.Id.ToString()),
+			new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName),
+			new Claim(JwtRegisteredClaimNames.Email, user.Email),
+			new Claim(JwtRegisteredClaimNames.PhoneNumber, user.PhoneNumber),
+			new Claim(JwtRegisteredClaimNames.Name, user.FirstName ?? ""),
+			new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName ?? ""),
+			new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()),
+			new Claim(ClaimTypes.Expiration, DateTime.UtcNow.Add(TimeSpan.FromSeconds(60)).ToString(CultureInfo.InvariantCulture)),
+			new Claim(ClaimTypes.Role, string.Join(",", user.Tags))
+		],
+		expires
+	);
 }

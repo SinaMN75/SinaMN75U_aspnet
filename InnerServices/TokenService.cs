@@ -2,24 +2,23 @@ namespace SinaMN75U.InnerServices;
 
 public interface ITokenService {
 	public string GenerateRefreshToken();
-	public string GenerateJwt(IEnumerable<Claim> claims);
+	public string GenerateJwt(IEnumerable<Claim> claims, DateTime expires);
 	public JwtClaimData? ExtractClaims(string? token);
-	public JwtClaimData? GetTokenClaim();
 }
 
-public class TokenService(IConfiguration config, IHttpContextAccessor httpContext) : ITokenService {
+public class TokenService(IConfiguration config) : ITokenService {
 	public string GenerateRefreshToken() {
 		byte[] randomNumber = new byte[64];
 		using RandomNumberGenerator rng = RandomNumberGenerator.Create();
 		rng.GetBytes(randomNumber);
 		return Convert.ToBase64String(randomNumber);
 	}
-
-	public string GenerateJwt(IEnumerable<Claim> claims) => new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
+	
+	public string GenerateJwt(IEnumerable<Claim> claims, DateTime expires) => new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
 			config["Jwt:Issuer"]!,
 			config["Jwt:Audience"]!,
 			claims,
-			expires: DateTime.UtcNow.Add(TimeSpan.FromSeconds(60)),
+			expires: expires,
 			signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]!)), SecurityAlgorithms.HmacSha256)
 		)
 	);
@@ -41,12 +40,5 @@ public class TokenService(IConfiguration config, IHttpContextAccessor httpContex
 		catch (Exception) {
 			return null;
 		}
-	}
-
-	public JwtClaimData? GetTokenClaim() {
-		HttpContext? context = httpContext.HttpContext;
-		if (context != null && context.Items.TryGetValue("JwtToken", out object? item))
-			return ExtractClaims(item?.ToString());
-		return null;
 	}
 }

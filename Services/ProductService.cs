@@ -41,24 +41,23 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 
 	public async Task<UResponse<IEnumerable<ProductResponse>?>> Read(ProductReadParams p, CancellationToken ct) {
 		IQueryable<ProductEntity> q = db.Set<ProductEntity>();
-		if (p.ParentId.IsNotNullOrEmpty()) q = q.Where(x => x.ParentId == p.ParentId);
 		if (p.Code.IsNotNullOrEmpty()) q = q.Where(x => x.Code.Contains(p.Code));
 		if (p.Query.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Query) || (x.Description ?? "").Contains(p.Query) || (x.Subtitle ?? "").Contains(p.Query));
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title));
-		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(x => x.UserId == p.UserId);
+		if (p.MinPrice.IsNotNullOrEmpty()) q = q.Where(x => x.Price >= p.MinPrice);
+		if (p.MaxPrice.IsNotNullOrEmpty()) q = q.Where(x => x.Price <= p.MaxPrice);
+		if (p.MinStock.IsNotNullOrEmpty()) q = q.Where(x => x.Stock >= p.MinStock);
+		if (p.MaxStock.IsNotNullOrEmpty()) q = q.Where(x => x.Stock >= p.MaxStock);
+		
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.UserId));
-
+		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(x => x.UserId == p.UserId);
+		if (p.ParentId.IsNotNullOrEmpty()) q = q.Where(x => x.ParentId == p.ParentId);
+		
 		if (p.User) q = q.Include(x => x.User);
 		if (p.Media) q = q.Include(x => x.Media);
 		if (p.Categories) q = q.Include(x => x.Categories);
-
-		UResponse<List<ProductEntity>> result = await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
-
-		return new UResponse<IEnumerable<ProductResponse>?>(result.Result?.Select(x => x.MapToResponse())) {
-			TotalCount = result.TotalCount,
-			PageCount = result.PageCount,
-			PageSize = result.PageSize
-		};
+		
+		return await q.Select(x => x.MapToResponse(p.Media, p.Categories,p.User)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse<ProductResponse?>> ReadById(IdParams p, CancellationToken ct) {

@@ -18,7 +18,7 @@ public class ProductResponse {
 	public required List<VisitCount> VisitCounts { get; set; }
 	public List<Guid>? RelatedProducts { get; set; }
 
-	public required UserResponse User { get; set; }
+	public UserResponse? User { get; set; }
 
 	public IEnumerable<ProductResponse>? Children { get; set; }
 

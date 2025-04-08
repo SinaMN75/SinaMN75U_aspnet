@@ -45,6 +45,11 @@ public class ProductReadParams: BaseReadParams {
 	public string? Query { get; set; }
 	public string? Title { get; set; }
 	public string? Code { get; set; }
+	
+	public int? MinStock { get; set; }
+	public int? MaxStock { get; set; }
+	public double? MinPrice { get; set; }
+	public double? MaxPrice { get; set; }
 
 	public Guid? ParentId { get; set; }
 	public Guid? UserId { get; set; }
