@@ -3,12 +3,14 @@ namespace SinaMN75U.Middlewares;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using System.Diagnostics;
+using System.Text;
+using System.Text.Json;
 
 public sealed class ApiRequestLoggingMiddleware(
 	RequestDelegate next,
 	ILogger<ApiRequestLoggingMiddleware> logger,
-	IServiceProvider serviceProvider
-) {
+	IServiceProvider serviceProvider) {
 	public async Task InvokeAsync(HttpContext context) {
 		HttpRequest request = context.Request;
 
@@ -18,64 +20,79 @@ public sealed class ApiRequestLoggingMiddleware(
 		}
 
 		Stopwatch stopwatch = Stopwatch.StartNew();
-		List<string> efCoreQueries = new();
-
-		// Set up EF Core query logging
-		using (IServiceScope scope = serviceProvider.CreateScope()) {
-			IEnumerable<DbContext> dbContexts = scope.ServiceProvider.GetServices<DbContext>();
-			foreach (DbContext dbContext in dbContexts) {
-				dbContext.Database.SetCommandTimeout(TimeSpan.FromSeconds(30));
-				ILoggerFactory loggerFactory = dbContext.GetService<ILoggerFactory>();
-				loggerFactory.AddProvider(new EfCoreQueryLoggerProvider(efCoreQueries));
-			}
-		}
-
+		List<string> efCoreQueries = [];
 		string requestBody = "";
-		if (request.Body.CanRead) {
-			try {
-				request.EnableBuffering();
-				using StreamReader reader = new(
-					request.Body,
-					Encoding.UTF8,
-					true,
-					1024,
-					true);
-
-				requestBody = await reader.ReadToEndAsync();
-				request.Body.Position = 0;
-			}
-			catch (Exception) {
-				// ignored
-			}
-		}
-
-		Stream originalResponseBody = context.Response.Body;
-		using MemoryStream responseBuffer = new();
-		context.Response.Body = responseBuffer;
+		string responseBody = "";
+		Exception? exception = null;
 
 		try {
-			await next(context);
+			// Setup EF Core query logging
+			using (IServiceScope scope = serviceProvider.CreateScope()) {
+				IEnumerable<DbContext> dbContexts = scope.ServiceProvider.GetServices<DbContext>();
+				foreach (DbContext dbContext in dbContexts) {
+					ILoggerFactory loggerFactory = dbContext.GetService<ILoggerFactory>();
+					loggerFactory.AddProvider(new EfCoreQueryLoggerProvider(efCoreQueries));
+				}
+			}
 
-			responseBuffer.Position = 0;
-			string responseBody = await new StreamReader(responseBuffer).ReadToEndAsync();
-			responseBuffer.Position = 0;
-			await responseBuffer.CopyToAsync(originalResponseBody);
+			// Read request body
+			if (request.Body.CanRead) {
+				try {
+					request.EnableBuffering();
+					using StreamReader reader = new StreamReader(
+						request.Body,
+						Encoding.UTF8,
+						true,
+						1024,
+						true);
+					requestBody = await reader.ReadToEndAsync();
+					request.Body.Position = 0;
+				}
+				catch (Exception ex) {
+					logger.LogError(ex, "Failed to read request body");
+				}
+			}
 
-			LogToFile(
-				DateTime.UtcNow,
-				request.Method,
-				request.Path,
-				context.Response.StatusCode,
-				stopwatch.ElapsedMilliseconds,
-				request.Headers,
-				context.Response.Headers,
-				requestBody,
-				responseBody,
-				efCoreQueries
-			);
+			// Capture response
+			Stream originalResponseBody = context.Response.Body;
+			using MemoryStream responseBuffer = new MemoryStream();
+			context.Response.Body = responseBuffer;
+
+			try {
+				await next(context);
+				responseBuffer.Position = 0;
+				responseBody = await new StreamReader(responseBuffer).ReadToEndAsync();
+				responseBuffer.Position = 0;
+				await responseBuffer.CopyToAsync(originalResponseBody);
+			}
+			finally {
+				context.Response.Body = originalResponseBody;
+			}
+		}
+		catch (Exception ex) {
+			exception = ex;
+			context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+			responseBody = ex.ToString();
+			throw; // Re-throw after logging
 		}
 		finally {
-			context.Response.Body = originalResponseBody;
+			try {
+				LogToFile(
+					timestamp: DateTime.UtcNow,
+					method: request.Method,
+					path: request.Path,
+					statusCode: context.Response.StatusCode,
+					elapsedMs: stopwatch.ElapsedMilliseconds,
+					requestHeaders: request.Headers,
+					responseHeaders: context.Response.Headers,
+					requestBody: requestBody,
+					responseBody: responseBody,
+					efCoreQueries: efCoreQueries,
+					exception: exception);
+			}
+			catch (Exception loggingEx) {
+				logger.LogError(loggingEx, "CRITICAL: Failed to log request");
+			}
 		}
 	}
 
@@ -89,27 +106,37 @@ public sealed class ApiRequestLoggingMiddleware(
 		IHeaderDictionary responseHeaders,
 		string requestBody,
 		string responseBody,
-		List<string> efCoreQueries) {
+		List<string> efCoreQueries,
+		Exception? exception = null) {
+		DateTime now = DateTime.Now;
+		string logDir = Path.Combine("Logs", now.Year.ToString(), now.Month.ToString("00"));
+		Directory.CreateDirectory(logDir);
+
+		bool isSuccess = statusCode is >= 200 and <= 299;
+		string logFileName = $"{now:dd}_{(isSuccess ? "success" : "failed")}.txt";
+
+		StringBuilder logEntry = new StringBuilder()
+			.AppendLine($"{timestamp:yyyy-MM-dd HH:mm:ss} {method} - {path} - {statusCode} - {elapsedMs}ms")
+			.AppendLine(SerializeHeaders(requestHeaders))
+			.AppendLine(SerializeHeaders(responseHeaders));
+
+		if (exception != null)
+			logEntry.AppendLine($"Type: {exception.GetType().Name}")
+				.AppendLine($"Message: {exception.Message}")
+				.AppendLine($"Stack Trace: {exception.StackTrace}");
+		else
+			logEntry.AppendLine(TryMinifyJson(requestBody)).AppendLine(TryMinifyJson(responseBody));
+
+		logEntry
+			.AppendJoin("", efCoreQueries)
+			.AppendLine("\n" + new string('=', 50));
+
 		try {
-			DateTime now = DateTime.Now;
-			string logDir = Path.Combine("Logs", now.Year.ToString(), now.Month.ToString("00"));
-			Directory.CreateDirectory(logDir);
-
-			// Determine log file name based on status code
-			string logFileName = statusCode == 200 ? "success.txt" : $"{now:dd}.txt";
-
-			string logEntry = $"{timestamp:yyyy-MM-dd HH:mm:ss} - {method} - {path} - {statusCode} - {elapsedMs}ms\n" +
-			                  $"{SerializeHeaders(requestHeaders)}\n" +
-			                  $"{SerializeHeaders(responseHeaders)}\n" +
-			                  $"{TryMinifyJson(requestBody)}\n" +
-			                  $"{TryMinifyJson(responseBody)}\n" +
-			                  $"EF Core Queries ({efCoreQueries.Count}):\n{string.Join("\n", efCoreQueries)}\n" +
-			                  new string('-', 50) + "\n";
-
-			File.AppendAllText(Path.Combine(logDir, logFileName), logEntry);
+			File.AppendAllText(Path.Combine(logDir, logFileName), logEntry.ToString());
+			logger.LogDebug("Logged to {file}", logFileName);
 		}
 		catch (Exception ex) {
-			logger.LogError(ex, "Log write failed");
+			logger.LogError(ex, "Failed to write to log file {file}", logFileName);
 		}
 	}
 
@@ -117,8 +144,7 @@ public sealed class ApiRequestLoggingMiddleware(
 		try {
 			return JsonSerializer.Serialize(
 				headers.ToDictionary(h => h.Key, h => h.Value.ToString()),
-				UJsonOptions.Default
-			);
+				UJsonOptions.Default);
 		}
 		catch {
 			return "{}";
@@ -126,8 +152,12 @@ public sealed class ApiRequestLoggingMiddleware(
 	}
 
 	private static string TryMinifyJson(string json) {
+		if (string.IsNullOrWhiteSpace(json))
+			return string.Empty;
+
 		try {
-			return JsonSerializer.Serialize(JsonDocument.Parse(json).RootElement, UJsonOptions.Default);
+			using JsonDocument doc = JsonDocument.Parse(json);
+			return JsonSerializer.Serialize(doc.RootElement, UJsonOptions.Default);
 		}
 		catch {
 			return json;
@@ -135,9 +165,10 @@ public sealed class ApiRequestLoggingMiddleware(
 	}
 }
 
-// EF Core query logger provider and logger implementation
 public class EfCoreQueryLoggerProvider(List<string> queries) : ILoggerProvider {
-	public ILogger CreateLogger(string categoryName) => new EfCoreQueryLogger(queries);
+	public ILogger CreateLogger(string categoryName) {
+		return new EfCoreQueryLogger(queries);
+	}
 
 	public void Dispose() { }
 }
@@ -153,8 +184,9 @@ public class EfCoreQueryLogger(List<string> queries) : ILogger {
 		TState state,
 		Exception exception,
 		Func<TState, Exception, string> formatter) {
-		if (eventId.Name != "Microsoft.EntityFrameworkCore.Database.Command.CommandExecuting") return;
+		if (eventId.Name != "Microsoft.EntityFrameworkCore.Database.Command.CommandExecuted") return;
 		string message = formatter(state, exception);
-		queries.Add(message);
+		queries.Add($"Query {queries.Count + 1}: {message}");
+		Debug.WriteLine($"EF Core Query: {message}");
 	}
 }
