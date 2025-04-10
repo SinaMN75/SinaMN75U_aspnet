@@ -17,13 +17,9 @@ public class CommentCreateParams: BaseParams {
 	public required List<TagComment> Tags { get; set; }
 }
 
-public class CommentUpdateParams {
-	[URequired("IdRequired")]
-	public required Guid Id { get; set; }
-
-	public string? Comment { get; set; }
+public class CommentUpdateParams : BaseUpdateParams<TagComment> {
+	public string? Description { get; set; }
 	public double? Score { get; set; }
-	public List<TagComment>? Tags { get; set; }
 }
 
 public class CommentReadParams : BaseReadParams<TagComment> {

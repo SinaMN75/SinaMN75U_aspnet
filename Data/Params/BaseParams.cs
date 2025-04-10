@@ -17,6 +17,14 @@ public class BaseReadParams<T> : BaseParams {
 	public List<T>? Tags { get; set; }
 }
 
+public class BaseUpdateParams<T> : BaseParams {
+	[URequired("IdRequired")]
+	public required Guid Id { get; set; }
+
+	public IEnumerable<T>? AddTags { get; set; }
+	public IEnumerable<T>? RemoveTags { get; set; }
+}
+
 public class BaseParams {
 	public string ApiKey { get; set; } = null!;
 	public string Token { get; set; } = null!;

@@ -2,7 +2,7 @@ namespace SinaMN75U.Utils;
 
 public static class AspNetConfig {
 	public static void AddUServices<T>(this WebApplicationBuilder builder) where T : DbContext {
-		builder.Services.AddCors(c => c.AddPolicy("AllowOrigin", option => option.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+		builder.Services.AddCors(c => c.AddPolicy("AllowOrigin", o => o.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 		builder.Services.AddUSwagger();
 		builder.Services.AddUOutputCache();
 		builder.Services.AddHttpContextAccessor();
@@ -15,7 +15,7 @@ public static class AspNetConfig {
 			o.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 			o.SerializerOptions.WriteIndented = false;
 		});
-		builder.Services.AddControllersWithViews(options => options.EnableEndpointRouting = false)
+		builder.Services.AddControllersWithViews(o => o.EnableEndpointRouting = false)
 			.AddJsonOptions(o => {
 				o.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 				o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
@@ -82,9 +82,10 @@ public static class AspNetConfig {
 
 		app.MapAuthRoutes("Auth");
 		app.MapUserRoutes("User");
-		app.MapCategoryRoutes("Category");
 		app.MapMediaRoutes("Media");
 		app.MapContentRoutes("Content");
 		app.MapProductRoutes("Product");
+		app.MapCommentRoutes("Comment");
+		app.MapCategoryRoutes("Category");
 	}
 }
