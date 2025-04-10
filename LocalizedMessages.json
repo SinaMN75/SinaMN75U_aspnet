@@ -2,6 +2,7 @@
   "en": {
     "PhoneNumberNotValid": "Phone number is not valid.",
     "PhoneNumberRequired": "Phone number is required.",
+    "CommentRequired": "Comment is required.",
     "EmailRequired": "Email is required.",
     "UserNameRequired": "UserName is required.",
     "UserNameMinLenght": "UserName is not valid.",

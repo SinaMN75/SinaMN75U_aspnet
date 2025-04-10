@@ -52,7 +52,8 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.UserId));
 		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(x => x.UserId == p.UserId);
 		if (p.ParentId.IsNotNullOrEmpty()) q = q.Where(x => x.ParentId == p.ParentId);
-		
+		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(u => u.Tags.Any(tag => p.Tags!.Contains(tag)));
+
 		if (p.ShowUser) q = q.Include(x => x.User);
 		if (p.ShowMedia) q = q.Include(x => x.Media);
 		if (p.ShowCategories) q = q.Include(x => x.Categories);

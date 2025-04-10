@@ -28,7 +28,6 @@ public class ContentUpdateParams : BaseParams {
 	public IEnumerable<int>? RemoveTags { get; set; }
 }
 
-public class ContentReadParams : BaseParams {
-	public IEnumerable<int>? Tags { get; set; }
+public class ContentReadParams : BaseReadParams<int> {
 	public bool ShowMedia { get; set; } = false;
 }

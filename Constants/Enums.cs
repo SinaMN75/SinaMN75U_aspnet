@@ -41,3 +41,15 @@ public enum TagProduct {
 	NotAccepted = 305,
 	AwaitingPayment = 306
 }
+
+public enum TagComment {
+	Released = 100,
+	InQueue = 101,
+	Rejected = 102,
+	Private = 501
+}
+
+public enum TagReaction {
+	Like = 101,
+	DisLike = 102
+}

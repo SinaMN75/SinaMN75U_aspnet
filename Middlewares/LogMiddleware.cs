@@ -1,10 +1,13 @@
 namespace SinaMN75U.Middlewares;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 public sealed class ApiRequestLoggingMiddleware(
 	RequestDelegate next,
-	ILogger<ApiRequestLoggingMiddleware> logger
+	ILogger<ApiRequestLoggingMiddleware> logger,
+	IServiceProvider serviceProvider
 ) {
 	public async Task InvokeAsync(HttpContext context) {
 		HttpRequest request = context.Request;
@@ -15,6 +18,17 @@ public sealed class ApiRequestLoggingMiddleware(
 		}
 
 		Stopwatch stopwatch = Stopwatch.StartNew();
+		List<string> efCoreQueries = new();
+
+		// Set up EF Core query logging
+		using (IServiceScope scope = serviceProvider.CreateScope()) {
+			IEnumerable<DbContext> dbContexts = scope.ServiceProvider.GetServices<DbContext>();
+			foreach (DbContext dbContext in dbContexts) {
+				dbContext.Database.SetCommandTimeout(TimeSpan.FromSeconds(30));
+				ILoggerFactory loggerFactory = dbContext.GetService<ILoggerFactory>();
+				loggerFactory.AddProvider(new EfCoreQueryLoggerProvider(efCoreQueries));
+			}
+		}
 
 		string requestBody = "";
 		if (request.Body.CanRead) {
@@ -56,7 +70,9 @@ public sealed class ApiRequestLoggingMiddleware(
 				request.Headers,
 				context.Response.Headers,
 				requestBody,
-				responseBody);
+				responseBody,
+				efCoreQueries
+			);
 		}
 		finally {
 			context.Response.Body = originalResponseBody;
@@ -72,20 +88,25 @@ public sealed class ApiRequestLoggingMiddleware(
 		IHeaderDictionary requestHeaders,
 		IHeaderDictionary responseHeaders,
 		string requestBody,
-		string responseBody) {
+		string responseBody,
+		List<string> efCoreQueries) {
 		try {
 			DateTime now = DateTime.Now;
 			string logDir = Path.Combine("Logs", now.Year.ToString(), now.Month.ToString("00"));
 			Directory.CreateDirectory(logDir);
+
+			// Determine log file name based on status code
+			string logFileName = statusCode == 200 ? "success.txt" : $"{now:dd}.txt";
 
 			string logEntry = $"{timestamp:yyyy-MM-dd HH:mm:ss} - {method} - {path} - {statusCode} - {elapsedMs}ms\n" +
 			                  $"{SerializeHeaders(requestHeaders)}\n" +
 			                  $"{SerializeHeaders(responseHeaders)}\n" +
 			                  $"{TryMinifyJson(requestBody)}\n" +
 			                  $"{TryMinifyJson(responseBody)}\n" +
+			                  $"EF Core Queries ({efCoreQueries.Count}):\n{string.Join("\n", efCoreQueries)}\n" +
 			                  new string('-', 50) + "\n";
 
-			File.AppendAllText(Path.Combine(logDir, $"{now:dd}.txt"), logEntry);
+			File.AppendAllText(Path.Combine(logDir, logFileName), logEntry);
 		}
 		catch (Exception ex) {
 			logger.LogError(ex, "Log write failed");
@@ -111,5 +132,29 @@ public sealed class ApiRequestLoggingMiddleware(
 		catch {
 			return json;
 		}
+	}
+}
+
+// EF Core query logger provider and logger implementation
+public class EfCoreQueryLoggerProvider(List<string> queries) : ILoggerProvider {
+	public ILogger CreateLogger(string categoryName) => new EfCoreQueryLogger(queries);
+
+	public void Dispose() { }
+}
+
+public class EfCoreQueryLogger(List<string> queries) : ILogger {
+	public IDisposable BeginScope<TState>(TState state) => null;
+
+	public bool IsEnabled(LogLevel logLevel) => true;
+
+	public void Log<TState>(
+		LogLevel logLevel,
+		EventId eventId,
+		TState state,
+		Exception exception,
+		Func<TState, Exception, string> formatter) {
+		if (eventId.Name != "Microsoft.EntityFrameworkCore.Database.Command.CommandExecuting") return;
+		string message = formatter(state, exception);
+		queries.Add(message);
 	}
 }

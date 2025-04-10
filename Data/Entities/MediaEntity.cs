@@ -20,6 +20,9 @@ public class MediaEntity : BaseEntity<TagMedia> {
 
 	public Guid? CategoryId { get; set; }
 	public CategoryEntity? Category { get; set; }
+	
+	public Guid? CommentId { get; set; }
+	public CommentEntity? Comment { get; set; }
 
 	public MediaResponse MapToResponse() => new() {
 		Id = Id,

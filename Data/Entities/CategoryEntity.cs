@@ -26,7 +26,7 @@ public class CategoryEntity : BaseEntity<TagCategory> {
 		Title = Title,
 		Subtitle = JsonDetail.Subtitle,
 		Tags = Tags,
-		Children = Children?.Select(x => x.MapToResponse()).ToList(),
+		Children = Children?.Select(x => x.MapToResponse()),
 		Media = media ? Media?.Select(x => x.MapToResponse()) : null,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt

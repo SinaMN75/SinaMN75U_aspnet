@@ -46,7 +46,7 @@ public class ProductUpdateParams : BaseParams {
 	public Guid? UserId { get; set; }
 }
 
-public class ProductReadParams : BaseReadParams {
+public class ProductReadParams : BaseReadParams<TagProduct> {
 	public IEnumerable<Guid>? Ids { get; set; }
 	public string? Query { get; set; }
 	public string? Title { get; set; }

@@ -39,7 +39,7 @@ public class CategoryService(
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
 
-		return new UResponse<IEnumerable<CategoryResponse>>(await q.ToListAsync());
+		return new UResponse<IEnumerable<CategoryResponse>>(await q.ToListAsync(ct));
 	}
 
 	public async Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct) {
