@@ -109,7 +109,7 @@ public sealed class ApiRequestLoggingMiddleware(
 		List<string> efCoreQueries,
 		Exception? exception = null) {
 		DateTime now = DateTime.Now;
-		string logDir = Path.Combine("Logs", now.Year.ToString(), now.Month.ToString("00"));
+		string logDir = Path.Combine("wwwroot", "Logs", now.Year.ToString(), now.Month.ToString("00"));
 		Directory.CreateDirectory(logDir);
 
 		bool isSuccess = statusCode is >= 200 and <= 299;

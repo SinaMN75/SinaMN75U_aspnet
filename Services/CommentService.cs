@@ -35,7 +35,7 @@ public class CommentService(
 	}
 
 	public async Task<UResponse<IEnumerable<CommentResponse>?>> Read(CommentReadParams p, CancellationToken ct) {
-		IQueryable<CommentEntity> q = db.Set<CommentEntity>().Select(x => x.MapToEntity(p.ShowMedia));
+		IQueryable<CommentEntity> q = db.Set<CommentEntity>();
 		if (p.ProductId.IsNotNullOrEmpty()) q = q.Where(x => x.ProductId == p.ProductId);
 		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(x => x.UserId == p.UserId);
 		if (p.TargetUserId.IsNotNullOrEmpty()) q = q.Where(x => x.TargetUserId == p.TargetUserId);
