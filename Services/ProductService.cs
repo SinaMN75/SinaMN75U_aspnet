@@ -101,10 +101,10 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 		if (p.Details.IsNotNullOrEmpty()) e.JsonDetail.Details = p.Details;
 		if (p.UserId.IsNotNullOrEmpty()) e.UserId = p.UserId ?? userData.Id;
 
-		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRange(p.AddTags);
+		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
 
-		if (p.AddRelatedProducts.IsNotNullOrEmpty()) e.JsonDetail.RelatedProducts.AddRange(p.AddRelatedProducts);
+		if (p.AddRelatedProducts.IsNotNullOrEmpty()) e.JsonDetail.RelatedProducts.AddRangeIfNotExist(p.AddRelatedProducts);
 		if (p.RemoveRelatedProducts.IsNotNullOrEmpty()) e.JsonDetail.RelatedProducts.RemoveAll(x => p.RemoveRelatedProducts.Contains(x));
 
 		db.Set<ProductEntity>().Update(e);

@@ -54,7 +54,7 @@ public class CommentService(
 		if (e == null) return new UResponse<CommentResponse?>(null, USC.NotFound, ls.Get("CommentNotFound"));
 		if (p.Score.IsNotNullOrEmpty()) e.Score = p.Score.Value;
 		if (p.Description.IsNotNullOrEmpty()) e.Description = p.Description;
-		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRange(p.AddTags);
+		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
 		db.Set<CommentEntity>().Update(e);
 		await db.SaveChangesAsync(ct);

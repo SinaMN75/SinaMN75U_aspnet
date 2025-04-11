@@ -14,8 +14,11 @@ public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService
 			return new UResponse<MediaResponse?>(null, USC.BadRequest);
 
 		string folderName = "";
-		if (p.UserId != null) folderName = "users/";
-		string name = $"{folderName}{Guid.NewGuid() + Path.GetExtension(p.File.FileName)}";
+		if (p.UserId != null) folderName = "users";
+		if (p.CategoryId != null) folderName = "categories";
+		if (p.CommentId != null) folderName = "comments";
+		if (p.ContentId != null) folderName = "contents";
+		string name = $"{folderName}/{Guid.CreateVersion7() + Path.GetExtension(p.File.FileName)}";
 		MediaEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			Path = name,
@@ -31,9 +34,9 @@ public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService
 				Description = p.Description
 			}
 		};
+		await SaveMedia(p.File, name);
 		await db.Set<MediaEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
-		await SaveMedia(p.File, name);
 		return new UResponse<MediaResponse?>(e.MapToResponse(), message: Path.Combine(env.WebRootPath, "Media"));
 	}
 
@@ -42,7 +45,7 @@ public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService
 		if (e == null) return new UResponse<MediaResponse?>(null, USC.BadRequest);
 		if (p.Title != null) e.JsonDetail.Title = p.Title;
 		if (p.Description != null) e.JsonDetail.Description = p.Description;
-		if (p.AddTags != null) e.Tags.AddRange(p.AddTags);
+		if (p.AddTags != null) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags != null) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
 
 		db.Update(e);

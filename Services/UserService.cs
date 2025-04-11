@@ -100,7 +100,7 @@ public class UserService(
 		if (p.State != null) e.State = p.State;
 		if (p.FcmToken != null) e.JsonDetail.FcmToken = p.FcmToken;
 
-		if (p.AddTags != null) e.Tags.AddRange(p.AddTags);
+		if (p.AddTags != null) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags != null) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
 
 		if (p.Categories.IsNotNullOrEmpty()) {

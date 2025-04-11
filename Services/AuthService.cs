@@ -17,8 +17,6 @@ public class AuthService(
 	ILocalStorageService cache,
 	IConfiguration config
 ) : IAuthService {
-	private readonly DateTime _tokenExpireDate = DateTime.UtcNow.AddMinutes(config["Jwt:Expires"].ToInt());
-
 	public async Task<UResponse<LoginResponse?>> Register(RegisterParams p, CancellationToken ct) {
 		bool isUserExists = await db.Set<UserEntity>().AnyAsync(x => x.Email == p.Email ||
 		                                                             x.UserName == p.UserName ||
@@ -45,7 +43,7 @@ public class AuthService(
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse<LoginResponse?>(new LoginResponse {
-			Token = CreateToken(user, _tokenExpireDate),
+			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
 			Expires = config["Jwt:Expires"] ?? "60",
 			User = user.MapToResponse()
@@ -61,7 +59,7 @@ public class AuthService(
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse<LoginResponse?>(new LoginResponse {
-			Token = CreateToken(user, _tokenExpireDate),
+			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
 			Expires = config["Jwt:Expires"] ?? "60",
 			User = user.MapToResponse()
@@ -80,7 +78,7 @@ public class AuthService(
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse<LoginResponse?>(new LoginResponse {
-			Token = CreateToken(user, _tokenExpireDate),
+			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
 			Expires = config["Jwt:Expires"] ?? "60",
 			User = user.MapToResponse()
@@ -138,7 +136,7 @@ public class AuthService(
 
 		return p.Otp == "1375" || p.Otp == cache.GetStringData(user.Id.ToString())
 			? new UResponse<LoginResponse?>(new LoginResponse {
-				Token = CreateToken(user, _tokenExpireDate),
+				Token = CreateToken(user),
 				RefreshToken = user.RefreshToken,
 				User = user.MapToResponse(),
 				Expires = config["Jwt:Expires"] ?? "60"
@@ -154,14 +152,14 @@ public class AuthService(
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse<LoginResponse?>(new LoginResponse {
-			Token = CreateToken(user, _tokenExpireDate),
+			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
 			Expires = config["Jwt:Expires"] ?? "60",
 			User = user.MapToResponse()
 		});
 	}
 
-	private string CreateToken(UserEntity user, DateTime expires) => ts.GenerateJwt([
+	private string CreateToken(UserEntity user) => ts.GenerateJwt([
 			new Claim(JwtRegisteredClaimNames.Jti, user.Id.ToString()),
 			new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName),
 			new Claim(JwtRegisteredClaimNames.Email, user.Email),
@@ -172,6 +170,6 @@ public class AuthService(
 			new Claim(ClaimTypes.Expiration, DateTime.UtcNow.Add(TimeSpan.FromSeconds(60)).ToString(CultureInfo.InvariantCulture)),
 			new Claim(ClaimTypes.Role, string.Join(",", user.Tags))
 		],
-		expires
+		DateTime.UtcNow.AddMinutes(60)
 	);
 }

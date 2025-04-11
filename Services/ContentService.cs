@@ -39,7 +39,7 @@ public class ContentService(DbContext context) : IContentService {
 		if (p.Description is not null) e.Description = p.Description;
 		if (p.Instagram is not null) e.JsonDetail.Instagram = p.Instagram;
 
-		if (p.AddTags != null) e.Tags.AddRange(p.AddTags);
+		if (p.AddTags != null) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags != null) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
 
 

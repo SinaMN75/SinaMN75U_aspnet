@@ -207,6 +207,13 @@ public static class EnumerableExtensions {
 	public static bool IsNullOrEmpty<T>([NotNullWhen(false)] this IEnumerable<T>? list) => list == null || !list.Any();
 	public static bool ContainsAny<T>(this IEnumerable<T> source, IEnumerable<T> target) => source.Any(target.Contains);
 
+	public static void AddRangeIfNotExist<T>(this ICollection<T>? collection, IEnumerable<T>? items) {
+		if (collection == null || items == null) return;
+		foreach (T item in items)
+			if (!collection.Contains(item))
+				collection.Add(item);
+	}
+
 	// New enumerable extensions
 	public static IEnumerable<T> ForEach<T>(this IEnumerable<T> source, Action<T> action) {
 		foreach (T item in source) {

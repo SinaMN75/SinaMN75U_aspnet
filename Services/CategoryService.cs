@@ -58,7 +58,7 @@ public class CategoryService(
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
 		if (p.Subtitle.IsNotNullOrEmpty()) e.JsonDetail.Subtitle = p.Subtitle;
 
-		if (p.AddTags != null) e.Tags.AddRange(p.AddTags);
+		if (p.AddTags != null) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags != null) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
 
 		await db.SaveChangesAsync(ct);
