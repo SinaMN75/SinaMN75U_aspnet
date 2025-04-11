@@ -14,7 +14,7 @@ public sealed class ApiRequestLoggingMiddleware(
 	public async Task InvokeAsync(HttpContext context) {
 		HttpRequest request = context.Request;
 
-		if (!request.Path.StartsWithSegments("/api")) {
+		if (!request.Path.StartsWithSegments("/api") || request.Path.StartsWithSegments("/api/media")) {
 			await next(context);
 			return;
 		}

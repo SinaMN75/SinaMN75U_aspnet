@@ -46,6 +46,7 @@ public static class AspNetConfig {
 
 		builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 		builder.Services.AddSingleton<IFileProvider>(new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")));
+		builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 100_000_000);
 		builder.Services.Configure<FormOptions>(x => {
 			x.ValueLengthLimit = int.MaxValue;
 			x.MultipartBodyLengthLimit = int.MaxValue;
