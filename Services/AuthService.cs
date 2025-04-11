@@ -6,6 +6,7 @@ public interface IAuthService {
 	Task<UResponse<LoginResponse?>> RefreshToken(RefreshTokenParams p, CancellationToken ct);
 	Task<UResponse> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> VerifyCodeForLogin(VerifyMobileForLoginParams p, CancellationToken ct);
+	Task<UResponse<LoginResponse?>> TestToken(LoginWithEmailPasswordParams p, CancellationToken ct);
 }
 
 public class AuthService(
@@ -143,6 +144,21 @@ public class AuthService(
 				Expires = config["Jwt:Expires"] ?? "60"
 			})
 			: new UResponse<LoginResponse?>(null, USC.WrongVerificationCode);
+	}
+
+	public async Task<UResponse<LoginResponse?>> TestToken(LoginWithEmailPasswordParams p, CancellationToken ct) {
+		UserEntity? user = await db.Set<UserEntity>().SingleOrDefaultAsync(x => x.Email == p.Email, ct);
+		if (user == null) return new UResponse<LoginResponse?>(null, USC.NotFound, ls.Get("InvalidCredentials"));
+
+		user.RefreshToken = ts.GenerateRefreshToken();
+		await db.SaveChangesAsync(ct);
+
+		return new UResponse<LoginResponse?>(new LoginResponse {
+			Token = CreateToken(user, _tokenExpireDate),
+			RefreshToken = user.RefreshToken,
+			Expires = config["Jwt:Expires"] ?? "60",
+			User = user.MapToResponse()
+		});
 	}
 
 	private string CreateToken(UserEntity user, DateTime expires) => ts.GenerateJwt([
