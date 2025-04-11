@@ -2,7 +2,7 @@ namespace SinaMN75U.Services;
 
 public interface ICategoryService {
 	Task<UResponse<CategoryResponse?>> Create(CategoryCreateParams p, CancellationToken ct);
-	Task<UResponse<IEnumerable<CategoryResponse>>> Read(CategoryReadParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct);
 	Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	Task<UResponse> DeleteRange(IEnumerable<Guid> p, CancellationToken ct);
@@ -31,15 +31,20 @@ public class CategoryService(
 		return new UResponse<CategoryResponse?>(e.MapToResponse());
 	}
 
-	public async Task<UResponse<IEnumerable<CategoryResponse>>> Read(CategoryReadParams p, CancellationToken ct) {
-		IQueryable<CategoryResponse> q = db.Set<CategoryEntity>()
-			.Include(i => i.Children)
-			.Select(i => i.MapToResponse(p.ShowMedia));
-		
+	public async Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct) {
+		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>();
+
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
+		if (p.ShowChildren) q = q.Include(x => x.Children);
+		if (p.ShowMedia) {
+			q = q.Include(x => x.Media);
+			q = q.Include(x => x.Children)!.ThenInclude(x => x.Media);
+		}
 
-		return new UResponse<IEnumerable<CategoryResponse>>(await q.ToListAsync(ct));
+		q = q.OrderByDescending(x => x.Id);
+
+		return await q.Select(x => x.MapToResponse(p.ShowMedia)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct) {

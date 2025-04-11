@@ -25,6 +25,12 @@ public class BaseUpdateParams<T> : BaseParams {
 	public IEnumerable<T>? RemoveTags { get; set; }
 }
 
+public class BaseCreateParams<T> : BaseParams {
+	[URequired("TagsRequired")]
+	[UMinCollectionLength(1, "TagsRequired")]
+	public required List<T> Tags { get; set; }
+}
+
 public class BaseParams {
 	public string ApiKey { get; set; } = null!;
 	public string Token { get; set; } = null!;

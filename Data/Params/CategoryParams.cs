@@ -21,8 +21,8 @@ public class CategoryUpdateParams : BaseParams {
 	public IEnumerable<TagCategory>? RemoveTags { get; set; }
 }
 
-public class CategoryReadParams : BaseParams {
+public class CategoryReadParams : BaseReadParams<TagCategory> {
 	public IEnumerable<Guid>? Ids { get; set; }
-	public IEnumerable<TagCategory>? Tags { get; set; }
 	public bool ShowMedia { get; set; } = false;
+	public bool ShowChildren { get; set; } = false;
 }

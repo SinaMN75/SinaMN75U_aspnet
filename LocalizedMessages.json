@@ -1,5 +1,6 @@
 {
   "en": {
+    "InvalidCredentials": "Email not found",
     "PhoneNumberNotValid": "Phone number is not valid.",
     "PhoneNumberRequired": "Phone number is required.",
     "CommentRequired": "Comment is required.",

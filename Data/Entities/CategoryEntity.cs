@@ -39,7 +39,7 @@ public class CategoryEntity : BaseEntity<TagCategory> {
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt,
 		Tags = Tags,
-		Children = Children?.Select(x => x.MapToEntity()),
+		Children = Children?.Select(x => x.MapToEntity(media)),
 		Media = media ? Media?.Select(x => x.MapToEntity()) : null,
 		ParentId = ParentId,
 	};

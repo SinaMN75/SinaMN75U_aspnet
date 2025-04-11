@@ -53,7 +53,7 @@ public class AuthService(
 	}
 
 	public async Task<UResponse<LoginResponse?>> LoginWithPassword(LoginWithEmailPasswordParams p, CancellationToken ct) {
-		UserEntity? user = await db.Set<UserEntity>().SingleOrDefaultAsync(x => x.Email == p.Email, ct);
+		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Email == p.Email, ct);
 		if (user == null || !PasswordHasher.Verify(p.Password, user.Password))
 			return new UResponse<LoginResponse?>(null, USC.NotFound, ls.Get("InvalidCredentials"));
 
@@ -147,7 +147,7 @@ public class AuthService(
 	}
 
 	public async Task<UResponse<LoginResponse?>> TestToken(LoginWithEmailPasswordParams p, CancellationToken ct) {
-		UserEntity? user = await db.Set<UserEntity>().SingleOrDefaultAsync(x => x.Email == p.Email, ct);
+		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Email == p.Email, ct);
 		if (user == null) return new UResponse<LoginResponse?>(null, USC.NotFound, ls.Get("InvalidCredentials"));
 
 		user.RefreshToken = ts.GenerateRefreshToken();
