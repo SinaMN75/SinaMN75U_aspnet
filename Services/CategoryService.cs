@@ -32,19 +32,17 @@ public class CategoryService(
 	}
 
 	public async Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct) {
-		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>();
+		IQueryable<CategoryEntity> qe = db.Set<CategoryEntity>().OrderByDescending(x => x.Id);
 
-		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
-		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
-		if (p.ShowChildren) q = q.Include(x => x.Children);
-		if (p.ShowMedia) {
-			q = q.Include(x => x.Media);
-			q = q.Include(x => x.Children)!.ThenInclude(x => x.Media);
-		}
+		if (p.Tags.IsNotNullOrEmpty()) qe = qe.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
+		if (p.Ids.IsNotNullOrEmpty()) qe = qe.Where(x => p.Ids.Contains(x.Id));
+		if (p.ShowChildren) qe = qe.Include(x => x.Children);
+		if (p.ShowMedia) qe = qe.Include(x => x.Media)
+			.Include(x => x.Children!).ThenInclude(x => x.Media);
 
-		q = q.OrderByDescending(x => x.Id);
+		IQueryable<CategoryResponse> qr = qe.ToResponse(p.ShowMedia, p.ShowChildren);
 
-		return await q.Select(x => x.MapToResponse(p.ShowMedia)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		return await qr.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct) {
