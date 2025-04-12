@@ -10,15 +10,15 @@ public static class DbModelBuilder {
 			}
 		}
 
-		builder.Entity<UserEntity>().OwnsOne(e => e.JsonDetail, b => b.ToJson());
-		builder.Entity<CategoryEntity>().OwnsOne(e => e.JsonDetail, b => b.ToJson());
-		builder.Entity<MediaEntity>().OwnsOne(e => e.JsonDetail, b => b.ToJson());
-		builder.Entity<ContentEntity>().OwnsOne(e => e.JsonDetail, b => b.ToJson());
-		builder.Entity<ProductEntity>().OwnsOne(e => e.JsonDetail, b => {
+		builder.Entity<UserEntity>().OwnsOne(e => e.Json, b => b.ToJson());
+		builder.Entity<CategoryEntity>().OwnsOne(e => e.Json, b => b.ToJson());
+		builder.Entity<MediaEntity>().OwnsOne(e => e.Json, b => b.ToJson());
+		builder.Entity<ContentEntity>().OwnsOne(e => e.Json, b => b.ToJson());
+		builder.Entity<ProductEntity>().OwnsOne(e => e.Json, b => {
 			b.ToJson();
 			b.OwnsMany(i => i.VisitCounts);
 		});
-		builder.Entity<CommentEntity>().OwnsOne(e => e.JsonDetail, b => {
+		builder.Entity<CommentEntity>().OwnsOne(e => e.Json, b => {
 			b.ToJson();
 			b.OwnsMany(i => i.Reacts);
 		});

@@ -3,16 +3,13 @@ namespace SinaMN75U.Data.Entities;
 [Table("Contents")]
 public class ContentEntity : BaseEntity<int> {
 	[Required]
-	public required ContentJsonDetail JsonDetail { get; set; }
+	public required ContentJson Json { get; set; }
 
 	public IEnumerable<MediaEntity>? Media { get; set; }
 
 	public ContentResponse MapToResponse(bool showMedia = false) => new() {
-		Title = JsonDetail.Title,
-		SubTitle = JsonDetail.SubTitle,
-		Description = JsonDetail.Description,
+		Json = Json,
 		Tags = Tags,
-		Instagram = JsonDetail.Instagram,
 		Media = showMedia ? Media?.Select(x => x.MapToResponse()) : null,
 		Id = Id,
 		CreatedAt = CreatedAt,
@@ -20,7 +17,7 @@ public class ContentEntity : BaseEntity<int> {
 	};
 }
 
-public class ContentJsonDetail {
+public class ContentJson {
 	public string? Title { get; set; }
 	public string? SubTitle { get; set; }
 	public string? Description { get; set; }

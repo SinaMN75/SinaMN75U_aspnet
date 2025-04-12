@@ -20,7 +20,7 @@ public class CategoryService(
 		CategoryEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			Title = p.Title,
-			JsonDetail = new CategoryJsonDetail { Subtitle = p.Subtitle },
+			Json = new CategoryJson { Subtitle = p.Subtitle },
 			Tags = p.Tags,
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow
@@ -42,23 +42,25 @@ public class CategoryService(
 		return await q.Select(x => new CategoryResponse {
 			Id = x.Id,
 			Title = x.Title,
-			Subtitle = x.JsonDetail.Subtitle,
+			Json = x.Json,
 			Tags = x.Tags,
 			Children = p.ShowChildren ? x.Children!.Select(c => new CategoryResponse {
 					Id = c.Id,
 					Title = c.Title,
-					Subtitle = c.JsonDetail.Subtitle,
+					Json = c.Json,
 					Tags = c.Tags,
 					Media = p.ShowMedia ? x.Media!.Select(m => new MediaResponse {
 							Path = m.Path,
 							Id = m.Id,
-							Tags = m.Tags
+							Tags = m.Tags,
+							Json = m.Json
 						}) : null
 				}) : null,
 			Media = p.ShowMedia ? x.Media!.Select(m => new MediaResponse {
 					Path = m.Path,
 					Id = m.Id,
-					Tags = m.Tags
+					Tags = m.Tags,
+					Json = m.Json
 				}): null
 		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
@@ -72,7 +74,7 @@ public class CategoryService(
 
 		e.UpdatedAt = DateTime.UtcNow;
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
-		if (p.Subtitle.IsNotNullOrEmpty()) e.JsonDetail.Subtitle = p.Subtitle;
+		if (p.Subtitle.IsNotNullOrEmpty()) e.Json.Subtitle = p.Subtitle;
 
 		if (p.AddTags != null) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags != null) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));

@@ -25,7 +25,7 @@ public class ProductEntity : BaseEntity<TagProduct> {
 	public ProductEntity? Parent { get; set; }
 	public Guid? ParentId { get; set; }
 
-	public ProductJsonDetail JsonDetail { get; set; } = new();
+	public required ProductJson Json { get; set; }
 
 	[Required]
 	public required Guid UserId { get; set; }
@@ -54,9 +54,7 @@ public class ProductEntity : BaseEntity<TagProduct> {
 		Price = Price,
 		ParentId = ParentId,
 		Tags = Tags,
-		Details = JsonDetail.Details,
-		VisitCounts = JsonDetail.VisitCounts,
-		RelatedProducts = JsonDetail.RelatedProducts,
+		Json = Json,
 		Children = Children?.Select(x => x.MapToResponse()),
 		Media = media
 			? Media?.Select(x => x.MapToResponse())
@@ -90,7 +88,7 @@ public class ProductEntity : BaseEntity<TagProduct> {
 		UserId = UserId,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt,
-		JsonDetail = JsonDetail,
+		Json = Json,
 		Children = Children?.Select(x => x.MapToEntity()),
 		Media = media
 			? Media?.Select(x => x.MapToEntity())
@@ -104,7 +102,7 @@ public class ProductEntity : BaseEntity<TagProduct> {
 	};
 }
 
-public class ProductJsonDetail {
+public class ProductJson {
 	public string? Details { get; set; }
 	public List<VisitCount> VisitCounts { get; set; } = [];
 	public List<Guid> RelatedProducts { get; set; } = [];

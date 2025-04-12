@@ -182,7 +182,7 @@ public class EfCoreQueryLogger(List<string> queries) : ILogger {
 		LogLevel logLevel,
 		EventId eventId,
 		TState state,
-		Exception exception,
+		Exception? exception,
 		Func<TState, Exception, string> formatter) {
 		if (eventId.Name != "Microsoft.EntityFrameworkCore.Database.Command.CommandExecuted") return;
 		string message = formatter(state, exception);

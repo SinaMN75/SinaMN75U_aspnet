@@ -10,7 +10,7 @@ public class MediaEntity : BaseEntity<TagMedia> {
 	public required string Path { get; set; }
 
 	[Required]
-	public required MediaJsonDetail JsonDetail { get; set; }
+	public required MediaJson Json { get; set; }
 
 	public Guid? UserId { get; set; }
 	public UserEntity? User { get; set; }
@@ -28,8 +28,7 @@ public class MediaEntity : BaseEntity<TagMedia> {
 		Id = Id,
 		Path = $"{Server.ServerAddress}/Media/{Path}",
 		Tags = Tags,
-		Title = JsonDetail.Title,
-		Description = JsonDetail.Description,
+		Json = Json,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt
 	};
@@ -39,7 +38,7 @@ public class MediaEntity : BaseEntity<TagMedia> {
 		Tags = Tags,
 		CreatedAt = CreatedAt,
 		UpdatedAt = CreatedAt,
-		JsonDetail = JsonDetail,
+		Json = Json,
 		Id = Id,
 		CategoryId = CategoryId,
 		UserId = UserId,
@@ -47,7 +46,7 @@ public class MediaEntity : BaseEntity<TagMedia> {
 	};
 }
 
-public class MediaJsonDetail {
+public class MediaJson {
 	public string? Title { get; set; }
 	public string? Description { get; set; }
 }

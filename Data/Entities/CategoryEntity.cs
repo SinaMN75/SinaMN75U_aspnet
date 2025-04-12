@@ -7,7 +7,7 @@ public class CategoryEntity : BaseEntity<TagCategory> {
 	public required string Title { get; set; }
 
 	[Required]
-	public required CategoryJsonDetail JsonDetail { get; set; }
+	public required CategoryJson Json { get; set; }
 
 	public Guid? ParentId { get; set; }
 	public CategoryEntity? Parent { get; set; }
@@ -24,7 +24,7 @@ public class CategoryEntity : BaseEntity<TagCategory> {
 	public CategoryEntity MapToEntity(bool media = false) => new() {
 		Id = Id,
 		Title = Title,
-		JsonDetail = JsonDetail,
+		Json = Json,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt,
 		Tags = Tags,
@@ -34,7 +34,7 @@ public class CategoryEntity : BaseEntity<TagCategory> {
 	};
 }
 
-public class CategoryJsonDetail {
+public class CategoryJson {
 	public string? Subtitle { get; set; }
 }
 
@@ -42,13 +42,13 @@ public static class CategoryEntityExtension {
 	public static CategoryResponse MapToResponse(this CategoryEntity x, bool showMedia = false, bool showChildren = false) => new() {
 		Id = x.Id,
 		Title = x.Title,
-		Subtitle = x.JsonDetail.Subtitle,
 		Tags = x.Tags,
+		Json = x.Json,
 		Children = showChildren || showMedia
 			? x.Children!.Select(c => new CategoryResponse {
 				Id = c.Id,
 				Title = c.Title,
-				Subtitle = c.JsonDetail.Subtitle,
+				Json = c.Json,
 				Tags = c.Tags,
 				Media = showMedia ? c.Media!.Select(m => m.MapToResponse()) : null
 			})

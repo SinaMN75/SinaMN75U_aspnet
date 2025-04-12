@@ -9,14 +9,10 @@ public class ProductResponse: BaseResponse<TagProduct> {
 	public double? Longitude { get; set; }
 	public int? Stock { get; set; }
 	public double? Price { get; set; }
+	public required ProductJson Json { get; set; }
 	
 	public Guid? ParentId { get; set; }
-
-	public string? Details { get; set; }
 	
-	public required List<VisitCount> VisitCounts { get; set; }
-	public List<Guid>? RelatedProducts { get; set; }
-
 	public UserResponse? User { get; set; }
 
 	public IEnumerable<ProductResponse>? Children { get; set; }

@@ -31,7 +31,7 @@ public class UserService(
 			State = p.State,
 			City = p.City,
 			Birthdate = p.Birthdate,
-			JsonDetail = new UserJsonDetail {
+			Json = new UserJson {
 				FcmToken = p.FcmToken
 			},
 			Tags = p.Tags,
@@ -88,7 +88,7 @@ public class UserService(
 		if (p.City != null) e.City = p.City;
 		if (p.Country != null) e.Country = p.Country;
 		if (p.State != null) e.State = p.State;
-		if (p.FcmToken != null) e.JsonDetail.FcmToken = p.FcmToken;
+		if (p.FcmToken != null) e.Json.FcmToken = p.FcmToken;
 
 		if (p.AddTags != null) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags != null) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));

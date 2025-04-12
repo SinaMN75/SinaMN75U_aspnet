@@ -41,7 +41,7 @@ public class UserEntity : BaseEntity<TagUser> {
 	public DateTime? Birthdate { get; set; }
 
 	[Required]
-	public required UserJsonDetail JsonDetail { get; set; }
+	public required UserJson Json { get; set; }
 
 	public IEnumerable<CategoryEntity>? Categories { get; set; }
 
@@ -55,7 +55,7 @@ public class UserEntity : BaseEntity<TagUser> {
 		Bio = Bio,
 		Birthdate = Birthdate,
 		Tags = Tags,
-		FcmToken = JsonDetail.FcmToken,
+		FcmToken = Json.FcmToken,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt,
 		City = City,
@@ -81,7 +81,7 @@ public class UserEntity : BaseEntity<TagUser> {
 		State = State,
 		FirstName = FirstName,
 		LastName = LastName,
-		JsonDetail = JsonDetail,
+		Json = Json,
 		Categories = showCategories
 			? Categories?.Select(u => u.MapToEntity())
 			: null,
@@ -90,7 +90,7 @@ public class UserEntity : BaseEntity<TagUser> {
 	};
 }
 
-public class UserJsonDetail {
+public class UserJson {
 	public string? FcmToken { get; set; }
 }
 
@@ -109,18 +109,19 @@ public static class UserEntityExtensions {
 			State = x.State,
 			City = x.City,
 			Bio = x.Bio,
-			FcmToken = x.JsonDetail.FcmToken,
+			FcmToken = x.Json.FcmToken,
 			Birthdate = x.Birthdate,
 			Categories = categories
 				? x.Categories!.Select(c => new CategoryResponse {
 					Title = c.Title,
 					Id = c.Id,
 					Tags = c.Tags,
-					Subtitle = c.JsonDetail.Subtitle,
+					Json = c.Json,
 					Media = c.Media!.Select(m => new MediaResponse {
 						Path = m.Path,
 						Id = m.Id,
-						Tags = m.Tags
+						Tags = m.Tags,
+						Json = m.Json
 					})
 				}).ToList()
 				: null,
@@ -128,7 +129,8 @@ public static class UserEntityExtensions {
 				? x.Media!.Select(m => new MediaResponse {
 					Path = m.Path,
 					Id = m.Id,
-					Tags = m.Tags
+					Tags = m.Tags,
+					Json = m.Json,
 				})
 				: null,
 		}

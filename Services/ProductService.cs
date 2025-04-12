@@ -28,7 +28,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 			ParentId = p.ParentId,
 			UserId = p.UserId ?? userData.Id,
 			Tags = p.Tags,
-			JsonDetail = new ProductJsonDetail {
+			Json = new ProductJson {
 				Details = p.Details,
 				VisitCounts = [],
 				RelatedProducts = []
@@ -71,10 +71,10 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse<ProductResponse?>(null, USC.NotFound, ls.Get("ProductNotFound"));
 
-		VisitCount? visitCount = e.JsonDetail.VisitCounts.FirstOrDefault(v => v.UserId == (userData?.Id ?? Guid.Empty));
+		VisitCount? visitCount = e.Json.VisitCounts.FirstOrDefault(v => v.UserId == (userData?.Id ?? Guid.Empty));
 
 		if (visitCount != null) visitCount.Count++;
-		else e.JsonDetail.VisitCounts.Add(new VisitCount { UserId = userData?.Id ?? Guid.Empty, Count = 1 });
+		else e.Json.VisitCounts.Add(new VisitCount { UserId = userData?.Id ?? Guid.Empty, Count = 1 });
 
 		db.Set<ProductEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
@@ -98,14 +98,14 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 		if (p.Price.IsNotNullOrEmpty()) e.Price = p.Price;
 		if (p.ParentId.IsNotNullOrEmpty()) e.ParentId = p.ParentId;
 		if (p.Stock.IsNotNullOrEmpty()) e.Stock = p.Stock;
-		if (p.Details.IsNotNullOrEmpty()) e.JsonDetail.Details = p.Details;
+		if (p.Details.IsNotNullOrEmpty()) e.Json.Details = p.Details;
 		if (p.UserId.IsNotNullOrEmpty()) e.UserId = p.UserId ?? userData.Id;
 
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
 
-		if (p.AddRelatedProducts.IsNotNullOrEmpty()) e.JsonDetail.RelatedProducts.AddRangeIfNotExist(p.AddRelatedProducts);
-		if (p.RemoveRelatedProducts.IsNotNullOrEmpty()) e.JsonDetail.RelatedProducts.RemoveAll(x => p.RemoveRelatedProducts.Contains(x));
+		if (p.AddRelatedProducts.IsNotNullOrEmpty()) e.Json.RelatedProducts.AddRangeIfNotExist(p.AddRelatedProducts);
+		if (p.RemoveRelatedProducts.IsNotNullOrEmpty()) e.Json.RelatedProducts.RemoveAll(x => p.RemoveRelatedProducts.Contains(x));
 
 		db.Set<ProductEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
