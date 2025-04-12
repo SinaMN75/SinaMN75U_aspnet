@@ -73,7 +73,33 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 			CreatedAt = x.CreatedAt,
 			UpdatedAt = x.UpdatedAt,
 			Tags = x.Tags,
-			User = p.ShowUser ? x.User!.MapToResponse(true) : null,
+			User = p.ShowUser
+				? new UserResponse {
+					UserName = x.User!.UserName,
+					PhoneNumber = x.User!.PhoneNumber,
+					Email = x.User!.Email,
+					Json = x.User!.Json,
+					FirstName = x.User!.FirstName,
+					LastName = x.User!.LastName,
+					Country = x.User!.Country,
+					State = x.User!.State,
+					City = x.User!.City,
+					Bio = x.User!.Bio,
+					Birthdate = x.User!.Birthdate,
+					Categories = x.Categories!.Select(y => new CategoryResponse {
+						Title = y.Title,
+						Json = y.Json,
+						Id = y.Id,
+						Tags = y.Tags,
+						Media = y.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.Json, Id = z.Id, Tags = z.Tags })
+					}),
+					Media = x.User.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.Json, Id = z.Id, Tags = z.Tags }),
+					Id = x.User!.Id,
+					CreatedAt = x.User!.CreatedAt,
+					UpdatedAt = x.User!.UpdatedAt,
+					Tags = x.User!.Tags,
+				}
+				: null,
 			Children = p.ShowChildren
 				? x.Children!.Select(c => new ProductResponse {
 					Title = x.Title,
