@@ -1,14 +1,17 @@
 ﻿namespace SinaMN75U.Services;
 
 public interface IContentService {
-	Task<UResponse<ContentResponse>> Create(ContentCreateParams p, CancellationToken ct);
+	Task<UResponse<ContentResponse?>> Create(ContentCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<ContentResponse>?>> Read(ContentReadParams p, CancellationToken ct);
-	Task<UResponse<ContentResponse>> Update(ContentUpdateParams p, CancellationToken ct);
+	Task<UResponse<ContentResponse?>> Update(ContentUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 }
 
-public class ContentService(DbContext db) : IContentService {
-	public async Task<UResponse<ContentResponse>> Create(ContentCreateParams p, CancellationToken ct) {
+public class ContentService(DbContext db, ILocalizationService ls, ITokenService ts) : IContentService {
+	public async Task<UResponse<ContentResponse?>> Create(ContentCreateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<ContentResponse?>(null, USC.UnAuthorized, ls.Get("AuthorizationRequired"));
+
 		EntityEntry<ContentEntity> e = await db.AddAsync(new ContentEntity {
 			Tags = p.Tags,
 			Id = Guid.CreateVersion7(),
@@ -22,7 +25,7 @@ public class ContentService(DbContext db) : IContentService {
 			}
 		}, ct);
 		await db.SaveChangesAsync(ct);
-		return new UResponse<ContentResponse>(e.Entity.MapToResponse());
+		return new UResponse<ContentResponse?>(e.Entity.MapToResponse());
 	}
 
 	public async Task<UResponse<IEnumerable<ContentResponse>?>> Read(ContentReadParams p, CancellationToken ct) {
@@ -41,7 +44,10 @@ public class ContentService(DbContext db) : IContentService {
 		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
-	public async Task<UResponse<ContentResponse>> Update(ContentUpdateParams p, CancellationToken ct) {
+	public async Task<UResponse<ContentResponse?>> Update(ContentUpdateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<ContentResponse?>(null, USC.UnAuthorized, ls.Get("AuthorizationRequired"));
+
 		ContentEntity e = (await db.Set<ContentEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
 		e.UpdatedAt = DateTime.UtcNow;
 		if (p.Title.IsNotNullOrEmpty()) e.JsonDetail.Title = p.Title;
@@ -54,10 +60,13 @@ public class ContentService(DbContext db) : IContentService {
 
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
-		return new UResponse<ContentResponse>(e.MapToResponse());
+		return new UResponse<ContentResponse?>(e.MapToResponse());
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<ContentResponse?>(null, USC.UnAuthorized, ls.Get("AuthorizationRequired"));
+
 		await db.Set<ContentEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync();
 		return new UResponse();
 	}
