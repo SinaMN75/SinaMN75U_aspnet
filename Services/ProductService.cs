@@ -48,7 +48,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 		if (p.MaxPrice.IsNotNullOrEmpty()) q = q.Where(x => x.Price <= p.MaxPrice);
 		if (p.MinStock.IsNotNullOrEmpty()) q = q.Where(x => x.Stock >= p.MinStock);
 		if (p.MaxStock.IsNotNullOrEmpty()) q = q.Where(x => x.Stock >= p.MaxStock);
-		
+
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.UserId));
 		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(x => x.UserId == p.UserId);
 		if (p.ParentId.IsNotNullOrEmpty()) q = q.Where(x => x.ParentId == p.ParentId);
@@ -57,8 +57,89 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 		if (p.ShowUser) q = q.Include(x => x.User);
 		if (p.ShowMedia) q = q.Include(x => x.Media);
 		if (p.ShowCategories) q = q.Include(x => x.Categories);
-		
-		return await q.Select(x => x.MapToResponse(p.ShowMedia, p.ShowCategories,p.ShowUser)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+
+		return await q.Select(x => new ProductResponse {
+			Title = x.Title,
+			Code = x.Code,
+			Subtitle = x.Subtitle,
+			Description = x.Description,
+			Latitude = x.Latitude,
+			Longitude = x.Longitude,
+			Stock = x.Stock,
+			Price = x.Price,
+			Json = x.Json,
+			ParentId = x.ParentId,
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			UpdatedAt = x.UpdatedAt,
+			Tags = x.Tags,
+			User = p.ShowUser ? x.User!.MapToResponse(true) : null,
+			Children = p.ShowChildren
+				? x.Children!.Select(c => new ProductResponse {
+					Title = x.Title,
+					Code = x.Code,
+					Subtitle = x.Subtitle,
+					Description = x.Description,
+					Latitude = x.Latitude,
+					Longitude = x.Longitude,
+					Stock = x.Stock,
+					Price = x.Price,
+					Json = x.Json,
+					ParentId = x.ParentId,
+					Id = x.Id,
+					CreatedAt = x.CreatedAt,
+					UpdatedAt = x.UpdatedAt,
+					Tags = x.Tags,
+					User = p.ShowUser
+						? new UserResponse {
+							UserName = x.User!.UserName,
+							PhoneNumber = x.User!.PhoneNumber,
+							Email = x.User!.Email,
+							Json = x.User!.Json,
+							FirstName = x.User!.FirstName,
+							LastName = x.User!.LastName,
+							Country = x.User!.Country,
+							State = x.User!.State,
+							City = x.User!.City,
+							Bio = x.User!.Bio,
+							Birthdate = x.User!.Birthdate,
+							Categories = x.Categories!.Select(y => new CategoryResponse {
+								Title = y.Title,
+								Json = y.Json,
+								Id = y.Id,
+								Tags = y.Tags,
+								Media = y.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.Json, Id = z.Id, Tags = z.Tags })
+							}),
+							Media = x.User.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.Json, Id = z.Id, Tags = z.Tags }),
+							Id = x.User!.Id,
+							CreatedAt = x.User!.CreatedAt,
+							UpdatedAt = x.User!.UpdatedAt,
+							Tags = x.User!.Tags,
+						}
+						: null,
+					Media = p.ShowMedia ? x.Media!.Select(y => new MediaResponse { Path = y.Path, Json = y.Json, Id = y.Id, Tags = y.Tags }) : null,
+					Categories = p.ShowCategories
+						? x.Categories!.Select(y => new CategoryResponse {
+							Title = y.Title,
+							Json = y.Json,
+							Id = y.Id,
+							Tags = y.Tags,
+							Media = y.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.Json, Id = z.Id, Tags = z.Tags })
+						})
+						: null,
+				})
+				: null,
+			Media = p.ShowMedia ? x.Media!.Select(y => new MediaResponse { Path = y.Path, Json = y.Json, Id = y.Id, Tags = y.Tags }) : null,
+			Categories = p.ShowCategories
+				? x.Categories!.Select(y => new CategoryResponse {
+					Title = y.Title,
+					Json = y.Json,
+					Id = y.Id,
+					Tags = y.Tags,
+					Media = y.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.Json, Id = y.Id, Tags = z.Tags })
+				})
+				: null,
+		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse<ProductResponse?>> ReadById(IdParams p, CancellationToken ct) {

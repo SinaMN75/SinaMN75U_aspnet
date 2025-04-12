@@ -62,5 +62,6 @@ public class ProductReadParams : BaseReadParams<TagProduct> {
 
 	public bool ShowCategories { get; set; } = false;
 	public bool ShowMedia { get; set; } = false;
+	public bool ShowChildren { get; set; } = false;
 	public bool ShowUser { get; set; } = false;
 }
