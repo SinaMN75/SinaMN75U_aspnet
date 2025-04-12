@@ -55,7 +55,7 @@ public class UserEntity : BaseEntity<TagUser> {
 		Bio = Bio,
 		Birthdate = Birthdate,
 		Tags = Tags,
-		FcmToken = Json.FcmToken,
+		Json = Json,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt,
 		City = City,
@@ -99,6 +99,7 @@ public static class UserEntityExtensions {
 			Id = x.Id,
 			CreatedAt = x.CreatedAt,
 			UpdatedAt = x.UpdatedAt,
+			Json = x.Json,
 			Tags = x.Tags,
 			UserName = x.UserName,
 			PhoneNumber = x.PhoneNumber,
@@ -109,7 +110,6 @@ public static class UserEntityExtensions {
 			State = x.State,
 			City = x.City,
 			Bio = x.Bio,
-			FcmToken = x.Json.FcmToken,
 			Birthdate = x.Birthdate,
 			Categories = categories
 				? x.Categories!.Select(c => new CategoryResponse {

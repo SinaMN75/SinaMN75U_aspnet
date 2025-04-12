@@ -90,6 +90,7 @@ public class AuthService(
 			Id = x.Id,
 			UserName = x.UserName,
 			PhoneNumber = x.PhoneNumber,
+			Json = x.Json,
 			FirstName = x.FirstName,
 			LastName = x.LastName,
 			Email = x.Email,
