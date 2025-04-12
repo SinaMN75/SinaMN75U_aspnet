@@ -44,22 +44,22 @@ public class CategoryService(
 			Title = x.Title,
 			Subtitle = x.JsonDetail.Subtitle,
 			Tags = x.Tags,
-			Children = x.Children!.SelectIf(p.ShowChildren, c => new CategoryResponse {
+			Children = p.ShowChildren ? x.Children!.Select(c => new CategoryResponse {
 					Id = c.Id,
 					Title = c.Title,
 					Subtitle = c.JsonDetail.Subtitle,
 					Tags = c.Tags,
-					Media = x.Media!.SelectIf(p.ShowMedia, m => new MediaResponse {
+					Media = p.ShowMedia ? x.Media!.Select(m => new MediaResponse {
 							Path = m.Path,
 							Id = m.Id,
 							Tags = m.Tags
-						})
-				}),
-			Media = x.Media!.SelectIf(p.ShowMedia, m => new MediaResponse {
+						}) : null
+				}) : null,
+			Media = p.ShowMedia ? x.Media!.Select(m => new MediaResponse {
 					Path = m.Path,
 					Id = m.Id,
 					Tags = m.Tags
-				})
+				}): null
 		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 

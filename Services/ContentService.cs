@@ -37,7 +37,7 @@ public class ContentService(DbContext db) : IContentService {
 			Title = x.Title,
 			SubTitle = x.SubTitle,
 			Instagram = x.JsonDetail.Instagram,
-			Media = x.Media!.SelectIf(p.ShowMedia, m => new MediaResponse { Path = m.Path, Id = m.Id, Tags = m.Tags })
+			Media = p.ShowMedia ? x.Media!.Select(m => new MediaResponse { Path = m.Path, Id = m.Id, Tags = m.Tags }) : null
 		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
