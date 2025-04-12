@@ -28,10 +28,29 @@ public class ContentEntity : BaseEntity<int> {
 		Media = showMedia ? Media?.Select(x => x.MapToResponse()) : null,
 		Id = Id,
 		CreatedAt = CreatedAt,
-		UpdatedAt = UpdatedAt,
+		UpdatedAt = UpdatedAt
 	};
 }
 
 public class ContentJsonDetail {
 	public string? Instagram { get; set; }
+}
+
+public static class ContentEntityExtensions {
+	public static IQueryable<ContentResponse> ToResponse(this IQueryable<ContentEntity> query, bool media) => query.Select(x => new ContentResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			Description = x.Description,
+			Title = x.Title,
+			SubTitle = x.SubTitle,
+			Instagram = x.JsonDetail.Instagram,
+			Media = media
+				? x.Media!.Select(m => new MediaResponse {
+					Path = m.Path,
+					Id = m.Id,
+					Tags = m.Tags
+				})
+				: null
+		}
+	);
 }

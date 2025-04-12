@@ -58,7 +58,8 @@ public class CategoryService(
 
 		if (p.AddTags != null) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags != null) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
-
+		
+		db.Update(e);
 		await db.SaveChangesAsync(ct);
 		return new UResponse<CategoryResponse?>(e.MapToResponse());
 	}

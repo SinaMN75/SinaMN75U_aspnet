@@ -93,3 +93,44 @@ public class UserEntity : BaseEntity<TagUser> {
 public class UserJsonDetail {
 	public string? FcmToken { get; set; }
 }
+
+public static class UserEntityExtensions {
+	public static IQueryable<UserResponse> ToResponse(this IQueryable<UserEntity> query, bool media, bool categories) => query.Select(x => new UserResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			UpdatedAt = x.UpdatedAt,
+			Tags = x.Tags,
+			UserName = x.UserName,
+			PhoneNumber = x.PhoneNumber,
+			Email = x.Email,
+			FirstName = x.FirstName,
+			LastName = x.LastName,
+			Country = x.Country,
+			State = x.State,
+			City = x.City,
+			Bio = x.Bio,
+			FcmToken = x.JsonDetail.FcmToken,
+			Birthdate = x.Birthdate,
+			Categories = categories
+				? x.Categories!.Select(c => new CategoryResponse {
+					Title = c.Title,
+					Id = c.Id,
+					Tags = c.Tags,
+					Subtitle = c.JsonDetail.Subtitle,
+					Media = c.Media!.Select(m => new MediaResponse {
+						Path = m.Path,
+						Id = m.Id,
+						Tags = m.Tags
+					})
+				}).ToList()
+				: null,
+			Media = media
+				? x.Media!.Select(m => new MediaResponse {
+					Path = m.Path,
+					Id = m.Id,
+					Tags = m.Tags
+				})
+				: null,
+		}
+	);
+}

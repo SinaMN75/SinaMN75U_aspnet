@@ -13,6 +13,7 @@ public class UserResponse: BaseResponse<TagUser> {
 	public string? FcmToken { get; set; }
 	public DateTime? Birthdate { get; set; }
 	public IEnumerable<CategoryResponse>? Categories { get; set; }
+	public IEnumerable<MediaResponse>? Media { get; set; }
 }
 
 public class LoginResponse {

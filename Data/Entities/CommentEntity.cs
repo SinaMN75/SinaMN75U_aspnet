@@ -70,3 +70,38 @@ public class CommentReacts {
 	public required TagReaction Tag { get; set; }
 	public required Guid UserId { get; set; }
 }
+
+public static class CommentReactsExtensions {
+	public static IQueryable<CommentResponse> ToResponse(this IQueryable<CommentEntity> query, bool media, bool children) => query.Select(x => new CommentResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			Score = x.Score,
+			Description = x.Description,
+			Children = children
+				? x.Children!.Select(c => new CommentResponse {
+					Id = x.Id,
+					Tags = x.Tags,
+					Score = x.Score,
+					Description = x.Description,
+					CreatedAt = x.CreatedAt,
+					UpdatedAt = x.UpdatedAt,
+					Reacts = x.JsonDetail.Reacts,
+					Media = media
+						? x.Media!.Select(m => new MediaResponse {
+							Path = m.Path,
+							Id = m.Id,
+							Tags = m.Tags
+						})
+						: null
+				})
+				: null,
+			Media = media
+				? x.Media!.Select(m => new MediaResponse {
+					Path = m.Path,
+					Id = m.Id,
+					Tags = m.Tags
+				})
+				: null
+		}
+	);
+}

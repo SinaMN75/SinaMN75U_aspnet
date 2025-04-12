@@ -30,7 +30,7 @@ public class CategoryEntity : BaseEntity<TagCategory> {
 		Tags = Tags,
 		Children = Children?.Select(x => x.MapToEntity(media)),
 		Media = media ? Media?.Select(x => x.MapToEntity()) : null,
-		ParentId = ParentId,
+		ParentId = ParentId
 	};
 }
 
@@ -53,7 +53,7 @@ public static class CategoryEntityExtension {
 				Media = showMedia ? c.Media!.Select(m => m.MapToResponse()) : null
 			})
 			: null,
-		Media = showMedia ? x.Media!.Select(m => m.MapToResponse()) : null,
+		Media = showMedia ? x.Media!.Select(m => m.MapToResponse()) : null
 	};
 
 	public static IQueryable<CategoryResponse> ToResponse(this IQueryable<CategoryEntity> query, bool media, bool children) => query.Select(x => new CategoryResponse {

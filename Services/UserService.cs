@@ -2,7 +2,7 @@ namespace SinaMN75U.Services;
 
 public interface IUserService {
 	public Task<UResponse<UserResponse?>> Create(UserCreateParams p, CancellationToken ct);
-	public Task<UResponse<IEnumerable<UserResponse>>> Read(UserReadParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<UserResponse>?>> Read(UserReadParams p, CancellationToken ct);
 	public Task<UResponse<UserResponse?>> ReadById(IdParams p, CancellationToken ct);
 	public Task<UResponse<UserResponse?>> Update(UserUpdateParams p, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
@@ -55,7 +55,7 @@ public class UserService(
 		return new UResponse<UserResponse?>(e.MapToResponse(), USC.Created);
 	}
 
-	public async Task<UResponse<IEnumerable<UserResponse>>> Read(UserReadParams p, CancellationToken ct) {
+	public async Task<UResponse<IEnumerable<UserResponse>?>> Read(UserReadParams p, CancellationToken ct) {
 		IQueryable<UserEntity> q = db.Set<UserEntity>();
 
 		if (p.UserName.IsNotNull()) q = q.Where(u => u.UserName.Contains(p.UserName!));
@@ -65,19 +65,9 @@ public class UserService(
 		if (p.StartBirthDate.HasValue) q = q.Where(u => u.Birthdate >= p.StartBirthDate.Value);
 		if (p.EndBirthDate.HasValue) q = q.Where(u => u.Birthdate <= p.EndBirthDate.Value);
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(u => u.Tags.Any(tag => p.Tags!.Contains(tag)));
-
 		if (p.Categories.IsNotNullOrEmpty()) q = q.Where(x => x.Categories!.Any(y => p.Categories.Contains(y.Id)));
-		
-		int totalCount = await q.CountAsync(ct);
-		q = q.Skip((p.PageNumber - 1) * p.PageSize).Take(p.PageSize);
 
-		List<UserEntity> list = await q.ToListAsync(ct);
-
-		return new UResponse<IEnumerable<UserResponse>>(list.Select(x => x.MapToResponse())) {
-			TotalCount = totalCount,
-			PageCount = totalCount % p.PageSize == 0 ? totalCount / p.PageSize : totalCount / p.PageSize + 1,
-			PageSize = p.PageSize
-		};
+		return await q.ToResponse(p.ShowMedia, p.ShowCategories).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse<UserResponse?>> Update(UserUpdateParams p, CancellationToken ct) {

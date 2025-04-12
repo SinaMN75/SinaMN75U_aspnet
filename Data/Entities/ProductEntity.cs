@@ -100,7 +100,7 @@ public class ProductEntity : BaseEntity<TagProduct> {
 			: null,
 		User = user
 			? User!.MapToEntity()
-			: null,
+			: null
 	};
 }
 

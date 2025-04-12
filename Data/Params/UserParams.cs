@@ -40,6 +40,9 @@ public class UserReadParams : BaseReadParams<TagUser> {
 	public DateTime? StartBirthDate { get; set; }
 	public DateTime? EndBirthDate { get; set; }
 	public IEnumerable<Guid>? Categories { get; set; }
+	
+	public bool ShowCategories { get; set; } = false;
+	public bool ShowMedia { get; set; } = false;
 }
 
 public class UserUpdateParams {

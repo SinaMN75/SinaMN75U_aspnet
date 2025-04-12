@@ -2,7 +2,7 @@
 
 public interface IContentService {
 	Task<UResponse<ContentResponse>> Create(ContentCreateParams p, CancellationToken ct);
-	Task<UResponse<IEnumerable<ContentResponse>>> Read(ContentReadParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<ContentResponse>?>> Read(ContentReadParams p, CancellationToken ct);
 	Task<UResponse<ContentResponse>> Update(ContentUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 }
@@ -25,10 +25,10 @@ public class ContentService(DbContext context) : IContentService {
 		return new UResponse<ContentResponse>(e.Entity.MapToResponse());
 	}
 
-	public async Task<UResponse<IEnumerable<ContentResponse>>> Read(ContentReadParams p, CancellationToken ct) {
+	public async Task<UResponse<IEnumerable<ContentResponse>?>> Read(ContentReadParams p, CancellationToken ct) {
 		IQueryable<ContentEntity> q = context.Set<ContentEntity>();
 		if (p.Tags != null) q = q.Where(u => u.Tags.Any(tag => p.Tags.Contains(tag)));
-		return new UResponse<IEnumerable<ContentResponse>>(await q.Select(x => x.MapToResponse(p.ShowMedia)).ToListAsync(ct));
+		return await q.ToResponse(p.ShowMedia).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse<ContentResponse>> Update(ContentUpdateParams p, CancellationToken ct) {

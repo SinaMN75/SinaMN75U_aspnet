@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Responses;
 
-public class CommentResponse : BaseEntity<TagComment> {
+public class CommentResponse : BaseResponse<TagComment> {
 	public required double Score { get; set; }
 	public required string Description { get; set; }
 	

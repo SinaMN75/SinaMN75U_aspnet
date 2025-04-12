@@ -31,7 +31,7 @@ public class MediaEntity : BaseEntity<TagMedia> {
 		Title = JsonDetail.Title,
 		Description = JsonDetail.Description,
 		CreatedAt = CreatedAt,
-		UpdatedAt = UpdatedAt,
+		UpdatedAt = UpdatedAt
 	};
 	
 	public MediaEntity MapToEntity() => new() {
@@ -43,7 +43,7 @@ public class MediaEntity : BaseEntity<TagMedia> {
 		Id = Id,
 		CategoryId = CategoryId,
 		UserId = UserId,
-		ContentId = ContentId,
+		ContentId = ContentId
 	};
 }
 
