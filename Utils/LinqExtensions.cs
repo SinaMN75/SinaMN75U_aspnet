@@ -111,4 +111,12 @@ public static class LinqExtensions {
 		where T : class => await query.ExecuteDeleteAsync(cancellationToken);
 
 	// await context.Products.Where(p => p.IsDeleted).BatchDeleteAsync();
+	
+	public static IEnumerable<TResult> SelectIf<TSource, TResult>(
+		this IEnumerable<TSource> source,
+		bool condition,
+		Func<TSource, TResult> selector)
+	{
+		return condition ? source.Select(selector) : null;
+	}
 }

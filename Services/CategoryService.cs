@@ -32,17 +32,35 @@ public class CategoryService(
 	}
 
 	public async Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct) {
-		IQueryable<CategoryEntity> qe = db.Set<CategoryEntity>().OrderByDescending(x => x.Id);
+		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>().OrderByDescending(x => x.Id);
 
-		if (p.Tags.IsNotNullOrEmpty()) qe = qe.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
-		if (p.Ids.IsNotNullOrEmpty()) qe = qe.Where(x => p.Ids.Contains(x.Id));
-		if (p.ShowChildren) qe = qe.Include(x => x.Children);
-		if (p.ShowMedia) qe = qe.Include(x => x.Media)
-			.Include(x => x.Children!).ThenInclude(x => x.Media);
-
-		IQueryable<CategoryResponse> qr = qe.ToResponse(p.ShowMedia, p.ShowChildren);
-
-		return await qr.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
+		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
+		if (p.ShowChildren) q = q.Include(x => x.Children);
+		if (p.ShowMedia) q = q.Include(x => x.Media).Include(x => x.Children!).ThenInclude(x => x.Media);
+		
+		return await q.Select(x => new CategoryResponse {
+			Id = x.Id,
+			Title = x.Title,
+			Subtitle = x.JsonDetail.Subtitle,
+			Tags = x.Tags,
+			Children = x.Children!.SelectIf(p.ShowChildren, c => new CategoryResponse {
+					Id = c.Id,
+					Title = c.Title,
+					Subtitle = c.JsonDetail.Subtitle,
+					Tags = c.Tags,
+					Media = x.Media!.SelectIf(p.ShowMedia, m => new MediaResponse {
+							Path = m.Path,
+							Id = m.Id,
+							Tags = m.Tags
+						})
+				}),
+			Media = x.Media!.SelectIf(p.ShowMedia, m => new MediaResponse {
+					Path = m.Path,
+					Id = m.Id,
+					Tags = m.Tags
+				})
+		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct) {

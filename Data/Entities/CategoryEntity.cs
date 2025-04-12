@@ -55,34 +55,4 @@ public static class CategoryEntityExtension {
 			: null,
 		Media = showMedia ? x.Media!.Select(m => m.MapToResponse()) : null
 	};
-
-	public static IQueryable<CategoryResponse> ToResponse(this IQueryable<CategoryEntity> query, bool media, bool children) => query.Select(x => new CategoryResponse {
-			Id = x.Id,
-			Title = x.Title,
-			Subtitle = x.JsonDetail.Subtitle,
-			Tags = x.Tags,
-			Children = children
-				? x.Children!.Select(c => new CategoryResponse {
-					Id = x.Id,
-					Title = x.Title,
-					Subtitle = x.JsonDetail.Subtitle,
-					Tags = x.Tags,
-					Media = media
-						? x.Media!.Select(m => new MediaResponse {
-							Path = m.Path,
-							Id = m.Id,
-							Tags = m.Tags
-						})
-						: null
-				})
-				: null,
-			Media = media
-				? x.Media!.Select(m => new MediaResponse {
-					Path = m.Path,
-					Id = m.Id,
-					Tags = m.Tags
-				})
-				: null
-		}
-	);
 }
