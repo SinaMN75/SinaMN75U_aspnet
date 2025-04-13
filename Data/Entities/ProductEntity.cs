@@ -36,7 +36,7 @@ public class ProductEntity : BaseEntity<TagProduct> {
 	public IEnumerable<ProductEntity>? Children { get; set; }
 
 	public IEnumerable<MediaEntity>? Media { get; set; }
-	public IEnumerable<CategoryEntity>? Categories { get; set; }
+	public List<CategoryEntity>? Categories { get; set; }
 
 	public ProductResponse MapToResponse(
 		bool media = false,
@@ -94,7 +94,7 @@ public class ProductEntity : BaseEntity<TagProduct> {
 			? Media?.Select(x => x.MapToEntity())
 			: null,
 		Categories = categories
-			? Categories?.Select(x => x.MapToEntity())
+			? Categories?.Select(x => x.MapToEntity()).ToList()
 			: null,
 		User = user
 			? User!.MapToEntity()

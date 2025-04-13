@@ -6,6 +6,8 @@ public interface ICategoryService {
 	Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	Task<UResponse> DeleteRange(IEnumerable<Guid> p, CancellationToken ct);
+
+	Task<List<CategoryEntity>?> ReadEntity(CategoryReadParams p, CancellationToken ct);
 }
 
 public class CategoryService(
@@ -38,30 +40,36 @@ public class CategoryService(
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
 		if (p.ShowChildren) q = q.Include(x => x.Children);
 		if (p.ShowMedia) q = q.Include(x => x.Media).Include(x => x.Children!).ThenInclude(x => x.Media);
-		
+
 		return await q.Select(x => new CategoryResponse {
 			Id = x.Id,
 			Title = x.Title,
 			Json = x.Json,
 			Tags = x.Tags,
-			Children = p.ShowChildren ? x.Children!.Select(c => new CategoryResponse {
+			Children = p.ShowChildren
+				? x.Children!.Select(c => new CategoryResponse {
 					Id = c.Id,
 					Title = c.Title,
 					Json = c.Json,
 					Tags = c.Tags,
-					Media = p.ShowMedia ? x.Media!.Select(m => new MediaResponse {
+					Media = p.ShowMedia
+						? x.Media!.Select(m => new MediaResponse {
 							Path = m.Path,
 							Id = m.Id,
 							Tags = m.Tags,
 							Json = m.Json
-						}) : null
-				}) : null,
-			Media = p.ShowMedia ? x.Media!.Select(m => new MediaResponse {
+						})
+						: null
+				})
+				: null,
+			Media = p.ShowMedia
+				? x.Media!.Select(m => new MediaResponse {
 					Path = m.Path,
 					Id = m.Id,
 					Tags = m.Tags,
 					Json = m.Json
-				}): null
+				})
+				: null
 		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
@@ -78,7 +86,7 @@ public class CategoryService(
 
 		if (p.AddTags != null) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags != null) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
-		
+
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
 		return new UResponse<CategoryResponse?>(e.MapToResponse());
@@ -107,5 +115,11 @@ public class CategoryService(
 	public async Task<UResponse> DeleteRange(IEnumerable<Guid> p, CancellationToken ct) {
 		await db.Set<CategoryEntity>().WhereIn(u => u.Id, p).ExecuteDeleteAsync(ct);
 		return new UResponse();
+	}
+
+	public async Task<List<CategoryEntity>?> ReadEntity(CategoryReadParams p, CancellationToken ct) {
+		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>().OrderByDescending(x => x.Id);
+		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
+		return await q.ToListAsync(ct);
 	}
 }

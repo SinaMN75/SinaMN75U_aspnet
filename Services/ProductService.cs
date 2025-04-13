@@ -8,10 +8,14 @@ public interface IProductService {
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
 }
 
-public class ProductService(DbContext db, ITokenService ts, ILocalizationService ls) : IProductService {
+public class ProductService(DbContext db, ITokenService ts, ILocalizationService ls, ICategoryService categoryService) : IProductService {
 	public async Task<UResponse<ProductResponse?>> Create(ProductCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ProductResponse?>(null, USC.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		List<CategoryEntity> categories = [];
+		if (p.Categories.IsNotNullOrEmpty())
+			categories = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct) ?? [];
 
 		ProductEntity e = new() {
 			Id = Guid.CreateVersion7(),
@@ -28,6 +32,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 			ParentId = p.ParentId,
 			UserId = p.UserId ?? userData.Id,
 			Tags = p.Tags,
+			Categories = categories,
 			Json = new ProductJson {
 				Details = p.Details,
 				VisitCounts = [],
@@ -193,7 +198,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ProductResponse?>(null, USC.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		ProductEntity? e = await db.Set<ProductEntity>().FindAsync(p.Id, ct);
+		ProductEntity? e = await db.Set<ProductEntity>().Include(x => x.Categories).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse<ProductResponse?>(null, USC.NotFound, ls.Get("ProductNotFound"));
 
 		if (p.Code.IsNotNullOrEmpty()) e.Code = p.Code;
@@ -213,6 +218,16 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 
 		if (p.AddRelatedProducts.IsNotNullOrEmpty()) e.Json.RelatedProducts.AddRangeIfNotExist(p.AddRelatedProducts);
 		if (p.RemoveRelatedProducts.IsNotNullOrEmpty()) e.Json.RelatedProducts.RemoveAll(x => p.RemoveRelatedProducts.Contains(x));
+
+		if (p.AddCategories.IsNotNullOrEmpty()) {
+			IEnumerable<CategoryEntity> newCategories = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.AddCategories }, ct) ?? [];
+			e.Categories.AddRangeIfNotExist(newCategories);
+		}
+
+		if (p.RemoveCategories.IsNotNullOrEmpty()) {
+			IEnumerable<CategoryEntity> categoriesToRemove = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.RemoveCategories }, ct) ?? [];
+			e.Categories.AddRangeIfNotExist(categoriesToRemove);
+		}
 
 		db.Set<ProductEntity>().Update(e);
 		await db.SaveChangesAsync(ct);

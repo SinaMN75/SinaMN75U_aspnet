@@ -17,6 +17,8 @@ public class ProductCreateParams : BaseParams {
 	[UMinCollectionLength(1, "TagsRequired")]
 	public required List<TagProduct> Tags { get; set; }
 
+	public IEnumerable<Guid>? Categories { get; set; }
+
 	public Guid? ParentId { get; set; }
 	public Guid? UserId { get; set; }
 }
@@ -36,11 +38,14 @@ public class ProductUpdateParams : BaseParams {
 
 	public string? Details { get; set; }
 
-	public List<TagProduct>? AddTags { get; set; }
-	public List<TagProduct>? RemoveTags { get; set; }
+	public IEnumerable<TagProduct>? AddTags { get; set; }
+	public IEnumerable<TagProduct>? RemoveTags { get; set; }
 
-	public List<Guid>? AddRelatedProducts { get; set; }
-	public List<Guid>? RemoveRelatedProducts { get; set; }
+	public IEnumerable<Guid>? AddRelatedProducts { get; set; }
+	public IEnumerable<Guid>? RemoveRelatedProducts { get; set; }
+
+	public IEnumerable<Guid>? AddCategories { get; set; }
+	public IEnumerable<Guid>? RemoveCategories { get; set; }
 
 	public Guid? ParentId { get; set; }
 	public Guid? UserId { get; set; }
