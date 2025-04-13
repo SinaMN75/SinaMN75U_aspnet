@@ -13,6 +13,11 @@ public static class StringExtensions {
 	public static string EncodeJson<T>(this T obj) => JsonSerializer.Serialize(obj, UJsonOptions.Default);
 	public static T DecodeJson<T>(this string json) => JsonSerializer.Deserialize<T>(json, UJsonOptions.Default)!;
 
+	public static string FirstChars(this string? input, int range) {
+		if (input.IsNullOrEmpty()) return input ?? "";
+		return input.Length <= range ? input : input[..range];
+	}
+
 	public static string Truncate(this string value, int maxLength, string truncationSuffix = "...") => value.IsNotNullOrEmpty() && value.Length > maxLength
 		? value[..(maxLength - truncationSuffix.Length)] + truncationSuffix
 		: value;

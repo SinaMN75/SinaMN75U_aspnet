@@ -86,7 +86,7 @@ public sealed class ApiRequestLoggingMiddleware(
 					requestHeaders: request.Headers,
 					responseHeaders: context.Response.Headers,
 					requestBody: requestBody,
-					responseBody: responseBody,
+					responseBody: responseBody.FirstChars(1000),
 					efCoreQueries: efCoreQueries,
 					exception: exception);
 			}

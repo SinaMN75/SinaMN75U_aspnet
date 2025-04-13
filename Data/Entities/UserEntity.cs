@@ -130,9 +130,9 @@ public static class UserEntityExtensions {
 					Path = m.Path,
 					Id = m.Id,
 					Tags = m.Tags,
-					Json = m.Json,
+					Json = m.Json
 				})
-				: null,
+				: null
 		}
 	);
 }

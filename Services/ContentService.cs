@@ -21,7 +21,7 @@ public class ContentService(DbContext db, ILocalizationService ls, ITokenService
 				Instagram = p.Instagram,
 				Description = p.Description,
 				Title = p.Title,
-				SubTitle = p.SubTitle,
+				SubTitle = p.SubTitle
 			}
 		}, ct);
 		await db.SaveChangesAsync(ct);

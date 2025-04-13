@@ -90,13 +90,9 @@ public class AuthService(
 			Id = x.Id,
 			UserName = x.UserName,
 			PhoneNumber = x.PhoneNumber,
-			Json = x.Json,
-			FirstName = x.FirstName,
-			LastName = x.LastName,
 			Email = x.Email,
-			Tags = x.Tags,
-			CreatedAt = x.CreatedAt,
-			UpdatedAt = x.UpdatedAt
+			Json = x.Json,
+			Tags = x.Tags
 		}).AsNoTracking().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
 
 		if (existingUser != null) {
@@ -105,16 +101,16 @@ public class AuthService(
 		}
 
 		UserEntity e = new() {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
 			UserName = p.PhoneNumber,
 			Password = "SinaMN75",
 			RefreshToken = "SinaMN75",
 			PhoneNumber = p.PhoneNumber,
 			Email = p.PhoneNumber,
 			Json = new UserJson(),
-			Tags = [],
-			Id = Guid.CreateVersion7(),
-			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow
+			Tags = []
 		};
 
 		UserResponse response = e.MapToResponse();

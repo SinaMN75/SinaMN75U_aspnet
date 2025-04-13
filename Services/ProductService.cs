@@ -86,18 +86,18 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 					City = x.User!.City,
 					Bio = x.User!.Bio,
 					Birthdate = x.User!.Birthdate,
+					Media = x.User.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.Json, Id = z.Id, Tags = z.Tags }),
+					Id = x.User!.Id,
+					CreatedAt = x.User!.CreatedAt,
+					UpdatedAt = x.User!.UpdatedAt,
+					Tags = x.User!.Tags,
 					Categories = x.Categories!.Select(y => new CategoryResponse {
 						Title = y.Title,
 						Json = y.Json,
 						Id = y.Id,
 						Tags = y.Tags,
 						Media = y.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.Json, Id = z.Id, Tags = z.Tags })
-					}),
-					Media = x.User.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.Json, Id = z.Id, Tags = z.Tags }),
-					Id = x.User!.Id,
-					CreatedAt = x.User!.CreatedAt,
-					UpdatedAt = x.User!.UpdatedAt,
-					Tags = x.User!.Tags,
+					})
 				}
 				: null,
 			Children = p.ShowChildren
@@ -129,18 +129,18 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 							City = x.User!.City,
 							Bio = x.User!.Bio,
 							Birthdate = x.User!.Birthdate,
+							Id = x.User!.Id,
+							CreatedAt = x.User!.CreatedAt,
+							UpdatedAt = x.User!.UpdatedAt,
+							Tags = x.User!.Tags,
+							Media = x.User.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.Json, Id = z.Id, Tags = z.Tags }),
 							Categories = x.Categories!.Select(y => new CategoryResponse {
 								Title = y.Title,
 								Json = y.Json,
 								Id = y.Id,
 								Tags = y.Tags,
 								Media = y.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.Json, Id = z.Id, Tags = z.Tags })
-							}),
-							Media = x.User.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.Json, Id = z.Id, Tags = z.Tags }),
-							Id = x.User!.Id,
-							CreatedAt = x.User!.CreatedAt,
-							UpdatedAt = x.User!.UpdatedAt,
-							Tags = x.User!.Tags,
+							})
 						}
 						: null,
 					Media = p.ShowMedia ? x.Media!.Select(y => new MediaResponse { Path = y.Path, Json = y.Json, Id = y.Id, Tags = y.Tags }) : null,
@@ -152,7 +152,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 							Tags = y.Tags,
 							Media = y.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.Json, Id = z.Id, Tags = z.Tags })
 						})
-						: null,
+						: null
 				})
 				: null,
 			Media = p.ShowMedia ? x.Media!.Select(y => new MediaResponse { Path = y.Path, Json = y.Json, Id = y.Id, Tags = y.Tags }) : null,
@@ -164,7 +164,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 					Tags = y.Tags,
 					Media = y.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.Json, Id = y.Id, Tags = z.Tags })
 				})
-				: null,
+				: null
 		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 

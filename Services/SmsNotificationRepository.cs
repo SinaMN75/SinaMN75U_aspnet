@@ -53,7 +53,7 @@ public class SmsNotificationService(
 		if (cachedData != null) return false;
 
 		string otp = Random.Shared.Next(1000, 9999).ToString();
-		cache.SetStringData("otp_" + user.Id, otp, TimeSpan.FromMinutes(60));
+		cache.SetStringData("otp_" + user.Id, otp, TimeSpan.FromMinutes(5));
 
 		await SendSms(user.PhoneNumber, config["sms.otpPattern"]!, otp);
 		return true;
