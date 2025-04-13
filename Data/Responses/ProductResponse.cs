@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Responses;
 
-public class ProductResponse: BaseResponse<TagProduct> {
+public class ProductResponse: BaseResponse<TagProduct, ProductJson> {
 	public required string Title { get; set; }
 	public required string Code { get; set; }
 	public string? Subtitle { get; set; }
@@ -9,7 +9,6 @@ public class ProductResponse: BaseResponse<TagProduct> {
 	public double? Longitude { get; set; }
 	public int? Stock { get; set; }
 	public double? Price { get; set; }
-	public required ProductJson Json { get; set; }
 	
 	public Guid? ParentId { get; set; }
 	

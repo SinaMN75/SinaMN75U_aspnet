@@ -1,10 +1,11 @@
 namespace SinaMN75U.Data.Responses;
 
-public class BaseResponse<T> {
+public class BaseResponse<T, TJ> {
 	public required Guid Id { get; set; }
 	public DateTime? CreatedAt { get; set; }
 	public DateTime? UpdatedAt { get; set; }
 	public required List<T> Tags { get; set; }
+	public required TJ Json { get; set; }
 }
 
 public class UResponse<T> : UResponse {

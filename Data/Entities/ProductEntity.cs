@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Products")]
-public class ProductEntity : BaseEntity<TagProduct> {
+public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	[Required]
 	[MaxLength(100)]
 	public required string Title { get; set; }
@@ -24,8 +24,6 @@ public class ProductEntity : BaseEntity<TagProduct> {
 
 	public ProductEntity? Parent { get; set; }
 	public Guid? ParentId { get; set; }
-
-	public required ProductJson Json { get; set; }
 
 	[Required]
 	public required Guid UserId { get; set; }

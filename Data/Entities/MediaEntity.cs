@@ -4,13 +4,10 @@ namespace SinaMN75U.Data.Entities;
 [Index(nameof(UserId), Name = "IX_Media_UserId")]
 [Index(nameof(ContentId), Name = "IX_Media_ContentId")]
 [Index(nameof(CategoryId), Name = "IX_Media_CategoryId")]
-public class MediaEntity : BaseEntity<TagMedia> {
+public class MediaEntity : BaseEntity<TagMedia, MediaJson> {
 	[Required]
 	[MaxLength(200)]
 	public required string Path { get; set; }
-
-	[Required]
-	public required MediaJson Json { get; set; }
 
 	public Guid? UserId { get; set; }
 	public UserEntity? User { get; set; }

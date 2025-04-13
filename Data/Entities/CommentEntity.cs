@@ -1,12 +1,9 @@
 ﻿namespace SinaMN75U.Data.Entities;
 
 [Table("Comment")]
-public class CommentEntity : BaseEntity<TagComment> {
+public class CommentEntity : BaseEntity<TagComment, CommentJson> {
 	[Required]
 	public required double Score { get; set; }
-
-	[Required]
-	public required CommentJson Json { get; set; }
 
 	[Required]
 	[MaxLength(2000)]

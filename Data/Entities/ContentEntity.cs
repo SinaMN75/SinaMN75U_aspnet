@@ -1,9 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Contents")]
-public class ContentEntity : BaseEntity<int> {
-	[Required]
-	public required ContentJson Json { get; set; }
+public class ContentEntity : BaseEntity<int, ContentJson> {
 
 	public IEnumerable<MediaEntity>? Media { get; set; }
 

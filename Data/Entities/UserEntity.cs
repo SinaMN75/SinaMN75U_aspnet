@@ -4,7 +4,7 @@ namespace SinaMN75U.Data.Entities;
 [Index(nameof(Email), IsUnique = true, Name = "IX_Users_Email")]
 [Index(nameof(UserName), IsUnique = true, Name = "IX_Users_UserName")]
 [Index(nameof(PhoneNumber), IsUnique = true, Name = "IX_Users_PhoneNumber")]
-public class UserEntity : BaseEntity<TagUser> {
+public class UserEntity : BaseEntity<TagUser, UserJson> {
 	[MaxLength(100)]
 	public required string UserName { get; set; }
 
@@ -39,9 +39,6 @@ public class UserEntity : BaseEntity<TagUser> {
 	public string? City { get; set; }
 
 	public DateTime? Birthdate { get; set; }
-
-	[Required]
-	public required UserJson Json { get; set; }
 
 	public IEnumerable<CategoryEntity>? Categories { get; set; }
 
