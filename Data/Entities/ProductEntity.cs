@@ -66,38 +66,6 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt
 	};
-
-	public ProductEntity MapToEntity(
-		bool media = false,
-		bool categories = false,
-		bool user = false
-	) => new() {
-		Id = Id,
-		Title = Title,
-		Code = Code,
-		Subtitle = Subtitle,
-		Description = Description,
-		Latitude = Latitude,
-		Longitude = Longitude,
-		Stock = Stock,
-		Price = Price,
-		ParentId = ParentId,
-		Tags = Tags,
-		UserId = UserId,
-		CreatedAt = CreatedAt,
-		UpdatedAt = UpdatedAt,
-		Json = Json,
-		Children = Children?.Select(x => x.MapToEntity()),
-		Media = media
-			? Media?.Select(x => x.MapToEntity())
-			: null,
-		Categories = categories
-			? Categories?.Select(x => x.MapToEntity()).ToList()
-			: null,
-		User = user
-			? User!.MapToEntity()
-			: null
-	};
 }
 
 public class ProductJson {

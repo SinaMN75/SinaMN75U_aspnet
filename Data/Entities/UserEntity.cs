@@ -62,33 +62,11 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 		LastName = LastName,
 		Categories = showCategories ? Categories?.Select(u => u.MapToResponse()) : null
 	};
-
-	public UserEntity MapToEntity(bool showCategories = false) => new() {
-		Id = Id,
-		UserName = UserName,
-		PhoneNumber = PhoneNumber,
-		Email = Email,
-		Bio = Bio,
-		Birthdate = Birthdate,
-		Tags = Tags,
-		CreatedAt = CreatedAt,
-		UpdatedAt = UpdatedAt,
-		City = City,
-		Country = Country,
-		State = State,
-		FirstName = FirstName,
-		LastName = LastName,
-		Json = Json,
-		Categories = showCategories
-			? Categories?.Select(u => u.MapToEntity())
-			: null,
-		Password = "",
-		RefreshToken = ""
-	};
 }
 
 public class UserJson {
 	public string? FcmToken { get; set; }
+	public List<string>? Health1 { get; set; }
 }
 
 public static class UserEntityExtensions {

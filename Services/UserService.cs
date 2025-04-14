@@ -11,8 +11,7 @@ public interface IUserService {
 public class UserService(
 	DbContext db,
 	ILocalizationService ls,
-	ITokenService ts,
-	ICategoryService categoryService
+	ITokenService ts
 ) : IUserService {
 	public async Task<UResponse<UserResponse?>> Create(UserCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
@@ -32,7 +31,8 @@ public class UserService(
 			City = p.City,
 			Birthdate = p.Birthdate,
 			Json = new UserJson {
-				FcmToken = p.FcmToken
+				FcmToken = p.FcmToken,
+				Health1 = p.Health1
 			},
 			Tags = p.Tags,
 			CreatedAt = DateTime.UtcNow,
@@ -77,25 +77,30 @@ public class UserService(
 
 		e.UpdatedAt = DateTime.UtcNow;
 
-		if (p.UserName != null) e.UserName = p.UserName;
-		if (p.PhoneNumber != null) e.PhoneNumber = p.PhoneNumber;
-		if (p.Email != null) e.Email = p.Email;
-		if (p.Bio != null) e.Bio = p.Bio;
+		if (p.UserName.IsNotNullOrEmpty()) e.UserName = p.UserName;
+		if (p.PhoneNumber.IsNotNullOrEmpty()) e.PhoneNumber = p.PhoneNumber;
+		if (p.Email.IsNotNullOrEmpty()) e.Email = p.Email;
+		if (p.Bio.IsNotNullOrEmpty()) e.Bio = p.Bio;
 		if (p.Birthdate != null) e.Birthdate = p.Birthdate;
-		if (p.Password != null) e.Password = p.Password;
-		if (p.FirstName != null) e.FirstName = p.FirstName;
-		if (p.LastName != null) e.LastName = p.LastName;
-		if (p.City != null) e.City = p.City;
-		if (p.Country != null) e.Country = p.Country;
-		if (p.State != null) e.State = p.State;
-		if (p.FcmToken != null) e.Json.FcmToken = p.FcmToken;
+		if (p.Password.IsNotNullOrEmpty()) e.Password = PasswordHasher.Hash(p.Password);
+		if (p.FirstName.IsNotNullOrEmpty()) e.FirstName = p.FirstName;
+		if (p.LastName.IsNotNullOrEmpty()) e.LastName = p.LastName;
+		if (p.City.IsNotNullOrEmpty()) e.City = p.City;
+		if (p.Country.IsNotNullOrEmpty()) e.Country = p.Country;
+		if (p.State.IsNotNullOrEmpty()) e.State = p.State;
+
+		// Json
+		if (p.FcmToken.IsNotNullOrEmpty()) e.Json.FcmToken = p.FcmToken;
 
 		if (p.AddTags != null) e.Tags.AddRangeIfNotExist(p.AddTags);
-		if (p.RemoveTags != null) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
+		if (p.RemoveTags != null) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
+		
+		if (p.AddHealth1 != null) e.Tags.AddRangeIfNotExist(p.AddHealth1);
+		if (p.RemoveHealth1 != null) e.Tags.RemoveAll(x => p.RemoveHealth1.Contains(x));
 
 		if (p.Categories.IsNotNullOrEmpty()) {
 			List<CategoryEntity> list = [];
-			foreach (Guid item in p.Categories!) {
+			foreach (Guid item in p.Categories) {
 				CategoryEntity? c = await db.Set<CategoryEntity>().FirstOrDefaultAsync(x => x.Id == item);
 				if (c != null) list.Add(c);
 			}
@@ -116,18 +121,7 @@ public class UserService(
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
-		UserEntity? e = await db.Set<UserEntity>()
-			.Include(x => x.Categories)
-			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-
-		if (e == null)
-			return new UResponse(USC.NotFound, ls.Get("UserNotFound"));
-
-		if (e.Categories.IsNotNullOrEmpty())
-			await categoryService.DeleteRange(e.Categories!.Select(x => x.Id), ct);
-
-		db.Set<UserEntity>().Remove(e);
-		await db.SaveChangesAsync(ct);
-		return new UResponse(USC.Deleted, ls.Get("UserDeleted"));
+		int count = await db.Set<UserEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
+		return count == 0 ? new UResponse(USC.NotFound, ls.Get("UserNotFound")) : new UResponse(USC.Deleted, ls.Get("UserDeleted"));
 	}
 }

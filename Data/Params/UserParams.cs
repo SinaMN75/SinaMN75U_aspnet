@@ -23,8 +23,10 @@ public class UserCreateParams : BaseParams {
 	public string? Country { get; set; }
 	public string? State { get; set; }
 	public string? City { get; set; }
-	public string? FcmToken { get; set; }
 	public DateTime? Birthdate { get; set; }
+	
+	public string? FcmToken { get; set; }
+	public List<string>? Health1 { get; set; }
 
 	[UMinCollectionLength(1, "TagsRequired")]
 	public required List<TagUser> Tags { get; set; }
@@ -63,5 +65,7 @@ public class UserUpdateParams {
 	public DateTime? Birthdate { get; set; }
 	public IEnumerable<TagUser>? AddTags { get; set; }
 	public IEnumerable<TagUser>? RemoveTags { get; set; }
+	public IEnumerable<TagUser>? AddHealth1 { get; set; }
+	public IEnumerable<TagUser>? RemoveHealth1 { get; set; }
 	public IEnumerable<Guid>? Categories { get; set; }
 }

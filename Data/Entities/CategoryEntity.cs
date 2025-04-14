@@ -17,18 +17,6 @@ public class CategoryEntity : BaseEntity<TagCategory, CategoryJson> {
 	public IEnumerable<UserEntity>? Users { get; set; }
 
 	public IEnumerable<MediaEntity>? Media { get; set; }
-
-	public CategoryEntity MapToEntity(bool media = false) => new() {
-		Id = Id,
-		Title = Title,
-		Json = Json,
-		CreatedAt = CreatedAt,
-		UpdatedAt = UpdatedAt,
-		Tags = Tags,
-		Children = Children?.Select(x => x.MapToEntity(media)),
-		Media = media ? Media?.Select(x => x.MapToEntity()) : null,
-		ParentId = ParentId
-	};
 }
 
 public class CategoryJson {
