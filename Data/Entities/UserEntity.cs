@@ -40,7 +40,7 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 
 	public DateTime? Birthdate { get; set; }
 
-	public IEnumerable<CategoryEntity>? Categories { get; set; }
+	public List<CategoryEntity>? Categories { get; set; }
 
 	public IEnumerable<MediaEntity>? Media { get; set; }
 
@@ -67,6 +67,9 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 public class UserJson {
 	public string? FcmToken { get; set; }
 	public List<string>? Health1 { get; set; }
+	public List<string>? FoodAllergies { get; set; }
+	public List<string>? Sickness { get; set; }
+	public UserAnswerJson? UserAnswerJson { get; set; }
 }
 
 public static class UserEntityExtensions {

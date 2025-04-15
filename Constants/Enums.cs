@@ -53,3 +53,7 @@ public enum TagReaction {
 	Like = 101,
 	DisLike = 102
 }
+
+public enum TagExam {
+	
+}

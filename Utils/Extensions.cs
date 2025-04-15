@@ -60,6 +60,7 @@ public static class NumberExtensions {
 	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this decimal? s) => s != null;
 	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this float? s) => s != null;
 	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this long? s) => s != null;
+	public static bool IsNotNullOrZero([NotNullWhen(true)] this int? s) => s != null && s != 0;
 
 	// New number extensions
 	public static bool IsBetween(this int value, int min, int max) => value >= min && value <= max;

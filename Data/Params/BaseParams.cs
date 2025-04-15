@@ -5,6 +5,11 @@ public class IdParams : BaseParams {
 	public required Guid Id { get; set; }
 }
 
+public class IdListParams : BaseParams {
+	[Required]
+	public required IEnumerable<Guid> Ids { get; set; }
+}
+
 public class IdTitleParams : BaseParams {
 	public int? Id { get; set; }
 	public string? Title { get; set; }

@@ -20,6 +20,7 @@ public static class AspNetConfig {
 				o.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 				o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 				o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+				o.JsonSerializerOptions.WriteIndented = false;
 			});
 		builder.Services.AddRateLimiter(o => o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(c =>
 				RateLimitPartition.GetFixedWindowLimiter(

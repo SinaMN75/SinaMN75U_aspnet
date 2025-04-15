@@ -45,38 +45,7 @@ public static class LinqExtensions {
 	}
 
 	//var pagedResults = context.Products.Paginate(pageNumber, pageSize);
-
-	public static IQueryable<T> OrderByProperty<T>(
-		this IQueryable<T> query,
-		string propertyName,
-		bool ascending = true) {
-		if (string.IsNullOrWhiteSpace(propertyName))
-			throw new ArgumentException("Property name cannot be null or empty.");
-
-		Type entityType = typeof(T);
-		PropertyInfo? propertyInfo = entityType.GetProperty(propertyName);
-
-		if (propertyInfo == null)
-			throw new ArgumentException($"Property '{propertyName}' not found on type '{entityType.Name}'.");
-
-		ParameterExpression parameter = Expression.Parameter(entityType, "x");
-		MemberExpression property = Expression.Property(parameter, propertyInfo);
-		LambdaExpression lambda = Expression.Lambda(property, parameter);
-
-		string methodName = ascending ? "OrderBy" : "OrderByDescending";
-		MethodCallExpression methodCall = Expression.Call(
-			typeof(Queryable),
-			methodName,
-			[entityType, propertyInfo.PropertyType],
-			query.Expression,
-			lambda
-		);
-
-		return query.Provider.CreateQuery<T>(methodCall);
-	}
-
-	//var sortedResults = context.Products.OrderByProperty("Name", ascending: true);
-
+	
 	public static IQueryable<TResult> SelectPartial<T, TResult>(
 		this IQueryable<T> query,
 		Expression<Func<T, TResult>> selector) => query.Select(selector);
@@ -90,25 +59,4 @@ public static class LinqExtensions {
 		where T : class => condition ? query.Include(navigationPropertyPath) : query;
 
 	// var results = context.Products.IncludeIf(includeCategory, p => p.Category);
-
-	public static T FirstOrDefaultWithException<T>(
-		this IQueryable<T> query,
-		Expression<Func<T, bool>> predicate,
-		string errorMessage = "Entity not found.") {
-		T? result = query.FirstOrDefault(predicate);
-
-		if (result == null)
-			throw new InvalidOperationException(errorMessage);
-
-		return result;
-	}
-
-	// var product = context.Products.FirstOrDefaultWithException(p => p.Id == 123, "Product not found.");
-
-	public static async Task<int> BatchDeleteAsync<T>(
-		this IQueryable<T> query,
-		CancellationToken cancellationToken = default)
-		where T : class => await query.ExecuteDeleteAsync(cancellationToken);
-
-	// await context.Products.Where(p => p.IsDeleted).BatchDeleteAsync();
 }

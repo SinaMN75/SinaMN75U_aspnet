@@ -27,6 +27,8 @@ public class UserCreateParams : BaseParams {
 	
 	public string? FcmToken { get; set; }
 	public List<string>? Health1 { get; set; }
+	public List<string>? FoodAllergies { get; set; }
+	public List<string>? Sickness { get; set; }
 
 	[UMinCollectionLength(1, "TagsRequired")]
 	public required List<TagUser> Tags { get; set; }
@@ -65,7 +67,15 @@ public class UserUpdateParams {
 	public DateTime? Birthdate { get; set; }
 	public IEnumerable<TagUser>? AddTags { get; set; }
 	public IEnumerable<TagUser>? RemoveTags { get; set; }
+	
 	public IEnumerable<TagUser>? AddHealth1 { get; set; }
 	public IEnumerable<TagUser>? RemoveHealth1 { get; set; }
+	
+	public IEnumerable<TagUser>? AddFoodAllergies { get; set; }
+	public IEnumerable<TagUser>? RemoveFoodAllergies { get; set; }
+	
+	public IEnumerable<TagUser>? AddSickness { get; set; }
+	public IEnumerable<TagUser>? RemoveSickness { get; set; }
 	public IEnumerable<Guid>? Categories { get; set; }
+	public List<UserAnswerJson>? UserAnswers { get; set; }
 }

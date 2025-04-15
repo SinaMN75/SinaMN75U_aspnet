@@ -11,7 +11,8 @@ public interface IUserService {
 public class UserService(
 	DbContext db,
 	ILocalizationService ls,
-	ITokenService ts
+	ITokenService ts,
+	ICategoryService categoryService
 ) : IUserService {
 	public async Task<UResponse<UserResponse?>> Create(UserCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
@@ -32,7 +33,9 @@ public class UserService(
 			Birthdate = p.Birthdate,
 			Json = new UserJson {
 				FcmToken = p.FcmToken,
-				Health1 = p.Health1
+				Health1 = p.Health1,
+				Sickness = p.Sickness,
+				FoodAllergies = p.FoodAllergies
 			},
 			Tags = p.Tags,
 			CreatedAt = DateTime.UtcNow,
@@ -92,20 +95,21 @@ public class UserService(
 		// Json
 		if (p.FcmToken.IsNotNullOrEmpty()) e.Json.FcmToken = p.FcmToken;
 
-		if (p.AddTags != null) e.Tags.AddRangeIfNotExist(p.AddTags);
-		if (p.RemoveTags != null) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
-		
-		if (p.AddHealth1 != null) e.Tags.AddRangeIfNotExist(p.AddHealth1);
-		if (p.RemoveHealth1 != null) e.Tags.RemoveAll(x => p.RemoveHealth1.Contains(x));
+		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
+		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
+
+		if (p.AddHealth1.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddHealth1);
+		if (p.RemoveHealth1.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveHealth1.Contains(x));
+
+		if (p.AddSickness.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddSickness);
+		if (p.RemoveSickness.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveSickness.Contains(x));
+
+		if (p.AddFoodAllergies.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddFoodAllergies);
+		if (p.RemoveFoodAllergies.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveFoodAllergies.Contains(x));
 
 		if (p.Categories.IsNotNullOrEmpty()) {
-			List<CategoryEntity> list = [];
-			foreach (Guid item in p.Categories) {
-				CategoryEntity? c = await db.Set<CategoryEntity>().FirstOrDefaultAsync(x => x.Id == item);
-				if (c != null) list.Add(c);
-			}
-
-			e.Categories = list;
+			List<CategoryEntity>? list = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct);
+			e.Categories.AddRangeIfNotExist(list);
 		}
 
 		db.Set<UserEntity>().Update(e);
