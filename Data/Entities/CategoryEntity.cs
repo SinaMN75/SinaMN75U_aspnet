@@ -28,12 +28,12 @@ public static class CategoryEntityExtension {
 		Id = x.Id,
 		Title = x.Title,
 		Tags = x.Tags,
-		Json = x.JsonData,
+		JsonData = x.JsonData,
 		Children = showChildren || showMedia
 			? x.Children!.Select(c => new CategoryResponse {
 				Id = c.Id,
 				Title = c.Title,
-				Json = c.JsonData,
+				JsonData = c.JsonData,
 				Tags = c.Tags,
 				Media = showMedia ? c.Media!.Select(m => m.MapToResponse()) : null
 			})

@@ -52,7 +52,7 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 		Bio = Bio,
 		Birthdate = Birthdate,
 		Tags = Tags,
-		Json = JsonData,
+		JsonData = JsonData,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt,
 		City = City,
@@ -82,7 +82,7 @@ public static class UserEntityExtensions {
 			Id = x.Id,
 			CreatedAt = x.CreatedAt,
 			UpdatedAt = x.UpdatedAt,
-			Json = x.JsonData,
+			JsonData = x.JsonData,
 			Tags = x.Tags,
 			UserName = x.UserName,
 			PhoneNumber = x.PhoneNumber,
@@ -99,12 +99,12 @@ public static class UserEntityExtensions {
 					Title = c.Title,
 					Id = c.Id,
 					Tags = c.Tags,
-					Json = c.JsonData,
+					JsonData = c.JsonData,
 					Media = c.Media!.Select(m => new MediaResponse {
 						Path = m.Path,
 						Id = m.Id,
 						Tags = m.Tags,
-						Json = m.JsonData
+						JsonData = m.JsonData
 					})
 				}).ToList()
 				: null,
@@ -113,7 +113,7 @@ public static class UserEntityExtensions {
 					Path = m.Path,
 					Id = m.Id,
 					Tags = m.Tags,
-					Json = m.JsonData
+					JsonData = m.JsonData
 				})
 				: null
 		}

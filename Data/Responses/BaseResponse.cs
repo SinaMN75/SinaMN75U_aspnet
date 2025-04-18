@@ -5,7 +5,7 @@ public class BaseResponse<T, TJ> {
 	public DateTime? CreatedAt { get; set; }
 	public DateTime? UpdatedAt { get; set; }
 	public required List<T> Tags { get; set; }
-	public required TJ Json { get; set; }
+	public required TJ JsonData { get; set; }
 }
 
 public class UResponse<T> : UResponse {

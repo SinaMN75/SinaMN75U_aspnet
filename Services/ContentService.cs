@@ -36,8 +36,8 @@ public class ContentService(DbContext db, ILocalizationService ls, ITokenService
 		return await q.Select(x => new ContentResponse {
 			Id = x.Id,
 			Tags = x.Tags,
-			Json = x.JsonData,
-			Media = p.ShowMedia ? x.Media!.Select(m => new MediaResponse { Path = m.Path, Id = m.Id, Tags = m.Tags, Json = m.JsonData}) : null
+			JsonData = x.JsonData,
+			Media = p.ShowMedia ? x.Media!.Select(m => new MediaResponse { Path = m.Path, Id = m.Id, Tags = m.Tags, JsonData = m.JsonData}) : null
 		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
