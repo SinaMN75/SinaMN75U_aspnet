@@ -1,5 +1,7 @@
 namespace SinaMN75U.Utils;
 
+using Data;
+
 public static class AspNetConfig {
 	public static void AddUServices<T>(this WebApplicationBuilder builder) where T : DbContext {
 		builder.Services.AddCors(c => c.AddPolicy("AllowOrigin", o => o.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
@@ -82,6 +84,7 @@ public static class AspNetConfig {
 		app.UseMiddleware<ApiRequestLoggingMiddleware>();
 		app.UseOutputCache();
 
+		app.MapPost("Datatypes", () => "hello").Produces<AllData>();
 		app.MapAuthRoutes("Auth");
 		app.MapUserRoutes("User");
 		app.MapMediaRoutes("Media");
