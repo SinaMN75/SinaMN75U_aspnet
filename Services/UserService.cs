@@ -33,9 +33,9 @@ public class UserService(
 			Birthdate = p.Birthdate,
 			Json = new UserJson {
 				FcmToken = p.FcmToken,
-				Health1 = p.Health1,
-				Sickness = p.Sickness,
-				FoodAllergies = p.FoodAllergies
+				Health1 = p.Health1 ?? [],
+				Sickness = p.Sickness ?? [],
+				FoodAllergies = p.FoodAllergies ?? []
 			},
 			Tags = p.Tags,
 			CreatedAt = DateTime.UtcNow,
@@ -107,6 +107,10 @@ public class UserService(
 		if (p.AddFoodAllergies.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddFoodAllergies);
 		if (p.RemoveFoodAllergies.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveFoodAllergies.Contains(x));
 
+		if (p.UserAnswers.IsNotNull()) {
+			e.Json.UserAnswerJson.AddRange(p.UserAnswers);
+		}
+		
 		if (p.Categories.IsNotNullOrEmpty()) {
 			List<CategoryEntity>? list = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct);
 			e.Categories.AddRangeIfNotExist(list);

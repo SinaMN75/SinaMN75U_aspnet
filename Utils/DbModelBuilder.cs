@@ -12,7 +12,7 @@ public static class DbModelBuilder {
 
 		builder.Entity<UserEntity>().OwnsOne(e => e.Json, b => {
 			b.ToJson();
-			b.OwnsOne(i => i.UserAnswerJson).OwnsMany(i => i.Results);
+			b.OwnsMany(i => i.UserAnswerJson).OwnsMany(i => i.Results);
 		});
 		builder.Entity<CategoryEntity>().OwnsOne(e => e.Json, b => b.ToJson());
 		builder.Entity<MediaEntity>().OwnsOne(e => e.Json, b => b.ToJson());

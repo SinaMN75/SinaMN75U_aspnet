@@ -25,9 +25,14 @@ public class UserCreateParams : BaseParams {
 	public string? City { get; set; }
 	public DateTime? Birthdate { get; set; }
 	
+	public double? Weight { get; set; }
+	public double? Height { get; set; }
+	public string? Address { get; set; }
+	public string? FatherName { get; set; }
 	public string? FcmToken { get; set; }
 	public List<string>? Health1 { get; set; }
 	public List<string>? FoodAllergies { get; set; }
+	public List<string> DrugAllergies { get; set; } = [];
 	public List<string>? Sickness { get; set; }
 
 	[UMinCollectionLength(1, "TagsRequired")]

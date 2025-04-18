@@ -18,7 +18,7 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
 			Json = new ExamJson { Questions = p.Questions },
-			Tags = p.Tags,
+			Tags = p.Tags
 		});
 		await db.SaveChangesAsync(ct);
 		return new UResponse<ExamResponse>(new ExamResponse {

@@ -66,10 +66,15 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 
 public class UserJson {
 	public string? FcmToken { get; set; }
-	public List<string>? Health1 { get; set; }
-	public List<string>? FoodAllergies { get; set; }
-	public List<string>? Sickness { get; set; }
-	public UserAnswerJson? UserAnswerJson { get; set; }
+	public List<string> Health1 { get; set; } = [];
+	public List<string> FoodAllergies { get; set; } = [];
+	public List<string> DrugAllergies { get; set; } = [];
+	public List<string> Sickness { get; set; } = [];
+	public double? Weight { get; set; }
+	public double? Height { get; set; }
+	public string? Address { get; set; }
+	public string? FatherName { get; set; }
+	public List<UserAnswerJson> UserAnswerJson { get; set; } = [];
 }
 
 public static class UserEntityExtensions {

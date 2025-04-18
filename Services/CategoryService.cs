@@ -38,20 +38,30 @@ public class CategoryService(
 
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
-		if (p.ShowChildren) q = q.Include(x => x.Children);
-		if (p.ShowMedia) q = q.Include(x => x.Media).Include(x => x.Children!).ThenInclude(x => x.Media);
 
 		return await q.Select(x => new CategoryResponse {
 			Id = x.Id,
 			Title = x.Title,
 			Json = x.Json,
 			Tags = x.Tags,
-			Children = p.ShowChildren
-				? x.Children!.Select(c => new CategoryResponse {
-					Id = c.Id,
-					Title = c.Title,
-					Json = c.Json,
-					Tags = c.Tags,
+			Children = x.Children!.Select(c1 => new CategoryResponse {
+				Id = c1.Id,
+				Title = c1.Title,
+				Json = c1.Json,
+				Tags = c1.Tags,
+				Media = p.ShowMedia
+					? x.Media!.Select(m => new MediaResponse {
+						Path = m.Path,
+						Id = m.Id,
+						Tags = m.Tags,
+						Json = m.Json
+					})
+					: null,
+				Children = x.Children!.Select(c2 => new CategoryResponse {
+					Id = c2.Id,
+					Title = c2.Title,
+					Json = c2.Json,
+					Tags = c2.Tags,
 					Media = p.ShowMedia
 						? x.Media!.Select(m => new MediaResponse {
 							Path = m.Path,
@@ -59,9 +69,79 @@ public class CategoryService(
 							Tags = m.Tags,
 							Json = m.Json
 						})
-						: null
+						: null,
+					Children = x.Children!.Select(c3 => new CategoryResponse {
+						Id = c3.Id,
+						Title = c3.Title,
+						Json = c3.Json,
+						Tags = c3.Tags,
+						Media = p.ShowMedia
+							? x.Media!.Select(m => new MediaResponse {
+								Path = m.Path,
+								Id = m.Id,
+								Tags = m.Tags,
+								Json = m.Json
+							})
+							: null,
+						Children = x.Children!.Select(c4 => new CategoryResponse {
+							Id = c4.Id,
+							Title = c4.Title,
+							Json = c4.Json,
+							Tags = c4.Tags,
+							Media = p.ShowMedia
+								? x.Media!.Select(m => new MediaResponse {
+									Path = m.Path,
+									Id = m.Id,
+									Tags = m.Tags,
+									Json = m.Json
+								})
+								: null,
+							Children = x.Children!.Select(c5 => new CategoryResponse {
+								Id = c5.Id,
+								Title = c5.Title,
+								Json = c5.Json,
+								Tags = c5.Tags,
+								Media = p.ShowMedia
+									? x.Media!.Select(m => new MediaResponse {
+										Path = m.Path,
+										Id = m.Id,
+										Tags = m.Tags,
+										Json = m.Json
+									})
+									: null,
+								Children = x.Children!.Select(c6 => new CategoryResponse {
+									Id = c6.Id,
+									Title = c6.Title,
+									Json = c6.Json,
+									Tags = c6.Tags,
+									Media = p.ShowMedia
+										? x.Media!.Select(m => new MediaResponse {
+											Path = m.Path,
+											Id = m.Id,
+											Tags = m.Tags,
+											Json = m.Json
+										})
+										: null,
+									Children = x.Children!.Select(c7 => new CategoryResponse {
+										Id = c7.Id,
+										Title = c7.Title,
+										Json = c7.Json,
+										Tags = c7.Tags,
+										Media = p.ShowMedia
+											? x.Media!.Select(m => new MediaResponse {
+												Path = m.Path,
+												Id = m.Id,
+												Tags = m.Tags,
+												Json = m.Json
+											})
+											: null
+									})
+								})
+							})
+						})
+					})
 				})
-				: null,
+			}),
 			Media = p.ShowMedia
 				? x.Media!.Select(m => new MediaResponse {
 					Path = m.Path,

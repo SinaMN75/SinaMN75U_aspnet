@@ -269,7 +269,7 @@ public static class EnumerableExtensions {
 
 public static class ObjectExtensions {
 	public static bool IsNull<T>(this T? obj) where T : class => obj == null;
-	public static bool IsNotNull<T>(this T? obj) where T : class => obj != null;
+	public static bool IsNotNull<T>([NotNullWhen(true)] this T? obj) where T : class => obj != null;
 
 	public static T DeepClone<T>(this T obj) {
 		if (obj == null) return default!;
