@@ -31,7 +31,7 @@ public class AuthService(
 			PhoneNumber = p.PhoneNumber,
 			Password = PasswordHasher.Hash(p.Password),
 			RefreshToken = ts.GenerateRefreshToken(),
-			Json = new UserJson(),
+			JsonData = new UserJson(),
 			Tags = p.Tags,
 			FirstName = p.FirstName,
 			LastName = p.LastName,
@@ -91,7 +91,7 @@ public class AuthService(
 			UserName = x.UserName,
 			PhoneNumber = x.PhoneNumber,
 			Email = x.Email,
-			Json = x.Json,
+			Json = x.JsonData,
 			Tags = x.Tags
 		}).AsNoTracking().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
 
@@ -109,7 +109,7 @@ public class AuthService(
 			RefreshToken = "SinaMN75",
 			PhoneNumber = p.PhoneNumber,
 			Email = p.PhoneNumber,
-			Json = new UserJson(),
+			JsonData = new UserJson(),
 			Tags = []
 		};
 

@@ -22,7 +22,7 @@ public class CategoryService(
 		CategoryEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			Title = p.Title,
-			Json = new CategoryJson { Subtitle = p.Subtitle },
+			JsonData = new CategoryJson { Subtitle = p.Subtitle },
 			Tags = p.Tags,
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow
@@ -42,97 +42,97 @@ public class CategoryService(
 		return await q.Select(x => new CategoryResponse {
 			Id = x.Id,
 			Title = x.Title,
-			Json = x.Json,
+			Json = x.JsonData,
 			Tags = x.Tags,
 			Children = x.Children!.Select(c1 => new CategoryResponse {
 				Id = c1.Id,
 				Title = c1.Title,
-				Json = c1.Json,
+				Json = c1.JsonData,
 				Tags = c1.Tags,
 				Media = p.ShowMedia
 					? x.Media!.Select(m => new MediaResponse {
 						Path = m.Path,
 						Id = m.Id,
 						Tags = m.Tags,
-						Json = m.Json
+						Json = m.JsonData
 					})
 					: null,
 				Children = x.Children!.Select(c2 => new CategoryResponse {
 					Id = c2.Id,
 					Title = c2.Title,
-					Json = c2.Json,
+					Json = c2.JsonData,
 					Tags = c2.Tags,
 					Media = p.ShowMedia
 						? x.Media!.Select(m => new MediaResponse {
 							Path = m.Path,
 							Id = m.Id,
 							Tags = m.Tags,
-							Json = m.Json
+							Json = m.JsonData
 						})
 						: null,
 					Children = x.Children!.Select(c3 => new CategoryResponse {
 						Id = c3.Id,
 						Title = c3.Title,
-						Json = c3.Json,
+						Json = c3.JsonData,
 						Tags = c3.Tags,
 						Media = p.ShowMedia
 							? x.Media!.Select(m => new MediaResponse {
 								Path = m.Path,
 								Id = m.Id,
 								Tags = m.Tags,
-								Json = m.Json
+								Json = m.JsonData
 							})
 							: null,
 						Children = x.Children!.Select(c4 => new CategoryResponse {
 							Id = c4.Id,
 							Title = c4.Title,
-							Json = c4.Json,
+							Json = c4.JsonData,
 							Tags = c4.Tags,
 							Media = p.ShowMedia
 								? x.Media!.Select(m => new MediaResponse {
 									Path = m.Path,
 									Id = m.Id,
 									Tags = m.Tags,
-									Json = m.Json
+									Json = m.JsonData
 								})
 								: null,
 							Children = x.Children!.Select(c5 => new CategoryResponse {
 								Id = c5.Id,
 								Title = c5.Title,
-								Json = c5.Json,
+								Json = c5.JsonData,
 								Tags = c5.Tags,
 								Media = p.ShowMedia
 									? x.Media!.Select(m => new MediaResponse {
 										Path = m.Path,
 										Id = m.Id,
 										Tags = m.Tags,
-										Json = m.Json
+										Json = m.JsonData
 									})
 									: null,
 								Children = x.Children!.Select(c6 => new CategoryResponse {
 									Id = c6.Id,
 									Title = c6.Title,
-									Json = c6.Json,
+									Json = c6.JsonData,
 									Tags = c6.Tags,
 									Media = p.ShowMedia
 										? x.Media!.Select(m => new MediaResponse {
 											Path = m.Path,
 											Id = m.Id,
 											Tags = m.Tags,
-											Json = m.Json
+											Json = m.JsonData
 										})
 										: null,
 									Children = x.Children!.Select(c7 => new CategoryResponse {
 										Id = c7.Id,
 										Title = c7.Title,
-										Json = c7.Json,
+										Json = c7.JsonData,
 										Tags = c7.Tags,
 										Media = p.ShowMedia
 											? x.Media!.Select(m => new MediaResponse {
 												Path = m.Path,
 												Id = m.Id,
 												Tags = m.Tags,
-												Json = m.Json
+												Json = m.JsonData
 											})
 											: null
 									})
@@ -147,7 +147,7 @@ public class CategoryService(
 					Path = m.Path,
 					Id = m.Id,
 					Tags = m.Tags,
-					Json = m.Json
+					Json = m.JsonData
 				})
 				: null
 		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
@@ -162,7 +162,7 @@ public class CategoryService(
 
 		e.UpdatedAt = DateTime.UtcNow;
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
-		if (p.Subtitle.IsNotNullOrEmpty()) e.Json.Subtitle = p.Subtitle;
+		if (p.Subtitle.IsNotNullOrEmpty()) e.JsonData.Subtitle = p.Subtitle;
 
 		if (p.AddTags != null) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags != null) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));

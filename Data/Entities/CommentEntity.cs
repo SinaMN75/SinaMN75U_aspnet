@@ -31,7 +31,7 @@ public class CommentEntity : BaseEntity<TagComment, CommentJson> {
 	public CommentResponse MapToResponse(bool media = false) => new() {
 		Id = Id,
 		Description = Description,
-		Json = Json,
+		Json = JsonData,
 		Tags = Tags,
 		Children = Children?.Select(x => x.MapToResponse())
 			.ToList(),
@@ -53,7 +53,7 @@ public class CommentEntity : BaseEntity<TagComment, CommentJson> {
 		UpdatedAt = UpdatedAt,
 		Score = Score,
 		ParentId = ProductId,
-		Json = Json,
+		JsonData = JsonData,
 		UserId = UserId,
 		ProductId = ProductId,
 		TargetUserId = TargetUserId
@@ -72,7 +72,7 @@ public class CommentReacts {
 public static class CommentReactsExtensions {
 	public static IQueryable<CommentResponse> ToResponse(this IQueryable<CommentEntity> query, bool media, bool children) => query.Select(x => new CommentResponse {
 			Id = x.Id,
-			Json = x.Json,
+			Json = x.JsonData,
 			Tags = x.Tags,
 			Score = x.Score,
 			Description = x.Description,
@@ -84,13 +84,13 @@ public static class CommentReactsExtensions {
 					Description = x.Description,
 					CreatedAt = x.CreatedAt,
 					UpdatedAt = x.UpdatedAt,
-					Json = x.Json,
+					Json = x.JsonData,
 					Media = media
 						? x.Media!.Select(m => new MediaResponse {
 							Path = m.Path,
 							Id = m.Id,
 							Tags = m.Tags,
-							Json = m.Json
+							Json = m.JsonData
 						})
 						: null
 				})
@@ -100,7 +100,7 @@ public static class CommentReactsExtensions {
 					Path = m.Path,
 					Id = m.Id,
 					Tags = m.Tags,
-					Json = m.Json
+					Json = m.JsonData
 				})
 				: null
 		}

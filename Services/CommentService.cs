@@ -22,7 +22,7 @@ public class CommentService(
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
 			Score = p.Score,
-			Json = new CommentJson(),
+			JsonData = new CommentJson(),
 			Description = p.Description,
 			UserId = p.UserId ?? userData.Id,
 			Tags = p.Tags,

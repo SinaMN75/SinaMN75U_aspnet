@@ -6,7 +6,7 @@ public class ContentEntity : BaseEntity<int, ContentJson> {
 	public IEnumerable<MediaEntity>? Media { get; set; }
 
 	public ContentResponse MapToResponse(bool showMedia = false) => new() {
-		Json = Json,
+		Json = JsonData,
 		Tags = Tags,
 		Media = showMedia ? Media?.Select(x => x.MapToResponse()) : null,
 		Id = Id,

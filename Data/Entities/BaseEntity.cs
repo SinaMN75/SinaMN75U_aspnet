@@ -13,7 +13,7 @@ public class BaseEntity<T, TJ> {
 	public required DateTime UpdatedAt { get; set; }
 
 	[Required]
-	public required TJ Json { get; set; }
+	public required TJ JsonData { get; set; }
 
 	[Required]
 	public required List<T> Tags { get; set; }

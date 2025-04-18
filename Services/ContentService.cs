@@ -17,7 +17,7 @@ public class ContentService(DbContext db, ILocalizationService ls, ITokenService
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
-			Json = new ContentJson {
+			JsonData = new ContentJson {
 				Instagram = p.Instagram,
 				Description = p.Description,
 				Title = p.Title,
@@ -36,8 +36,8 @@ public class ContentService(DbContext db, ILocalizationService ls, ITokenService
 		return await q.Select(x => new ContentResponse {
 			Id = x.Id,
 			Tags = x.Tags,
-			Json = x.Json,
-			Media = p.ShowMedia ? x.Media!.Select(m => new MediaResponse { Path = m.Path, Id = m.Id, Tags = m.Tags, Json = m.Json}) : null
+			Json = x.JsonData,
+			Media = p.ShowMedia ? x.Media!.Select(m => new MediaResponse { Path = m.Path, Id = m.Id, Tags = m.Tags, Json = m.JsonData}) : null
 		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
@@ -47,10 +47,10 @@ public class ContentService(DbContext db, ILocalizationService ls, ITokenService
 
 		ContentEntity e = (await db.Set<ContentEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
 		e.UpdatedAt = DateTime.UtcNow;
-		if (p.Title.IsNotNullOrEmpty()) e.Json.Title = p.Title;
-		if (p.SubTitle.IsNotNullOrEmpty()) e.Json.SubTitle = p.SubTitle;
-		if (p.Description.IsNotNullOrEmpty()) e.Json.Description = p.Description;
-		if (p.Instagram.IsNotNullOrEmpty()) e.Json.Instagram = p.Instagram;
+		if (p.Title.IsNotNullOrEmpty()) e.JsonData.Title = p.Title;
+		if (p.SubTitle.IsNotNullOrEmpty()) e.JsonData.SubTitle = p.SubTitle;
+		if (p.Description.IsNotNullOrEmpty()) e.JsonData.Description = p.Description;
+		if (p.Instagram.IsNotNullOrEmpty()) e.JsonData.Instagram = p.Instagram;
 
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));

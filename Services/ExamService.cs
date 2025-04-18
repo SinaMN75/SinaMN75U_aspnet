@@ -17,7 +17,7 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
-			Json = new ExamJson { Questions = p.Questions },
+			JsonData = new ExamJson { Questions = p.Questions },
 			Tags = p.Tags
 		});
 		await db.SaveChangesAsync(ct);
@@ -26,7 +26,7 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 			Description = e.Entity.Description,
 			Id = e.Entity.Id,
 			Tags = e.Entity.Tags,
-			Json = e.Entity.Json
+			Json = e.Entity.JsonData
 		});
 	}
 
@@ -41,14 +41,14 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 			Description = x.Description,
 			Id = x.Id,
 			Tags = x.Tags,
-			Json = x.Json,
+			Json = x.JsonData,
 			CreatedAt = x.CreatedAt,
 			UpdatedAt = x.UpdatedAt,
 			Category = new CategoryResponse {
 				Title = x.Category!.Title,
 				Id = x.Category.Id,
 				Tags = x.Category.Tags,
-				Json = x.Category.Json
+				Json = x.Category.JsonData
 			}
 		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
@@ -59,14 +59,14 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 			Description = x.Description,
 			Id = x.Id,
 			Tags = x.Tags,
-			Json = x.Json,
+			Json = x.JsonData,
 			CreatedAt = x.CreatedAt,
 			UpdatedAt = x.UpdatedAt,
 			Category = new CategoryResponse {
 				Title = x.Category!.Title,
 				Id = x.Category.Id,
 				Tags = x.Category.Tags,
-				Json = x.Category.Json
+				Json = x.Category.JsonData
 			}
 		}).FirstOrDefaultAsync(x => x.Id == p.Id);
 

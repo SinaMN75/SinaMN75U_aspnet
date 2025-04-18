@@ -31,7 +31,7 @@ public class UserService(
 			State = p.State,
 			City = p.City,
 			Birthdate = p.Birthdate,
-			Json = new UserJson {
+			JsonData = new UserJson {
 				FcmToken = p.FcmToken,
 				Health1 = p.Health1 ?? [],
 				Sickness = p.Sickness ?? [],
@@ -93,7 +93,7 @@ public class UserService(
 		if (p.State.IsNotNullOrEmpty()) e.State = p.State;
 
 		// Json
-		if (p.FcmToken.IsNotNullOrEmpty()) e.Json.FcmToken = p.FcmToken;
+		if (p.FcmToken.IsNotNullOrEmpty()) e.JsonData.FcmToken = p.FcmToken;
 
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
@@ -108,7 +108,7 @@ public class UserService(
 		if (p.RemoveFoodAllergies.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveFoodAllergies.Contains(x));
 
 		if (p.UserAnswers.IsNotNull()) {
-			e.Json.UserAnswerJson.AddRange(p.UserAnswers);
+			e.JsonData.UserAnswerJson.AddRange(p.UserAnswers);
 		}
 		
 		if (p.Categories.IsNotNullOrEmpty()) {

@@ -10,22 +10,22 @@ public static class DbModelBuilder {
 			}
 		}
 
-		builder.Entity<UserEntity>().OwnsOne(e => e.Json, b => {
+		builder.Entity<UserEntity>().OwnsOne(e => e.JsonData, b => {
 			b.ToJson();
 			b.OwnsMany(i => i.UserAnswerJson).OwnsMany(i => i.Results);
 		});
-		builder.Entity<CategoryEntity>().OwnsOne(e => e.Json, b => b.ToJson());
-		builder.Entity<MediaEntity>().OwnsOne(e => e.Json, b => b.ToJson());
-		builder.Entity<ContentEntity>().OwnsOne(e => e.Json, b => b.ToJson());
-		builder.Entity<ProductEntity>().OwnsOne(e => e.Json, b => {
+		builder.Entity<CategoryEntity>().OwnsOne(e => e.JsonData, b => b.ToJson());
+		builder.Entity<MediaEntity>().OwnsOne(e => e.JsonData, b => b.ToJson());
+		builder.Entity<ContentEntity>().OwnsOne(e => e.JsonData, b => b.ToJson());
+		builder.Entity<ProductEntity>().OwnsOne(e => e.JsonData, b => {
 			b.ToJson();
 			b.OwnsMany(i => i.VisitCounts);
 		});
-		builder.Entity<CommentEntity>().OwnsOne(e => e.Json, b => {
+		builder.Entity<CommentEntity>().OwnsOne(e => e.JsonData, b => {
 			b.ToJson();
 			b.OwnsMany(i => i.Reacts);
 		});
-		builder.Entity<ExamEntity>().OwnsOne(e => e.Json, b => {
+		builder.Entity<ExamEntity>().OwnsOne(e => e.JsonData, b => {
 			b.ToJson();
 			b.OwnsMany(i => i.Questions).OwnsMany(i => i.Options);
 		});

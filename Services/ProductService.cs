@@ -33,7 +33,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 			UserId = p.UserId ?? userData.Id,
 			Tags = p.Tags,
 			Categories = categories,
-			Json = new ProductJson {
+			JsonData = new ProductJson {
 				Details = p.Details,
 				VisitCounts = [],
 				RelatedProducts = []
@@ -72,7 +72,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 			Longitude = x.Longitude,
 			Stock = x.Stock,
 			Price = x.Price,
-			Json = x.Json,
+			Json = x.JsonData,
 			ParentId = x.ParentId,
 			Id = x.Id,
 			CreatedAt = x.CreatedAt,
@@ -83,7 +83,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 					UserName = x.User!.UserName,
 					PhoneNumber = x.User!.PhoneNumber,
 					Email = x.User!.Email,
-					Json = x.User!.Json,
+					Json = x.User!.JsonData,
 					FirstName = x.User!.FirstName,
 					LastName = x.User!.LastName,
 					Country = x.User!.Country,
@@ -91,17 +91,17 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 					City = x.User!.City,
 					Bio = x.User!.Bio,
 					Birthdate = x.User!.Birthdate,
-					Media = x.User.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.Json, Id = z.Id, Tags = z.Tags }),
+					Media = x.User.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.JsonData, Id = z.Id, Tags = z.Tags }),
 					Id = x.User!.Id,
 					CreatedAt = x.User!.CreatedAt,
 					UpdatedAt = x.User!.UpdatedAt,
 					Tags = x.User!.Tags,
 					Categories = x.Categories!.Select(y => new CategoryResponse {
 						Title = y.Title,
-						Json = y.Json,
+						Json = y.JsonData,
 						Id = y.Id,
 						Tags = y.Tags,
-						Media = y.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.Json, Id = z.Id, Tags = z.Tags })
+						Media = y.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.JsonData, Id = z.Id, Tags = z.Tags })
 					})
 				}
 				: null,
@@ -115,7 +115,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 					Longitude = x.Longitude,
 					Stock = x.Stock,
 					Price = x.Price,
-					Json = x.Json,
+					Json = x.JsonData,
 					ParentId = x.ParentId,
 					Id = x.Id,
 					CreatedAt = x.CreatedAt,
@@ -126,7 +126,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 							UserName = x.User!.UserName,
 							PhoneNumber = x.User!.PhoneNumber,
 							Email = x.User!.Email,
-							Json = x.User!.Json,
+							Json = x.User!.JsonData,
 							FirstName = x.User!.FirstName,
 							LastName = x.User!.LastName,
 							Country = x.User!.Country,
@@ -138,36 +138,36 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 							CreatedAt = x.User!.CreatedAt,
 							UpdatedAt = x.User!.UpdatedAt,
 							Tags = x.User!.Tags,
-							Media = x.User.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.Json, Id = z.Id, Tags = z.Tags }),
+							Media = x.User.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.JsonData, Id = z.Id, Tags = z.Tags }),
 							Categories = x.Categories!.Select(y => new CategoryResponse {
 								Title = y.Title,
-								Json = y.Json,
+								Json = y.JsonData,
 								Id = y.Id,
 								Tags = y.Tags,
-								Media = y.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.Json, Id = z.Id, Tags = z.Tags })
+								Media = y.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.JsonData, Id = z.Id, Tags = z.Tags })
 							})
 						}
 						: null,
-					Media = p.ShowMedia ? x.Media!.Select(y => new MediaResponse { Path = y.Path, Json = y.Json, Id = y.Id, Tags = y.Tags }) : null,
+					Media = p.ShowMedia ? x.Media!.Select(y => new MediaResponse { Path = y.Path, Json = y.JsonData, Id = y.Id, Tags = y.Tags }) : null,
 					Categories = p.ShowCategories
 						? x.Categories!.Select(y => new CategoryResponse {
 							Title = y.Title,
-							Json = y.Json,
+							Json = y.JsonData,
 							Id = y.Id,
 							Tags = y.Tags,
-							Media = y.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.Json, Id = z.Id, Tags = z.Tags })
+							Media = y.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.JsonData, Id = z.Id, Tags = z.Tags })
 						})
 						: null
 				})
 				: null,
-			Media = p.ShowMedia ? x.Media!.Select(y => new MediaResponse { Path = y.Path, Json = y.Json, Id = y.Id, Tags = y.Tags }) : null,
+			Media = p.ShowMedia ? x.Media!.Select(y => new MediaResponse { Path = y.Path, Json = y.JsonData, Id = y.Id, Tags = y.Tags }) : null,
 			Categories = p.ShowCategories
 				? x.Categories!.Select(y => new CategoryResponse {
 					Title = y.Title,
-					Json = y.Json,
+					Json = y.JsonData,
 					Id = y.Id,
 					Tags = y.Tags,
-					Media = y.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.Json, Id = y.Id, Tags = z.Tags })
+					Media = y.Media!.Select(z => new MediaResponse { Path = z.Path, Json = z.JsonData, Id = y.Id, Tags = z.Tags })
 				})
 				: null
 		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
@@ -183,10 +183,10 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse<ProductResponse?>(null, USC.NotFound, ls.Get("ProductNotFound"));
 
-		VisitCount? visitCount = e.Json.VisitCounts.FirstOrDefault(v => v.UserId == (userData?.Id ?? Guid.Empty));
+		VisitCount? visitCount = e.JsonData.VisitCounts.FirstOrDefault(v => v.UserId == (userData?.Id ?? Guid.Empty));
 
 		if (visitCount != null) visitCount.Count++;
-		else e.Json.VisitCounts.Add(new VisitCount { UserId = userData?.Id ?? Guid.Empty, Count = 1 });
+		else e.JsonData.VisitCounts.Add(new VisitCount { UserId = userData?.Id ?? Guid.Empty, Count = 1 });
 
 		db.Set<ProductEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
@@ -210,14 +210,14 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 		if (p.Price.IsNotNullOrEmpty()) e.Price = p.Price;
 		if (p.ParentId.IsNotNullOrEmpty()) e.ParentId = p.ParentId;
 		if (p.Stock.IsNotNullOrEmpty()) e.Stock = p.Stock;
-		if (p.Details.IsNotNullOrEmpty()) e.Json.Details = p.Details;
+		if (p.Details.IsNotNullOrEmpty()) e.JsonData.Details = p.Details;
 		if (p.UserId.IsNotNullOrEmpty()) e.UserId = p.UserId ?? userData.Id;
 
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
 
-		if (p.AddRelatedProducts.IsNotNullOrEmpty()) e.Json.RelatedProducts.AddRangeIfNotExist(p.AddRelatedProducts);
-		if (p.RemoveRelatedProducts.IsNotNullOrEmpty()) e.Json.RelatedProducts.RemoveAll(x => p.RemoveRelatedProducts.Contains(x));
+		if (p.AddRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.AddRangeIfNotExist(p.AddRelatedProducts);
+		if (p.RemoveRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.RemoveAll(x => p.RemoveRelatedProducts.Contains(x));
 
 		if (p.AddCategories.IsNotNullOrEmpty()) {
 			IEnumerable<CategoryEntity> newCategories = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.AddCategories }, ct) ?? [];

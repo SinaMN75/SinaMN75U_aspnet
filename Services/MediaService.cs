@@ -30,7 +30,7 @@ public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
 			Tags = p.Tags,
-			Json = new MediaJson {
+			JsonData = new MediaJson {
 				Title = p.Title,
 				Description = p.Description
 			}
@@ -44,8 +44,8 @@ public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService
 	public async Task<UResponse<MediaResponse?>> Update(MediaUpdateParams p, CancellationToken ct) {
 		MediaEntity? e = await db.Set<MediaEntity>().FindAsync(p.Id, ct);
 		if (e == null) return new UResponse<MediaResponse?>(null, USC.BadRequest);
-		if (p.Title != null) e.Json.Title = p.Title;
-		if (p.Description != null) e.Json.Description = p.Description;
+		if (p.Title != null) e.JsonData.Title = p.Title;
+		if (p.Description != null) e.JsonData.Description = p.Description;
 		if (p.AddTags != null) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags != null) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
 

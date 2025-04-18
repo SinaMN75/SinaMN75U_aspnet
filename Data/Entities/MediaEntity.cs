@@ -25,7 +25,7 @@ public class MediaEntity : BaseEntity<TagMedia, MediaJson> {
 		Id = Id,
 		Path = $"{Server.ServerAddress}/Media/{Path}",
 		Tags = Tags,
-		Json = Json,
+		Json = JsonData,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt
 	};
@@ -35,7 +35,7 @@ public class MediaEntity : BaseEntity<TagMedia, MediaJson> {
 		Tags = Tags,
 		CreatedAt = CreatedAt,
 		UpdatedAt = CreatedAt,
-		Json = Json,
+		JsonData = JsonData,
 		Id = Id,
 		CategoryId = CategoryId,
 		UserId = UserId,

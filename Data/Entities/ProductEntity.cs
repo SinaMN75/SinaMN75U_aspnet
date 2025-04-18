@@ -52,7 +52,7 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 		Price = Price,
 		ParentId = ParentId,
 		Tags = Tags,
-		Json = Json,
+		Json = JsonData,
 		Children = Children?.Select(x => x.MapToResponse()),
 		Media = media
 			? Media?.Select(x => x.MapToResponse())
