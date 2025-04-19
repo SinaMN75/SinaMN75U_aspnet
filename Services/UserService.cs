@@ -94,6 +94,10 @@ public class UserService(
 
 		// Json
 		if (p.FcmToken.IsNotNullOrEmpty()) e.JsonData.FcmToken = p.FcmToken;
+		if (p.FatherName.IsNotNullOrEmpty()) e.JsonData.FatherName = p.FatherName;
+		if (p.Weight.IsNotNullOrEmpty()) e.JsonData.Weight = p.Weight;
+		if (p.Height.IsNotNullOrEmpty()) e.JsonData.Height = p.Height;
+		if (p.Address.IsNotNullOrEmpty()) e.JsonData.Address = p.Address;
 
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
@@ -104,13 +108,16 @@ public class UserService(
 		if (p.AddSickness.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddSickness);
 		if (p.RemoveSickness.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveSickness.Contains(x));
 
+		if (p.AddDrugAllergies.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddDrugAllergies);
+		if (p.RemoveDrugAllergies.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveDrugAllergies.Contains(x));
+
 		if (p.AddFoodAllergies.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddFoodAllergies);
 		if (p.RemoveFoodAllergies.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveFoodAllergies.Contains(x));
 
 		if (p.UserAnswers.IsNotNull()) {
 			e.JsonData.UserAnswerJson.AddRange(p.UserAnswers);
 		}
-		
+
 		if (p.Categories.IsNotNullOrEmpty()) {
 			List<CategoryEntity>? list = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct);
 			e.Categories.AddRangeIfNotExist(list);
