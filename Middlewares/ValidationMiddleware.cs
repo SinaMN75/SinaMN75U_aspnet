@@ -6,7 +6,7 @@ public class UValidationFilter : IEndpointFilter {
 	public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next) {
 		foreach (object? argument in context.Arguments) {
 			if (argument is null) continue;
-			ILocalizationService localization = context.HttpContext.RequestServices.GetRequiredService<ILocalizationService>();
+			ILocalizationService l = context.HttpContext.RequestServices.GetRequiredService<ILocalizationService>();
 			ValidationContext validationContext = new(argument,
 				serviceProvider: context.HttpContext.RequestServices,
 				items: null);
@@ -20,10 +20,9 @@ public class UValidationFilter : IEndpointFilter {
 			);
 
 			if (isValid) continue;
-			ValidationResult? firstError = validationResults.FirstOrDefault();
-			string errorMessage = firstError?.ErrorMessage ?? localization.Get("ValidationError");
+			string errorMessage = validationResults.FirstOrDefault()?.ErrorMessage ?? l.Get("ValidationError");
 
-			return new UResponse(USC.BadRequest, errorMessage);
+			return new UResponse(USC.BadRequest, errorMessage).ToResult();
 		}
 
 		return await next(context);
