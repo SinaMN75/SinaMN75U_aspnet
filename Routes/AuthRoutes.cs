@@ -5,7 +5,8 @@ public static class AuthRoutes {
 		RouteGroupBuilder route = app.MapGroup("api/auth/").WithTags(tag).AddEndpointFilter<UValidationFilter>();
 
 		route.MapPost("Register", async (RegisterParams d, IAuthService s, CancellationToken c) => (await s.Register(d, c)).ToResult()).Produces<UResponse<LoginResponse>>();
-		route.MapPost("LoginWithPassword", async (LoginWithEmailPasswordParams d, IAuthService s, CancellationToken c) => (await s.LoginWithPassword(d, c)).ToResult()).Produces<UResponse<LoginResponse>>();
+		route.MapPost("LoginWithEmailPassword", async (LoginWithEmailPasswordParams d, IAuthService s, CancellationToken c) => (await s.LoginWithEmailPassword(d, c)).ToResult()).Produces<UResponse<LoginResponse>>();
+		route.MapPost("LoginWithUserNamePassword", async (LoginWithUserNamePasswordParams d, IAuthService s, CancellationToken c) => (await s.LoginWithUserNamePassword(d, c)).ToResult()).Produces<UResponse<LoginResponse>>();
 		route.MapPost("Test", async (LoginWithEmailPasswordParams d, IAuthService s, CancellationToken c) => (await s.TestToken(d, c)).ToResult()).Produces<UResponse<LoginResponse>>();
 		route.MapPost("RefreshToken", async (RefreshTokenParams d, IAuthService s, CancellationToken c) => (await s.RefreshToken(d, c)).ToResult()).Produces<UResponse<LoginResponse>>();
 		route.MapPost("GetVerificationCodeForLogin", async (GetMobileVerificationCodeForLoginParams p, IAuthService s, CancellationToken c) => (await s.GetVerificationCodeForLogin(p, c)).ToResult()).Produces<UResponse<UserResponse>>();

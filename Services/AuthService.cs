@@ -2,7 +2,8 @@ namespace SinaMN75U.Services;
 
 public interface IAuthService {
 	Task<UResponse<LoginResponse?>> Register(RegisterParams p, CancellationToken ct);
-	Task<UResponse<LoginResponse?>> LoginWithPassword(LoginWithEmailPasswordParams p, CancellationToken ct);
+	Task<UResponse<LoginResponse?>> LoginWithEmailPassword(LoginWithEmailPasswordParams p, CancellationToken ct);
+	Task<UResponse<LoginResponse?>> LoginWithUserNamePassword(LoginWithUserNamePasswordParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> RefreshToken(RefreshTokenParams p, CancellationToken ct);
 	Task<UResponse> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> VerifyCodeForLogin(VerifyMobileForLoginParams p, CancellationToken ct);
@@ -50,11 +51,27 @@ public class AuthService(
 		});
 	}
 
-	public async Task<UResponse<LoginResponse?>> LoginWithPassword(LoginWithEmailPasswordParams p, CancellationToken ct) {
+	public async Task<UResponse<LoginResponse?>> LoginWithEmailPassword(LoginWithEmailPasswordParams p, CancellationToken ct) {
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Email == p.Email, ct);
 		if (user == null || !PasswordHasher.Verify(p.Password, user.Password))
 			return new UResponse<LoginResponse?>(null, USC.NotFound, ls.Get("InvalidCredentials"));
 
+		user.RefreshToken = ts.GenerateRefreshToken();
+		await db.SaveChangesAsync(ct);
+
+		return new UResponse<LoginResponse?>(new LoginResponse {
+			Token = CreateToken(user),
+			RefreshToken = user.RefreshToken,
+			Expires = config["Jwt:Expires"] ?? "60",
+			User = user.MapToResponse()
+		});
+	}
+	
+	public async Task<UResponse<LoginResponse?>> LoginWithUserNamePassword(LoginWithUserNamePasswordParams p, CancellationToken ct) {
+		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.UserName == p.UserName, ct);
+		if (user == null || !PasswordHasher.Verify(p.Password, user.Password))
+			return new UResponse<LoginResponse?>(null, USC.NotFound, ls.Get("InvalidCredentials"));
+		
 		user.RefreshToken = ts.GenerateRefreshToken();
 		await db.SaveChangesAsync(ct);
 
