@@ -35,7 +35,12 @@ public class UserService(
 				FcmToken = p.FcmToken,
 				Health1 = p.Health1 ?? [],
 				Sickness = p.Sickness ?? [],
-				FoodAllergies = p.FoodAllergies ?? []
+				Weight = p.Weight,
+				Height = p.Height,
+				Address = p.Address,
+				FatherName = p.FatherName,
+				FoodAllergies = p.FoodAllergies ?? [],
+				DrugAllergies = p.DrugAllergies
 			},
 			Tags = p.Tags,
 			CreatedAt = DateTime.UtcNow,
