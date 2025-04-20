@@ -18,7 +18,8 @@ public enum USC {
 
 public enum TagUser {
 	Male = 100,
-	Female = 101
+	Female = 101,
+	SuperAdmin = 201
 }
 
 public enum TagCategory {

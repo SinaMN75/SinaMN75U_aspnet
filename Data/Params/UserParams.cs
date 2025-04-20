@@ -54,10 +54,7 @@ public class UserReadParams : BaseReadParams<TagUser> {
 	public bool ShowMedia { get; set; } = false;
 }
 
-public class UserUpdateParams {
-	[URequired("IdRequired")]
-	public required Guid Id { get; set; }
-
+public class UserUpdateParams: BaseUpdateParams<TagUser> {
 	public string? Password { get; set; }
 	public string? FirstName { get; set; }
 	public string? LastName { get; set; }
@@ -75,9 +72,7 @@ public class UserUpdateParams {
 	public double? Height { get; set; }
 	public string? Address { get; set; }
 	public string? FatherName { get; set; }
-
-	public IEnumerable<TagUser>? AddTags { get; set; }
-	public IEnumerable<TagUser>? RemoveTags { get; set; }
+	
 	public IEnumerable<TagUser>? AddHealth1 { get; set; }
 	public IEnumerable<TagUser>? RemoveHealth1 { get; set; }
 	public IEnumerable<TagUser>? AddFoodAllergies { get; set; }
