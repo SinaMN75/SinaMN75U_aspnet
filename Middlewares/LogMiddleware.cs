@@ -166,16 +166,14 @@ public sealed class ApiRequestLoggingMiddleware(
 }
 
 public class EfCoreQueryLoggerProvider(List<string> queries) : ILoggerProvider {
-	public ILogger CreateLogger(string categoryName) {
-		return new EfCoreQueryLogger(queries);
-	}
+	public ILogger CreateLogger(string categoryName) => new EfCoreQueryLogger(queries);
 
-	public void Dispose() { }
+	public void Dispose() {}
 }
 
 public class EfCoreQueryLogger(List<string> queries) : ILogger {
-	public IDisposable BeginScope<TState>(TState state) => null;
-
+	public IDisposable? BeginScope<TState>(TState state) => null;
+	
 	public bool IsEnabled(LogLevel logLevel) => true;
 
 	public void Log<TState>(
@@ -183,7 +181,7 @@ public class EfCoreQueryLogger(List<string> queries) : ILogger {
 		EventId eventId,
 		TState state,
 		Exception? exception,
-		Func<TState, Exception, string> formatter) {
+		Func<TState, Exception?, string> formatter) {
 		if (eventId.Name != "Microsoft.EntityFrameworkCore.Database.Command.CommandExecuted") return;
 		string message = formatter(state, exception);
 		queries.Add($"Query {queries.Count + 1}: {message}");

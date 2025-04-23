@@ -109,6 +109,7 @@ public class AuthService(
 			PhoneNumber = x.PhoneNumber,
 			Email = x.Email,
 			JsonData = x.JsonData,
+			UserExamResultJson = x.UserExamResultJson,
 			Tags = x.Tags
 		}).AsNoTracking().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
 

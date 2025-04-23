@@ -11,6 +11,10 @@ public class UserResponse : BaseResponse<TagUser, UserJson> {
 	public string? City { get; set; }
 	public string? Bio { get; set; }
 	public DateTime? Birthdate { get; set; }
+	
+	public required UserExamResultJson UserExamResultJson { get; set; }
+	
+	public IEnumerable<UserResponse>? Children { get; set; }
 	public IEnumerable<CategoryResponse>? Categories { get; set; }
 	public IEnumerable<MediaResponse>? Media { get; set; }
 }

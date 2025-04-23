@@ -9,8 +9,8 @@ public static class DbModelBuilder {
 				foreignKey.DeleteBehavior = DeleteBehavior.Cascade;
 			}
 		}
-		
-		builder.Entity<UserEntity>().OwnsOne(e => e.JsonData, b => {
+
+		builder.Entity<UserEntity>().OwnsOne(e => e.JsonData, b => b.ToJson()).OwnsOne(e => e.UserExamResultJson, b => {
 			b.ToJson();
 			b.OwnsMany(i => i.UserAnswerJson).OwnsMany(i => i.Results).OwnsOne(i => i.Answer);
 		});

@@ -6,6 +6,8 @@ public interface IUserService {
 	public Task<UResponse<UserResponse?>> ReadById(IdParams p, CancellationToken ct);
 	public Task<UResponse<UserResponse?>> Update(UserUpdateParams p, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
+
+	public Task<UserEntity?> ReadEntityById(Guid id, CancellationToken ct);
 }
 
 public class UserService(
@@ -31,6 +33,7 @@ public class UserService(
 			State = p.State,
 			City = p.City,
 			Birthdate = p.Birthdate,
+			ParentId = p.ParentId,
 			JsonData = new UserJson {
 				FcmToken = p.FcmToken,
 				Health1 = p.Health1 ?? [],
@@ -75,6 +78,19 @@ public class UserService(
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(u => u.Tags.Any(tag => p.Tags!.Contains(tag)));
 		if (p.Categories.IsNotNullOrEmpty()) q = q.Where(x => x.Categories!.Any(y => p.Categories.Contains(y.Id)));
 
+		if (p.ShowCategories) q = q.Include(x => x.Categories);
+		if (p.ShowMedia) q = q.Include(x => x.Media);
+		if (p.ShowChildren)
+			q = q.Include(x => x.Children)!
+				.ThenInclude(x => x.Children)!
+				.ThenInclude(x => x.Children)!
+				.ThenInclude(x => x.Children)!
+				.ThenInclude(x => x.Children)!
+				.ThenInclude(x => x.Children)!
+				.ThenInclude(x => x.Children)!
+				.ThenInclude(x => x.Children)!
+				.ThenInclude(x => x.Children)!
+				.ThenInclude(x => x.Children);
 		return await q.ToResponse(p.ShowMedia, p.ShowCategories).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
@@ -96,6 +112,7 @@ public class UserService(
 		if (p.City.IsNotNullOrEmpty()) e.City = p.City;
 		if (p.Country.IsNotNullOrEmpty()) e.Country = p.Country;
 		if (p.State.IsNotNullOrEmpty()) e.State = p.State;
+		if (p.ParentId.IsNotNullOrEmpty()) e.ParentId = p.ParentId;
 
 		// Json
 		if (p.FcmToken.IsNotNullOrEmpty()) e.JsonData.FcmToken = p.FcmToken;
@@ -107,21 +124,17 @@ public class UserService(
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
 
-		if (p.AddHealth1.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddHealth1);
-		if (p.RemoveHealth1.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveHealth1.Contains(x));
+		if (p.AddHealth1.IsNotNullOrEmpty()) e.JsonData.Health1.AddRangeIfNotExist(p.AddHealth1);
+		if (p.RemoveHealth1.IsNotNullOrEmpty()) e.JsonData.Health1.RemoveAll(x => p.RemoveHealth1.Contains(x));
 
-		if (p.AddSickness.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddSickness);
-		if (p.RemoveSickness.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveSickness.Contains(x));
+		if (p.AddSickness.IsNotNullOrEmpty()) e.JsonData.Sickness.AddRangeIfNotExist(p.AddSickness);
+		if (p.RemoveSickness.IsNotNullOrEmpty()) e.JsonData.Sickness.RemoveAll(x => p.RemoveSickness.Contains(x));
 
-		if (p.AddDrugAllergies.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddDrugAllergies);
-		if (p.RemoveDrugAllergies.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveDrugAllergies.Contains(x));
+		if (p.AddDrugAllergies.IsNotNullOrEmpty()) e.JsonData.DrugAllergies.AddRangeIfNotExist(p.AddDrugAllergies);
+		if (p.RemoveDrugAllergies.IsNotNullOrEmpty()) e.JsonData.DrugAllergies.RemoveAll(x => p.RemoveDrugAllergies.Contains(x));
 
-		if (p.AddFoodAllergies.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddFoodAllergies);
-		if (p.RemoveFoodAllergies.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveFoodAllergies.Contains(x));
-
-		if (p.UserAnswers.IsNotNull()) {
-			e.JsonData.UserAnswerJson.AddRange(p.UserAnswers);
-		}
+		if (p.AddFoodAllergies.IsNotNullOrEmpty()) e.JsonData.FoodAllergies.AddRangeIfNotExist(p.AddFoodAllergies);
+		if (p.RemoveFoodAllergies.IsNotNullOrEmpty()) e.JsonData.FoodAllergies.RemoveAll(x => p.RemoveFoodAllergies.Contains(x));
 
 		if (p.Categories.IsNotNullOrEmpty()) {
 			List<CategoryEntity>? list = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct);
@@ -143,5 +156,22 @@ public class UserService(
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		int count = await db.Set<UserEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 		return count == 0 ? new UResponse(USC.NotFound, ls.Get("UserNotFound")) : new UResponse(USC.Deleted, ls.Get("UserDeleted"));
+	}
+
+	public async Task<UserEntity?> ReadEntityById(Guid id, CancellationToken ct) {
+		UserEntity? e = await db.Set<UserEntity>().Select(x => new UserEntity {
+			UserName = x.UserName,
+			Password = x.Password,
+			RefreshToken = x.RefreshToken,
+			PhoneNumber = x.PhoneNumber,
+			Email = x.Email,
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			UpdatedAt = x.UpdatedAt,
+			JsonData = x.JsonData,
+			Tags = x.Tags
+		}).FirstOrDefaultAsync(x => x.Id == id, ct);
+
+		return e ?? null;
 	}
 }

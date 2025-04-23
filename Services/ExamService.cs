@@ -74,17 +74,21 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 	}
 
 	public async Task<UResponse> Delete(IdListParams p, CancellationToken ct) {
-		int? count = await db.Set<ExamEntity>().Where(x => p.Ids.Contains(x.Id)).ExecuteDeleteAsync();
+		int? count = await db.Set<ExamEntity>().Where(x => p.Ids.Contains(x.Id)).ExecuteDeleteAsync(ct);
 		return count.IsNotNullOrZero() ? new UResponse<ExamResponse?>(null, USC.NotFound, ls.Get("ExamNotFound")) : new UResponse();
 	}
 
 	public async Task<UResponse> SubmitAnswers(SubmitAnswersParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(USC.UnAuthorized, ls.Get("AuthorizationRequired"));
-		await userService.Update(new UserUpdateParams {
-			Id = p.UserId ?? userData.Id,
-			UserAnswers = p.UserAnswers
-		}, ct);
+
+		UserEntity? user = await userService.ReadEntityById(p.UserId, ct);
+		if (user == null) return new UResponse(USC.UnAuthorized, ls.Get("UserNotFound"));
+
+		user.UserExamResultJson.UserAnswerJson.AddRangeIfNotExist(p.UserAnswers);
+		db.Set<UserEntity>().Update(user);
+		await db.SaveChangesAsync(ct);
+		
 		return new UResponse();
 	}
 }

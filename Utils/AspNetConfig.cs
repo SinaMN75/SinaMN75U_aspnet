@@ -84,7 +84,6 @@ public static class AspNetConfig {
 		app.UseMiddleware<ApiRequestLoggingMiddleware>();
 		app.UseOutputCache();
 
-		app.MapPost("Datatypes", () => "hello").Produces<AllData>();
 		app.MapAuthRoutes("Auth");
 		app.MapUserRoutes("User");
 		app.MapMediaRoutes("Media");

@@ -14,5 +14,5 @@ public class ExamReadParams : BaseReadParams<TagExam> {
 
 public class SubmitAnswersParams: BaseParams {
 	public required List<UserAnswerJson> UserAnswers { get; set; }
-	public Guid? UserId { get; set; }
+	public required Guid UserId { get; set; }
 }

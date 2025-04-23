@@ -30,6 +30,7 @@ public class UserCreateParams : BaseParams {
 	public string? Address { get; set; }
 	public string? FatherName { get; set; }
 	public string? FcmToken { get; set; }
+	public Guid? ParentId { get; set; }
 	public List<string>? Health1 { get; set; }
 	public List<string>? FoodAllergies { get; set; }
 	public List<string> DrugAllergies { get; set; } = [];
@@ -52,6 +53,7 @@ public class UserReadParams : BaseReadParams<TagUser> {
 
 	public bool ShowCategories { get; set; } = false;
 	public bool ShowMedia { get; set; } = false;
+	public bool ShowChildren { get; set; } = false;
 }
 
 public class UserUpdateParams: BaseUpdateParams<TagUser> {
@@ -65,23 +67,23 @@ public class UserUpdateParams: BaseUpdateParams<TagUser> {
 	public string? PhoneNumber { get; set; }
 	public string? Email { get; set; }
 	public string? Bio { get; set; }
+	public Guid? ParentId { get; set; }
 	public DateTime? Birthdate { get; set; }
 
 	public string? FcmToken { get; set; }
-	public double? Weight { get; set; }
-	public double? Height { get; set; }
 	public string? Address { get; set; }
 	public string? FatherName { get; set; }
+	public double? Weight { get; set; }
+	public double? Height { get; set; }
 	
-	public IEnumerable<TagUser>? AddHealth1 { get; set; }
-	public IEnumerable<TagUser>? RemoveHealth1 { get; set; }
-	public IEnumerable<TagUser>? AddFoodAllergies { get; set; }
-	public IEnumerable<TagUser>? RemoveFoodAllergies { get; set; }
-	public IEnumerable<TagUser>? AddDrugAllergies { get; set; }
-	public IEnumerable<TagUser>? RemoveDrugAllergies { get; set; }
-
-	public IEnumerable<TagUser>? AddSickness { get; set; }
-	public IEnumerable<TagUser>? RemoveSickness { get; set; }
+	public IEnumerable<string>? AddHealth1 { get; set; }
+	public IEnumerable<string>? RemoveHealth1 { get; set; }
+	public IEnumerable<string>? AddFoodAllergies { get; set; }
+	public IEnumerable<string>? RemoveFoodAllergies { get; set; }
+	public IEnumerable<string>? AddDrugAllergies { get; set; }
+	public IEnumerable<string>? RemoveDrugAllergies { get; set; }
+	public IEnumerable<string>? AddSickness { get; set; }
+	public IEnumerable<string>? RemoveSickness { get; set; }
+	
 	public IEnumerable<Guid>? Categories { get; set; }
-	public List<UserAnswerJson>? UserAnswers { get; set; }
 }
