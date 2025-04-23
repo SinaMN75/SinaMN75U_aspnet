@@ -44,7 +44,7 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 	public UserEntity? Parent { get; set; }
 
 	[InverseProperty("Parent")]
-	public IEnumerable<CategoryEntity>? Children { get; set; }
+	public IEnumerable<UserEntity>? Children { get; set; }
 	
 	public UserExamResultJson UserExamResultJson { get; set; } = new();
 	
@@ -69,7 +69,9 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 		State = State,
 		FirstName = FirstName,
 		LastName = LastName,
-		Categories = showCategories ? Categories?.Select(u => u.MapToResponse()) : null
+		Categories = showCategories ? Categories?.Select(u => u.MapToResponse()) : null,
+		Media = Media?.Select(u => u.MapToResponse()) ?? null,
+		Children = Children?.Select(u => u.MapToResponse()) ?? null,
 	};
 }
 
