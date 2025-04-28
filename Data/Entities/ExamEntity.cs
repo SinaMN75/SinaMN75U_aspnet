@@ -22,6 +22,7 @@ public class QuestionJson {
 
 public class QuestionOptionJson {
 	public required string Title { get; set; }
+	public required string Hint { get; set; }
 	public required string Score { get; set; }
 }
 

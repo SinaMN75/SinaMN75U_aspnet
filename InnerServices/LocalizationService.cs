@@ -5,10 +5,7 @@ public interface ILocalizationService {
 }
 
 public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizationService {
-	public string Get(string key, string? locale) {
-		string filePath = Path.Combine(AppContext.BaseDirectory, "LocalizedMessages.json");
-		return JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(File.ReadAllText(filePath))!
-			.GetValueOrDefault(locale ?? httpContext.HttpContext?.Request.Headers["Locale"].FirstOrDefault() ?? "en")?
-			.GetValueOrDefault(key, "Error") ?? "Error";
-	}
+	public string Get(string key, string? locale) => JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "LocalizedMessages.json")))!
+		.GetValueOrDefault(locale ?? httpContext.HttpContext?.Request.Headers["Locale"].FirstOrDefault() ?? "en")?
+		.GetValueOrDefault(key, "Error") ?? "Error";
 }
