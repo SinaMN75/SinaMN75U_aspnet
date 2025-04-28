@@ -68,6 +68,7 @@ public static class AspNetConfig {
 		builder.Services.AddScoped<IContentService, ContentService>();
 		builder.Services.AddScoped<IProductService, ProductService>();
 		builder.Services.AddScoped<ICommentService, CommentService>();
+		builder.Services.AddScoped<IExamService, ExamService>();
 	}
 
 	public static void UseUServices(this WebApplication app) {
