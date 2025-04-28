@@ -10,9 +10,9 @@ public static class DbModelBuilder {
 			}
 		}
 
-		builder.Entity<UserEntity>().OwnsOne(e => e.JsonData, b => b.ToJson()).OwnsOne(e => e.UserExamResultJson, b => {
+		builder.Entity<UserEntity>().OwnsOne(e => e.JsonData, b => {
 			b.ToJson();
-			b.OwnsMany(i => i.UserAnswerJson).OwnsMany(i => i.Results).OwnsOne(i => i.Answer);
+			b.OwnsMany(i => i.UserAnswerJson).OwnsMany(i => i.Results);
 		});
 		builder.Entity<CategoryEntity>().OwnsOne(e => e.JsonData, b => b.ToJson());
 		builder.Entity<MediaEntity>().OwnsOne(e => e.JsonData, b => b.ToJson());

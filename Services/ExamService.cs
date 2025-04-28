@@ -92,13 +92,12 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 			CreatedAt = x.CreatedAt,
 			UpdatedAt = x.UpdatedAt,
 			JsonData = x.JsonData,
-			UserExamResultJson = x.UserExamResultJson,
 			Tags = x.Tags
 		}).FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
 
 		if (user == null) return new UResponse(USC.UnAuthorized, ls.Get("UserNotFound"));
 
-		user.UserExamResultJson.UserAnswerJson.AddRangeIfNotExist(p.UserAnswers);
+		user.JsonData.UserAnswerJson.AddRangeIfNotExist(p.UserAnswers);
 		db.Update(user);
 		await db.SaveChangesAsync(ct);
 

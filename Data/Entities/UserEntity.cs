@@ -46,8 +46,6 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 	[InverseProperty("Parent")]
 	public IEnumerable<UserEntity>? Children { get; set; }
 	
-	public UserExamResultJson UserExamResultJson { get; set; } = new();
-	
 	public List<CategoryEntity>? Categories { get; set; }
 
 	public IEnumerable<MediaEntity>? Media { get; set; }
@@ -61,7 +59,6 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 		Birthdate = Birthdate,
 		Tags = Tags,
 		JsonData = JsonData,
-		UserExamResultJson = UserExamResultJson,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt,
 		City = City,
@@ -85,9 +82,6 @@ public class UserJson {
 	public double? Height { get; set; }
 	public string? Address { get; set; }
 	public string? FatherName { get; set; }
-}
-
-public class UserExamResultJson {
 	public List<UserAnswerJson> UserAnswerJson { get; set; } = [];
 }
 
@@ -108,7 +102,6 @@ public static class UserEntityExtensions {
 			City = x.City,
 			Bio = x.Bio,
 			Birthdate = x.Birthdate,
-			UserExamResultJson = x.UserExamResultJson,
 			Categories = categories
 				? x.Categories!.Select(c => new CategoryResponse {
 					Title = c.Title,
