@@ -8,7 +8,7 @@ public interface IExamService {
 	public Task<UResponse> SubmitAnswers(SubmitAnswersParams p, CancellationToken ct);
 }
 
-public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts, IUserService userService) : IExamService {
+public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts) : IExamService {
 	public async Task<UResponse<ExamResponse>> Create(ExamCreateParams p, CancellationToken ct) {
 		EntityEntry<ExamEntity> e = await db.AddAsync(new ExamEntity {
 			Title = p.Title,
@@ -68,7 +68,7 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 				Tags = x.Category.Tags,
 				JsonData = x.Category.JsonData
 			}
-		}).FirstOrDefaultAsync(x => x.Id == p.Id);
+		}).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 
 		return e == null ? new UResponse<ExamResponse?>(null, USC.NotFound, ls.Get("ExamNotFound")) : new UResponse<ExamResponse?>(e);
 	}
@@ -92,13 +92,14 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 			CreatedAt = x.CreatedAt,
 			UpdatedAt = x.UpdatedAt,
 			JsonData = x.JsonData,
+			UserExamResultJson = x.UserExamResultJson,
 			Tags = x.Tags
 		}).FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
-		
+
 		if (user == null) return new UResponse(USC.UnAuthorized, ls.Get("UserNotFound"));
 
 		user.UserExamResultJson.UserAnswerJson.AddRangeIfNotExist(p.UserAnswers);
-		db.Set<UserEntity>().Update(user);
+		db.Update(user);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();
