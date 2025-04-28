@@ -6,8 +6,6 @@ public interface IUserService {
 	public Task<UResponse<UserResponse?>> ReadById(IdParams p, CancellationToken ct);
 	public Task<UResponse<UserResponse?>> Update(UserUpdateParams p, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
-
-	public Task<UserEntity?> ReadEntityById(Guid id, CancellationToken ct);
 }
 
 public class UserService(
@@ -156,22 +154,5 @@ public class UserService(
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		int count = await db.Set<UserEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 		return count == 0 ? new UResponse(USC.NotFound, ls.Get("UserNotFound")) : new UResponse(USC.Deleted, ls.Get("UserDeleted"));
-	}
-
-	public async Task<UserEntity?> ReadEntityById(Guid id, CancellationToken ct) {
-		UserEntity? e = await db.Set<UserEntity>().Select(x => new UserEntity {
-			UserName = x.UserName,
-			Password = x.Password,
-			RefreshToken = x.RefreshToken,
-			PhoneNumber = x.PhoneNumber,
-			Email = x.Email,
-			Id = x.Id,
-			CreatedAt = x.CreatedAt,
-			UpdatedAt = x.UpdatedAt,
-			JsonData = x.JsonData,
-			Tags = x.Tags
-		}).FirstOrDefaultAsync(x => x.Id == id, ct);
-
-		return e ?? null;
 	}
 }

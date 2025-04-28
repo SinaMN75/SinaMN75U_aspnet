@@ -82,13 +82,25 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(USC.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		UserEntity? user = await userService.ReadEntityById(p.UserId, ct);
+		UserEntity? user = await db.Set<UserEntity>().Select(x => new UserEntity {
+			UserName = x.UserName,
+			Password = x.Password,
+			RefreshToken = x.RefreshToken,
+			PhoneNumber = x.PhoneNumber,
+			Email = x.Email,
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			UpdatedAt = x.UpdatedAt,
+			JsonData = x.JsonData,
+			Tags = x.Tags
+		}).FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
+		
 		if (user == null) return new UResponse(USC.UnAuthorized, ls.Get("UserNotFound"));
 
 		user.UserExamResultJson.UserAnswerJson.AddRangeIfNotExist(p.UserAnswers);
 		db.Set<UserEntity>().Update(user);
 		await db.SaveChangesAsync(ct);
-		
+
 		return new UResponse();
 	}
 }
