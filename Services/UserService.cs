@@ -71,6 +71,7 @@ public class UserService(
 		if (p.PhoneNumber.IsNotNull()) q = q.Where(u => u.PhoneNumber == p.PhoneNumber);
 		if (p.Email.IsNotNull()) q = q.Where(u => u.Email == p.Email);
 		if (p.Bio.IsNotNull()) q = q.Where(u => u.Bio == p.Bio);
+		if (p.ParentId.IsNotNullOrEmpty()) q = q.Where(u => u.ParentId == p.ParentId);
 		if (p.StartBirthDate.HasValue) q = q.Where(u => u.Birthdate >= p.StartBirthDate.Value);
 		if (p.EndBirthDate.HasValue) q = q.Where(u => u.Birthdate <= p.EndBirthDate.Value);
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(u => u.Tags.Any(tag => p.Tags!.Contains(tag)));
