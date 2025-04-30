@@ -93,7 +93,7 @@ public class UserService(
 	}
 
 	public async Task<UResponse<UserResponse?>> Update(UserUpdateParams p, CancellationToken ct) {
-		UserEntity? e = await db.Set<UserEntity>().FindAsync(p.Id, ct);
+		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 
 		if (e == null) return new UResponse<UserResponse?>(null, USC.NotFound);
 
