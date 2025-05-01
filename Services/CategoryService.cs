@@ -44,11 +44,13 @@ public class CategoryService(
 			Title = x.Title,
 			JsonData = x.JsonData,
 			Tags = x.Tags,
+			ParentId = x.ParentId,
 			Children = x.Children!.Select(c1 => new CategoryResponse {
 				Id = c1.Id,
 				Title = c1.Title,
 				JsonData = c1.JsonData,
 				Tags = c1.Tags,
+				ParentId = x.ParentId,
 				Media = p.ShowMedia
 					? x.Media!.Select(m => new MediaResponse {
 						Path = m.Path,
@@ -61,6 +63,7 @@ public class CategoryService(
 					Id = c2.Id,
 					Title = c2.Title,
 					JsonData = c2.JsonData,
+					ParentId = x.ParentId,
 					Tags = c2.Tags,
 					Media = p.ShowMedia
 						? x.Media!.Select(m => new MediaResponse {
@@ -75,6 +78,7 @@ public class CategoryService(
 						Title = c3.Title,
 						JsonData = c3.JsonData,
 						Tags = c3.Tags,
+						ParentId = x.ParentId,
 						Media = p.ShowMedia
 							? x.Media!.Select(m => new MediaResponse {
 								Path = m.Path,
@@ -88,6 +92,7 @@ public class CategoryService(
 							Title = c4.Title,
 							JsonData = c4.JsonData,
 							Tags = c4.Tags,
+							ParentId = x.ParentId,
 							Media = p.ShowMedia
 								? x.Media!.Select(m => new MediaResponse {
 									Path = m.Path,
@@ -101,6 +106,7 @@ public class CategoryService(
 								Title = c5.Title,
 								JsonData = c5.JsonData,
 								Tags = c5.Tags,
+								ParentId = x.ParentId,
 								Media = p.ShowMedia
 									? x.Media!.Select(m => new MediaResponse {
 										Path = m.Path,
@@ -114,6 +120,7 @@ public class CategoryService(
 									Title = c6.Title,
 									JsonData = c6.JsonData,
 									Tags = c6.Tags,
+									ParentId = x.ParentId,
 									Media = p.ShowMedia
 										? x.Media!.Select(m => new MediaResponse {
 											Path = m.Path,
@@ -127,6 +134,7 @@ public class CategoryService(
 										Title = c7.Title,
 										JsonData = c7.JsonData,
 										Tags = c7.Tags,
+										ParentId = x.ParentId,
 										Media = p.ShowMedia
 											? x.Media!.Select(m => new MediaResponse {
 												Path = m.Path,
