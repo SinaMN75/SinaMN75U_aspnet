@@ -8,13 +8,8 @@ public class UserCreateParams : BaseParams {
 	[URequired("PasswordRequired")]
 	[UStringLength(4, 100, "PasswordMinLength")]
 	public required string Password { get; set; }
-
-	[URequired("PhoneNumberRequired")]
-	[UStringLength(9, 12, "PhoneNumberNotValid")]
+	
 	public required string PhoneNumber { get; set; }
-
-	[URequired("EmailRequired")]
-	[UEmail("EmailInvalid")]
 	public required string Email { get; set; }
 
 	public string? FirstName { get; set; }

@@ -1,9 +1,9 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Users")]
-[Index(nameof(Email), IsUnique = true, Name = "IX_Users_Email")]
-[Index(nameof(UserName), IsUnique = true, Name = "IX_Users_UserName")]
-[Index(nameof(PhoneNumber), IsUnique = true, Name = "IX_Users_PhoneNumber")]
+[Index(nameof(Email), Name = "IX_Users_Email")]
+[Index(nameof(UserName), Name = "IX_Users_UserName")]
+[Index(nameof(PhoneNumber), Name = "IX_Users_PhoneNumber")]
 public class UserEntity : BaseEntity<TagUser, UserJson> {
 	[MaxLength(100)]
 	public required string UserName { get; set; }
@@ -15,10 +15,10 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 	public required string RefreshToken { get; set; }
 
 	[MaxLength(15)]
-	public required string PhoneNumber { get; set; }
+	public string? PhoneNumber { get; set; }
 
 	[MaxLength(100)]
-	public required string Email { get; set; }
+	public string? Email { get; set; }
 
 	[MaxLength(100)]
 	public string? FirstName { get; set; }
