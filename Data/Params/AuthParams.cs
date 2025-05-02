@@ -34,14 +34,10 @@ public class RegisterParams : BaseParams {
 	[URequired("UserNameRequired")]
 	[UStringLength(2, 100, "UserNameMinLenght")]
 	public required string UserName { get; set; }
-
-	[URequired("EmailRequired")]
-	[UEmail("EmailInvalid")]
-	public required string Email { get; set; }
-
-	[URequired("PhoneNumberRequired")]
-	[UStringLength(9, 12, "PhoneNumberNotValid")]
-	public required string PhoneNumber { get; set; }
+	
+	public string? Email { get; set; }
+	
+	public string? PhoneNumber { get; set; }
 
 	[URequired("PasswordRequired")]
 	[UStringLength(4, 100, "PasswordMinLength")]

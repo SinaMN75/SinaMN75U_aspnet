@@ -2,8 +2,8 @@ namespace SinaMN75U.Data.Responses;
 
 public class UserResponse : BaseResponse<TagUser, UserJson> {
 	public required string UserName { get; set; }
-	public required string PhoneNumber { get; set; }
-	public required string? Email { get; set; }
+	public string? PhoneNumber { get; set; }
+	public string? Email { get; set; }
 	public string? FirstName { get; set; }
 	public string? LastName { get; set; }
 	public string? Country { get; set; }
