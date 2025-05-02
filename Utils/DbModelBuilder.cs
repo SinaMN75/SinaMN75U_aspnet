@@ -28,6 +28,7 @@ public static class DbModelBuilder {
 		builder.Entity<ExamEntity>().OwnsOne(e => e.JsonData, b => {
 			b.ToJson();
 			b.OwnsMany(i => i.Questions).OwnsMany(i => i.Options);
+			b.OwnsMany(i => i.ScoreDetails);
 		});
 	}
 }
