@@ -126,15 +126,10 @@ public class UserService(
 		if (p.AddHealth1.IsNotNullOrEmpty()) e.JsonData.Health1.AddRangeIfNotExist(p.AddHealth1);
 		if (p.RemoveHealth1.IsNotNullOrEmpty()) e.JsonData.Health1.RemoveAll(x => p.RemoveHealth1.Contains(x));
 
-		if (p.AddSickness.IsNotNullOrEmpty()) e.JsonData.Sickness.AddRangeIfNotExist(p.AddSickness);
-		if (p.RemoveSickness.IsNotNullOrEmpty()) e.JsonData.Sickness.RemoveAll(x => p.RemoveSickness.Contains(x));
-
-		if (p.AddDrugAllergies.IsNotNullOrEmpty()) e.JsonData.DrugAllergies.AddRangeIfNotExist(p.AddDrugAllergies);
-		if (p.RemoveDrugAllergies.IsNotNullOrEmpty()) e.JsonData.DrugAllergies.RemoveAll(x => p.RemoveDrugAllergies.Contains(x));
-
-		if (p.AddFoodAllergies.IsNotNullOrEmpty()) e.JsonData.FoodAllergies.AddRangeIfNotExist(p.AddFoodAllergies);
-		if (p.RemoveFoodAllergies.IsNotNullOrEmpty()) e.JsonData.FoodAllergies.RemoveAll(x => p.RemoveFoodAllergies.Contains(x));
-
+		if (p.Sickness.IsNotNullOrEmpty()) e.JsonData.Sickness = p.Sickness;
+		if (p.DrugAllergies.IsNotNullOrEmpty()) e.JsonData.DrugAllergies = p.DrugAllergies;
+		if (p.FoodAllergies.IsNotNullOrEmpty()) e.JsonData.FoodAllergies = p.FoodAllergies;
+		
 		if (p.Categories.IsNotNullOrEmpty()) {
 			List<CategoryEntity>? list = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct);
 			e.Categories.AddRangeIfNotExist(list);
