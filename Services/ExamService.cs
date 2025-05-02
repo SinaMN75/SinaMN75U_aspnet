@@ -17,7 +17,10 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
-			JsonData = new ExamJson { Questions = p.Questions },
+			JsonData = new ExamJson {
+				Questions = p.Questions,
+				ScoreDetails = p.ScoreDetails
+			},
 			Tags = p.Tags
 		});
 		await db.SaveChangesAsync(ct);
@@ -83,10 +86,36 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 		if (userData == null) return new UResponse(USC.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		UserEntity? user = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
+		if (user == null) return new UResponse(USC.NotFound, ls.Get("UserNotFound"));
 
-		if (user == null) return new UResponse(USC.UnAuthorized, ls.Get("UserNotFound"));
+		ExamEntity? exam = await db.Set<ExamEntity>().FirstOrDefaultAsync(x => x.Id == p.ExamId, ct);
+		if (exam == null) return new UResponse(USC.NotFound, ls.Get("ExamNotFound"));
 
-		user.JsonData.UserAnswerJson.AddRangeIfNotExist(p.UserAnswers);
+		double score = p.Answers.Sum(x => x.Answer.Score);
+		
+		ExamScoreDetail scoreDetail = exam.JsonData.ScoreDetails.FirstOrDefault(c => score >= c.MinScore && score <= c.MaxScore)
+		                              ?? new ExamScoreDetail {
+			                              Label = "Uncategorized",
+			                              Description = "Your score doesn't fall into defined categories",
+			                              MinScore = 1,
+			                              MaxScore = 1000
+		                              };
+		
+		foreach (ExamScoreDetail condition in exam.JsonData.ScoreDetails) {
+			if (score >= condition.MinScore && score <= condition.MaxScore) {
+				scoreDetail = condition;
+			}
+		}
+
+		UserAnswerJson json = new() {
+			Date = DateTime.UtcNow,
+			TotalScore = score,
+			Results = p.Answers,
+			Label = scoreDetail.Label,
+			Description = scoreDetail.Description
+		};
+
+		user.JsonData.UserAnswerJson.Add(json);
 		db.Update(user);
 		await db.SaveChangesAsync(ct);
 

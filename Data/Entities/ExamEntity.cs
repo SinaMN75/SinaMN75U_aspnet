@@ -11,6 +11,14 @@ public class ExamEntity : BaseEntity<TagExam, ExamJson> {
 
 public class ExamJson {
 	public required List<QuestionJson> Questions { get; set; }
+	public required List<ExamScoreDetail> ScoreDetails { get; set; }
+}
+
+public class ExamScoreDetail {
+	public required double MinScore { get; set; }
+	public required double MaxScore { get; set; }
+	public required string Label { get; set; }
+	public required string Description { get; set; }
 }
 
 public class QuestionJson {
@@ -23,13 +31,15 @@ public class QuestionJson {
 public class QuestionOptionJson {
 	public required string Title { get; set; }
 	public required string Hint { get; set; }
-	public required string Score { get; set; }
+	public required double Score { get; set; }
 }
 
 public class UserAnswerJson {
 	public required DateTime Date { get; set; }
 	public required double TotalScore { get; set; }
 	public required List<UserAnswerResultJson> Results { get; set; }
+	public required string Label { get; set; }
+	public required string Description { get; set; }
 }
 
 public class UserAnswerResultJson {
