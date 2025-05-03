@@ -19,9 +19,8 @@ public class AuthService(
 	IConfiguration config
 ) : IAuthService {
 	public async Task<UResponse<LoginResponse?>> Register(RegisterParams p, CancellationToken ct) {
-		bool isUserExists = await db.Set<UserEntity>().AnyAsync(x => x.Email == p.Email ||
-		                                                             x.UserName == p.UserName ||
-		                                                             x.PhoneNumber == p.PhoneNumber, ct);
+		bool isUserExists = await db.Set<UserEntity>().AnyAsync(x =>
+			x.UserName == p.UserName, ct);
 		if (isUserExists)
 			return new UResponse<LoginResponse?>(null, USC.Conflict, ls.Get("UserAlreadyExist"));
 

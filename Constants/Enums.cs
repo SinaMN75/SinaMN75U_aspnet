@@ -24,7 +24,8 @@ public enum TagUser {
 }
 
 public enum TagCategory {
-	Category = 100
+	Category = 100,
+	Exam = 101
 }
 
 public enum TagMedia {
