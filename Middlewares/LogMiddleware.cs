@@ -14,7 +14,7 @@ public sealed class ApiRequestLoggingMiddleware(
 	public async Task InvokeAsync(HttpContext context) {
 		HttpRequest request = context.Request;
 
-		if (!request.Path.StartsWithSegments("/api") || request.Path.StartsWithSegments("/api/media")) {
+		if (!request.Path.StartsWithSegments("/api") || request.Path.StartsWithSegments("/api/media") || request.Path.StartsWithSegments("/api/practino")) {
 			await next(context);
 			return;
 		}
@@ -168,12 +168,12 @@ public sealed class ApiRequestLoggingMiddleware(
 public class EfCoreQueryLoggerProvider(List<string> queries) : ILoggerProvider {
 	public ILogger CreateLogger(string categoryName) => new EfCoreQueryLogger(queries);
 
-	public void Dispose() {}
+	public void Dispose() { }
 }
 
 public class EfCoreQueryLogger(List<string> queries) : ILogger {
 	public IDisposable? BeginScope<TState>(TState state) => null;
-	
+
 	public bool IsEnabled(LogLevel logLevel) => true;
 
 	public void Log<TState>(
