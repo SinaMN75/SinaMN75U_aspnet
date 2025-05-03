@@ -5,6 +5,8 @@ public interface IHttpClientService {
 	Task<string> Post(string uri, object? body, Dictionary<string, string>? headers = null, TimeSpan? cacheDuration = null);
 	Task<string> Put(string uri, object? body, Dictionary<string, string>? headers = null);
 	Task<string> Delete(string uri, Dictionary<string, string>? headers = null);
+	Task<string> Upload(string uri, IFormFile file, Dictionary<string, string>? headers = null);
+	Task<string> Upload(string uri, IFormFile file, string fileName, Dictionary<string, string>? headers = null);
 }
 
 public class HttpClientService(HttpClient httpClient, IMemoryCache cache) : IHttpClientService {
@@ -34,6 +36,45 @@ public class HttpClientService(HttpClient httpClient, IMemoryCache cache) : IHtt
 		string uri,
 		Dictionary<string, string>? headers = null
 	) => await Send(HttpMethod.Delete, uri, null, null, headers);
+
+	public async Task<string> Upload(
+		string uri,
+		IFormFile file,
+		Dictionary<string, string>? headers = null
+	) => await Upload(uri, file, file.FileName, headers);
+
+	public async Task<string> Upload(
+		string uri,
+		IFormFile file,
+		string fileName,
+		Dictionary<string, string>? headers = null
+	) {
+		if (string.IsNullOrEmpty(uri)) throw new ArgumentException("URI cannot be null or empty.", nameof(uri));
+		ArgumentNullException.ThrowIfNull(file);
+		if (string.IsNullOrEmpty(fileName)) throw new ArgumentException("File name cannot be null or empty.", nameof(fileName));
+
+		using MultipartFormDataContent content = new MultipartFormDataContent();
+		await using Stream stream = file.OpenReadStream();
+		StreamContent fileContent = new StreamContent(stream);
+		fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+		content.Add(fileContent, "file", fileName);
+
+		using HttpRequestMessage request = new(HttpMethod.Post, uri);
+		request.Content = content;
+
+		if (headers != null) {
+			foreach (KeyValuePair<string, string> header in headers) {
+				request.Headers.Add(header.Key, header.Value);
+			}
+		}
+
+		using HttpResponseMessage response = await _httpClient.SendAsync(request);
+		if (!response.IsSuccessStatusCode) {
+			throw new HttpRequestException($"Request failed with status code {response.StatusCode}");
+		}
+
+		return await response.Content.ReadAsStringAsync();
+	}
 
 	private async Task<string> Send(
 		HttpMethod method,
