@@ -2,6 +2,7 @@ namespace SinaMN75U.Services;
 
 public interface IUserService {
 	public Task<UResponse<UserResponse?>> Create(UserCreateParams p, CancellationToken ct);
+	public Task<UResponse> BulkCreate(UserBulkCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<UserResponse>?>> Read(UserReadParams p, CancellationToken ct);
 	public Task<UResponse<UserResponse?>> ReadById(IdParams p, CancellationToken ct);
 	public Task<UResponse<UserResponse?>> Update(UserUpdateParams p, CancellationToken ct);
@@ -62,6 +63,56 @@ public class UserService(
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse<UserResponse?>(e.MapToResponse(), USC.Created);
+	}
+
+	public async Task<UResponse> BulkCreate(UserBulkCreateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(USC.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		if (p.Users.Count == 0) return new UResponse(USC.BadRequest, ls.Get("AtLeastOneUserRequired"));
+
+		List<UserEntity> entities = [];
+		List<Guid> categoryIds = p.Users.SelectMany(u => u.Categories ?? []).Distinct().ToList();
+		List<CategoryEntity> categories = await db.Set<CategoryEntity>()
+			.Where(c => categoryIds.Contains(c.Id))
+			.ToListAsync(ct);
+
+		entities.AddRange(p.Users.Select(userParam => new UserEntity {
+			Id = Guid.CreateVersion7(),
+			UserName = userParam.UserName,
+			Password = userParam.Password,
+			RefreshToken = "",
+			PhoneNumber = userParam.PhoneNumber,
+			Email = userParam.Email,
+			FirstName = userParam.FirstName,
+			LastName = userParam.LastName,
+			Bio = userParam.Bio,
+			Country = userParam.Country,
+			State = userParam.State,
+			City = userParam.City,
+			Birthdate = userParam.Birthdate,
+			ParentId = userParam.ParentId,
+			JsonData = new UserJson {
+				FcmToken = userParam.FcmToken,
+				Health1 = userParam.Health1 ?? [],
+				Sickness = userParam.Sickness ?? [],
+				Weight = userParam.Weight,
+				Height = userParam.Height,
+				Address = userParam.Address,
+				FatherName = userParam.FatherName,
+				FoodAllergies = userParam.FoodAllergies ?? [],
+				DrugAllergies = userParam.DrugAllergies
+			},
+			Tags = userParam.Tags,
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
+			Categories = categories.Where(c => userParam.Categories?.Contains(c.Id) ?? false).ToList()
+		}));
+
+		await db.Set<UserEntity>().AddRangeAsync(entities, ct);
+		await db.SaveChangesAsync(ct);
+
+		return new UResponse(USC.Created);
 	}
 
 	public async Task<UResponse<IEnumerable<UserResponse>?>> Read(UserReadParams p, CancellationToken ct) {
@@ -129,7 +180,7 @@ public class UserService(
 		if (p.Sickness.IsNotNullOrEmpty()) e.JsonData.Sickness = p.Sickness;
 		if (p.DrugAllergies.IsNotNullOrEmpty()) e.JsonData.DrugAllergies = p.DrugAllergies;
 		if (p.FoodAllergies.IsNotNullOrEmpty()) e.JsonData.FoodAllergies = p.FoodAllergies;
-		
+
 		if (p.Categories.IsNotNullOrEmpty()) {
 			List<CategoryEntity>? list = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct);
 			e.Categories.AddRangeIfNotExist(list);

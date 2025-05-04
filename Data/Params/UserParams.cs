@@ -37,6 +37,12 @@ public class UserCreateParams : BaseParams {
 	public IEnumerable<Guid>? Categories { get; set; }
 }
 
+public class UserBulkCreateParams : BaseParams {
+	[URequired("UsersRequired")]
+	[UMinCollectionLength(1, "AtLeastOneUserRequired")]
+	public required List<UserCreateParams> Users { get; set; }
+}
+
 public class UserReadParams : BaseReadParams<TagUser> {
 	public string? UserName { get; set; }
 	public string? PhoneNumber { get; set; }

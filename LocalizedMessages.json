@@ -29,7 +29,8 @@
     "PhoneNumberInvalid": "Please enter a valid phone number.",
     "AuthorizationRequired": "Please sign in to continue.",
     "MaxOtpReached": "Too many OTP requests. Please wait and try again.",
-    "UserDeleted": "Account deleted successfully."
+    "UserDeleted": "Account deleted successfully.",
+    "AtLeastOneUserRequired": "At Least One User Required"
   },
   "fa": {
     "InvalidCredentials": "اطلاعات ورود نادرست است",
@@ -61,6 +62,7 @@
     "PhoneNumberInvalid": "لطفا یک شماره تلفن معتبر وارد کنید.",
     "AuthorizationRequired": "لطفا برای ادامه وارد شوید.",
     "MaxOtpReached": "درخواست‌های کد یکبار مصرف بیش از حد است. لطفا صبر کنید و مجددا تلاش کنید.",
-    "UserDeleted": "حساب کاربری با موفقیت حذف شد."
+    "UserDeleted": "حساب کاربری با موفقیت حذف شد.",
+    "AtLeastOneUserRequired": "حداقل یک کاربر نیاز است"
   }
 }
