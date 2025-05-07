@@ -4,7 +4,6 @@ public static class AspNetConfig {
 	public static void AddUServices<T>(this WebApplicationBuilder builder) where T : DbContext {
 		builder.Services.AddCors(c => c.AddPolicy("AllowOrigin", o => o.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 		builder.Services.AddUSwagger();
-		builder.Services.AddUOutputCache();
 		builder.Services.AddHttpContextAccessor();
 		builder.Services.AddHttpClient();
 		builder.Services.AddMemoryCache();
@@ -33,7 +32,7 @@ public static class AspNetConfig {
 				)
 			)
 		);
-		
+
 		builder.Services.AddResponseCompression(o => o.EnableForHttps = true);
 		builder.Services.AddScoped<DbContext, T>();
 		builder.Services.AddDbContextPool<T>(b => {
@@ -81,15 +80,14 @@ public static class AspNetConfig {
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
 		app.UseMiddleware<ApiRequestLoggingMiddleware>();
-		app.UseOutputCache();
 
-		app.MapAuthRoutes("Auth");
-		app.MapUserRoutes("User");
-		app.MapMediaRoutes("Media");
-		app.MapContentRoutes("Content");
-		app.MapProductRoutes("Product");
-		app.MapCommentRoutes("Comment");
-		app.MapCategoryRoutes("Category");
-		app.MapExamRoutes("Exam");
+		app.MapAuthRoutes("api/auth/");
+		app.MapUserRoutes("api/user/");
+		app.MapMediaRoutes("api/media/");
+		app.MapContentRoutes("api/content/");
+		app.MapProductRoutes("api/product/");
+		app.MapCommentRoutes("api/comment/");
+		app.MapCategoryRoutes("api/Category/");
+		app.MapExamRoutes("api/Exam/");
 	}
 }

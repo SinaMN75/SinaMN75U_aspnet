@@ -24,7 +24,7 @@ public class LoginWithUserNamePasswordParams : BaseParams {
 	[URequired("UserNameRequired")]
 	[UStringLength(2, 100, "UserNameMinLenght")]
 	public required string UserName { get; set; }
-	
+
 	[URequired("PasswordRequired")]
 	[UStringLength(4, 100, "PasswordMinLength")]
 	public required string Password { get; set; }
@@ -34,9 +34,9 @@ public class RegisterParams : BaseParams {
 	[URequired("UserNameRequired")]
 	[UStringLength(2, 100, "UserNameMinLenght")]
 	public required string UserName { get; set; }
-	
+
 	public string? Email { get; set; }
-	
+
 	public string? PhoneNumber { get; set; }
 
 	[URequired("PasswordRequired")]

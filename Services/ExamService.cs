@@ -92,7 +92,7 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 		if (exam == null) return new UResponse(USC.NotFound, ls.Get("ExamNotFound"));
 
 		double score = p.Answers.Sum(x => x.Answer.Score);
-		
+
 		ExamScoreDetail scoreDetail = exam.JsonData.ScoreDetails.FirstOrDefault(c => score >= c.MinScore && score <= c.MaxScore)
 		                              ?? new ExamScoreDetail {
 			                              Label = "Uncategorized",
@@ -100,12 +100,10 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 			                              MinScore = 1,
 			                              MaxScore = 1000
 		                              };
-		
-		foreach (ExamScoreDetail condition in exam.JsonData.ScoreDetails) {
-			if (score >= condition.MinScore && score <= condition.MaxScore) {
+
+		foreach (ExamScoreDetail condition in exam.JsonData.ScoreDetails)
+			if (score >= condition.MinScore && score <= condition.MaxScore)
 				scoreDetail = condition;
-			}
-		}
 
 		UserAnswerJson json = new() {
 			Date = DateTime.UtcNow,

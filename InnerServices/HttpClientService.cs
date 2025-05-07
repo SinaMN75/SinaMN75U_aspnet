@@ -53,25 +53,21 @@ public class HttpClientService(HttpClient httpClient, IMemoryCache cache) : IHtt
 		ArgumentNullException.ThrowIfNull(file);
 		if (string.IsNullOrEmpty(fileName)) throw new ArgumentException("File name cannot be null or empty.", nameof(fileName));
 
-		using MultipartFormDataContent content = new MultipartFormDataContent();
+		using MultipartFormDataContent content = new();
 		await using Stream stream = file.OpenReadStream();
-		StreamContent fileContent = new StreamContent(stream);
-		fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+		StreamContent fileContent = new(stream);
+		fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
 		content.Add(fileContent, "file", fileName);
 
 		using HttpRequestMessage request = new(HttpMethod.Post, uri);
 		request.Content = content;
 
-		if (headers != null) {
-			foreach (KeyValuePair<string, string> header in headers) {
+		if (headers != null)
+			foreach (KeyValuePair<string, string> header in headers)
 				request.Headers.Add(header.Key, header.Value);
-			}
-		}
 
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
-		if (!response.IsSuccessStatusCode) {
-			throw new HttpRequestException($"Request failed with status code {response.StatusCode}");
-		}
+		if (!response.IsSuccessStatusCode) throw new HttpRequestException($"Request failed with status code {response.StatusCode}");
 
 		return await response.Content.ReadAsStringAsync();
 	}

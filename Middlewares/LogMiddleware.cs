@@ -1,12 +1,5 @@
 namespace SinaMN75U.Middlewares;
 
-using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using System.Diagnostics;
-using System.Text;
-using System.Text.Json;
-
 public sealed class ApiRequestLoggingMiddleware(
 	RequestDelegate next,
 	ILogger<ApiRequestLoggingMiddleware> logger,
@@ -36,10 +29,10 @@ public sealed class ApiRequestLoggingMiddleware(
 			}
 
 			// Read request body
-			if (request.Body.CanRead) {
+			if (request.Body.CanRead)
 				try {
 					request.EnableBuffering();
-					using StreamReader reader = new StreamReader(
+					using StreamReader reader = new(
 						request.Body,
 						Encoding.UTF8,
 						true,
@@ -51,11 +44,10 @@ public sealed class ApiRequestLoggingMiddleware(
 				catch (Exception ex) {
 					logger.LogError(ex, "Failed to read request body");
 				}
-			}
 
 			// Capture response
 			Stream originalResponseBody = context.Response.Body;
-			using MemoryStream responseBuffer = new MemoryStream();
+			using MemoryStream responseBuffer = new();
 			context.Response.Body = responseBuffer;
 
 			try {
@@ -78,17 +70,17 @@ public sealed class ApiRequestLoggingMiddleware(
 		finally {
 			try {
 				LogToFile(
-					timestamp: DateTime.UtcNow,
-					method: request.Method,
-					path: request.Path,
-					statusCode: context.Response.StatusCode,
-					elapsedMs: stopwatch.ElapsedMilliseconds,
-					requestHeaders: request.Headers,
-					responseHeaders: context.Response.Headers,
-					requestBody: requestBody,
-					responseBody: responseBody.FirstChars(1000),
-					efCoreQueries: efCoreQueries,
-					exception: exception);
+					DateTime.UtcNow,
+					request.Method,
+					request.Path,
+					context.Response.StatusCode,
+					stopwatch.ElapsedMilliseconds,
+					request.Headers,
+					context.Response.Headers,
+					requestBody,
+					responseBody.FirstChars(1000),
+					efCoreQueries,
+					exception);
 			}
 			catch (Exception loggingEx) {
 				logger.LogError(loggingEx, "CRITICAL: Failed to log request");

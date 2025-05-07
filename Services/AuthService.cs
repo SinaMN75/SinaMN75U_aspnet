@@ -65,12 +65,12 @@ public class AuthService(
 			User = user.MapToResponse()
 		});
 	}
-	
+
 	public async Task<UResponse<LoginResponse?>> LoginWithUserNamePassword(LoginWithUserNamePasswordParams p, CancellationToken ct) {
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.UserName == p.UserName, ct);
 		if (user == null || !PasswordHasher.Verify(p.Password, user.Password))
 			return new UResponse<LoginResponse?>(null, USC.NotFound, ls.Get("InvalidCredentials"));
-		
+
 		user.RefreshToken = ts.GenerateRefreshToken();
 		await db.SaveChangesAsync(ct);
 

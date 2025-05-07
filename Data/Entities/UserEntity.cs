@@ -37,15 +37,15 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 
 	[MaxLength(100)]
 	public string? City { get; set; }
-	
+
 	public DateTime? Birthdate { get; set; }
-	
+
 	public Guid? ParentId { get; set; }
 	public UserEntity? Parent { get; set; }
 
 	[InverseProperty("Parent")]
 	public IEnumerable<UserEntity>? Children { get; set; }
-	
+
 	public List<CategoryEntity>? Categories { get; set; }
 
 	public IEnumerable<MediaEntity>? Media { get; set; }
@@ -68,7 +68,7 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 		LastName = LastName,
 		Categories = showCategories ? Categories?.Select(u => u.MapToResponse()) : null,
 		Media = Media?.Select(u => u.MapToResponse()) ?? null,
-		Children = Children?.Select(u => u.MapToResponse()) ?? null,
+		Children = Children?.Select(u => u.MapToResponse()) ?? null
 	};
 }
 

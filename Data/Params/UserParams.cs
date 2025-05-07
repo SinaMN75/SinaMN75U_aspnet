@@ -8,7 +8,7 @@ public class UserCreateParams : BaseParams {
 	[URequired("PasswordRequired")]
 	[UStringLength(4, 100, "PasswordMinLength")]
 	public required string Password { get; set; }
-	
+
 	public required string PhoneNumber { get; set; }
 	public required string Email { get; set; }
 
@@ -58,7 +58,7 @@ public class UserReadParams : BaseReadParams<TagUser> {
 	public bool ShowChildren { get; set; } = false;
 }
 
-public class UserUpdateParams: BaseUpdateParams<TagUser> {
+public class UserUpdateParams : BaseUpdateParams<TagUser> {
 	public string? Password { get; set; }
 	public string? FirstName { get; set; }
 	public string? LastName { get; set; }
@@ -77,13 +77,13 @@ public class UserUpdateParams: BaseUpdateParams<TagUser> {
 	public string? FatherName { get; set; }
 	public double? Weight { get; set; }
 	public double? Height { get; set; }
-	
+
 	public List<string>? AddHealth1 { get; set; }
 	public List<string>? RemoveHealth1 { get; set; }
 	public List<string>? FoodAllergies { get; set; }
 	public List<string>? DrugAllergies { get; set; }
 	public List<string>? Sickness { get; set; }
 	public List<string>? Health1 { get; set; }
-	
+
 	public IEnumerable<Guid>? Categories { get; set; }
 }

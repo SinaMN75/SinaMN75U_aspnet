@@ -4,11 +4,9 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 public static class DbModelBuilder {
 	public static void SetupModelBuilder(this ModelBuilder builder) {
-		foreach (IMutableEntityType entityType in builder.Model.GetEntityTypes()) {
-			foreach (IMutableForeignKey foreignKey in entityType.GetForeignKeys()) {
-				foreignKey.DeleteBehavior = DeleteBehavior.Cascade;
-			}
-		}
+		foreach (IMutableEntityType entityType in builder.Model.GetEntityTypes())
+		foreach (IMutableForeignKey foreignKey in entityType.GetForeignKeys())
+			foreignKey.DeleteBehavior = DeleteBehavior.Cascade;
 
 		builder.Entity<UserEntity>().OwnsOne(e => e.JsonData, b => {
 			b.ToJson();

@@ -24,7 +24,7 @@ public static class StringExtensions {
 
 	public static string ToTitleCase(this string? str) => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(str?.ToLower() ?? "");
 
-	public static string RemoveWhitespace(this string? input) => new string(input?.Where(c => !char.IsWhiteSpace(c)).ToArray() ?? []);
+	public static string RemoveWhitespace(this string? input) => new(input?.Where(c => !char.IsWhiteSpace(c)).ToArray() ?? []);
 
 	public static bool IsNumeric(this string str) => double.TryParse(str, out _);
 
@@ -109,9 +109,9 @@ public static class DateTimeExtensions {
 
 	public static bool IsWeekday(this DateTime date) => !date.IsWeekend();
 
-	public static DateTime StartOfDay(this DateTime date) => new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, 0);
+	public static DateTime StartOfDay(this DateTime date) => new(date.Year, date.Month, date.Day, 0, 0, 0, 0);
 
-	public static DateTime EndOfDay(this DateTime date) => new DateTime(date.Year, date.Month, date.Day, 23, 59, 59, 999);
+	public static DateTime EndOfDay(this DateTime date) => new(date.Year, date.Month, date.Day, 23, 59, 59, 999);
 
 	public static int GetAge(this DateTime birthDate, DateTime? referenceDate = null) {
 		DateTime refDate = referenceDate ?? DateTime.Today;
@@ -129,7 +129,7 @@ public static class DateTimeExtensions {
 		const int day = 24 * hour;
 		const int month = 30 * day;
 
-		TimeSpan ts = new TimeSpan(DateTime.UtcNow.Ticks - date.Ticks);
+		TimeSpan ts = new(DateTime.UtcNow.Ticks - date.Ticks);
 		double delta = Math.Abs(ts.TotalSeconds);
 
 		switch (delta) {
@@ -194,9 +194,7 @@ public static class EnumExtensions {
 		if (variable == null) return false;
 		ArgumentNullException.ThrowIfNull(value);
 
-		if (!Enum.IsDefined(variable.GetType(), value)) {
-			throw new ArgumentException($"Enumeration type mismatch. The flag is of type '{value.GetType()}', was expecting '{variable.GetType()}'.");
-		}
+		if (!Enum.IsDefined(variable.GetType(), value)) throw new ArgumentException($"Enumeration type mismatch. The flag is of type '{value.GetType()}', was expecting '{variable.GetType()}'.");
 
 		ulong num = Convert.ToUInt64(value);
 		return (Convert.ToUInt64(variable) & num) == num;

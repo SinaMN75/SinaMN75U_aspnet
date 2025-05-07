@@ -30,14 +30,14 @@ public class ContentService(DbContext db, ILocalizationService ls, ITokenService
 
 	public async Task<UResponse<IEnumerable<ContentResponse>?>> Read(ContentReadParams p, CancellationToken ct) {
 		IQueryable<ContentEntity> q = db.Set<ContentEntity>();
-		
+
 		if (p.Tags != null) q = q.Where(u => u.Tags.Any(tag => p.Tags.Contains(tag)));
-		
+
 		return await q.Select(x => new ContentResponse {
 			Id = x.Id,
 			Tags = x.Tags,
 			JsonData = x.JsonData,
-			Media = p.ShowMedia ? x.Media!.Select(m => new MediaResponse { Path = m.Path, Id = m.Id, Tags = m.Tags, JsonData = m.JsonData}) : null
+			Media = p.ShowMedia ? x.Media!.Select(m => new MediaResponse { Path = m.Path, Id = m.Id, Tags = m.Tags, JsonData = m.JsonData }) : null
 		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 

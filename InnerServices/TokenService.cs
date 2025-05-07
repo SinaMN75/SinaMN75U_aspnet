@@ -13,7 +13,7 @@ public class TokenService(IConfiguration config) : ITokenService {
 		rng.GetBytes(randomNumber);
 		return Convert.ToBase64String(randomNumber);
 	}
-	
+
 	public string GenerateJwt(IEnumerable<Claim> claims, DateTime expires) => new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
 			config["Jwt:Issuer"]!,
 			config["Jwt:Audience"]!,

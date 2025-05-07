@@ -20,7 +20,7 @@ public enum TagUser {
 	Male = 100,
 	Female = 101,
 	SuperAdmin = 201,
-	Guest = 202,
+	Guest = 202
 }
 
 public enum TagCategory {
@@ -57,6 +57,4 @@ public enum TagReaction {
 	DisLike = 102
 }
 
-public enum TagExam {
-	
-}
+public enum TagExam { }

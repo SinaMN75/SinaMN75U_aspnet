@@ -2,7 +2,6 @@ namespace SinaMN75U.Data.Entities;
 
 [Table("Contents")]
 public class ContentEntity : BaseEntity<int, ContentJson> {
-
 	public IEnumerable<MediaEntity>? Media { get; set; }
 
 	public ContentResponse MapToResponse(bool showMedia = false) => new() {

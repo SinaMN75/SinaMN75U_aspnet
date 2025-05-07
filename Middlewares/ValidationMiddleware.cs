@@ -1,22 +1,20 @@
 namespace SinaMN75U.Middlewares;
 
-using System.Collections;
-
 public class UValidationFilter : IEndpointFilter {
 	public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next) {
 		foreach (object? argument in context.Arguments) {
 			if (argument is null) continue;
 			ILocalizationService l = context.HttpContext.RequestServices.GetRequiredService<ILocalizationService>();
 			ValidationContext validationContext = new(argument,
-				serviceProvider: context.HttpContext.RequestServices,
-				items: null);
+				context.HttpContext.RequestServices,
+				null);
 
 			List<ValidationResult> validationResults = [];
 			bool isValid = Validator.TryValidateObject(
 				argument,
 				validationContext,
 				validationResults,
-				validateAllProperties: true
+				true
 			);
 
 			if (isValid) continue;

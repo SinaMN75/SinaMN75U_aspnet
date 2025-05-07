@@ -45,7 +45,7 @@ public static class LinqExtensions {
 	}
 
 	//var pagedResults = context.Products.Paginate(pageNumber, pageSize);
-	
+
 	public static IQueryable<TResult> SelectPartial<T, TResult>(
 		this IQueryable<T> query,
 		Expression<Func<T, TResult>> selector) => query.Select(selector);

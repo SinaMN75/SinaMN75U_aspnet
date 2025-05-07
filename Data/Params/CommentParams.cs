@@ -1,12 +1,12 @@
 namespace SinaMN75U.Data.Params;
 
-public class CommentCreateParams: BaseParams {
+public class CommentCreateParams : BaseParams {
 	[URequired("CommentRequired")]
 	public required string Description { get; set; }
 
 	public double Score { get; set; } = 0;
 	public TagReaction? Reaction { get; set; }
-	
+
 	public Guid? ParentId { get; set; }
 	public Guid? ProductId { get; set; }
 	public Guid? TargetUserId { get; set; }
