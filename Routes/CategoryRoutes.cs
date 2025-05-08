@@ -9,7 +9,7 @@ public static class CategoryRoutes {
 			return (await s.Create(d, c)).ToResult();
 		}).Produces<UResponse<CategoryResponse>>();
 
-		route.MapPost("Read", async (CategoryReadParams p, ICategoryService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Cache(o => o.Minutes = 60).Produces<UResponse<IEnumerable<CategoryResponse>>>();
+		route.MapPost("Read", async (CategoryReadParams p, ICategoryService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Cache(60).Produces<UResponse<IEnumerable<CategoryResponse>>>();
 
 		route.MapPost("Update", async (CategoryUpdateParams d, ICategoryService s, ILocalStorageService ls, CancellationToken c) => {
 			ls.DeleteAllByPartialKey(tag);

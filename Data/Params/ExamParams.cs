@@ -1,8 +1,12 @@
 namespace SinaMN75U.Data.Params;
 
 public class ExamCreateParams : BaseCreateParams<TagExam> {
+	[URequired("TitleRequired")]
 	public required string Title { get; set; }
+	
+	[URequired("DescriptionRequired")]
 	public required string Description { get; set; }
+	
 	public required List<QuestionJson> Questions { get; set; }
 	public required List<ExamScoreDetail> ScoreDetails { get; set; }
 

@@ -1,33 +1,18 @@
 namespace SinaMN75U.Middlewares;
 
-using Microsoft.Extensions.Options;
-
-public class CacheOptions {
-	public int Minutes { get; set; } = 1;
-	public int MaxBodySizeToCache { get; set; } = 1024 * 1024;
-}
-
-public class CustomRequestResponseFilter(ILocalStorageService cache, IOptions<CacheOptions> options) : IEndpointFilter {
-	private readonly CacheOptions _options = options.Value;
-
-	public async ValueTask<object?> InvokeAsync(
-		EndpointFilterInvocationContext context,
-		EndpointFilterDelegate next) {
-		HttpContext httpContext = context.HttpContext;
+public class CustomRequestResponseFilter(ILocalStorageService cache, int minutes) : IEndpointFilter {
+	public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext c, EndpointFilterDelegate n) {
+		HttpContext httpContext = c.HttpContext;
 		HttpRequest request = httpContext.Request;
-
 		string url = $"{request.Scheme}://{request.Host}{request.Path}{request.QueryString}";
-
 		Dictionary<string, string> headers = request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString());
-
 		string? body = null;
-		if (request.ContentLength > 0 &&
-		    request.ContentLength <= _options.MaxBodySizeToCache &&
-		    request.Body.CanRead) {
+		
+		if (request is { ContentLength: > 0, Body.CanRead: true }) {
 			try {
 				long originalPosition = request.Body.Position;
 				request.Body.Position = 0;
-				using StreamReader reader = new (request.Body, Encoding.UTF8, leaveOpen: true);
+				using StreamReader reader = new(request.Body, Encoding.UTF8, leaveOpen: true);
 				body = await reader.ReadToEndAsync();
 				request.Body.Position = originalPosition;
 			}
@@ -46,10 +31,10 @@ public class CustomRequestResponseFilter(ILocalStorageService cache, IOptions<Ca
 				statusCode: StatusCodes.Status200OK);
 		}
 
-		object? result = await next(context);
+		object? result = await n(c);
 
 		if (result is IResult originalResult && httpContext.Response.StatusCode == StatusCodes.Status200OK) {
-			return new ModifiedResult(originalResult, cacheKey, cache, TimeSpan.FromMinutes(_options.Minutes));
+			return new ModifiedResult(originalResult, cacheKey, cache, TimeSpan.FromMinutes(minutes));
 		}
 
 		return result;
@@ -113,16 +98,11 @@ public class ModifiedResult(
 }
 
 public static class CacheFilterExtensions {
-	public static TBuilder Cache<TBuilder>(
-		this TBuilder builder,
-		Action<CacheOptions>? configure = null)
+	public static TBuilder Cache<TBuilder>(this TBuilder builder, int minutes)
 		where TBuilder : IEndpointConventionBuilder {
-		CacheOptions options = new();
-		configure?.Invoke(options);
-
 		return builder.AddEndpointFilter(async (context, next) => {
 			ILocalStorageService cache = context.HttpContext.RequestServices.GetRequiredService<ILocalStorageService>();
-			CustomRequestResponseFilter filter = new(cache, Options.Create(options));
+			CustomRequestResponseFilter filter = new(cache, minutes);
 			return await filter.InvokeAsync(context, next);
 		});
 	}

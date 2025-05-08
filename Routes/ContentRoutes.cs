@@ -8,7 +8,7 @@ public static class ContentRoutes {
 			return (await s.Create(d, c)).ToResult();
 		}).Produces<UResponse<ContentResponse>>();
 
-		r.MapPost("Read", async (ContentReadParams p, IContentService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Cache(o => o.Minutes = 60).Produces<UResponse<IEnumerable<ContentResponse>>>();
+		r.MapPost("Read", async (ContentReadParams p, IContentService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Cache(60).Produces<UResponse<IEnumerable<ContentResponse>>>();
 
 		r.MapPost("Update", async (ContentUpdateParams d, IContentService s, ILocalStorageService ls, CancellationToken c) => {
 			ls.DeleteAllByPartialKey(tag);

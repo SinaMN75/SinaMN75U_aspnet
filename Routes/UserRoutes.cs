@@ -12,7 +12,7 @@ public static class UserRoutes {
 			ls.DeleteAllByPartialKey(tag);
 			return (await s.BulkCreate(d, c)).ToResult();
 		}).Produces<UResponse>();
-		route.MapPost("Read", async (UserReadParams d, IUserService s, CancellationToken c) => (await s.Read(d, c)).ToResult()).Cache(o => o.Minutes = 60).Produces<UResponse<IEnumerable<UserResponse>>>();
+		route.MapPost("Read", async (UserReadParams d, IUserService s, CancellationToken c) => (await s.Read(d, c)).ToResult()).Cache(60).Produces<UResponse<IEnumerable<UserResponse>>>();
 		route.MapPost("ReadById", async (IdParams d, IUserService s, CancellationToken c) => (await s.ReadById(d, c)).ToResult()).Produces<UResponse<UserResponse>>();
 		route.MapPost("Update", async (UserUpdateParams d, IUserService s, ILocalStorageService ls, CancellationToken c) => {
 			ls.DeleteAllByPartialKey(tag);

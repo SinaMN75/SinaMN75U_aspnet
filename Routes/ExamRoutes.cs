@@ -9,7 +9,7 @@ public static class ExamRoutes {
 			return (await s.Create(d, c)).ToResult();
 		}).Produces<UResponse<ExamResponse>>();
 
-		route.MapPost("Read", async (ExamReadParams p, IExamService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Cache(o => o.Minutes = 60).Produces<UResponse<IEnumerable<ExamResponse>>>();
+		route.MapPost("Read", async (ExamReadParams p, IExamService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Cache(60).Produces<UResponse<IEnumerable<ExamResponse>>>();
 
 		route.MapPost("ReadById", async (IdParams p, IExamService s, CancellationToken c) => (await s.ReadById(p, c)).ToResult()).Produces<UResponse<ExamResponse>>();
 
