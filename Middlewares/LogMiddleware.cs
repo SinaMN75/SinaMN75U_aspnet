@@ -28,7 +28,6 @@ public sealed class ApiRequestLoggingMiddleware(
 				}
 			}
 
-			// Read request body
 			if (request.Body.CanRead)
 				try {
 					request.EnableBuffering();

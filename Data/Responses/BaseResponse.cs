@@ -9,7 +9,7 @@ public class BaseResponse<T, TJ> {
 }
 
 public class UResponse<T> : UResponse {
-	public UResponse(T result, USC status = USC.Success, string message = "") {
+	public UResponse(T result, Usc status = Usc.Success, string message = "") {
 		Result = result;
 		Status = status;
 		Message = message;
@@ -18,8 +18,8 @@ public class UResponse<T> : UResponse {
 	public T? Result { get; }
 }
 
-public class UResponse(USC status = USC.Success, string message = "") {
-	public USC Status { get; protected set; } = status;
+public class UResponse(Usc status = Usc.Success, string message = "") {
+	public Usc Status { get; protected set; } = status;
 	public int? PageSize { get; set; }
 	public int? PageCount { get; set; }
 	public int? TotalCount { get; set; }

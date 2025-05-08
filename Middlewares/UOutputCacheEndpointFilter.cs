@@ -27,7 +27,7 @@ public class CustomRequestResponseFilter(ILocalStorageService cache, IOptions<Ca
 			try {
 				long originalPosition = request.Body.Position;
 				request.Body.Position = 0;
-				using StreamReader reader = new StreamReader(request.Body, Encoding.UTF8, leaveOpen: true);
+				using StreamReader reader = new (request.Body, Encoding.UTF8, leaveOpen: true);
 				body = await reader.ReadToEndAsync();
 				request.Body.Position = originalPosition;
 			}
@@ -38,7 +38,7 @@ public class CustomRequestResponseFilter(ILocalStorageService cache, IOptions<Ca
 
 		string cacheKey = GenerateCacheKey(url, headers, body);
 
-		string? cachedResponse = cache.GetStringData(cacheKey);
+		string? cachedResponse = cache.Get(cacheKey);
 		if (cachedResponse != null) {
 			httpContext.Response.Headers.TryAdd("X-Cache-Hit", "true");
 			return Results.Json(
@@ -98,7 +98,7 @@ public class ModifiedResult(
 				memoryStream.Seek(0, SeekOrigin.Begin);
 				string responseBody = await new StreamReader(memoryStream).ReadToEndAsync();
 
-				cache.SetStringData(cacheKey, responseBody, cacheDuration);
+				cache.Set(cacheKey, responseBody, cacheDuration);
 				httpContext.Response.Headers.TryAdd("X-Cache-Store", "true");
 			}
 			catch (Exception) {

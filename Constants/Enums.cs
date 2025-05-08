@@ -1,6 +1,6 @@
 namespace SinaMN75U.Constants;
 
-public enum USC {
+public enum Usc {
 	Success = 200,
 	Created = 201,
 	Deleted = 211,
@@ -57,4 +57,4 @@ public enum TagReaction {
 	DisLike = 102
 }
 
-public enum TagExam { }
+public enum TagExam;

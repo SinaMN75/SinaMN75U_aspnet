@@ -15,7 +15,7 @@ public class CommentService(
 ) : ICommentService {
 	public async Task<UResponse<CommentResponse?>> Create(CommentCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<CommentResponse?>(null, USC.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<CommentResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		EntityEntry<CommentEntity> e = await db.Set<CommentEntity>().AddAsync(new CommentEntity {
 			Id = Guid.CreateVersion7(),
@@ -46,12 +46,12 @@ public class CommentService(
 
 	public async Task<UResponse<CommentResponse?>> ReadById(IdParams p, CancellationToken ct) {
 		CommentEntity? e = await db.Set<CommentEntity>().Select(x => x.MapToEntity(true)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		return e == null ? new UResponse<CommentResponse?>(null, USC.NotFound, ls.Get("CommentNotFound")) : new UResponse<CommentResponse?>(e.MapToResponse(true));
+		return e == null ? new UResponse<CommentResponse?>(null, Usc.NotFound, ls.Get("CommentNotFound")) : new UResponse<CommentResponse?>(e.MapToResponse(true));
 	}
 
 	public async Task<UResponse<CommentResponse?>> Update(CommentUpdateParams p, CancellationToken ct) {
 		CommentEntity? e = await db.Set<CommentEntity>().Select(x => x.MapToEntity(false)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse<CommentResponse?>(null, USC.NotFound, ls.Get("CommentNotFound"));
+		if (e == null) return new UResponse<CommentResponse?>(null, Usc.NotFound, ls.Get("CommentNotFound"));
 		if (p.Score.IsNotNullOrEmpty()) e.Score = p.Score.Value;
 		if (p.Description.IsNotNullOrEmpty()) e.Description = p.Description;
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
@@ -62,7 +62,7 @@ public class CommentService(
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
-		await db.Set<CommentEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync();
+		await db.Set<CommentEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 		return new UResponse();
 	}
 }

@@ -11,7 +11,7 @@ public interface IProductService {
 public class ProductService(DbContext db, ITokenService ts, ILocalizationService ls, ICategoryService categoryService) : IProductService {
 	public async Task<UResponse<ProductResponse?>> Create(ProductCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ProductResponse?>(null, USC.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<ProductResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		List<CategoryEntity> categories = [];
 		if (p.Categories.IsNotNullOrEmpty())
@@ -181,7 +181,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 			.Include(x => x.Categories)
 			.Include(x => x.User)
 			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse<ProductResponse?>(null, USC.NotFound, ls.Get("ProductNotFound"));
+		if (e == null) return new UResponse<ProductResponse?>(null, Usc.NotFound, ls.Get("ProductNotFound"));
 
 		VisitCount? visitCount = e.JsonData.VisitCounts.FirstOrDefault(v => v.UserId == (userData?.Id ?? Guid.Empty));
 
@@ -196,10 +196,10 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 
 	public async Task<UResponse<ProductResponse?>> Update(ProductUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ProductResponse?>(null, USC.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<ProductResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		ProductEntity? e = await db.Set<ProductEntity>().Include(x => x.Categories).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse<ProductResponse?>(null, USC.NotFound, ls.Get("ProductNotFound"));
+		if (e == null) return new UResponse<ProductResponse?>(null, Usc.NotFound, ls.Get("ProductNotFound"));
 
 		if (p.Code.IsNotNullOrEmpty()) e.Code = p.Code;
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
@@ -236,9 +236,9 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ProductResponse?>(null, USC.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<ProductResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		int count = await db.Set<ProductEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
-		return count > 0 ? new UResponse(USC.Deleted, ls.Get("ProductDeleted")) : new UResponse(USC.NotFound, ls.Get("ProductNotFound"));
+		return count > 0 ? new UResponse(Usc.Deleted, ls.Get("ProductDeleted")) : new UResponse(Usc.NotFound, ls.Get("ProductNotFound"));
 	}
 }

@@ -20,5 +20,10 @@ public static class CategoryRoutes {
 			ls.DeleteAllByPartialKey(tag);
 			return (await s.Delete(d, c)).ToResult();
 		}).Produces<UResponse<CategoryResponse>>();
+		
+		route.MapPost("DeleteRange", async (IdListParams d, ICategoryService s, ILocalStorageService ls, CancellationToken c) => {
+			ls.DeleteAllByPartialKey(tag);
+			return (await s.DeleteRange(d.Ids, c)).ToResult();
+		}).Produces<UResponse<CategoryResponse>>();
 	}
 }

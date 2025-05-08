@@ -22,7 +22,7 @@ public class AuthService(
 		bool isUserExists = await db.Set<UserEntity>().AnyAsync(x =>
 			x.UserName == p.UserName, ct);
 		if (isUserExists)
-			return new UResponse<LoginResponse?>(null, USC.Conflict, ls.Get("UserAlreadyExist"));
+			return new UResponse<LoginResponse?>(null, Usc.Conflict, ls.Get("UserAlreadyExist"));
 
 		UserEntity user = new() {
 			Id = Guid.CreateVersion7(),
@@ -53,7 +53,7 @@ public class AuthService(
 	public async Task<UResponse<LoginResponse?>> LoginWithEmailPassword(LoginWithEmailPasswordParams p, CancellationToken ct) {
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Email == p.Email, ct);
 		if (user == null || !PasswordHasher.Verify(p.Password, user.Password))
-			return new UResponse<LoginResponse?>(null, USC.NotFound, ls.Get("InvalidCredentials"));
+			return new UResponse<LoginResponse?>(null, Usc.NotFound, ls.Get("InvalidCredentials"));
 
 		user.RefreshToken = ts.GenerateRefreshToken();
 		await db.SaveChangesAsync(ct);
@@ -69,7 +69,7 @@ public class AuthService(
 	public async Task<UResponse<LoginResponse?>> LoginWithUserNamePassword(LoginWithUserNamePasswordParams p, CancellationToken ct) {
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.UserName == p.UserName, ct);
 		if (user == null || !PasswordHasher.Verify(p.Password, user.Password))
-			return new UResponse<LoginResponse?>(null, USC.NotFound, ls.Get("InvalidCredentials"));
+			return new UResponse<LoginResponse?>(null, Usc.NotFound, ls.Get("InvalidCredentials"));
 
 		user.RefreshToken = ts.GenerateRefreshToken();
 		await db.SaveChangesAsync(ct);
@@ -84,11 +84,11 @@ public class AuthService(
 
 	public async Task<UResponse<LoginResponse?>> RefreshToken(RefreshTokenParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<LoginResponse?>(null, USC.UnAuthorized);
+		if (userData == null) return new UResponse<LoginResponse?>(null, Usc.UnAuthorized);
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(u => u.RefreshToken == p.RefreshToken && u.Id == userData.Id, ct);
 
 		if (user == null)
-			return new UResponse<LoginResponse?>(null, USC.UnAuthorized, ls.Get("UserNotFound"));
+			return new UResponse<LoginResponse?>(null, Usc.UnAuthorized, ls.Get("UserNotFound"));
 
 		user.RefreshToken = ts.GenerateRefreshToken();
 		await db.SaveChangesAsync(ct);
@@ -112,7 +112,7 @@ public class AuthService(
 		}).AsNoTracking().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
 
 		if (existingUser != null) {
-			if (!await smsNotificationService.SendOtpSms(existingUser)) return new UResponse(USC.MaximumLimitReached, ls.Get("MaxOtpReached"));
+			if (!await smsNotificationService.SendOtpSms(existingUser)) return new UResponse(Usc.MaximumLimitReached, ls.Get("MaxOtpReached"));
 			return new UResponse();
 		}
 
@@ -132,14 +132,14 @@ public class AuthService(
 		UserResponse response = e.MapToResponse();
 
 		await db.SaveChangesAsync(ct);
-		if (!await smsNotificationService.SendOtpSms(response)) return new UResponse(USC.MaximumLimitReached, ls.Get("MaxOtpReached"));
+		if (!await smsNotificationService.SendOtpSms(response)) return new UResponse(Usc.MaximumLimitReached, ls.Get("MaxOtpReached"));
 		return new UResponse();
 	}
 
 	public async Task<UResponse<LoginResponse?>> VerifyCodeForLogin(VerifyMobileForLoginParams p, CancellationToken ct) {
 		string mobile = p.PhoneNumber.Replace("+", "");
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == mobile, ct);
-		if (user == null) return new UResponse<LoginResponse?>(null, USC.UserNotFound);
+		if (user == null) return new UResponse<LoginResponse?>(null, Usc.UserNotFound);
 
 		user.FirstName = p.FirstName ?? user.FirstName;
 		user.LastName = p.LastName ?? user.LastName;
@@ -147,19 +147,19 @@ public class AuthService(
 		db.Update(user);
 		await db.SaveChangesAsync();
 
-		return p.Otp == "1375" || p.Otp == cache.GetStringData(user.Id.ToString())
+		return p.Otp == "1375" || p.Otp == cache.Get(user.Id.ToString())
 			? new UResponse<LoginResponse?>(new LoginResponse {
 				Token = CreateToken(user),
 				RefreshToken = user.RefreshToken,
 				User = user.MapToResponse(),
 				Expires = config["Jwt:Expires"] ?? "60"
 			})
-			: new UResponse<LoginResponse?>(null, USC.WrongVerificationCode);
+			: new UResponse<LoginResponse?>(null, Usc.WrongVerificationCode);
 	}
 
 	public async Task<UResponse<LoginResponse?>> TestToken(LoginWithEmailPasswordParams p, CancellationToken ct) {
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Email == p.Email, ct);
-		if (user == null) return new UResponse<LoginResponse?>(null, USC.NotFound, ls.Get("InvalidCredentials"));
+		if (user == null) return new UResponse<LoginResponse?>(null, Usc.NotFound, ls.Get("InvalidCredentials"));
 
 		user.RefreshToken = ts.GenerateRefreshToken();
 		await db.SaveChangesAsync(ct);

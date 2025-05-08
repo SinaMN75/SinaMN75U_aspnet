@@ -49,12 +49,13 @@ public class SmsNotificationService(
 	}
 
 	public async Task<bool> SendOtpSms(UserResponse user) {
-		string? cachedData = cache.GetStringData($"otp_{user.Id}");
+		string? cachedData = cache.Get($"otp_{user.Id}");
 		if (cachedData != null) return false;
 
 		string otp = Random.Shared.Next(1000, 9999).ToString();
-		cache.SetStringData("otp_" + user.Id, otp, TimeSpan.FromMinutes(5));
-
+		cache.Set("otp_" + user.Id, otp, TimeSpan.FromMinutes(5));
+		
+		if (user.PhoneNumber.IsNullOrEmpty()) return false;
 		await SendSms(user.PhoneNumber, config["sms.otpPattern"]!, otp);
 		return true;
 	}

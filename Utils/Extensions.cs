@@ -61,14 +61,12 @@ public static class NumberExtensions {
 	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this float? s) => s != null;
 	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this long? s) => s != null;
 	public static bool IsNotNullOrZero([NotNullWhen(true)] this int? s) => s != null && s != 0;
-
-	// New number extensions
 	public static bool IsBetween(this int value, int min, int max) => value >= min && value <= max;
 	public static bool IsBetween(this double value, double min, double max) => value >= min && value <= max;
 	public static bool IsBetween(this decimal value, decimal min, decimal max) => value >= min && value <= max;
 
 	public static string ToFileSizeString(this long byteCount) {
-		string[] suf = { "B", "KB", "MB", "GB", "TB", "PB", "EB" };
+		string[] suf = ["B", "KB", "MB", "GB", "TB", "PB", "EB"];
 		if (byteCount == 0) return "0" + suf[0];
 		long bytes = Math.Abs(byteCount);
 		int place = Convert.ToInt32(Math.Floor(Math.Log(bytes, 1024)));
@@ -88,24 +86,20 @@ public static class NumberExtensions {
 	public static string ToOrdinal(this int num) {
 		if (num <= 0) return num.ToString();
 
-		switch (num % 100) {
-			case 11:
-			case 12:
-			case 13:
-				return num + "th";
-		}
-
-		return (num % 10) switch {
-			1 => num + "st",
-			2 => num + "nd",
-			3 => num + "rd",
-			_ => num + "th"
+		return (num % 100) switch {
+			11 or 12 or 13 => num + "th",
+			_ => (num % 10) switch {
+				1 => num + "st",
+				2 => num + "nd",
+				3 => num + "rd",
+				_ => num + "th"
+			}
 		};
 	}
 }
 
 public static class DateTimeExtensions {
-	public static bool IsWeekend(this DateTime date) => date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
+	public static bool IsWeekend(this DateTime date) => date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
 
 	public static bool IsWeekday(this DateTime date) => !date.IsWeekend();
 
@@ -202,7 +196,7 @@ public static class EnumExtensions {
 }
 
 public static class UtilitiesStatusCodesExtension {
-	public static int Value(this USC statusCode) => (int)statusCode;
+	public static int Value(this Usc statusCode) => (int)statusCode;
 }
 
 public static class EnumerableExtensions {
@@ -247,7 +241,11 @@ public static class EnumerableExtensions {
 		return enumerable.Skip(Math.Max(0, enumerable.Count() - count));
 	}
 
-	public static bool IsEquivalentTo<T>(this IEnumerable<T> first, IEnumerable<T> second) => first.Count() == second.Count() && !first.Except(second).Any();
+	public static bool IsEquivalentTo<T>(this IEnumerable<T> first, IEnumerable<T> second) {
+		IEnumerable<T> enumerable = first.ToList();
+		IEnumerable<T> enumerable1 = second.ToList();
+		return enumerable.Count() == enumerable1.Count() && !enumerable.Except(enumerable1).Any();
+	}
 
 	public static string Join<T>(this IEnumerable<T> source, string separator) => string.Join(separator, source);
 

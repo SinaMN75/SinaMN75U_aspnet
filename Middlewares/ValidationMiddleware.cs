@@ -20,7 +20,7 @@ public class UValidationFilter : IEndpointFilter {
 			if (isValid) continue;
 			string errorMessage = validationResults.FirstOrDefault()?.ErrorMessage ?? l.Get("ValidationError");
 
-			return new UResponse(USC.BadRequest, errorMessage).ToResult();
+			return new UResponse(Usc.BadRequest, errorMessage).ToResult();
 		}
 
 		return await next(context);

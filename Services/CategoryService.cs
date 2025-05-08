@@ -18,7 +18,7 @@ public class CategoryService(
 ) : ICategoryService {
 	public async Task<UResponse<CategoryResponse?>> Create(CategoryCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<CategoryResponse?>(null, USC.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<CategoryResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		CategoryEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			Title = p.Title,
@@ -163,10 +163,10 @@ public class CategoryService(
 
 	public async Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<CategoryResponse?>(null, USC.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<CategoryResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		CategoryEntity? e = await db.Set<CategoryEntity>().FindAsync(p.Id, ct);
 		if (e == null)
-			return new UResponse<CategoryResponse?>(null, USC.NotFound, "Category not found");
+			return new UResponse<CategoryResponse?>(null, Usc.NotFound, "Category not found");
 
 		e.UpdatedAt = DateTime.UtcNow;
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
@@ -183,14 +183,14 @@ public class CategoryService(
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null)
-			return new UResponse<CategoryResponse?>(null, USC.UnAuthorized, ls.Get("AuthorizationRequired"));
+			return new UResponse<CategoryResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		CategoryEntity? category = await db.Set<CategoryEntity>()
 			.Include(x => x.Media)
 			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 
 		if (category == null)
-			return new UResponse(USC.NotFound, ls.Get("CategoryNotFound"));
+			return new UResponse(Usc.NotFound, ls.Get("CategoryNotFound"));
 
 		if (category.Media.IsNotNullOrEmpty())
 			await mediaService.DeleteRange(category.Media.Select(x => x.Id), ct);

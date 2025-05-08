@@ -14,7 +14,7 @@ public static class SwaggerSetup {
 				Type = SecuritySchemeType.ApiKey
 			});
 			c.AddSecurityRequirement(new OpenApiSecurityRequirement {
-				{ new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "locale" } }, Array.Empty<string>() }
+				{ new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "locale" } }, [] }
 			});
 		});
 	}

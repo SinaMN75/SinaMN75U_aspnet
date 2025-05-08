@@ -73,23 +73,23 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 			}
 		}).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 
-		return e == null ? new UResponse<ExamResponse?>(null, USC.NotFound, ls.Get("ExamNotFound")) : new UResponse<ExamResponse?>(e);
+		return e == null ? new UResponse<ExamResponse?>(null, Usc.NotFound, ls.Get("ExamNotFound")) : new UResponse<ExamResponse?>(e);
 	}
 
 	public async Task<UResponse> Delete(IdListParams p, CancellationToken ct) {
 		int? count = await db.Set<ExamEntity>().Where(x => p.Ids.Contains(x.Id)).ExecuteDeleteAsync(ct);
-		return count.IsNotNullOrZero() ? new UResponse<ExamResponse?>(null, USC.NotFound, ls.Get("ExamNotFound")) : new UResponse();
+		return count.IsNotNullOrZero() ? new UResponse<ExamResponse?>(null, Usc.NotFound, ls.Get("ExamNotFound")) : new UResponse();
 	}
 
 	public async Task<UResponse> SubmitAnswers(SubmitAnswersParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(USC.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		UserEntity? user = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
-		if (user == null) return new UResponse(USC.NotFound, ls.Get("UserNotFound"));
+		if (user == null) return new UResponse(Usc.NotFound, ls.Get("UserNotFound"));
 
 		ExamEntity? exam = await db.Set<ExamEntity>().FirstOrDefaultAsync(x => x.Id == p.ExamId, ct);
-		if (exam == null) return new UResponse(USC.NotFound, ls.Get("ExamNotFound"));
+		if (exam == null) return new UResponse(Usc.NotFound, ls.Get("ExamNotFound"));
 
 		double score = p.Answers.Sum(x => x.Answer.Score);
 
@@ -101,9 +101,8 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 			                              MaxScore = 1000
 		                              };
 
-		foreach (ExamScoreDetail condition in exam.JsonData.ScoreDetails)
-			if (score >= condition.MinScore && score <= condition.MaxScore)
-				scoreDetail = condition;
+		foreach (ExamScoreDetail condition in exam.JsonData.ScoreDetails.Where(condition => score >= condition.MinScore && score <= condition.MaxScore))
+			scoreDetail = condition;
 
 		UserAnswerJson json = new() {
 			Date = DateTime.UtcNow,

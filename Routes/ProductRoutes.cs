@@ -11,7 +11,7 @@ public static class ProductRoutes {
 
 		route.MapPost("Read", async (ProductReadParams p, IProductService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Cache(o => o.Minutes = 60).Produces<UResponse<IEnumerable<ProductResponse>>>();
 
-		route.MapPost("ReadById", async (IdParams p, IProductService s, ILocalStorageService ls, CancellationToken c) => (await s.ReadById(p, c)).ToResult()).Produces<UResponse<ProductResponse>>();
+		route.MapPost("ReadById", async (IdParams p, IProductService s, CancellationToken c) => (await s.ReadById(p, c)).ToResult()).Produces<UResponse<ProductResponse>>();
 
 		route.MapPost("Update", async (ProductUpdateParams d, IProductService s, ILocalStorageService ls, CancellationToken c) => {
 			ls.DeleteAllByPartialKey(tag);
