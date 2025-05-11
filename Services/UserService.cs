@@ -21,7 +21,7 @@ public class UserService(
 		UserEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			UserName = p.UserName,
-			Password = p.Password,
+			Password = PasswordHasher.Hash(p.Password),
 			RefreshToken = "",
 			PhoneNumber = p.PhoneNumber,
 			Email = p.Email,
@@ -80,7 +80,7 @@ public class UserService(
 		entities.AddRange(p.Users.Select(userParam => new UserEntity {
 			Id = Guid.CreateVersion7(),
 			UserName = userParam.UserName,
-			Password = userParam.Password,
+			Password = PasswordHasher.Hash(userParam.Password),
 			RefreshToken = "",
 			PhoneNumber = userParam.PhoneNumber,
 			Email = userParam.Email,
