@@ -1,17 +1,19 @@
 namespace SinaMN75U.InnerServices;
 
 public interface ILocalStorageService {
-	public void Set(string key, string value, TimeSpan? absoluteExpireTime = null, TimeSpan? slidingExpireTime = null);
+	public void Set(string key, string value, TimeSpan? expireTime = null);
 	public string? Get(string key);
 	public void Delete(string recordId);
 	void DeleteAllByPartialKey(string partialKey);
 }
 
 public class MemoryCacheService(IMemoryCache cache) : ILocalStorageService {
-	public void Set(string key, string value, TimeSpan? absoluteExpireTime = null, TimeSpan? slidingExpireTime = null) {
+	public void Set(string key, string value, TimeSpan? expireTime = null) {
 		MemoryCacheEntryOptions cacheEntryOptions = new();
-		if (absoluteExpireTime.HasValue) cacheEntryOptions.SetAbsoluteExpiration(absoluteExpireTime.Value);
-		if (slidingExpireTime.HasValue) cacheEntryOptions.SetSlidingExpiration(slidingExpireTime.Value);
+		if (expireTime.HasValue) {
+			cacheEntryOptions.SetAbsoluteExpiration(expireTime.Value);
+			cacheEntryOptions.SetSlidingExpiration(expireTime.Value);
+		}
 		cache.Set(key, value, cacheEntryOptions);
 	}
 

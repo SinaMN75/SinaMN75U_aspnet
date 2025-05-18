@@ -8,7 +8,7 @@ public class Base64EncodeMiddleware(RequestDelegate next) {
 		await next(context);
 		newBodyStream.Seek(0, SeekOrigin.Begin);
 		string responseBody = await new StreamReader(newBodyStream).ReadToEndAsync();
-		string base64ResponseBody = Encryption.EncodeBase64(responseBody);
+		string base64ResponseBody = responseBody.EncodeBase64();
 		newBodyStream.Seek(0, SeekOrigin.Begin);
 		newBodyStream.SetLength(0);
 		await newBodyStream.WriteAsync(Encoding.UTF8.GetBytes(base64ResponseBody));
@@ -24,7 +24,7 @@ public class Base64DecodeMiddleware(RequestDelegate next) {
 			string base64Body = await reader.ReadToEndAsync();
 
 			try {
-				string decodedBody = Encryption.DecodeBase64(base64Body);
+				string decodedBody = base64Body.DecodeBase64();
 				MemoryStream newBodyStream = new(Encoding.UTF8.GetBytes(decodedBody));
 				context.Request.Body = newBodyStream;
 				context.Request.ContentLength = newBodyStream.Length;

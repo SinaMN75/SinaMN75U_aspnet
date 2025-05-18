@@ -3,6 +3,8 @@ namespace SinaMN75U.Utils;
 using System.ComponentModel;
 
 public static class StringExtensions {
+	public static string EncodeBase64(this string plainText) => Convert.ToBase64String(Encoding.UTF8.GetBytes(plainText));
+	public static string DecodeBase64(this string base64EncodedData) => Encoding.UTF8.GetString(Convert.FromBase64String(base64EncodedData));
 	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this string? s) => s is { Length: > 0 };
 	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this Guid? s) => s != null;
 	public static bool IsNotNull([NotNullWhen(true)] this string? s) => s != null;
@@ -201,6 +203,7 @@ public static class UtilitiesStatusCodesExtension {
 
 public static class EnumerableExtensions {
 	public static bool IsNotNullOrEmpty<T>([NotNullWhen(true)] this IEnumerable<T>? list) => list != null && list.Any();
+	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this IEnumerable<string>? list) => list != null && list.Any();
 	public static bool IsNotNull<T>([NotNullWhen(true)] this IEnumerable<T>? list) => list != null;
 	public static bool IsNullOrEmpty<T>([NotNullWhen(false)] this IEnumerable<T>? list) => list == null || !list.Any();
 	public static bool ContainsAny<T>(this IEnumerable<T> source, IEnumerable<T> target) => source.Any(target.Contains);

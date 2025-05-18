@@ -20,7 +20,9 @@ public enum TagUser {
 	Male = 100,
 	Female = 101,
 	SuperAdmin = 201,
-	Guest = 202
+	Guest = 202,
+	
+	Amper = 801
 }
 
 public enum TagCategory {

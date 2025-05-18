@@ -2,7 +2,6 @@ namespace SinaMN75U.Utils;
 
 public static class SwaggerSetup {
 	public static void AddUSwagger(this IServiceCollection services) {
-		services.AddOpenApi();
 		services.AddEndpointsApiExplorer();
 		services.AddSwaggerGen(c => {
 			c.UseInlineDefinitionsForEnums();

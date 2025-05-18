@@ -7,6 +7,7 @@ public static class AspNetConfig {
 		builder.Services.AddHttpContextAccessor();
 		builder.Services.AddHttpClient();
 		builder.Services.AddMemoryCache();
+		builder.Services.AddURateLimiter();
 		builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 		builder.Services.ConfigureHttpJsonOptions(o => {
 			o.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
@@ -21,17 +22,6 @@ public static class AspNetConfig {
 				o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 				o.JsonSerializerOptions.WriteIndented = false;
 			});
-		builder.Services.AddRateLimiter(o => o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(c =>
-				RateLimitPartition.GetFixedWindowLimiter(
-					c.Request.Headers.Host.ToString(),
-					_ => new FixedWindowRateLimiterOptions {
-						AutoReplenishment = true,
-						PermitLimit = 100,
-						Window = TimeSpan.FromMinutes(1)
-					}
-				)
-			)
-		);
 
 		builder.Services.AddResponseCompression(o => o.EnableForHttps = true);
 		builder.Services.AddScoped<DbContext, T>();
@@ -74,8 +64,6 @@ public static class AspNetConfig {
 		app.UseCors(o => o.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 		app.UseResponseCompression();
 		app.UseDeveloperExceptionPage();
-		app.MapOpenApi();
-		app.MapScalarApiReference();
 		app.UseUSwagger();
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
