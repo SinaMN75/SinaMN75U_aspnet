@@ -26,6 +26,7 @@ global using System.Security.Cryptography;
 global using System.IdentityModel.Tokens.Jwt;
 global using System.Diagnostics;
 global using System.Diagnostics.CodeAnalysis;
+global using System.Runtime.InteropServices;
 global using System.Threading.RateLimiting;
 global using System.Globalization;
 global using System.Collections;

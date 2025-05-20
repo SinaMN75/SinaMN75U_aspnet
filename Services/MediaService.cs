@@ -2,6 +2,7 @@ namespace SinaMN75U.Services;
 
 public interface IMediaService {
 	Task<UResponse<MediaResponse?>> Create(MediaCreateParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<MediaResponse>?>> Read(BaseReadParams<TagMedia> p, CancellationToken ct);
 	Task<UResponse<MediaResponse?>> Update(MediaUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	Task<UResponse> DeleteRange(IEnumerable<Guid> ids, CancellationToken ct);
@@ -39,6 +40,19 @@ public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService
 		await db.Set<MediaEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
 		return new UResponse<MediaResponse?>(e.MapToResponse(), message: Path.Combine(env.WebRootPath, "Media"));
+	}
+
+	public async Task<UResponse<IEnumerable<MediaResponse>?>> Read(BaseReadParams<TagMedia> p, CancellationToken ct) {
+		IQueryable<MediaEntity> q = db.Set<MediaEntity>().OrderByDescending(x => x.Id);
+
+		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
+
+		return await q.Select(x => new MediaResponse {
+			Id = x.Id,
+			JsonData = x.JsonData,
+			Tags = x.Tags,
+			Path = x.Path
+		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse<MediaResponse?>> Update(MediaUpdateParams p, CancellationToken ct) {
