@@ -118,6 +118,9 @@ public class UserService(
 	public async Task<UResponse<IEnumerable<UserResponse>?>> Read(UserReadParams p, CancellationToken ct) {
 		IQueryable<UserEntity> q = db.Set<UserEntity>();
 
+		if (p.FromCreatedAt.HasValue) q = q.Where(u => u.CreatedAt >= p.FromCreatedAt.Value);
+		if (p.ToCreatedAt.HasValue) q = q.Where(u => u.CreatedAt <= p.ToCreatedAt.Value);
+
 		if (p.UserName.IsNotNull()) q = q.Where(u => u.UserName.Contains(p.UserName!));
 		if (p.PhoneNumber.IsNotNull()) q = q.Where(u => u.PhoneNumber == p.PhoneNumber);
 		if (p.Email.IsNotNull()) q = q.Where(u => u.Email == p.Email);
@@ -127,6 +130,14 @@ public class UserService(
 		if (p.EndBirthDate.HasValue) q = q.Where(u => u.Birthdate <= p.EndBirthDate.Value);
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(u => u.Tags.Any(tag => p.Tags!.Contains(tag)));
 		if (p.Categories.IsNotNullOrEmpty()) q = q.Where(x => x.Categories!.Any(y => p.Categories.Contains(y.Id)));
+		if (p.OrderByLastNameDesc) q = q.OrderByDescending(x => x.LastName);
+
+		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
+		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
+		if (p.OrderByUpdatedAt) q = q.OrderBy(x => x.UpdatedAt);
+		if (p.OrderByUpdatedAtDesc) q = q.OrderByDescending(x => x.UpdatedAt);
+		if (p.OrderByLastName) q = q.OrderBy(x => x.LastName);
+		if (p.OrderByLastNameDesc) q = q.OrderByDescending(x => x.LastName);
 
 		if (p.ShowCategories) q = q.Include(x => x.Categories);
 		if (p.ShowMedia) q = q.Include(x => x.Media);

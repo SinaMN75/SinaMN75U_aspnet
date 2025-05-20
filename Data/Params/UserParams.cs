@@ -56,6 +56,9 @@ public class UserReadParams : BaseReadParams<TagUser> {
 	public bool ShowCategories { get; set; } = false;
 	public bool ShowMedia { get; set; } = false;
 	public bool ShowChildren { get; set; } = false;
+	
+	public bool OrderByLastName { get; set; } = false;
+	public bool OrderByLastNameDesc { get; set; } = false;
 }
 
 public class UserUpdateParams : BaseUpdateParams<TagUser> {

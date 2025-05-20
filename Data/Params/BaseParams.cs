@@ -18,7 +18,12 @@ public class IdTitleParams : BaseParams {
 public class BaseReadParams<T> : BaseParams {
 	public int PageSize { get; set; } = 100;
 	public int PageNumber { get; set; } = 1;
-	public DateTime? FromDate { get; set; }
+	public DateTime? FromCreatedAt { get; set; }
+	public DateTime? ToCreatedAt { get; set; }
+	public bool OrderByCreatedAt { get; set; } = false;
+	public bool OrderByCreatedAtDesc { get; set; } = false;
+	public bool OrderByUpdatedAt { get; set; } = false;
+	public bool OrderByUpdatedAtDesc { get; set; } = false;
 	public List<T>? Tags { get; set; }
 }
 
