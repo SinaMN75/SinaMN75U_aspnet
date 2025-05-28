@@ -7,7 +7,7 @@ public class CustomRequestResponseFilter(ILocalStorageService cache, int minutes
 		string url = $"{request.Scheme}://{request.Host}{request.Path}{request.QueryString}";
 		Dictionary<string, string> headers = request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString());
 		string? body = null;
-		
+
 		if (request is { ContentLength: > 0, Body.CanRead: true }) {
 			try {
 				long originalPosition = request.Body.Position;
@@ -22,6 +22,8 @@ public class CustomRequestResponseFilter(ILocalStorageService cache, int minutes
 		}
 
 		string cacheKey = GenerateCacheKey(url, headers, body);
+
+		Console.WriteLine(cacheKey);
 
 		string? cachedResponse = cache.Get(cacheKey);
 		if (cachedResponse != null) {
@@ -40,29 +42,7 @@ public class CustomRequestResponseFilter(ILocalStorageService cache, int minutes
 		return result;
 	}
 
-	private static string GenerateCacheKey(string url, Dictionary<string, string> headers, string? body) {
-		using MemoryStream stream = new();
-		using Utf8JsonWriter writer = new(stream);
-
-		writer.WriteStartObject();
-		writer.WriteString("url", url);
-
-		writer.WriteStartObject("headers");
-		foreach (KeyValuePair<string, string> header in headers) {
-			writer.WriteString(header.Key, header.Value);
-		}
-
-		writer.WriteEndObject();
-
-		if (!string.IsNullOrEmpty(body)) {
-			writer.WriteString("body", body);
-		}
-
-		writer.WriteEndObject();
-
-		writer.Flush();
-		return Convert.ToBase64String(stream.ToArray());
-	}
+	private static string GenerateCacheKey(string url, Dictionary<string, string> headers, string? body) => $"{url}{string.Join(";", headers.OrderBy(h => h.Key).Select(h => $"{h.Key}={h.Value}"))}{body ?? ""}";
 }
 
 public class ModifiedResult(
