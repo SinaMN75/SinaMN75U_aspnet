@@ -6,7 +6,7 @@ public static class AspNetConfig {
 		builder.Services.AddUSwagger();
 		builder.Services.AddHttpContextAccessor();
 		builder.Services.AddHttpClient();
-		builder.Services.AddMemoryCache();
+		// builder.Services.AddMemoryCache();
 		builder.Services.AddURateLimiter();
 		builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 		builder.Services.ConfigureHttpJsonOptions(o => {
@@ -47,7 +47,7 @@ public static class AspNetConfig {
 
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
 		builder.Services.AddSingleton<IHttpClientService, HttpClientService>();
-		builder.Services.AddSingleton<ILocalStorageService, MemoryCacheService>();
+		builder.Services.AddSingleton<ILocalStorageService, StaticCacheService>();
 		builder.Services.AddScoped<ITokenService, TokenService>();
 		builder.Services.AddScoped<IUserService, UserService>();
 		builder.Services.AddScoped<IAuthService, AuthService>();

@@ -40,3 +40,32 @@ public class MemoryCacheService(IMemoryCache cache) : ILocalStorageService {
 		}
 	}
 }
+
+public class StaticCacheService : ILocalStorageService {
+	private static readonly ConcurrentDictionary<string, (string Value, DateTime? Expiry)> Cache = new();
+
+	public void Set(string key, string value, TimeSpan? expireTime = null) {
+		DateTime? expiry = expireTime.HasValue ? DateTime.UtcNow.Add(expireTime.Value) : null;
+		Cache[key] = (value, expiry);
+	}
+
+	public string? Get(string key) {
+		if (!Cache.TryGetValue(key, out (string Value, DateTime? Expiry) entry)) return null;
+		if (entry.Expiry == null || DateTime.UtcNow < entry.Expiry) {
+			return entry.Value;
+		}
+
+		Cache.TryRemove(key, out _);
+
+		return null;
+	}
+
+	public void Delete(string key) => Cache.TryRemove(key, out _);
+
+	public void DeleteAllByPartialKey(string partialKey) {
+		List<string> keysToRemove = Cache.Keys.Where(k => k.Contains(partialKey)).ToList();
+		foreach (string key in keysToRemove) {
+			Cache.TryRemove(key, out _);
+		}
+	}
+}
