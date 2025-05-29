@@ -74,8 +74,6 @@ public sealed class ApiRequestLoggingMiddleware(
 					request.Path,
 					context.Response.StatusCode,
 					stopwatch.ElapsedMilliseconds,
-					request.Headers,
-					context.Response.Headers,
 					requestBody,
 					responseBody.FirstChars(1000),
 					efCoreQueries,
@@ -93,8 +91,6 @@ public sealed class ApiRequestLoggingMiddleware(
 		string path,
 		int statusCode,
 		long elapsedMs,
-		IHeaderDictionary requestHeaders,
-		IHeaderDictionary responseHeaders,
 		string requestBody,
 		string responseBody,
 		List<string> efCoreQueries,
@@ -104,41 +100,33 @@ public sealed class ApiRequestLoggingMiddleware(
 		Directory.CreateDirectory(logDir);
 
 		bool isSuccess = statusCode is >= 200 and <= 299;
-		string logFileName = $"{now:dd}_{(isSuccess ? "success" : "failed")}.txt";
+		string logFileName = $"{now:dd}_{(isSuccess ? "success" : "failed")}.json";
 
-		StringBuilder logEntry = new StringBuilder()
-			.AppendLine($"{timestamp:yyyy-MM-dd HH:mm:ss} {method} - {path} - {statusCode} - {elapsedMs}ms")
-			.AppendLine(SerializeHeaders(requestHeaders))
-			.AppendLine(SerializeHeaders(responseHeaders));
-
-		if (exception != null)
-			logEntry.AppendLine($"Type: {exception.GetType().Name}")
-				.AppendLine($"Message: {exception.Message}")
-				.AppendLine($"Stack Trace: {exception.StackTrace}");
-		else
-			logEntry.AppendLine(TryMinifyJson(requestBody)).AppendLine(TryMinifyJson(responseBody));
-
-		logEntry
-			.AppendJoin("", efCoreQueries)
-			.AppendLine("\n" + new string('=', 50));
+		var logEntry = new {
+			timestamp = timestamp.ToString("yyyy-MM-dd HH:mm:ss"),
+			method,
+			path,
+			statusCode,
+			elapsedMs,
+			requestBody = TryMinifyJson(requestBody),
+			responseBody = TryMinifyJson(responseBody),
+			efCoreQueries = efCoreQueries.ToArray(),
+			exception = exception != null
+				? new {
+					type = exception.GetType().Name,
+					message = exception.Message,
+					stackTrace = exception.StackTrace
+				}
+				: null
+		};
 
 		try {
-			File.AppendAllText(Path.Combine(logDir, logFileName), logEntry.ToString());
+			string json = JsonSerializer.Serialize(logEntry, UJsonOptions.Default);
+			File.AppendAllText(Path.Combine(logDir, logFileName), json + Environment.NewLine);
 			logger.LogDebug("Logged to {file}", logFileName);
 		}
 		catch (Exception ex) {
 			logger.LogError(ex, "Failed to write to log file {file}", logFileName);
-		}
-	}
-
-	private static string SerializeHeaders(IHeaderDictionary headers) {
-		try {
-			return JsonSerializer.Serialize(
-				headers.ToDictionary(h => h.Key, h => h.Value.ToString()),
-				UJsonOptions.Default);
-		}
-		catch {
-			return "{}";
 		}
 	}
 
