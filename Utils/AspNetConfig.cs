@@ -6,7 +6,6 @@ public static class AspNetConfig {
 		builder.Services.AddUSwagger();
 		builder.Services.AddHttpContextAccessor();
 		builder.Services.AddHttpClient();
-		// builder.Services.AddMemoryCache();
 		builder.Services.AddURateLimiter();
 		builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 		builder.Services.ConfigureHttpJsonOptions(o => {
@@ -15,14 +14,6 @@ public static class AspNetConfig {
 			o.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 			o.SerializerOptions.WriteIndented = false;
 		});
-		builder.Services.AddControllersWithViews(o => o.EnableEndpointRouting = false)
-			.AddJsonOptions(o => {
-				o.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-				o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-				o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-				o.JsonSerializerOptions.WriteIndented = false;
-			});
-
 		builder.Services.AddResponseCompression(o => o.EnableForHttps = true);
 		builder.Services.AddScoped<DbContext, T>();
 		builder.Services.AddDbContextPool<T>(b => {
@@ -36,7 +27,6 @@ public static class AspNetConfig {
 
 		builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 		builder.Services.AddSingleton<IFileProvider>(new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")));
-		builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 100_000_000);
 		builder.Services.Configure<FormOptions>(x => {
 			x.ValueLengthLimit = int.MaxValue;
 			x.MultipartBodyLengthLimit = int.MaxValue;
