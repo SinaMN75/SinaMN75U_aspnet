@@ -1,9 +1,6 @@
 namespace SinaMN75U.Middlewares;
 
-public sealed class ApiRequestLoggingMiddleware(
-	RequestDelegate next,
-	ILogger<ApiRequestLoggingMiddleware> logger,
-	IServiceProvider serviceProvider) {
+public sealed class ApiRequestLoggingMiddleware(RequestDelegate next, IServiceProvider serviceProvider) {
 	public async Task InvokeAsync(HttpContext context) {
 		HttpRequest request = context.Request;
 
@@ -40,8 +37,8 @@ public sealed class ApiRequestLoggingMiddleware(
 					requestBody = await reader.ReadToEndAsync();
 					request.Body.Position = 0;
 				}
-				catch (Exception ex) {
-					logger.LogError(ex, "Failed to read request body");
+				catch (Exception) {
+					// ignored
 				}
 
 			// Capture response
@@ -79,8 +76,8 @@ public sealed class ApiRequestLoggingMiddleware(
 					efCoreQueries,
 					exception);
 			}
-			catch (Exception loggingEx) {
-				logger.LogError(loggingEx, "CRITICAL: Failed to log request");
+			catch (Exception) {
+				// ignored
 			}
 		}
 	}
@@ -122,18 +119,16 @@ public sealed class ApiRequestLoggingMiddleware(
 
 		try {
 			string json = JsonSerializer.Serialize(logEntry, UJsonOptions.Default);
-			File.AppendAllText(Path.Combine(logDir, logFileName), json + Environment.NewLine);
-			logger.LogDebug("Logged to {file}", logFileName);
+			File.AppendAllText(Path.Combine(logDir, logFileName), json + "," + Environment.NewLine);
 		}
-		catch (Exception ex) {
-			logger.LogError(ex, "Failed to write to log file {file}", logFileName);
+		catch (Exception) {
+			// ignored
 		}
 	}
 
 	private static string TryMinifyJson(string json) {
 		if (string.IsNullOrWhiteSpace(json))
 			return string.Empty;
-
 		try {
 			using JsonDocument doc = JsonDocument.Parse(json);
 			return JsonSerializer.Serialize(doc.RootElement, UJsonOptions.Default);
