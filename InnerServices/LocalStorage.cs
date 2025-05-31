@@ -40,13 +40,13 @@ public class MemoryCacheService(IMemoryCache cache) : ILocalStorageService {
 }
 
 public class StaticCacheService : ILocalStorageService {
-	private static readonly ConcurrentDictionary<string, (string Value, DateTime? Expiry)> Cache = new();
+	private static readonly ConcurrentDictionary<string, (string Value, DateTime Expiry)> Cache = new();
 
 	public void Set(string key, string value, TimeSpan expireTime) => Cache[key] = (value, DateTime.UtcNow.Add(expireTime));
 
 	public string? Get(string key) {
-		if (!Cache.TryGetValue(key, out (string Value, DateTime? Expiry) entry)) return null;
-		if (entry.Expiry == null || DateTime.UtcNow < entry.Expiry) return entry.Value;
+		if (!Cache.TryGetValue(key, out (string Value, DateTime Expiry) entry)) return null;
+		if (DateTime.UtcNow < entry.Expiry) return entry.Value;
 		Cache.TryRemove(key, out _);
 		return null;
 	}
