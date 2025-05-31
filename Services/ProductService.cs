@@ -6,6 +6,7 @@ public interface IProductService {
 	public Task<UResponse<ProductResponse?>> ReadById(IdParams p, CancellationToken ct);
 	public Task<UResponse<ProductResponse?>> Update(ProductUpdateParams p, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
+	public Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct);
 }
 
 public class ProductService(DbContext db, ITokenService ts, ILocalizationService ls, ICategoryService categoryService) : IProductService {
@@ -240,5 +241,10 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 
 		int count = await db.Set<ProductEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 		return count > 0 ? new UResponse(Usc.Deleted, ls.Get("ProductDeleted")) : new UResponse(Usc.NotFound, ls.Get("ProductNotFound"));
+	}
+
+	public async Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct) {
+		await db.Set<ProductEntity>().WhereIn(u => u.Id, p.Ids).ExecuteDeleteAsync(ct);
+		return new UResponse();
 	}
 }

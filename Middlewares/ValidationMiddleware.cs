@@ -5,17 +5,10 @@ public class UValidationFilter : IEndpointFilter {
 		foreach (object? argument in context.Arguments) {
 			if (argument is null) continue;
 			ILocalizationService l = context.HttpContext.RequestServices.GetRequiredService<ILocalizationService>();
-			ValidationContext validationContext = new(argument,
-				context.HttpContext.RequestServices,
-				null);
+			ValidationContext validationContext = new(argument, context.HttpContext.RequestServices, null);
 
 			List<ValidationResult> validationResults = [];
-			bool isValid = Validator.TryValidateObject(
-				argument,
-				validationContext,
-				validationResults,
-				true
-			);
+			bool isValid = Validator.TryValidateObject(argument, validationContext, validationResults, true);
 
 			if (isValid) continue;
 			string errorMessage = validationResults.FirstOrDefault()?.ErrorMessage ?? l.Get("ValidationError");

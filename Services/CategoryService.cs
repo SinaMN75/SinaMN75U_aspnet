@@ -5,7 +5,7 @@ public interface ICategoryService {
 	Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct);
 	Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
-	Task<UResponse> DeleteRange(IEnumerable<Guid> p, CancellationToken ct);
+	Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct);
 
 	Task<List<CategoryEntity>?> ReadEntity(CategoryReadParams p, CancellationToken ct);
 }
@@ -200,8 +200,12 @@ public class CategoryService(
 		return new UResponse();
 	}
 
-	public async Task<UResponse> DeleteRange(IEnumerable<Guid> p, CancellationToken ct) {
-		await db.Set<CategoryEntity>().WhereIn(u => u.Id, p).ExecuteDeleteAsync(ct);
+	public async Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null)
+			return new UResponse<CategoryResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		await db.Set<CategoryEntity>().WhereIn(u => u.Id, p.Ids).ExecuteDeleteAsync(ct);
 		return new UResponse();
 	}
 
