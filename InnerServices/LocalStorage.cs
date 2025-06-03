@@ -3,9 +3,9 @@ namespace SinaMN75U.InnerServices;
 using System.Collections.Concurrent;
 
 public interface ILocalStorageService {
-	public void Set(string key, string value, TimeSpan expireTime);
-	public string? Get(string key);
-	public void Delete(string recordId);
+	void Set(string key, string value, TimeSpan expireTime);
+	string? Get(string key);
+	void Delete(string recordId);
 	void DeleteAllByPartialKey(string partialKey);
 }
 
@@ -39,10 +39,17 @@ public class MemoryCacheService(IMemoryCache cache) : ILocalStorageService {
 	}
 }
 
-public class StaticCacheService : ILocalStorageService {
+public sealed class StaticCacheService : ILocalStorageService {
 	private static readonly ConcurrentDictionary<string, (string Value, DateTime Expiry)> Cache = new();
+	private static DateTime _lastCleanup = DateTime.UtcNow;
 
-	public void Set(string key, string value, TimeSpan expireTime) => Cache[key] = (value, DateTime.UtcNow.Add(expireTime));
+	public void Set(string key, string value, TimeSpan expireTime) {
+		DateTime now = DateTime.UtcNow;
+		Cache[key] = (value, now.Add(expireTime));
+		if (now - _lastCleanup <= TimeSpan.FromMinutes(5)) return;
+		CleanupExpiredEntries();
+		_lastCleanup = now;
+	}
 
 	public string? Get(string key) {
 		if (!Cache.TryGetValue(key, out (string Value, DateTime Expiry) entry)) return null;
@@ -54,7 +61,14 @@ public class StaticCacheService : ILocalStorageService {
 	public void Delete(string key) => Cache.TryRemove(key, out _);
 
 	public void DeleteAllByPartialKey(string partialKey) {
-		List<string> keysToRemove = Cache.Keys.Where(k => k.Contains(partialKey)).ToList();
-		foreach (string key in keysToRemove) Cache.TryRemove(key, out _);
+		foreach (KeyValuePair<string, (string Value, DateTime Expiry)> kvp in Cache) {
+			if (kvp.Key.Contains(partialKey, StringComparison.Ordinal)) Cache.TryRemove(kvp.Key, out _);
+		}
+	}
+
+	private static void CleanupExpiredEntries() {
+		foreach (KeyValuePair<string, (string Value, DateTime Expiry)> kvp in Cache) {
+			if (DateTime.UtcNow >= kvp.Value.Expiry) Cache.TryRemove(kvp.Key, out _);
+		}
 	}
 }
