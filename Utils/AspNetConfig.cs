@@ -1,5 +1,7 @@
 namespace SinaMN75U.Utils;
 
+using System.IO.Compression;
+
 public static class AspNetConfig {
 	public static void AddUServices<T>(this WebApplicationBuilder builder) where T : DbContext {
 		builder.Services.AddCors(c => c.AddPolicy("AllowOrigin", o => o.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
@@ -15,8 +17,13 @@ public static class AspNetConfig {
 			o.SerializerOptions.WriteIndented = false;
 		});
 		builder.Services.AddResponseCompression(o => {
-			o.Providers.Add<GzipCompressionProvider>();
 			o.EnableForHttps = true;
+			o.Providers.Add<GzipCompressionProvider>();
+			o.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(["application/json", "text/plain"]);
+		});
+
+		builder.Services.Configure<GzipCompressionProviderOptions>(options => {
+			options.Level = CompressionLevel.Fastest; // Or Optimal if CPU usage is okay
 		});
 		builder.Services.AddScoped<DbContext, T>();
 		builder.Services.AddDbContextPool<T>(b => {

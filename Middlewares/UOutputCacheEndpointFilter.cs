@@ -1,15 +1,16 @@
 namespace SinaMN75U.Middlewares;
 
-using Microsoft.Extensions.Primitives;
-using System.Buffers;
-
-public sealed class CustomRequestResponseFilter(ILocalStorageService cache, int minutes) : IEndpointFilter {
+public sealed class CacheResponseFilter(ILocalStorageService cache, int minutes) : IEndpointFilter {
 	public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next) {
 		HttpContext httpContext = context.HttpContext;
 		HttpRequest request = httpContext.Request;
-		string cacheKey = BuildCacheKey(request);
 
-		if (cache.Get(cacheKey) is { } cachedResponse) return Results.Json(JsonSerializer.Deserialize<object>(cachedResponse));
+		string body = await ReadRequestBodyAsync(request);
+		string cacheKey = BuildCacheKey(request, body);
+
+		if (cache.Get(cacheKey) is { } cachedResponse) {
+			return Results.Json(JsonSerializer.Deserialize<object>(cachedResponse));
+		}
 
 		object? result = await next(context);
 
@@ -20,40 +21,51 @@ public sealed class CustomRequestResponseFilter(ILocalStorageService cache, int 
 		return result;
 	}
 
-	private static string BuildCacheKey(HttpRequest request) {
-		StringBuilder sb = new StringBuilder(256)
-			.Append(request.Scheme).Append("://")
-			.Append(request.Host)
-			.Append(request.Path)
-			.Append(request.QueryString);
-		foreach (KeyValuePair<string, StringValues> header in request.Headers.OrderBy(h => h.Key)) {
-			sb.Append(header.Key).Append('=').Append(header.Value);
+	private static async Task<string> ReadRequestBodyAsync(HttpRequest request) {
+		if (!(HttpMethods.IsPost(request.Method) || HttpMethods.IsPut(request.Method))) {
+			return string.Empty;
 		}
 
-		if (!(request.ContentLength > 0) || !request.Body.CanRead) return sb.ToString();
 		try {
-			long originalPosition = request.Body.Position;
 			request.Body.Position = 0;
-			byte[] buffer = ArrayPool<byte>.Shared.Rent((int)request.ContentLength);
-			try {
-				int bytesRead = request.Body.Read(buffer, 0, (int)request.ContentLength);
-				sb.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
-			}
-			finally {
-				ArrayPool<byte>.Shared.Return(buffer);
-				request.Body.Position = originalPosition;
-			}
+			using StreamReader reader = new(request.Body, Encoding.UTF8, leaveOpen: true);
+			string body = await reader.ReadToEndAsync();
+			request.Body.Position = 0;
+
+			return body.Trim();
 		}
 		catch {
-			// ignored
+			return string.Empty;
+		}
+	}
+
+	private static string BuildCacheKey(HttpRequest request, string body) {
+		StringBuilder sb = new StringBuilder(256)
+			.Append(request.Method).Append(':')
+			.Append(request.Path).Append('?')
+			.Append(request.QueryString);
+
+		if (request.Headers.TryGetValue("locale", out StringValues locale)) {
+			sb.Append('-').Append(locale.ToString());
 		}
 
-		Console.WriteLine(sb.ToString());
-		return sb.ToString();
+		if (!string.IsNullOrEmpty(body)) {
+			sb.Append('-').Append(ComputeSha256Hash(body));
+		}
+
+		string key = sb.ToString();
+		Console.WriteLine(key);
+		return key;
+	}
+
+	private static string ComputeSha256Hash(string rawData) {
+		using SHA256 sha256 = SHA256.Create();
+		byte[] bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(rawData));
+		return Convert.ToHexString(bytes); // returns uppercase hex string
 	}
 }
 
-public sealed class ModifiedResult(
+public class ModifiedResult(
 	IResult originalResult,
 	string cacheKey,
 	ILocalStorageService cache,
@@ -61,7 +73,7 @@ public sealed class ModifiedResult(
 	: IResult {
 	public async Task ExecuteAsync(HttpContext httpContext) {
 		Stream originalBodyStream = httpContext.Response.Body;
-		await using MemoryStream memoryStream = new(1024); // Pre-allocate buffer
+		await using MemoryStream memoryStream = new();
 		httpContext.Response.Body = memoryStream;
 
 		await originalResult.ExecuteAsync(httpContext);
@@ -69,19 +81,19 @@ public sealed class ModifiedResult(
 		if (httpContext.Response.StatusCode == StatusCodes.Status200OK) {
 			try {
 				memoryStream.Seek(0, SeekOrigin.Begin);
-				using StreamReader reader = new StreamReader(memoryStream, Encoding.UTF8, false, 1024, leaveOpen: true);
-				string responseBody = await reader.ReadToEndAsync();
+				string responseBody = await new StreamReader(memoryStream).ReadToEndAsync();
 
 				cache.Set(cacheKey, responseBody, cacheDuration);
-				httpContext.Response.Headers["X-Cache-Store"] = "true";
+				httpContext.Response.Headers.TryAdd("X-Cache-Store", "true");
 			}
 			catch {
 				// ignored
 			}
+			finally {
+				memoryStream.Seek(0, SeekOrigin.Begin);
+				await memoryStream.CopyToAsync(originalBodyStream);
+			}
 		}
-
-		memoryStream.Seek(0, SeekOrigin.Begin);
-		await memoryStream.CopyToAsync(originalBodyStream);
 	}
 }
 
@@ -90,7 +102,7 @@ public static class CacheFilterExtensions {
 		where TBuilder : IEndpointConventionBuilder {
 		return builder.AddEndpointFilter(async (context, next) => {
 			ILocalStorageService cache = context.HttpContext.RequestServices.GetRequiredService<ILocalStorageService>();
-			CustomRequestResponseFilter filter = new(cache, minutes);
+			CacheResponseFilter filter = new(cache, minutes);
 			return await filter.InvokeAsync(context, next);
 		});
 	}
