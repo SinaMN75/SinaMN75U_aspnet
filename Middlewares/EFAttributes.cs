@@ -190,6 +190,10 @@ public class UNotInAttribute(string targetProperty) : UFilterAttribute(targetPro
 
 public class UHasAnyAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
+public class UHasAllAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+
+public class UOverlapsAttribute(string targetProperty) : UFilterAttribute(targetProperty); // New: any overlap
+
 public class UIsTrueAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
 public class UIsFalseAttribute(string targetProperty) : UFilterAttribute(targetProperty);
@@ -197,6 +201,16 @@ public class UIsFalseAttribute(string targetProperty) : UFilterAttribute(targetP
 public class UDateAfterAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
 public class UDateBeforeAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+
+public class UIsNullAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+
+public class UIsNotNullAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+
+public class ULengthEqualAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+
+public class ULengthGreaterAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+
+public class ULengthLessAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
 [AttributeUsage(AttributeTargets.Property)]
 public class USortAttribute(string targetProperty, bool descending = false) : Attribute {
@@ -210,99 +224,75 @@ public class UIncludeAttribute(string navigationProperty) : Attribute {
 }
 
 public static class UQueryableFilterExtensions {
-	private static readonly ConcurrentDictionary<Type, List<(PropertyInfo Property, UFilterAttribute Attr)>> FilterCache = new();
+	private static readonly ConcurrentDictionary<Type, PropertyInfo[]> PropertyCache = new();
 
 	public static IQueryable<TEntity> ApplyFilters<TEntity, TParams>(this IQueryable<TEntity> query, TParams filterParams) {
 		Type paramType = typeof(TParams);
 		Type entityType = typeof(TEntity);
 		ParameterExpression parameter = Expression.Parameter(entityType, "x");
 
-		if (!FilterCache.TryGetValue(paramType, out List<(PropertyInfo Property, UFilterAttribute Attr)>? cachedFilters)) {
-			cachedFilters = (from prop in paramType.GetProperties()
-				from attr in prop.GetCustomAttributes<UFilterAttribute>()
-				select (prop, attr)).ToList();
-			FilterCache[paramType] = cachedFilters;
-		}
+		PropertyInfo[] props = PropertyCache.GetOrAdd(paramType, t => t.GetProperties());
 
-		foreach ((PropertyInfo prop, UFilterAttribute attr) in cachedFilters) {
+		foreach (PropertyInfo prop in props) {
 			object? value = prop.GetValue(filterParams);
 			if (value == null || value is string s && string.IsNullOrWhiteSpace(s)) continue;
 
-			MemberExpression target = BuildNestedProperty(parameter, attr.TargetProperty);
-			ConstantExpression constant = Expression.Constant(value);
-			Expression? predicate = attr switch {
-				UContainsAttribute => Expression.Call(target, nameof(string.Contains), null, constant),
-				UStartsWithAttribute => Expression.Call(target, nameof(string.StartsWith), null, constant),
-				UEndsWithAttribute => Expression.Call(target, nameof(string.EndsWith), null, constant),
-				UEqualAttribute => Expression.Equal(target, constant),
-				UNotEqualAttribute => Expression.NotEqual(target, constant),
-				UGreaterThanAttribute => Expression.GreaterThan(target, constant),
-				UGreaterThanOrEqualAttribute => Expression.GreaterThanOrEqual(target, constant),
-				ULessThanAttribute => Expression.LessThan(target, constant),
-				ULessThanOrEqualAttribute => Expression.LessThanOrEqual(target, constant),
-				UIsTrueAttribute => Expression.Equal(target, Expression.Constant(true)),
-				UIsFalseAttribute => Expression.Equal(target, Expression.Constant(false)),
-				UDateAfterAttribute => Expression.GreaterThan(target, constant),
-				UDateBeforeAttribute => Expression.LessThan(target, constant),
-				UInAttribute => BuildInExpression(target, value),
-				UNotInAttribute => Expression.Not(BuildInExpression(target, value)),
-				UHasAnyAttribute => BuildHasAnyExpression(target, value),
-				_ => null
-			};
+			foreach (UFilterAttribute attr in prop.GetCustomAttributes<UFilterAttribute>()) {
+				MemberExpression target = BuildNestedProperty(parameter, attr.TargetProperty);
+				ConstantExpression constant = Expression.Constant(value);
 
-			if (predicate == null) continue;
-			Expression<Func<TEntity, bool>> lambda = Expression.Lambda<Func<TEntity, bool>>(predicate, parameter);
-			query = query.Where(lambda);
-		}
+				Expression? predicate = attr switch {
+					UContainsAttribute => Expression.Call(target, nameof(string.Contains), null, constant),
+					UStartsWithAttribute => Expression.Call(target, nameof(string.StartsWith), null, constant),
+					UEndsWithAttribute => Expression.Call(target, nameof(string.EndsWith), null, constant),
+					UEqualAttribute => Expression.Equal(target, constant),
+					UNotEqualAttribute => Expression.NotEqual(target, constant),
+					UGreaterThanAttribute => Expression.GreaterThan(target, constant),
+					UGreaterThanOrEqualAttribute => Expression.GreaterThanOrEqual(target, constant),
+					ULessThanAttribute => Expression.LessThan(target, constant),
+					ULessThanOrEqualAttribute => Expression.LessThanOrEqual(target, constant),
+					UIsTrueAttribute => Expression.Equal(target, Expression.Constant(true)),
+					UIsFalseAttribute => Expression.Equal(target, Expression.Constant(false)),
+					UDateAfterAttribute => Expression.GreaterThan(target, constant),
+					UDateBeforeAttribute => Expression.LessThan(target, constant),
+					UInAttribute => BuildContainsExpression(target, value),
+					UNotInAttribute => Expression.Not(BuildContainsExpression(target, value)),
+					UHasAnyAttribute => BuildHasAnyExpression(target, value),
+					UHasAllAttribute => BuildHasAllExpression(target, value),
+					UOverlapsAttribute => BuildOverlapExpression(target, value),
+					UIsNullAttribute => Expression.Equal(target, Expression.Constant(null)),
+					UIsNotNullAttribute => Expression.NotEqual(target, Expression.Constant(null)),
+					ULengthEqualAttribute => Expression.Equal(Expression.Property(target, "Length"), constant),
+					ULengthGreaterAttribute => Expression.GreaterThan(Expression.Property(target, "Length"), constant),
+					ULengthLessAttribute => Expression.LessThan(Expression.Property(target, "Length"), constant),
+					_ => null
+				};
 
-		foreach (PropertyInfo prop in paramType.GetProperties()) {
-			UBetweenAttribute? attr = prop.GetCustomAttribute<UBetweenAttribute>();
-			if (attr == null || prop.GetValue(filterParams) is not IList { Count: 2 } range) continue;
+				if (predicate == null) continue;
+				Expression<Func<TEntity, bool>> lambda = Expression.Lambda<Func<TEntity, bool>>(predicate, parameter);
+				query = query.Where(lambda);
+			}
 
-			MemberExpression target = BuildNestedProperty(parameter, attr.TargetProperty);
-			ConstantExpression from = Expression.Constant(range[0]);
-			ConstantExpression to = Expression.Constant(range[1]);
-			BinaryExpression ge = Expression.GreaterThanOrEqual(target, from);
-			BinaryExpression le = Expression.LessThanOrEqual(target, to);
-			BinaryExpression between = Expression.AndAlso(ge, le);
-			Expression<Func<TEntity, bool>> lambda = Expression.Lambda<Func<TEntity, bool>>(between, parameter);
-			query = query.Where(lambda);
+			if (prop.GetCustomAttribute<UBetweenAttribute>() is not { } betweenAttr || value is not IList range || range.Count != 2) continue;
+			{
+				MemberExpression target = BuildNestedProperty(parameter, betweenAttr.TargetProperty);
+				ConstantExpression from = Expression.Constant(range[0]);
+				ConstantExpression to = Expression.Constant(range[1]);
+				BinaryExpression ge = Expression.GreaterThanOrEqual(target, from);
+				BinaryExpression le = Expression.LessThanOrEqual(target, to);
+				BinaryExpression combined = Expression.AndAlso(ge, le);
+				Expression<Func<TEntity, bool>> lambda = Expression.Lambda<Func<TEntity, bool>>(combined, parameter);
+				query = query.Where(lambda);
+			}
 		}
 
 		return query;
 	}
 
-	private static MemberExpression BuildNestedProperty(Expression param, string propertyPath) {
-		return propertyPath.Split('.')
-			       .Aggregate((Expression)param, Expression.Property) as MemberExpression
-		       ?? throw new InvalidOperationException($"Invalid property path: {propertyPath}");
-	}
-
-	private static Expression BuildInExpression(MemberExpression target, object value) {
-		ConstantExpression enumerable = Expression.Constant(value);
-		MethodInfo method = typeof(Enumerable).GetMethods()
-			.First(m => m.Name == "Contains" && m.GetParameters().Length == 2)
-			.MakeGenericMethod(target.Type);
-		return Expression.Call(method, enumerable, target);
-	}
-
-	private static Expression BuildHasAnyExpression(MemberExpression target, object value) {
-		Type elementType = target.Type.GetGenericArguments().FirstOrDefault() ?? typeof(object);
-		ParameterExpression param = Expression.Parameter(elementType, "e");
-		ConstantExpression constant = Expression.Constant(value);
-		MethodInfo containsMethod = typeof(Enumerable).GetMethods()
-			.First(m => m.Name == "Contains" && m.GetParameters().Length == 2)
-			.MakeGenericMethod(elementType);
-		MethodCallExpression body = Expression.Call(containsMethod, constant, param);
-		LambdaExpression lambda = Expression.Lambda(body, param);
-		return Expression.Call(typeof(Enumerable), "Any", [elementType], target, lambda);
-	}
-
 	public static IQueryable<TEntity> ApplyIncludes<TEntity, TParams>(this IQueryable<TEntity> query, TParams param) where TEntity : class {
-		Type paramType = typeof(TParams);
-		foreach (PropertyInfo prop in paramType.GetProperties()) {
-			UIncludeAttribute? attr = prop.GetCustomAttribute<UIncludeAttribute>();
-			if (attr != null && prop.PropertyType == typeof(bool) && (bool)(prop.GetValue(param) ?? false)) {
+		PropertyInfo[] props = PropertyCache.GetOrAdd(typeof(TParams), t => t.GetProperties());
+		foreach (PropertyInfo prop in props) {
+			if (prop.GetCustomAttribute<UIncludeAttribute>() is { } attr && prop.PropertyType == typeof(bool) && (bool)(prop.GetValue(param) ?? false)) {
 				query = query.Include(attr.NavigationProperty);
 			}
 		}
@@ -311,21 +301,56 @@ public static class UQueryableFilterExtensions {
 	}
 
 	public static IQueryable<TEntity> ApplySorting<TEntity, TParams>(this IQueryable<TEntity> query, TParams param) {
-		IEnumerable<(PropertyInfo Property, USortAttribute? Attr)> props = typeof(TParams).GetProperties()
-			.Select(p => (Property: p, Attr: p.GetCustomAttribute<USortAttribute>()))
-			.Where(t => t.Attr != null && (bool)(t.Property.GetValue(param) ?? false));
+		PropertyInfo[] props = PropertyCache.GetOrAdd(typeof(TParams), t => t.GetProperties());
 
-		foreach ((PropertyInfo _, USortAttribute? attr) in props) {
+		foreach (PropertyInfo prop in props) {
+			if (prop.GetCustomAttribute<USortAttribute>() is not { } attr) continue;
+			if (!(prop.GetValue(param) is bool apply) || !apply) continue;
+
 			ParameterExpression parameter = Expression.Parameter(typeof(TEntity), "x");
-			MemberExpression target = BuildNestedProperty(parameter, attr!.TargetProperty);
+			MemberExpression target = BuildNestedProperty(parameter, attr.TargetProperty);
 			LambdaExpression lambda = Expression.Lambda(target, parameter);
 			string methodName = attr.Descending ? "OrderByDescending" : "OrderBy";
-			MethodInfo method = typeof(Queryable).GetMethods()
-				.First(m => m.Name == methodName && m.GetParameters().Length == 2)
-				.MakeGenericMethod(typeof(TEntity), target.Type);
+
+			MethodInfo method = typeof(Queryable).GetMethods().First(m => m.Name == methodName && m.GetParameters().Length == 2).MakeGenericMethod(typeof(TEntity), target.Type);
 			query = (IQueryable<TEntity>)method.Invoke(null, [query, lambda])!;
 		}
-
 		return query;
+	}
+	
+	private static Expression BuildContainsExpression(Expression target, object value) {
+		MethodInfo method = typeof(Enumerable).GetMethods().First(m => m.Name == "Contains" && m.GetParameters().Length == 2).MakeGenericMethod(target.Type);
+		return Expression.Call(method, Expression.Constant(value), target);
+	}
+
+	private static Expression BuildHasAnyExpression(Expression target, object value) {
+		Type elementType = target.Type.GetGenericArguments().FirstOrDefault() ?? typeof(object);
+		ParameterExpression param = Expression.Parameter(elementType, "e");
+		MethodInfo contains = typeof(Enumerable).GetMethods().First(m => m.Name == "Contains" && m.GetParameters().Length == 2).MakeGenericMethod(elementType);
+		MethodCallExpression call = Expression.Call(contains, Expression.Constant(value), param);
+		LambdaExpression lambda = Expression.Lambda(call, param);
+		return Expression.Call(typeof(Enumerable), "Any", [elementType], target, lambda);
+	}
+
+	private static Expression BuildHasAllExpression(Expression target, object value) {
+		Type elementType = target.Type.GetGenericArguments().FirstOrDefault() ?? typeof(object);
+		ParameterExpression param = Expression.Parameter(elementType, "e");
+		MethodInfo contains = typeof(Enumerable).GetMethods().First(m => m.Name == "Contains" && m.GetParameters().Length == 2).MakeGenericMethod(target.Type);
+		MethodCallExpression call = Expression.Call(contains, target, param);
+		LambdaExpression lambda = Expression.Lambda(call, param);
+		return Expression.Call(typeof(Enumerable), "All", [elementType], Expression.Constant(value), lambda);
+	}
+
+	private static Expression BuildOverlapExpression(Expression target, object value) {
+		Type elementType = target.Type.GetGenericArguments().FirstOrDefault() ?? typeof(object);
+		ParameterExpression param = Expression.Parameter(elementType, "e");
+		MethodInfo contains = typeof(Enumerable).GetMethods().First(m => m.Name == "Contains" && m.GetParameters().Length == 2).MakeGenericMethod(elementType);
+		MethodCallExpression call = Expression.Call(contains, target, param);
+		LambdaExpression lambda = Expression.Lambda(call, param);
+		return Expression.Call(typeof(Enumerable), "Any", [elementType], Expression.Constant(value), lambda);
+	}
+
+	private static MemberExpression BuildNestedProperty(Expression parameter, string propertyPath) {
+		return propertyPath.Split('.').Aggregate((MemberExpression)parameter, Expression.Property);
 	}
 }
