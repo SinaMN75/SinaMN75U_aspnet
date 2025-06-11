@@ -22,9 +22,7 @@ public static class AspNetConfig {
 			o.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(["application/json", "text/plain"]);
 		});
 
-		builder.Services.Configure<GzipCompressionProviderOptions>(options => {
-			options.Level = CompressionLevel.Fastest; // Or Optimal if CPU usage is okay
-		});
+		builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
 		builder.Services.AddScoped<DbContext, T>();
 		builder.Services.AddDbContextPool<T>(b => {
 			b.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
