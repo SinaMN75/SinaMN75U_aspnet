@@ -44,6 +44,8 @@ public enum TagMedia {
 
 public enum TagProduct {
 	Product = 101,
+	Content = 102,
+	Blog = 103,
 	New = 201,
 	KindOfNew = 202,
 	Used = 203,
