@@ -8,6 +8,7 @@ public interface IAuthService {
 	Task<UResponse> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> VerifyCodeForLogin(VerifyMobileForLoginParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> TestToken(LoginWithEmailPasswordParams p, CancellationToken ct);
+	Task<UResponse<UserResponse?>> ReadUserByToken(BaseParams p, CancellationToken ct);
 }
 
 public class AuthService(
@@ -169,6 +170,14 @@ public class AuthService(
 			Expires = config["Jwt:Expires"] ?? "60",
 			User = user.MapToResponse()
 		});
+	}
+
+	public async Task<UResponse<UserResponse?>> ReadUserByToken(BaseParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<UserResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		UserEntity? user = await db.Set<UserEntity>().FindAsync(userData.Id, ct);
+		return user == null ? new UResponse<UserResponse?>(null, Usc.NotFound, ls.Get("UserNotFound")) : new UResponse<UserResponse?>(user.MapToResponse());
 	}
 
 	private string CreateToken(UserEntity user) => ts.GenerateJwt([
