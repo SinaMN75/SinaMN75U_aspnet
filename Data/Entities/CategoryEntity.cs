@@ -29,7 +29,7 @@ public class CategoryJson {
 }
 
 public static class CategoryEntityExtension {
-	public static CategoryResponse MapToResponse(this CategoryEntity x, bool showMedia = false, bool showChildren = false) => new() {
+	public static CategoryResponse MapToResponse(this CategoryEntity x, bool showMedia = false) => new() {
 		Id = x.Id,
 		Title = x.Title,
 		Tags = x.Tags,
@@ -38,8 +38,8 @@ public static class CategoryEntityExtension {
 		Location = x.Location,
 		Type = x.Type,
 		Order = x.Order,
-		Children = showChildren || showMedia
-			? x.Children!.Select(c => new CategoryResponse {
+		Children =
+			x.Children!.Select(c => new CategoryResponse {
 				Id = c.Id,
 				Title = c.Title,
 				JsonData = c.JsonData,
@@ -49,8 +49,7 @@ public static class CategoryEntityExtension {
 				Type = x.Type,
 				Order = x.Order,
 				Media = showMedia ? c.Media!.Select(m => m.MapToResponse()) : null
-			})
-			: null,
+			}),
 		Media = showMedia ? x.Media!.Select(m => m.MapToResponse()) : null
 	};
 }

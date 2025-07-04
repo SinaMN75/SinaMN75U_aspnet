@@ -4,7 +4,6 @@ public class CategoryCreateParams : BaseParams {
 	[URequired("TitleRequired")]
 	public required string Title { get; set; }
 
-	[URequired("")]
 	public string? Subtitle { get; set; }
 
 	[UMinCollectionLength(1, "TagsRequired")]

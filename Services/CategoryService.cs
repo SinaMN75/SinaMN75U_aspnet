@@ -50,10 +50,7 @@ public class CategoryService(
 		if (p.Ids.IsNotNullOrEmpty())
 			q = q.Where(x => p.Ids.Contains(x.Id));
 
-		List<CategoryEntity> entities = await q.ToListAsync(ct);
-		List<CategoryResponse> result = entities.Select(x => x.MapToResponse(p.ShowMedia)).ToList();
-
-		return new UResponse<IEnumerable<CategoryResponse>?>(result);
+		return await q.Select(x => x.MapToResponse(p.ShowMedia)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct) {
