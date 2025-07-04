@@ -31,7 +31,8 @@ public enum TagUser {
 public enum TagCategory {
 	Category = 100,
 	Exam = 101,
-	User = 102
+	User = 102,
+	Menu = 103
 }
 
 public enum TagMedia {

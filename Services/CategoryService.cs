@@ -22,9 +22,12 @@ public class CategoryService(
 		CategoryEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			Title = p.Title,
-			JsonData = new CategoryJson { Subtitle = p.Subtitle },
+			JsonData = new CategoryJson { Subtitle = p.Subtitle, Link = p.Link },
 			Tags = p.Tags,
 			CreatedAt = DateTime.UtcNow,
+			Location = p.Location,
+			Type = p.Type,
+			Order = p.Order,
 			UpdatedAt = DateTime.UtcNow
 		};
 
@@ -45,12 +48,18 @@ public class CategoryService(
 			JsonData = x.JsonData,
 			Tags = x.Tags,
 			ParentId = x.ParentId,
+			Type = x.Type,
+			Location = x.Location,
+			Order = x.Order,
 			Children = x.Children!.Select(c1 => new CategoryResponse {
 				Id = c1.Id,
 				Title = c1.Title,
 				JsonData = c1.JsonData,
 				Tags = c1.Tags,
 				ParentId = x.ParentId,
+				Type = x.Type,
+				Location = x.Location,
+				Order = x.Order,
 				Media = p.ShowMedia
 					? x.Media!.Select(m => new MediaResponse {
 						Path = m.Path,
@@ -65,6 +74,9 @@ public class CategoryService(
 					JsonData = c2.JsonData,
 					ParentId = x.ParentId,
 					Tags = c2.Tags,
+					Type = x.Type,
+					Location = x.Location,
+					Order = x.Order,
 					Media = p.ShowMedia
 						? x.Media!.Select(m => new MediaResponse {
 							Path = m.Path,
@@ -79,6 +91,9 @@ public class CategoryService(
 						JsonData = c3.JsonData,
 						Tags = c3.Tags,
 						ParentId = x.ParentId,
+						Type = x.Type,
+						Location = x.Location,
+						Order = x.Order,
 						Media = p.ShowMedia
 							? x.Media!.Select(m => new MediaResponse {
 								Path = m.Path,
@@ -93,6 +108,9 @@ public class CategoryService(
 							JsonData = c4.JsonData,
 							Tags = c4.Tags,
 							ParentId = x.ParentId,
+							Type = x.Type,
+							Location = x.Location,
+							Order = x.Order,
 							Media = p.ShowMedia
 								? x.Media!.Select(m => new MediaResponse {
 									Path = m.Path,
@@ -107,6 +125,9 @@ public class CategoryService(
 								JsonData = c5.JsonData,
 								Tags = c5.Tags,
 								ParentId = x.ParentId,
+								Type = x.Type,
+								Location = x.Location,
+								Order = x.Order,
 								Media = p.ShowMedia
 									? x.Media!.Select(m => new MediaResponse {
 										Path = m.Path,
@@ -121,6 +142,9 @@ public class CategoryService(
 									JsonData = c6.JsonData,
 									Tags = c6.Tags,
 									ParentId = x.ParentId,
+									Type = x.Type,
+									Location = x.Location,
+									Order = x.Order,
 									Media = p.ShowMedia
 										? x.Media!.Select(m => new MediaResponse {
 											Path = m.Path,
@@ -135,6 +159,9 @@ public class CategoryService(
 										JsonData = c7.JsonData,
 										Tags = c7.Tags,
 										ParentId = x.ParentId,
+										Type = x.Type,
+										Location = x.Location,
+										Order = x.Order,
 										Media = p.ShowMedia
 											? x.Media!.Select(m => new MediaResponse {
 												Path = m.Path,
@@ -170,7 +197,12 @@ public class CategoryService(
 
 		e.UpdatedAt = DateTime.UtcNow;
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
+		if (p.Type.IsNotNullOrEmpty()) e.Type = p.Type;
+		if (p.Order != null) e.Order = p.Order;
+		if (p.Location.IsNotNullOrEmpty()) e.Location = p.Location;
+		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
 		if (p.Subtitle.IsNotNullOrEmpty()) e.JsonData.Subtitle = p.Subtitle;
+		if (p.Link.IsNotNullOrEmpty()) e.JsonData.Link = p.Link;
 
 		if (p.AddTags != null) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags != null) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
