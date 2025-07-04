@@ -39,7 +39,7 @@ public static class CategoryEntityExtension {
 		Type = x.Type,
 		Order = x.Order,
 		Children =
-			x.Children!.Select(c => new CategoryResponse {
+			x.Children?.Select(c => new CategoryResponse {
 				Id = c.Id,
 				Title = c.Title,
 				JsonData = c.JsonData,
@@ -48,8 +48,8 @@ public static class CategoryEntityExtension {
 				Location = x.Location,
 				Type = x.Type,
 				Order = x.Order,
-				Media = showMedia ? c.Media!.Select(m => m.MapToResponse()) : null
+				Media = showMedia ? c.Media?.Select(m => m.MapToResponse()) : null
 			}),
-		Media = showMedia ? x.Media!.Select(m => m.MapToResponse()) : null
+		Media = showMedia ? x.Media?.Select(m => m.MapToResponse()) : null
 	};
 }

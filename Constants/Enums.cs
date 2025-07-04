@@ -34,7 +34,8 @@ public enum TagCategory {
 	User = 102,
 	Menu = 103,
 	Enabled = 201,
-	Disabled = 202
+	Disabled = 202,
+	Hidden = 203
 }
 
 public enum TagMedia {
