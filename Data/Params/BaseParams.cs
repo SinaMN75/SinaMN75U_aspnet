@@ -37,7 +37,7 @@ public class BaseUpdateParams<T> : BaseParams {
 	[URemoveMatching("Tags")]
 	public IEnumerable<T>? RemoveTags { get; set; }
 	
-	[UAssignIfNotEmpty("Tags")]
+	[UReplaceListAttribute("Tags")]
 	public IEnumerable<T>? Tags { get; set; }
 
 }
