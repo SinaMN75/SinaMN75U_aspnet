@@ -1,5 +1,10 @@
 namespace SinaMN75U.Constants;
 
+public enum SqlDatabaseType {
+	Postgres = 100,
+	SqlServer = 101
+}
+
 public enum Usc {
 	Success = 200,
 	Created = 201,

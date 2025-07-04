@@ -3,7 +3,11 @@ namespace SinaMN75U.Utils;
 using System.IO.Compression;
 
 public static class AspNetConfig {
-	public static void AddUServices<T>(this WebApplicationBuilder builder, string connectionStrings) where T : DbContext {
+	public static void AddUServices<T>(
+		this WebApplicationBuilder builder,
+		SqlDatabaseType sqlDatabaseType,
+		string sqlDatabaseConnectionStrings
+	) where T : DbContext {
 		builder.Services.AddCors(c => c.AddPolicy("AllowOrigin", o => o.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 		builder.Services.AddUSwagger();
 		builder.Services.AddHttpContextAccessor();
@@ -26,11 +30,20 @@ public static class AspNetConfig {
 		builder.Services.AddScoped<DbContext, T>();
 		builder.Services.AddDbContextPool<T>(b => {
 			b.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
-			b.UseNpgsql(builder.Configuration.GetConnectionString(connectionStrings), o => {
-				AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-				o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-				o.EnableRetryOnFailure(5, TimeSpan.FromSeconds(30), null);
-			});
+			switch (sqlDatabaseType) {
+				case SqlDatabaseType.Postgres:
+					b.UseNpgsql(builder.Configuration.GetConnectionString(sqlDatabaseConnectionStrings), o => {
+						AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+						o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+						o.EnableRetryOnFailure(5, TimeSpan.FromSeconds(30), null);
+					});
+					break;
+				case SqlDatabaseType.SqlServer:
+					b.UseSqlServer(builder.Configuration.GetConnectionString(sqlDatabaseConnectionStrings), o => { });
+					break;
+				default:
+					throw new ArgumentOutOfRangeException(nameof(sqlDatabaseType), sqlDatabaseType, null);
+			}
 		});
 
 		builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
