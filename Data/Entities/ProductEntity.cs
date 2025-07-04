@@ -44,11 +44,7 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	public IEnumerable<MediaEntity>? Media { get; set; }
 	public List<CategoryEntity>? Categories { get; set; }
 
-	public ProductResponse MapToResponse(
-		bool media = false,
-		bool categories = false,
-		bool user = false
-	) => new() {
+	public ProductResponse MapToResponse() => new() {
 		Id = Id,
 		Title = Title,
 		Code = Code,
@@ -62,17 +58,14 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 		Tags = Tags,
 		JsonData = JsonData,
 		Children = Children?.Select(x => x.MapToResponse()),
-		Media = media
-			? Media?.Select(x => x.MapToResponse())
-			: null,
-		Categories = categories
-			? Categories?.Select(x => x.MapToResponse())
-			: null,
-		User = user
-			? User!.MapToResponse()
-			: null,
+		Media = Media?.Select(x => x.MapToResponse()),
+		Categories = Categories?.Select(x => x.MapToResponse()),
+		User = User?.MapToResponse(),
 		CreatedAt = CreatedAt,
-		UpdatedAt = UpdatedAt
+		UpdatedAt = UpdatedAt,
+		Content = Content,
+		Type = Type,
+		Slug = Slug
 	};
 }
 

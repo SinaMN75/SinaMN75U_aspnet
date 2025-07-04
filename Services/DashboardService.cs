@@ -123,7 +123,7 @@ public class DashboardService(
 		UResponse<IEnumerable<ContentResponse>?> newContents = await contentService.Read(new ContentReadParams { PageSize = 5 }, ct);
 		UResponse<IEnumerable<ExamResponse>?> newExams = await examService.Read(new ExamReadParams { PageSize = 5 }, ct);
 		UResponse<IEnumerable<MediaResponse>?> newMedia = await mediaService.Read(new BaseReadParams<TagMedia> { PageSize = 5 }, ct);
-		UResponse<IEnumerable<ProductResponse>?> newProducts = await productService.Read(new ProductReadParams { PageSize = 5 }, ct);
+		UResponse<IEnumerable<ProductEntity>?> newProducts = await productService.Read(new ProductReadParams { PageSize = 5 }, ct);
 
 		return new DashboardResponse {
 			Categories = await db.Set<CategoryEntity>().CountAsync(),
@@ -139,7 +139,7 @@ public class DashboardService(
 			NewContents = newContents.Result ?? [],
 			NewExams = newExams.Result ?? [],
 			NewMedia = newMedia.Result ?? [],
-			NewProducts = newProducts.Result ?? [],
+			NewProducts = [],
 		};
 	}
 

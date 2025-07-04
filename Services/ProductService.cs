@@ -2,7 +2,7 @@ namespace SinaMN75U.Services;
 
 public interface IProductService {
 	public Task<UResponse<ProductResponse?>> Create(ProductCreateParams p, CancellationToken ct);
-	public Task<UResponse<IEnumerable<ProductResponse>?>> Read(ProductReadParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<ProductEntity>?>> Read(ProductReadParams p, CancellationToken ct);
 	public Task<UResponse<ProductResponse?>> ReadById(IdParams p, CancellationToken ct);
 	public Task<UResponse<ProductResponse?>> Update(ProductUpdateParams p, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
@@ -51,7 +51,8 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 		return new UResponse<ProductResponse?>(e.MapToResponse());
 	}
 
-	public async Task<UResponse<IEnumerable<ProductResponse>?>> Read(ProductReadParams p, CancellationToken ct) {
+
+	public async Task<UResponse<IEnumerable<ProductEntity>?>> Read(ProductReadParams p, CancellationToken ct) {
 		IQueryable<ProductEntity> q = db.Set<ProductEntity>();
 		if (p.Code.IsNotNullOrEmpty()) q = q.Where(x => x.Code.Contains(p.Code));
 		if (p.Query.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Query) || (x.Description ?? "").Contains(p.Query) || (x.Subtitle ?? "").Contains(p.Query));
@@ -69,121 +70,16 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 		if (p.ShowUser) q = q.Include(x => x.User);
 		if (p.ShowMedia) q = q.Include(x => x.Media);
 		if (p.ShowCategories) q = q.Include(x => x.Categories);
+		if (p.ShowChildren)
+			q = q.Include(x => x.Children)!
+				.ThenInclude(x => x.Children)!
+				.ThenInclude(x => x.Children)!
+				.ThenInclude(x => x.Children)!
+				.ThenInclude(x => x.Children)!
+				.ThenInclude(x => x.Children)!
+				.ThenInclude(x => x.Children);
 
-		return await q.Select(x => new ProductResponse {
-			Title = x.Title,
-			Code = x.Code,
-			Subtitle = x.Subtitle,
-			Description = x.Description,
-			Latitude = x.Latitude,
-			Longitude = x.Longitude,
-			Stock = x.Stock,
-			Price = x.Price,
-			JsonData = x.JsonData,
-			ParentId = x.ParentId,
-			Id = x.Id,
-			CreatedAt = x.CreatedAt,
-			UpdatedAt = x.UpdatedAt,
-			Type = x.Content,
-			Slug = x.Slug,
-			Content = x.Content,
-			Tags = x.Tags,
-			User = p.ShowUser
-				? new UserResponse {
-					UserName = x.User!.UserName,
-					PhoneNumber = x.User!.PhoneNumber,
-					Email = x.User!.Email,
-					JsonData = x.User!.JsonData,
-					FirstName = x.User!.FirstName,
-					LastName = x.User!.LastName,
-					Country = x.User!.Country,
-					State = x.User!.State,
-					City = x.User!.City,
-					Bio = x.User!.Bio,
-					Birthdate = x.User!.Birthdate,
-					Media = x.User.Media!.Select(z => new MediaResponse { Path = z.Path, JsonData = z.JsonData, Id = z.Id, Tags = z.Tags }),
-					Id = x.User!.Id,
-					CreatedAt = x.User!.CreatedAt,
-					UpdatedAt = x.User!.UpdatedAt,
-					Tags = x.User!.Tags,
-					Categories = x.Categories!.Select(y => new CategoryResponse {
-						Title = y.Title,
-						JsonData = y.JsonData,
-						Id = y.Id,
-						Tags = y.Tags,
-						Media = y.Media!.Select(z => new MediaResponse { Path = z.Path, JsonData = z.JsonData, Id = z.Id, Tags = z.Tags })
-					})
-				}
-				: null,
-			Children = p.ShowChildren
-				? x.Children!.Select(c => new ProductResponse {
-					Title = x.Title,
-					Code = x.Code,
-					Subtitle = x.Subtitle,
-					Description = x.Description,
-					Latitude = x.Latitude,
-					Longitude = x.Longitude,
-					Stock = x.Stock,
-					Price = x.Price,
-					JsonData = x.JsonData,
-					ParentId = x.ParentId,
-					Id = x.Id,
-					CreatedAt = x.CreatedAt,
-					UpdatedAt = x.UpdatedAt,
-					Tags = x.Tags,
-					Type = x.Content,
-					Slug = x.Slug,
-					Content = x.Content,
-					User = p.ShowUser
-						? new UserResponse {
-							UserName = x.User!.UserName,
-							PhoneNumber = x.User!.PhoneNumber,
-							Email = x.User!.Email,
-							JsonData = x.User!.JsonData,
-							FirstName = x.User!.FirstName,
-							LastName = x.User!.LastName,
-							Country = x.User!.Country,
-							State = x.User!.State,
-							City = x.User!.City,
-							Bio = x.User!.Bio,
-							Birthdate = x.User!.Birthdate,
-							Id = x.User!.Id,
-							CreatedAt = x.User!.CreatedAt,
-							UpdatedAt = x.User!.UpdatedAt,
-							Tags = x.User!.Tags,
-							Media = x.User.Media!.Select(z => new MediaResponse { Path = z.Path, JsonData = z.JsonData, Id = z.Id, Tags = z.Tags }),
-							Categories = x.Categories!.Select(y => new CategoryResponse {
-								Title = y.Title,
-								JsonData = y.JsonData,
-								Id = y.Id,
-								Tags = y.Tags,
-								Media = y.Media!.Select(z => new MediaResponse { Path = z.Path, JsonData = z.JsonData, Id = z.Id, Tags = z.Tags })
-							})
-						}
-						: null,
-					Media = p.ShowMedia ? x.Media!.Select(y => new MediaResponse { Path = y.Path, JsonData = y.JsonData, Id = y.Id, Tags = y.Tags }) : null,
-					Categories = p.ShowCategories
-						? x.Categories!.Select(y => new CategoryResponse {
-							Title = y.Title,
-							JsonData = y.JsonData,
-							Id = y.Id,
-							Tags = y.Tags,
-							Media = y.Media!.Select(z => new MediaResponse { Path = z.Path, JsonData = z.JsonData, Id = z.Id, Tags = z.Tags })
-						})
-						: null
-				})
-				: null,
-			Media = p.ShowMedia ? x.Media!.Select(y => new MediaResponse { Path = y.Path, JsonData = y.JsonData, Id = y.Id, Tags = y.Tags }) : null,
-			Categories = p.ShowCategories
-				? x.Categories!.Select(y => new CategoryResponse {
-					Title = y.Title,
-					JsonData = y.JsonData,
-					Id = y.Id,
-					Tags = y.Tags,
-					Media = y.Media!.Select(z => new MediaResponse { Path = z.Path, JsonData = z.JsonData, Id = y.Id, Tags = z.Tags })
-				})
-				: null
-		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse<ProductResponse?>> ReadById(IdParams p, CancellationToken ct) {
@@ -193,6 +89,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 			.Include(x => x.Media)
 			.Include(x => x.Categories)
 			.Include(x => x.User)
+			.Include(x => x.Children)
 			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse<ProductResponse?>(null, Usc.NotFound, ls.Get("ProductNotFound"));
 
@@ -204,7 +101,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 		db.Set<ProductEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
 
-		return new UResponse<ProductResponse?>(e.MapToResponse(true, true, true));
+		return new UResponse<ProductResponse?>(e.MapToResponse());
 	}
 
 	public async Task<UResponse<ProductResponse?>> Update(ProductUpdateParams p, CancellationToken ct) {
