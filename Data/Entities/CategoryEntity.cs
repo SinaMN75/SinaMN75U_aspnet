@@ -12,7 +12,7 @@ public class CategoryEntity : BaseEntity<TagCategory, CategoryJson> {
 	public int? Order { get; set; }
 	public string? Location { get; set; }
 	public string? Type { get; set; }
-	
+
 	[InverseProperty("Parent")]
 	public IEnumerable<CategoryEntity>? Children { get; set; }
 
@@ -35,6 +35,9 @@ public static class CategoryEntityExtension {
 		Tags = x.Tags,
 		JsonData = x.JsonData,
 		ParentId = x.ParentId,
+		Location = x.Location,
+		Type = x.Type,
+		Order = x.Order,
 		Children = showChildren || showMedia
 			? x.Children!.Select(c => new CategoryResponse {
 				Id = c.Id,
@@ -42,6 +45,9 @@ public static class CategoryEntityExtension {
 				JsonData = c.JsonData,
 				Tags = c.Tags,
 				ParentId = x.ParentId,
+				Location = x.Location,
+				Type = x.Type,
+				Order = x.Order,
 				Media = showMedia ? c.Media!.Select(m => m.MapToResponse()) : null
 			})
 			: null,

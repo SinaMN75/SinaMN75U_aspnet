@@ -51,7 +51,7 @@ public class CategoryService(
 			q = q.Where(x => p.Ids.Contains(x.Id));
 
 		List<CategoryEntity> entities = await q.ToListAsync(ct);
-		List<CategoryResponse> result = entities.Select(x => MapToResponse(x, p.ShowMedia)).ToList();
+		List<CategoryResponse> result = entities.Select(x => x.MapToResponse(p.ShowMedia)).ToList();
 
 		return new UResponse<IEnumerable<CategoryResponse>?>(result);
 	}
@@ -113,27 +113,5 @@ public class CategoryService(
 		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>().OrderByDescending(x => x.Id);
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
 		return await q.ToListAsync(ct);
-	}
-
-	private CategoryResponse MapToResponse(CategoryEntity entity, bool showMedia) {
-		return new CategoryResponse {
-			Id = entity.Id,
-			Title = entity.Title,
-			JsonData = entity.JsonData,
-			Tags = entity.Tags,
-			ParentId = entity.ParentId,
-			Type = entity.Type,
-			Location = entity.Location,
-			Order = entity.Order,
-			Media = showMedia
-				? entity.Media?.Select(m => new MediaResponse {
-					Path = m.Path,
-					Id = m.Id,
-					Tags = m.Tags,
-					JsonData = m.JsonData
-				}).ToList()
-				: null,
-			Children = entity.Children?.Select(child => MapToResponse(child, showMedia)).ToList()
-		};
 	}
 }

@@ -167,7 +167,6 @@ public static class EnumExtensions {
 			Id = item
 		}).ToList();
 
-	// New enum extensions
 	public static string GetDescription(this Enum value) {
 		FieldInfo? field = value.GetType().GetField(value.ToString());
 		DescriptionAttribute? attribute = field?.GetCustomAttribute<DescriptionAttribute>();
