@@ -18,12 +18,22 @@ public class CategoryCreateParams : BaseParams {
 }
 
 public class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
+	[UAssignIfNotNull(nameof(CategoryEntity.Title))]
 	public string? Title { get; set; }
+
+	[UAssignNested(nameof(CategoryEntity.JsonData), nameof(CategoryJson.Subtitle))]
 	public string? Subtitle { get; set; }
 
+	[UAssignNested(nameof(CategoryEntity.JsonData), nameof(CategoryJson.Link))]
 	public string? Link { get; set; }
+
+	[UAssignIfNotNull(nameof(CategoryEntity.Order))]
 	public int? Order { get; set; }
+
+	[UAssignIfNotNull(nameof(CategoryEntity.Location))]
 	public string? Location { get; set; }
+
+	[UAssignIfNotNull(nameof(CategoryEntity.Type))]
 	public string? Type { get; set; }
 }
 

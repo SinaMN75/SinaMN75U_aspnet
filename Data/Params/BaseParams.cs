@@ -31,7 +31,10 @@ public class BaseUpdateParams<T> : BaseParams {
 	[URequired("IdRequired")]
 	public required Guid Id { get; set; }
 
+	[UAddRangeIfNotExist("Tags")]
 	public IEnumerable<T>? AddTags { get; set; }
+
+	[URemoveMatching("Tags")]
 	public IEnumerable<T>? RemoveTags { get; set; }
 }
 
