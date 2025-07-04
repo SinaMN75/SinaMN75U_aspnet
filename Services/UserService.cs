@@ -1,11 +1,11 @@
 namespace SinaMN75U.Services;
 
 public interface IUserService {
-	public Task<UResponse<UserResponse?>> Create(UserCreateParams p, CancellationToken ct);
+	public Task<UResponse<UserEntity?>> Create(UserCreateParams p, CancellationToken ct);
 	public Task<UResponse> BulkCreate(UserBulkCreateParams p, CancellationToken ct);
-	public Task<UResponse<IEnumerable<UserResponse>?>> Read(UserReadParams p, CancellationToken ct);
-	public Task<UResponse<UserResponse?>> ReadById(IdParams p, CancellationToken ct);
-	public Task<UResponse<UserResponse?>> Update(UserUpdateParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<UserEntity>?>> Read(UserReadParams p, CancellationToken ct);
+	public Task<UResponse<UserEntity?>> ReadById(IdParams p, CancellationToken ct);
+	public Task<UResponse<UserEntity?>> Update(UserUpdateParams p, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
 }
 
@@ -15,9 +15,9 @@ public class UserService(
 	ITokenService ts,
 	ICategoryService categoryService
 ) : IUserService {
-	public async Task<UResponse<UserResponse?>> Create(UserCreateParams p, CancellationToken ct) {
+	public async Task<UResponse<UserEntity?>> Create(UserCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<UserResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<UserEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		UserEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			UserName = p.UserName,
@@ -62,7 +62,7 @@ public class UserService(
 		await db.Set<UserEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
 
-		return new UResponse<UserResponse?>(e.MapToResponse(), Usc.Created);
+		return new UResponse<UserEntity?>(e, Usc.Created);
 	}
 
 	public async Task<UResponse> BulkCreate(UserBulkCreateParams p, CancellationToken ct) {
@@ -115,7 +115,7 @@ public class UserService(
 		return new UResponse(Usc.Created);
 	}
 
-	public async Task<UResponse<IEnumerable<UserResponse>?>> Read(UserReadParams p, CancellationToken ct) {
+	public async Task<UResponse<IEnumerable<UserEntity>?>> Read(UserReadParams p, CancellationToken ct) {
 		IQueryable<UserEntity> q = db.Set<UserEntity>();
 
 		if (p.FromCreatedAt.HasValue) q = q.Where(u => u.CreatedAt >= p.FromCreatedAt.Value);
@@ -155,10 +155,10 @@ public class UserService(
 		return await q.ToResponse(p.ShowMedia, p.ShowCategories).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
-	public async Task<UResponse<UserResponse?>> Update(UserUpdateParams p, CancellationToken ct) {
+	public async Task<UResponse<UserEntity?>> Update(UserUpdateParams p, CancellationToken ct) {
 		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 
-		if (e == null) return new UResponse<UserResponse?>(null, Usc.NotFound);
+		if (e == null) return new UResponse<UserEntity?>(null, Usc.NotFound);
 
 		e.UpdatedAt = DateTime.UtcNow;
 
@@ -200,13 +200,13 @@ public class UserService(
 		db.Set<UserEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
 
-		return new UResponse<UserResponse?>(e.MapToResponse());
+		return new UResponse<UserEntity?>(e);
 	}
 
-	public async Task<UResponse<UserResponse?>> ReadById(IdParams p, CancellationToken ct) {
+	public async Task<UResponse<UserEntity?>> ReadById(IdParams p, CancellationToken ct) {
 		UserEntity? user = await db.Set<UserEntity>().FindAsync(p.Id, ct);
 
-		return user == null ? new UResponse<UserResponse?>(null, Usc.NotFound, ls.Get("UserNotFound")) : new UResponse<UserResponse?>(user.MapToResponse());
+		return user == null ? new UResponse<UserEntity?>(null, Usc.NotFound, ls.Get("UserNotFound")) : new UResponse<UserEntity?>(user);
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {

@@ -49,27 +49,6 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 	public List<CategoryEntity>? Categories { get; set; }
 
 	public IEnumerable<MediaEntity>? Media { get; set; }
-
-	public UserResponse MapToResponse(bool showCategories = false) => new() {
-		Id = Id,
-		UserName = UserName,
-		PhoneNumber = PhoneNumber,
-		Email = Email,
-		Bio = Bio,
-		Birthdate = Birthdate,
-		Tags = Tags,
-		JsonData = JsonData,
-		CreatedAt = CreatedAt,
-		UpdatedAt = UpdatedAt,
-		City = City,
-		Country = Country,
-		State = State,
-		FirstName = FirstName,
-		LastName = LastName,
-		Categories = showCategories ? Categories?.Select(u => u.MapToResponse()) : null,
-		Media = Media?.Select(u => u.MapToResponse()) ?? null,
-		Children = Children?.Select(u => u.MapToResponse()) ?? null
-	};
 }
 
 public class UserJson {
@@ -86,7 +65,7 @@ public class UserJson {
 }
 
 public static class UserEntityExtensions {
-	public static IQueryable<UserResponse> ToResponse(this IQueryable<UserEntity> query, bool media, bool categories) => query.Select(x => new UserResponse {
+	public static IQueryable<UserEntity> ToResponse(this IQueryable<UserEntity> query, bool media, bool categories) => query.Select(x => new UserEntity {
 			Id = x.Id,
 			CreatedAt = x.CreatedAt,
 			UpdatedAt = x.UpdatedAt,
@@ -103,27 +82,36 @@ public static class UserEntityExtensions {
 			Bio = x.Bio,
 			Birthdate = x.Birthdate,
 			Categories = categories
-				? x.Categories!.Select(c => new CategoryResponse {
-					Title = c.Title,
-					Id = c.Id,
-					Tags = c.Tags,
-					JsonData = c.JsonData,
-					Media = c.Media!.Select(m => new MediaResponse {
-						Path = m.Path,
-						Id = m.Id,
-						Tags = m.Tags,
-						JsonData = m.JsonData
+				? x.Categories!.Select(c => new CategoryEntity {
+						Title = c.Title,
+						Id = c.Id,
+						Tags = c.Tags,
+						JsonData = c.JsonData,
+						CreatedAt = c.CreatedAt,
+						UpdatedAt = c.UpdatedAt,
+						Media = c.Media!.Select(m => new MediaEntity {
+							Path = m.Path,
+							Id = m.Id,
+							Tags = m.Tags,
+							JsonData = m.JsonData,
+							CreatedAt = c.CreatedAt,
+							UpdatedAt = c.UpdatedAt
+						})
 					})
-				}).ToList()
+					.ToList()
 				: null,
 			Media = media
-				? x.Media!.Select(m => new MediaResponse {
+				? x.Media!.Select(m => new MediaEntity {
 					Path = m.Path,
 					Id = m.Id,
 					Tags = m.Tags,
-					JsonData = m.JsonData
+					JsonData = m.JsonData,
+					CreatedAt = m.CreatedAt,
+					UpdatedAt = m.UpdatedAt
 				})
-				: null
+				: null,
+			Password = "",
+			RefreshToken = ""
 		}
 	);
 }

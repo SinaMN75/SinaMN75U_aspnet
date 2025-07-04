@@ -1,15 +1,15 @@
 namespace SinaMN75U.Services;
 
 public interface IExamService {
-	public Task<UResponse<ExamResponse>> Create(ExamCreateParams p, CancellationToken ct);
-	public Task<UResponse<IEnumerable<ExamResponse>?>> Read(ExamReadParams p, CancellationToken ct);
-	public Task<UResponse<ExamResponse?>> ReadById(IdParams p, CancellationToken ct);
+	public Task<UResponse<ExamEntity>> Create(ExamCreateParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<ExamEntity>?>> Read(ExamReadParams p, CancellationToken ct);
+	public Task<UResponse<ExamEntity?>> ReadById(IdParams p, CancellationToken ct);
 	public Task<UResponse> Delete(IdListParams p, CancellationToken ct);
 	public Task<UResponse> SubmitAnswers(SubmitAnswersParams p, CancellationToken ct);
 }
 
 public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts) : IExamService {
-	public async Task<UResponse<ExamResponse>> Create(ExamCreateParams p, CancellationToken ct) {
+	public async Task<UResponse<ExamEntity>> Create(ExamCreateParams p, CancellationToken ct) {
 		EntityEntry<ExamEntity> e = await db.AddAsync(new ExamEntity {
 			Title = p.Title,
 			Description = p.Description,
@@ -24,22 +24,25 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 			Tags = p.Tags
 		});
 		await db.SaveChangesAsync(ct);
-		return new UResponse<ExamResponse>(new ExamResponse {
+		return new UResponse<ExamEntity>(new ExamEntity {
 			Title = e.Entity.Title,
 			Description = e.Entity.Description,
 			Id = e.Entity.Id,
 			Tags = e.Entity.Tags,
-			JsonData = e.Entity.JsonData
+			JsonData = e.Entity.JsonData,
+			CategoryId = e.Entity.CategoryId,
+			CreatedAt = e.Entity.CreatedAt,
+			UpdatedAt = e.Entity.UpdatedAt
 		});
 	}
 
-	public async Task<UResponse<IEnumerable<ExamResponse>?>> Read(ExamReadParams p, CancellationToken ct) {
+	public async Task<UResponse<IEnumerable<ExamEntity>?>> Read(ExamReadParams p, CancellationToken ct) {
 		IQueryable<ExamEntity> q = db.Set<ExamEntity>();
 
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(u => u.Tags.Any(tag => p.Tags!.Contains(tag)));
 		if (p.CategoryId.IsNotNullOrEmpty()) q = q.Where(x => x.CategoryId == p.CategoryId);
 
-		return await q.Select(x => new ExamResponse {
+		return await q.Select(x => new ExamEntity {
 			Title = x.Title,
 			Description = x.Description,
 			Id = x.Id,
@@ -47,17 +50,20 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 			JsonData = x.JsonData,
 			CreatedAt = x.CreatedAt,
 			UpdatedAt = x.UpdatedAt,
-			Category = new CategoryResponse {
+			CategoryId = x.CategoryId,
+			Category = new CategoryEntity {
 				Title = x.Category!.Title,
 				Id = x.Category.Id,
 				Tags = x.Category.Tags,
-				JsonData = x.Category.JsonData
+				JsonData = x.Category.JsonData,
+				CreatedAt = x.CreatedAt,
+				UpdatedAt = x.UpdatedAt
 			}
 		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
-	public async Task<UResponse<ExamResponse?>> ReadById(IdParams p, CancellationToken ct) {
-		ExamResponse? e = await db.Set<ExamEntity>().Select(x => new ExamResponse {
+	public async Task<UResponse<ExamEntity?>> ReadById(IdParams p, CancellationToken ct) {
+		ExamEntity? e = await db.Set<ExamEntity>().Select(x => new ExamEntity {
 			Title = x.Title,
 			Description = x.Description,
 			Id = x.Id,
@@ -65,20 +71,23 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 			JsonData = x.JsonData,
 			CreatedAt = x.CreatedAt,
 			UpdatedAt = x.UpdatedAt,
-			Category = new CategoryResponse {
+			CategoryId = x.CategoryId,
+			Category = new CategoryEntity {
 				Title = x.Category!.Title,
 				Id = x.Category.Id,
 				Tags = x.Category.Tags,
-				JsonData = x.Category.JsonData
+				JsonData = x.Category.JsonData,
+				CreatedAt = x.CreatedAt,
+				UpdatedAt = x.UpdatedAt
 			}
 		}).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 
-		return e == null ? new UResponse<ExamResponse?>(null, Usc.NotFound, ls.Get("ExamNotFound")) : new UResponse<ExamResponse?>(e);
+		return e == null ? new UResponse<ExamEntity?>(null, Usc.NotFound, ls.Get("ExamNotFound")) : new UResponse<ExamEntity?>(e);
 	}
 
 	public async Task<UResponse> Delete(IdListParams p, CancellationToken ct) {
 		int? count = await db.Set<ExamEntity>().Where(x => p.Ids.Contains(x.Id)).ExecuteDeleteAsync(ct);
-		return count.IsNotNullOrZero() ? new UResponse<ExamResponse?>(null, Usc.NotFound, ls.Get("ExamNotFound")) : new UResponse();
+		return count.IsNotNullOrZero() ? new UResponse<ExamEntity?>(null, Usc.NotFound, ls.Get("ExamNotFound")) : new UResponse();
 	}
 
 	public async Task<UResponse> SubmitAnswers(SubmitAnswersParams p, CancellationToken ct) {

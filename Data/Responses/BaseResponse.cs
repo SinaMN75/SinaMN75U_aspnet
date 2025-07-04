@@ -1,13 +1,5 @@
 namespace SinaMN75U.Data.Responses;
 
-public class BaseResponse<T, TJ> {
-	public required Guid Id { get; set; }
-	public DateTime? CreatedAt { get; set; }
-	public DateTime? UpdatedAt { get; set; }
-	public required List<T> Tags { get; set; }
-	public required TJ JsonData { get; set; }
-}
-
 public class UResponse<T> : UResponse {
 	public UResponse(T result, Usc status = Usc.Success, string message = "") {
 		Result = result;

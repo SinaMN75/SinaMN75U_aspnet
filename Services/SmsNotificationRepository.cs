@@ -2,7 +2,7 @@
 
 public interface ISmsNotificationService {
 	Task<UResponse> SendSms(string mobileNumber, string template, string param1, string? param2 = null, string? param3 = null);
-	Task<bool> SendOtpSms(UserResponse user);
+	Task<bool> SendOtpSms(UserEntity user);
 }
 
 public class SmsNotificationService(
@@ -48,7 +48,7 @@ public class SmsNotificationService(
 		return new UResponse();
 	}
 
-	public async Task<bool> SendOtpSms(UserResponse user) {
+	public async Task<bool> SendOtpSms(UserEntity user) {
 		string? cachedData = cache.Get($"otp_{user.Id}");
 		if (cachedData != null) return false;
 

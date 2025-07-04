@@ -7,16 +7,16 @@ public static class ExamRoutes {
 		r.MapPost("Create", async (ExamCreateParams d, IExamService s, ILocalStorageService ls, CancellationToken c) => {
 			ls.DeleteAllByPartialKey(tag);
 			return (await s.Create(d, c)).ToResult();
-		}).Produces<UResponse<ExamResponse>>();
+		}).Produces<UResponse<ExamEntity>>();
 
-		r.MapPost("Read", async (ExamReadParams p, IExamService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Cache(60).Produces<UResponse<IEnumerable<ExamResponse>>>();
+		r.MapPost("Read", async (ExamReadParams p, IExamService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Cache(60).Produces<UResponse<IEnumerable<ExamEntity>>>();
 
-		r.MapPost("ReadById", async (IdParams p, IExamService s, CancellationToken c) => (await s.ReadById(p, c)).ToResult()).Produces<UResponse<ExamResponse>>();
+		r.MapPost("ReadById", async (IdParams p, IExamService s, CancellationToken c) => (await s.ReadById(p, c)).ToResult()).Produces<UResponse<ExamEntity>>();
 
 		r.MapPost("Delete", async (IdListParams p, IExamService s, ILocalStorageService ls, CancellationToken c) => {
 			ls.DeleteAllByPartialKey(tag);
 			return (await s.Delete(p, c)).ToResult();
-		}).Produces<UResponse<ExamResponse>>();
+		}).Produces<UResponse<ExamEntity>>();
 
 		r.MapPost("SubmitAnswers", async (SubmitAnswersParams p, IExamService s, CancellationToken c) => (await s.SubmitAnswers(p, c)).ToResult()).Produces<UResponse>();
 	}

@@ -19,11 +19,11 @@ public class DashboardResponse {
 	public required int Media { get; set; }
 	public required int Products { get; set; }
 	public required int Users { get; set; }
-	public required IEnumerable<UserResponse> NewUsers { get; set; }
-	public required IEnumerable<CategoryResponse> NewCategories { get; set; }
-	public required IEnumerable<CommentResponse> NewComments { get; set; }
-	public required IEnumerable<ContentResponse> NewContents { get; set; }
-	public required IEnumerable<ExamResponse> NewExams { get; set; }
-	public required IEnumerable<MediaResponse> NewMedia { get; set; }
+	public required IEnumerable<UserEntity> NewUsers { get; set; }
+	public required IEnumerable<CategoryEntity> NewCategories { get; set; }
+	public required IEnumerable<CommentEntity> NewComments { get; set; }
+	public required IEnumerable<ContentEntity> NewContents { get; set; }
+	public required IEnumerable<ExamEntity> NewExams { get; set; }
+	public required IEnumerable<MediaEntity> NewMedia { get; set; }
 	public required IEnumerable<ProductEntity> NewProducts { get; set; }
 }

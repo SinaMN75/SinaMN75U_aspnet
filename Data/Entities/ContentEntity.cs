@@ -4,10 +4,10 @@ namespace SinaMN75U.Data.Entities;
 public class ContentEntity : BaseEntity<int, ContentJson> {
 	public IEnumerable<MediaEntity>? Media { get; set; }
 
-	public ContentResponse MapToResponse(bool showMedia = false) => new() {
+	public ContentEntity MapToResponse(bool showMedia = false) => new() {
 		JsonData = JsonData,
 		Tags = Tags,
-		Media = showMedia ? Media?.Select(x => x.MapToResponse()) : null,
+		Media = showMedia ? Media : null,
 		Id = Id,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt

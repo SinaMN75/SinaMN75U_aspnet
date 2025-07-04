@@ -8,7 +8,7 @@ public interface IAuthService {
 	Task<UResponse> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> VerifyCodeForLogin(VerifyMobileForLoginParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> TestToken(LoginWithEmailPasswordParams p, CancellationToken ct);
-	Task<UResponse<UserResponse?>> ReadUserByToken(BaseParams p, CancellationToken ct);
+	Task<UResponse<UserEntity?>> ReadUserByToken(BaseParams p, CancellationToken ct);
 }
 
 public class AuthService(
@@ -46,7 +46,7 @@ public class AuthService(
 			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
 			Expires = config["Jwt:Expires"] ?? "60",
-			User = user.MapToResponse()
+			User = user
 		});
 	}
 
@@ -62,7 +62,7 @@ public class AuthService(
 			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
 			Expires = config["Jwt:Expires"] ?? "60",
-			User = user.MapToResponse()
+			User = user
 		});
 	}
 
@@ -78,7 +78,7 @@ public class AuthService(
 			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
 			Expires = config["Jwt:Expires"] ?? "60",
-			User = user.MapToResponse()
+			User = user
 		});
 	}
 
@@ -97,18 +97,22 @@ public class AuthService(
 			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
 			Expires = config["Jwt:Expires"] ?? "60",
-			User = user.MapToResponse()
+			User = user
 		});
 	}
 
 	public async Task<UResponse> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct) {
-		UserResponse? existingUser = await db.Set<UserEntity>().Select(x => new UserResponse {
+		UserEntity? existingUser = await db.Set<UserEntity>().Select(x => new UserEntity {
 			Id = x.Id,
 			UserName = x.UserName,
 			PhoneNumber = x.PhoneNumber,
 			Email = x.Email,
 			JsonData = x.JsonData,
-			Tags = x.Tags
+			Tags = x.Tags,
+			Password = "",
+			RefreshToken = "",
+			CreatedAt = x.CreatedAt,
+			UpdatedAt = x.UpdatedAt
 		}).AsNoTracking().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
 
 		if (existingUser != null) {
@@ -129,7 +133,7 @@ public class AuthService(
 			Tags = []
 		};
 
-		UserResponse response = e.MapToResponse();
+		UserEntity response = e;
 
 		await db.SaveChangesAsync(ct);
 		if (!await smsNotificationService.SendOtpSms(response)) return new UResponse(Usc.MaximumLimitReached, ls.Get("MaxOtpReached"));
@@ -151,7 +155,7 @@ public class AuthService(
 			? new UResponse<LoginResponse?>(new LoginResponse {
 				Token = CreateToken(user),
 				RefreshToken = user.RefreshToken,
-				User = user.MapToResponse(),
+				User = user,
 				Expires = config["Jwt:Expires"] ?? "60"
 			})
 			: new UResponse<LoginResponse?>(null, Usc.WrongVerificationCode);
@@ -168,16 +172,16 @@ public class AuthService(
 			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
 			Expires = config["Jwt:Expires"] ?? "60",
-			User = user.MapToResponse()
+			User = user
 		});
 	}
 
-	public async Task<UResponse<UserResponse?>> ReadUserByToken(BaseParams p, CancellationToken ct) {
+	public async Task<UResponse<UserEntity?>> ReadUserByToken(BaseParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<UserResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<UserEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		UserEntity? user = await db.Set<UserEntity>().FindAsync(userData.Id, ct);
-		return user == null ? new UResponse<UserResponse?>(null, Usc.NotFound, ls.Get("UserNotFound")) : new UResponse<UserResponse?>(user.MapToResponse());
+		return user == null ? new UResponse<UserEntity?>(null, Usc.NotFound, ls.Get("UserNotFound")) : new UResponse<UserEntity?>(user);
 	}
 
 	private string CreateToken(UserEntity user) => ts.GenerateJwt([

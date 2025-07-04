@@ -27,29 +27,3 @@ public class CategoryJson {
 	public string? Subtitle { get; set; }
 	public string? Link { get; set; }
 }
-
-public static class CategoryEntityExtension {
-	public static CategoryResponse MapToResponse(this CategoryEntity x, bool showMedia = false) => new() {
-		Id = x.Id,
-		Title = x.Title,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		ParentId = x.ParentId,
-		Location = x.Location,
-		Type = x.Type,
-		Order = x.Order,
-		Children =
-			x.Children?.Select(c => new CategoryResponse {
-				Id = c.Id,
-				Title = c.Title,
-				JsonData = c.JsonData,
-				Tags = c.Tags,
-				ParentId = x.ParentId,
-				Location = x.Location,
-				Type = x.Type,
-				Order = x.Order,
-				Media = showMedia ? c.Media?.Select(m => m.MapToResponse()) : null
-			}),
-		Media = showMedia ? x.Media?.Select(m => m.MapToResponse()) : null
-	};
-}

@@ -21,7 +21,7 @@ public class MediaEntity : BaseEntity<TagMedia, MediaJson> {
 	public Guid? CommentId { get; set; }
 	public CommentEntity? Comment { get; set; }
 
-	public MediaResponse MapToResponse() => new() {
+	public MediaEntity MapToResponse() => new() {
 		Id = Id,
 		Path = $"{Server.ServerAddress}/Media/{Path}",
 		Tags = Tags,
