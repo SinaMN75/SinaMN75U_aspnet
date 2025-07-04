@@ -39,7 +39,7 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	public UserEntity? User { get; set; }
 
 	[InverseProperty("Parent")]
-	public IQueryable<ProductEntity>? Children { get; set; }
+	public IEnumerable<ProductEntity>? Children { get; set; }
 
 	public IEnumerable<MediaEntity>? Media { get; set; }
 	public List<CategoryEntity>? Categories { get; set; }
