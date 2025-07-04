@@ -9,7 +9,9 @@ public class CategoryCreateParams : BaseParams {
 
 	[UMinCollectionLength(1, "TagsRequired")]
 	public required List<TagCategory> Tags { get; set; }
-	
+
+	public Guid? ParentId { get; set; }
+
 	public int? Order { get; set; }
 	public string? Location { get; set; }
 	public string? Type { get; set; }
@@ -19,7 +21,7 @@ public class CategoryCreateParams : BaseParams {
 public class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
 	public string? Title { get; set; }
 	public string? Subtitle { get; set; }
-	
+
 	public string? Link { get; set; }
 	public int? Order { get; set; }
 	public string? Location { get; set; }

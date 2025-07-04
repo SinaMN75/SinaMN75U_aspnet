@@ -28,7 +28,8 @@ public class CategoryService(
 			Location = p.Location,
 			Type = p.Type,
 			Order = p.Order,
-			UpdatedAt = DateTime.UtcNow
+			UpdatedAt = DateTime.UtcNow,
+			ParentId = p.ParentId
 		};
 
 		db.Set<CategoryEntity>().Add(e);
