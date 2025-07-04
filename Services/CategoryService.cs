@@ -43,7 +43,7 @@ public class CategoryService(
 			.Include(x => x.Children)
 			.Include(x => x.Media)
 			.Where(x => x.ParentId == null)
-			.OrderByDescending(x => x.Id);
+			.OrderBy(x => x.Id);
 
 		if (p.Tags.IsNotNullOrEmpty())
 			q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));

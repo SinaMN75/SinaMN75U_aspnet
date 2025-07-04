@@ -34,8 +34,14 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 			UserId = p.UserId ?? userData.Id,
 			Tags = p.Tags,
 			Categories = categories,
+			Type = p.Type,
+			Content = p.Content,
+			Slug = p.Slug,
 			JsonData = new ProductJson {
 				Details = p.Details,
+				ActionTitle = p.ActionTitle,
+				ActionUri = p.ActionUri,
+				ActionType = p.ActionType,
 				VisitCounts = [],
 				RelatedProducts = []
 			}
@@ -78,6 +84,9 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 			Id = x.Id,
 			CreatedAt = x.CreatedAt,
 			UpdatedAt = x.UpdatedAt,
+			Type = x.Content,
+			Slug = x.Slug,
+			Content = x.Content,
 			Tags = x.Tags,
 			User = p.ShowUser
 				? new UserResponse {
@@ -122,6 +131,9 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 					CreatedAt = x.CreatedAt,
 					UpdatedAt = x.UpdatedAt,
 					Tags = x.Tags,
+					Type = x.Content,
+					Slug = x.Slug,
+					Content = x.Content,
 					User = p.ShowUser
 						? new UserResponse {
 							UserName = x.User!.UserName,
@@ -202,20 +214,21 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 		ProductEntity? e = await db.Set<ProductEntity>().Include(x => x.Categories).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse<ProductResponse?>(null, Usc.NotFound, ls.Get("ProductNotFound"));
 
-		if (p.Code.IsNotNullOrEmpty()) e.Code = p.Code;
-		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
-		if (p.Description.IsNotNullOrEmpty()) e.Description = p.Description;
-		if (p.Subtitle.IsNotNullOrEmpty()) e.Subtitle = p.Subtitle;
-		if (p.Latitude.IsNotNullOrEmpty()) e.Latitude = p.Latitude;
-		if (p.Longitude.IsNotNullOrEmpty()) e.Longitude = p.Longitude;
-		if (p.Price.IsNotNullOrEmpty()) e.Price = p.Price;
-		if (p.ParentId.IsNotNullOrEmpty()) e.ParentId = p.ParentId;
-		if (p.Stock.IsNotNullOrEmpty()) e.Stock = p.Stock;
-		if (p.Details.IsNotNullOrEmpty()) e.JsonData.Details = p.Details;
-		if (p.UserId.IsNotNullOrEmpty()) e.UserId = p.UserId ?? userData.Id;
+		e.ApplyUpdates(p);
+		// if (p.Code.IsNotNullOrEmpty()) e.Code = p.Code;
+		// if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
+		// if (p.Description.IsNotNullOrEmpty()) e.Description = p.Description;
+		// if (p.Subtitle.IsNotNullOrEmpty()) e.Subtitle = p.Subtitle;
+		// if (p.Latitude.IsNotNullOrEmpty()) e.Latitude = p.Latitude;
+		// if (p.Longitude.IsNotNullOrEmpty()) e.Longitude = p.Longitude;
+		// if (p.Price.IsNotNullOrEmpty()) e.Price = p.Price;
+		// if (p.ParentId.IsNotNullOrEmpty()) e.ParentId = p.ParentId;
+		// if (p.Stock.IsNotNullOrEmpty()) e.Stock = p.Stock;
+		// if (p.Details.IsNotNullOrEmpty()) e.JsonData.Details = p.Details;
+		// if (p.UserId.IsNotNullOrEmpty()) e.UserId = p.UserId ?? userData.Id;
 
-		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
-		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
+		// if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
+		// if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
 
 		if (p.AddRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.AddRangeIfNotExist(p.AddRelatedProducts);
 		if (p.RemoveRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.RemoveAll(x => p.RemoveRelatedProducts.Contains(x));

@@ -16,6 +16,14 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	[MaxLength(2000)]
 	public string? Description { get; set; }
 
+	[MaxLength(100)]
+	public string? Slug { get; set; }
+
+	[MaxLength(100)]
+	public string? Type { get; set; }
+	
+	public string? Content { get; set; }
+
 	public double? Latitude { get; set; }
 	public double? Longitude { get; set; }
 
@@ -69,6 +77,9 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 }
 
 public class ProductJson {
+	public string? ActionType { get; set; }
+	public string? ActionTitle { get; set; }
+	public string? ActionUri { get; set; }
 	public string? Details { get; set; }
 	public List<VisitCount> VisitCounts { get; set; } = [];
 	public List<Guid> RelatedProducts { get; set; } = [];
