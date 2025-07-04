@@ -7,22 +7,22 @@ public static class ProductRoutes {
 		r.MapPost("Create", async (ProductCreateParams p, IProductService s, ILocalStorageService ls, CancellationToken c) => {
 			ls.DeleteAllByPartialKey(tag);
 			return (await s.Create(p, c)).ToResult();
-		}).Produces<UResponse<ProductResponse>>();
+		}).Produces<UResponse<ProductEntity>>();
 
-		r.MapPost("Read", async (ProductReadParams p, IProductService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Cache(60).Produces<UResponse<IEnumerable<ProductResponse>>>();
+		r.MapPost("Read", async (ProductReadParams p, IProductService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Cache(60).Produces<UResponse<IEnumerable<ProductEntity>>>();
 
-		r.MapPost("ReadById", async (IdParams p, IProductService s, CancellationToken c) => (await s.ReadById(p, c)).ToResult()).Produces<UResponse<ProductResponse>>();
+		r.MapPost("ReadById", async (IdParams p, IProductService s, CancellationToken c) => (await s.ReadById(p, c)).ToResult()).Produces<UResponse<ProductEntity>>();
 
 		r.MapPost("Update", async (ProductUpdateParams p, IProductService s, ILocalStorageService ls, CancellationToken c) => {
 			ls.DeleteAllByPartialKey(tag);
 			return (await s.Update(p, c)).ToResult();
-		}).Produces<UResponse<ProductResponse>>();
+		}).Produces<UResponse<ProductEntity>>();
 
 		r.MapPost("Delete", async (IdParams p, IProductService s, ILocalStorageService ls, CancellationToken c) => {
 			ls.DeleteAllByPartialKey(tag);
 			return (await s.Delete(p, c)).ToResult();
 		}).Produces<UResponse>();
-		
+
 		r.MapPost("DeleteRange", async (IdListParams p, IProductService s, ILocalStorageService ls, CancellationToken c) => {
 			ls.DeleteAllByPartialKey(tag);
 			return (await s.DeleteRange(p, c)).ToResult();

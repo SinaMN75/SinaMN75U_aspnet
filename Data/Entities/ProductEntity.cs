@@ -39,34 +39,10 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	public UserEntity? User { get; set; }
 
 	[InverseProperty("Parent")]
-	public IEnumerable<ProductEntity>? Children { get; set; }
+	public IQueryable<ProductEntity>? Children { get; set; }
 
 	public IEnumerable<MediaEntity>? Media { get; set; }
 	public List<CategoryEntity>? Categories { get; set; }
-
-	public ProductResponse MapToResponse() => new() {
-		Id = Id,
-		Title = Title,
-		Code = Code,
-		Subtitle = Subtitle,
-		Description = Description,
-		Latitude = Latitude,
-		Longitude = Longitude,
-		Stock = Stock,
-		Price = Price,
-		ParentId = ParentId,
-		Tags = Tags,
-		JsonData = JsonData,
-		Children = Children?.Select(x => x.MapToResponse()),
-		Media = Media?.Select(x => x.MapToResponse()),
-		Categories = Categories?.Select(x => x.MapToResponse()),
-		User = User?.MapToResponse(),
-		CreatedAt = CreatedAt,
-		UpdatedAt = UpdatedAt,
-		Content = Content,
-		Type = Type,
-		Slug = Slug
-	};
 }
 
 public class ProductJson {

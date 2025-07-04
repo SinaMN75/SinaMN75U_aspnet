@@ -139,7 +139,7 @@ public class DashboardService(
 			NewContents = newContents.Result ?? [],
 			NewExams = newExams.Result ?? [],
 			NewMedia = newMedia.Result ?? [],
-			NewProducts = [],
+			NewProducts = newProducts.Result ?? [],
 		};
 	}
 

@@ -25,5 +25,5 @@ public class DashboardResponse {
 	public required IEnumerable<ContentResponse> NewContents { get; set; }
 	public required IEnumerable<ExamResponse> NewExams { get; set; }
 	public required IEnumerable<MediaResponse> NewMedia { get; set; }
-	public required IEnumerable<ProductResponse> NewProducts { get; set; }
+	public required IEnumerable<ProductEntity> NewProducts { get; set; }
 }

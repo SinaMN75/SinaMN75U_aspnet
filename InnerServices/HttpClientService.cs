@@ -9,7 +9,7 @@ public interface IHttpClientService {
 	Task<string> Upload(string uri, IFormFile file, string fileName, Dictionary<string, string>? headers = null);
 }
 
-public class HttpClientService(HttpClient httpClient, ILocalStorageService ls) : IHttpClientService {
+public class HttpClientService(HttpClient httpClient) : IHttpClientService {
 	private readonly HttpClient _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
 
 	public async Task<string> Get(string uri, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Get, uri, null, headers);
