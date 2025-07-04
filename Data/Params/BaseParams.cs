@@ -18,12 +18,26 @@ public class IdTitleParams : BaseParams {
 public class BaseReadParams<T> : BaseParams {
 	public int PageSize { get; set; } = 100;
 	public int PageNumber { get; set; } = 1;
+
+	[UFilterGreaterThanOrEqual("CreatedAt")]
 	public DateTime? FromCreatedAt { get; set; }
+
+	[UFilterLessThanOrEqual("CreatedAt")]
 	public DateTime? ToCreatedAt { get; set; }
+
+	[USort("CreatedAt")]
 	public bool OrderByCreatedAt { get; set; } = false;
+
+	[USort("CreatedAt", true)]
 	public bool OrderByCreatedAtDesc { get; set; } = false;
+
+	[USort("UpdatedAt")]
 	public bool OrderByUpdatedAt { get; set; } = false;
+
+	[USort("UpdatedAt", true)]
 	public bool OrderByUpdatedAtDesc { get; set; } = false;
+
+	[UFilterHasAny("Tags")]
 	public List<T>? Tags { get; set; }
 }
 
@@ -36,10 +50,9 @@ public class BaseUpdateParams<T> : BaseParams {
 
 	[URemoveMatching("Tags")]
 	public IEnumerable<T>? RemoveTags { get; set; }
-	
+
 	[UReplaceListAttribute("Tags")]
 	public IEnumerable<T>? Tags { get; set; }
-
 }
 
 public class BaseCreateParams<T> : BaseParams {

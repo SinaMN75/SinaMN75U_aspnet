@@ -7,53 +7,53 @@ public abstract class UFilterAttribute(string targetProperty) : Attribute {
 	public string TargetProperty { get; } = targetProperty;
 }
 
-public class UContainsAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterContainsAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class UStartsWithAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterStartsWithAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class UEndsWithAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterEndsWithAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class UEqualAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterEqualAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class UNotEqualAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterNotEqualAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class UGreaterThanAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterGreaterThanAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class UGreaterThanOrEqualAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterGreaterThanOrEqualAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class ULessThanAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterLessThanAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class ULessThanOrEqualAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterLessThanOrEqualAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class UBetweenAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterBetweenAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class UInAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterInAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class UNotInAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterNotInAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class UHasAnyAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterHasAnyAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class UHasAllAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterHasAllAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class UOverlapsAttribute(string targetProperty) : UFilterAttribute(targetProperty); // New: any overlap
+public class UFilterOverlapsAttribute(string targetProperty) : UFilterAttribute(targetProperty); // New: any overlap
 
-public class UIsTrueAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterIsTrueAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class UIsFalseAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterIsFalseAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class UDateAfterAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterDateAfterAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class UDateBeforeAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterDateBeforeAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class UIsNullAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterIsNullAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class UIsNotNullAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterIsNotNullAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class ULengthEqualAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterLengthEqualAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class ULengthGreaterAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterLengthGreaterAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
-public class ULengthLessAttribute(string targetProperty) : UFilterAttribute(targetProperty);
+public class UFilterLengthLessAttribute(string targetProperty) : UFilterAttribute(targetProperty);
 
 [AttributeUsage(AttributeTargets.Property)]
 public class USortAttribute(string targetProperty, bool descending = false) : Attribute {
@@ -81,29 +81,29 @@ public static class UQueryableFilterExtensions {
 				MemberExpression target = BuildNestedProperty(parameter, attr.TargetProperty);
 				ConstantExpression constant = Expression.Constant(value);
 				Expression? predicate = attr switch {
-					UContainsAttribute => Expression.Call(target, nameof(string.Contains), null, constant),
-					UStartsWithAttribute => Expression.Call(target, nameof(string.StartsWith), null, constant),
-					UEndsWithAttribute => Expression.Call(target, nameof(string.EndsWith), null, constant),
-					UEqualAttribute => Expression.Equal(target, constant),
-					UNotEqualAttribute => Expression.NotEqual(target, constant),
-					UGreaterThanAttribute => Expression.GreaterThan(target, constant),
-					UGreaterThanOrEqualAttribute => Expression.GreaterThanOrEqual(target, constant),
-					ULessThanAttribute => Expression.LessThan(target, constant),
-					ULessThanOrEqualAttribute => Expression.LessThanOrEqual(target, constant),
-					UIsTrueAttribute => Expression.Equal(target, Expression.Constant(true)),
-					UIsFalseAttribute => Expression.Equal(target, Expression.Constant(false)),
-					UDateAfterAttribute => Expression.GreaterThan(target, constant),
-					UDateBeforeAttribute => Expression.LessThan(target, constant),
-					UInAttribute => BuildContainsExpression(target, value),
-					UNotInAttribute => Expression.Not(BuildContainsExpression(target, value)),
-					UHasAnyAttribute => BuildHasAnyExpression(target, value),
-					UHasAllAttribute => BuildHasAllExpression(target, value),
-					UOverlapsAttribute => BuildOverlapExpression(target, value),
-					UIsNullAttribute => Expression.Equal(target, Expression.Constant(null)),
-					UIsNotNullAttribute => Expression.NotEqual(target, Expression.Constant(null)),
-					ULengthEqualAttribute => Expression.Equal(Expression.Property(target, "Length"), constant),
-					ULengthGreaterAttribute => Expression.GreaterThan(Expression.Property(target, "Length"), constant),
-					ULengthLessAttribute => Expression.LessThan(Expression.Property(target, "Length"), constant),
+					UFilterContainsAttribute => Expression.Call(target, nameof(string.Contains), null, constant),
+					UFilterStartsWithAttribute => Expression.Call(target, nameof(string.StartsWith), null, constant),
+					UFilterEndsWithAttribute => Expression.Call(target, nameof(string.EndsWith), null, constant),
+					UFilterEqualAttribute => Expression.Equal(target, constant),
+					UFilterNotEqualAttribute => Expression.NotEqual(target, constant),
+					UFilterGreaterThanAttribute => Expression.GreaterThan(target, constant),
+					UFilterGreaterThanOrEqualAttribute => Expression.GreaterThanOrEqual(target, constant),
+					UFilterLessThanAttribute => Expression.LessThan(target, constant),
+					UFilterLessThanOrEqualAttribute => Expression.LessThanOrEqual(target, constant),
+					UFilterIsTrueAttribute => Expression.Equal(target, Expression.Constant(true)),
+					UFilterIsFalseAttribute => Expression.Equal(target, Expression.Constant(false)),
+					UFilterDateAfterAttribute => Expression.GreaterThan(target, constant),
+					UFilterDateBeforeAttribute => Expression.LessThan(target, constant),
+					UFilterInAttribute => BuildContainsExpression(target, value),
+					UFilterNotInAttribute => Expression.Not(BuildContainsExpression(target, value)),
+					UFilterHasAnyAttribute => BuildHasAnyExpression(target, value),
+					UFilterHasAllAttribute => BuildHasAllExpression(target, value),
+					UFilterOverlapsAttribute => BuildOverlapExpression(target, value),
+					UFilterIsNullAttribute => Expression.Equal(target, Expression.Constant(null)),
+					UFilterIsNotNullAttribute => Expression.NotEqual(target, Expression.Constant(null)),
+					UFilterLengthEqualAttribute => Expression.Equal(Expression.Property(target, "Length"), constant),
+					UFilterLengthGreaterAttribute => Expression.GreaterThan(Expression.Property(target, "Length"), constant),
+					UFilterLengthLessAttribute => Expression.LessThan(Expression.Property(target, "Length"), constant),
 					_ => null
 				};
 				if (predicate == null) continue;
@@ -111,7 +111,7 @@ public static class UQueryableFilterExtensions {
 				query = query.Where(lambda);
 			}
 
-			if (prop.GetCustomAttribute<UBetweenAttribute>() is not { } betweenAttr || value is not IList { Count: 2 } range) continue;
+			if (prop.GetCustomAttribute<UFilterBetweenAttribute>() is not { } betweenAttr || value is not IList { Count: 2 } range) continue;
 			{
 				MemberExpression target = BuildNestedProperty(parameter, betweenAttr.TargetProperty);
 				ConstantExpression from = Expression.Constant(range[0]);

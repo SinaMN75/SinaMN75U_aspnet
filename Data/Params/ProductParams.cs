@@ -89,21 +89,43 @@ public class ProductUpdateParams : BaseUpdateParams<TagProduct> {
 }
 
 public class ProductReadParams : BaseReadParams<TagProduct> {
+	[UFilterIn(nameof(ProductEntity.Id))]
 	public IEnumerable<Guid>? Ids { get; set; }
+
 	public string? Query { get; set; }
+
+	[UFilterContains(nameof(ProductEntity.Title))]
 	public string? Title { get; set; }
+
+	[UFilterContains(nameof(ProductEntity.Code))]
 	public string? Code { get; set; }
 
+	[UFilterGreaterThanOrEqual(nameof(ProductEntity.Stock))]
 	public int? MinStock { get; set; }
+
+	[UFilterLessThanOrEqual(nameof(ProductEntity.Stock))]
 	public int? MaxStock { get; set; }
+
+	[UFilterGreaterThanOrEqual(nameof(ProductEntity.Price))]
 	public double? MinPrice { get; set; }
+
+	[UFilterLessThanOrEqual(nameof(ProductEntity.Price))]
 	public double? MaxPrice { get; set; }
 
+	[UFilterEqual(nameof(ProductEntity.ParentId))]
 	public Guid? ParentId { get; set; }
+
+	[UFilterEqual(nameof(ProductEntity.UserId))]
 	public Guid? UserId { get; set; }
 
+	[UInclude(nameof(ProductEntity.Categories))]
 	public bool ShowCategories { get; set; } = false;
+
+	[UInclude(nameof(ProductEntity.Media))]
 	public bool ShowMedia { get; set; } = false;
-	public bool ShowChildren { get; set; } = false;
+	
+	[UInclude(nameof(ProductEntity.User))]
 	public bool ShowUser { get; set; } = false;
+	
+	public bool ShowChildren { get; set; } = false;
 }
