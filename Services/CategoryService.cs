@@ -3,6 +3,7 @@ namespace SinaMN75U.Services;
 public interface ICategoryService {
 	Task<UResponse<CategoryResponse?>> Create(CategoryCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct);
+	Task<UResponse<CategoryResponse?>> ReadById(IdParams p, CancellationToken ct);
 	Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct);
@@ -51,6 +52,28 @@ public class CategoryService(
 			q = q.Where(x => p.Ids.Contains(x.Id));
 
 		return await q.Select(x => x.MapToResponse(p.ShowMedia)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	}
+
+	public async Task<UResponse<CategoryResponse?>> ReadById(IdParams p, CancellationToken ct) {
+		CategoryResponse? e = await db.Set<CategoryEntity>().Select(x => new CategoryResponse {
+			Title = x.Title,
+			Order = x.Order,
+			Location = x.Location,
+			Type = x.Type,
+			ParentId = x.ParentId,
+			Media = x.Media!.Select(y => new MediaResponse {
+				Path = y.Path,
+				Id = y.Id,
+				Tags = y.Tags,
+				JsonData = y.JsonData
+			}),
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			UpdatedAt = x.UpdatedAt,
+			Tags = x.Tags,
+			JsonData = x.JsonData
+		}).FirstOrDefaultAsync(x => x.Id == p.Id);
+		return e == null ? new UResponse<CategoryResponse?>(null, Usc.NotFound, ls.Get("CategoryNotFound")) : new UResponse<CategoryResponse?>(e);
 	}
 
 	public async Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct) {

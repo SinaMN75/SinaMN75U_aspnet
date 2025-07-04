@@ -10,6 +10,7 @@ public static class CategoryRoutes {
 		}).Produces<UResponse<CategoryResponse>>();
 
 		r.MapPost("Read", async (CategoryReadParams p, ICategoryService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Cache(60).Produces<UResponse<IEnumerable<CategoryResponse>>>();
+		r.MapPost("ReadById", async (IdParams p, ICategoryService s, CancellationToken c) => (await s.ReadById(p, c)).ToResult()).Cache(60).Produces<UResponse<CategoryResponse>>();
 
 		r.MapPost("Update", async (CategoryUpdateParams p, ICategoryService s, ILocalStorageService ls, CancellationToken c) => {
 			ls.DeleteAllByPartialKey(tag);
