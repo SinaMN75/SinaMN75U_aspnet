@@ -38,155 +38,22 @@ public class CategoryService(
 	}
 
 	public async Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct) {
-		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>().OrderByDescending(x => x.Id);
+		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>()
+			.Include(x => x.Children)
+			.Include(x => x.Media)
+			.Where(x => x.ParentId == null)
+			.OrderByDescending(x => x.Id);
 
-		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
-		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
+		if (p.Tags.IsNotNullOrEmpty())
+			q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
 
-		return await q.Select(x => new CategoryResponse {
-			Id = x.Id,
-			Title = x.Title,
-			JsonData = x.JsonData,
-			Tags = x.Tags,
-			ParentId = x.ParentId,
-			Type = x.Type,
-			Location = x.Location,
-			Order = x.Order,
-			Children = x.Children!.Select(c1 => new CategoryResponse {
-				Id = c1.Id,
-				Title = c1.Title,
-				JsonData = c1.JsonData,
-				Tags = c1.Tags,
-				ParentId = x.ParentId,
-				Type = x.Type,
-				Location = x.Location,
-				Order = x.Order,
-				Media = p.ShowMedia
-					? x.Media!.Select(m => new MediaResponse {
-						Path = m.Path,
-						Id = m.Id,
-						Tags = m.Tags,
-						JsonData = m.JsonData
-					})
-					: null,
-				Children = x.Children!.Select(c2 => new CategoryResponse {
-					Id = c2.Id,
-					Title = c2.Title,
-					JsonData = c2.JsonData,
-					ParentId = x.ParentId,
-					Tags = c2.Tags,
-					Type = x.Type,
-					Location = x.Location,
-					Order = x.Order,
-					Media = p.ShowMedia
-						? x.Media!.Select(m => new MediaResponse {
-							Path = m.Path,
-							Id = m.Id,
-							Tags = m.Tags,
-							JsonData = m.JsonData
-						})
-						: null,
-					Children = x.Children!.Select(c3 => new CategoryResponse {
-						Id = c3.Id,
-						Title = c3.Title,
-						JsonData = c3.JsonData,
-						Tags = c3.Tags,
-						ParentId = x.ParentId,
-						Type = x.Type,
-						Location = x.Location,
-						Order = x.Order,
-						Media = p.ShowMedia
-							? x.Media!.Select(m => new MediaResponse {
-								Path = m.Path,
-								Id = m.Id,
-								Tags = m.Tags,
-								JsonData = m.JsonData
-							})
-							: null,
-						Children = x.Children!.Select(c4 => new CategoryResponse {
-							Id = c4.Id,
-							Title = c4.Title,
-							JsonData = c4.JsonData,
-							Tags = c4.Tags,
-							ParentId = x.ParentId,
-							Type = x.Type,
-							Location = x.Location,
-							Order = x.Order,
-							Media = p.ShowMedia
-								? x.Media!.Select(m => new MediaResponse {
-									Path = m.Path,
-									Id = m.Id,
-									Tags = m.Tags,
-									JsonData = m.JsonData
-								})
-								: null,
-							Children = x.Children!.Select(c5 => new CategoryResponse {
-								Id = c5.Id,
-								Title = c5.Title,
-								JsonData = c5.JsonData,
-								Tags = c5.Tags,
-								ParentId = x.ParentId,
-								Type = x.Type,
-								Location = x.Location,
-								Order = x.Order,
-								Media = p.ShowMedia
-									? x.Media!.Select(m => new MediaResponse {
-										Path = m.Path,
-										Id = m.Id,
-										Tags = m.Tags,
-										JsonData = m.JsonData
-									})
-									: null,
-								Children = x.Children!.Select(c6 => new CategoryResponse {
-									Id = c6.Id,
-									Title = c6.Title,
-									JsonData = c6.JsonData,
-									Tags = c6.Tags,
-									ParentId = x.ParentId,
-									Type = x.Type,
-									Location = x.Location,
-									Order = x.Order,
-									Media = p.ShowMedia
-										? x.Media!.Select(m => new MediaResponse {
-											Path = m.Path,
-											Id = m.Id,
-											Tags = m.Tags,
-											JsonData = m.JsonData
-										})
-										: null,
-									Children = x.Children!.Select(c7 => new CategoryResponse {
-										Id = c7.Id,
-										Title = c7.Title,
-										JsonData = c7.JsonData,
-										Tags = c7.Tags,
-										ParentId = x.ParentId,
-										Type = x.Type,
-										Location = x.Location,
-										Order = x.Order,
-										Media = p.ShowMedia
-											? x.Media!.Select(m => new MediaResponse {
-												Path = m.Path,
-												Id = m.Id,
-												Tags = m.Tags,
-												JsonData = m.JsonData
-											})
-											: null
-									})
-								})
-							})
-						})
-					})
-				})
-			}),
-			Media = p.ShowMedia
-				? x.Media!.Select(m => new MediaResponse {
-					Path = m.Path,
-					Id = m.Id,
-					Tags = m.Tags,
-					JsonData = m.JsonData
-				})
-				: null
-		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		if (p.Ids.IsNotNullOrEmpty())
+			q = q.Where(x => p.Ids.Contains(x.Id));
+
+		List<CategoryEntity> entities = await q.ToListAsync(ct);
+		List<CategoryResponse> result = entities.Select(x => MapToResponse(x, p.ShowMedia)).ToList();
+
+		return new UResponse<IEnumerable<CategoryResponse>?>(result);
 	}
 
 	public async Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct) {
@@ -246,5 +113,27 @@ public class CategoryService(
 		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>().OrderByDescending(x => x.Id);
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
 		return await q.ToListAsync(ct);
+	}
+
+	private CategoryResponse MapToResponse(CategoryEntity entity, bool showMedia) {
+		return new CategoryResponse {
+			Id = entity.Id,
+			Title = entity.Title,
+			JsonData = entity.JsonData,
+			Tags = entity.Tags,
+			ParentId = entity.ParentId,
+			Type = entity.Type,
+			Location = entity.Location,
+			Order = entity.Order,
+			Media = showMedia
+				? entity.Media?.Select(m => new MediaResponse {
+					Path = m.Path,
+					Id = m.Id,
+					Tags = m.Tags,
+					JsonData = m.JsonData
+				}).ToList()
+				: null,
+			Children = entity.Children?.Select(child => MapToResponse(child, showMedia)).ToList()
+		};
 	}
 }
