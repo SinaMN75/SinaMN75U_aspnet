@@ -7,7 +7,7 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	public required string Title { get; set; }
 
 	[Required]
-	[MaxLength(10)]
+	[MaxLength(100)]
 	public required string Code { get; set; }
 
 	[MaxLength(100)]

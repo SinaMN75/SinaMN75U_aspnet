@@ -61,11 +61,6 @@ public class USortAttribute(string targetProperty, bool descending = false) : At
 	public bool Descending { get; } = descending;
 }
 
-[AttributeUsage(AttributeTargets.Property)]
-public class UIncludeAttribute(string navigationProperty) : Attribute {
-	public string NavigationProperty { get; } = navigationProperty;
-}
-
 public static class UQueryableFilterExtensions {
 	private static readonly ConcurrentDictionary<Type, PropertyInfo[]> PropertyCache = new();
 
@@ -122,16 +117,6 @@ public static class UQueryableFilterExtensions {
 				Expression<Func<TEntity, bool>> lambda = Expression.Lambda<Func<TEntity, bool>>(combined, parameter);
 				query = query.Where(lambda);
 			}
-		}
-
-		return query;
-	}
-
-	public static IQueryable<TEntity> ApplyIncludes<TEntity, TParams>(this IQueryable<TEntity> query, TParams param) where TEntity : class {
-		PropertyInfo[] props = PropertyCache.GetOrAdd(typeof(TParams), t => t.GetProperties());
-		foreach (PropertyInfo prop in props) {
-			if (prop.GetCustomAttribute<UIncludeAttribute>() is { } attr && prop.PropertyType == typeof(bool) && (bool)(prop.GetValue(param) ?? false))
-				query = query.Include(attr.NavigationProperty);
 		}
 
 		return query;

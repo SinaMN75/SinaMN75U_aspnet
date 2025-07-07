@@ -53,7 +53,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 
 
 	public async Task<UResponse<IEnumerable<ProductEntity>?>> Read(ProductReadParams p, CancellationToken ct) {
-		IQueryable<ProductEntity> q = db.Set<ProductEntity>();
+		IQueryable<ProductEntity> q = db.Set<ProductEntity>().Where(x => x.ParentId == null);
 		if (p.Code.IsNotNullOrEmpty()) q = q.Where(x => x.Code.Contains(p.Code));
 		if (p.Query.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Query) || (x.Description ?? "").Contains(p.Query) || (x.Subtitle ?? "").Contains(p.Query));
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title));
@@ -68,10 +68,14 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(u => u.Tags.Any(tag => p.Tags!.Contains(tag)));
 
 		// q = q.ApplyFilters(p);
-		// q = q.ApplyIncludes(p);
 		// q = q.ApplySorting(p);
 
-		if (p.ShowChildren)
+		if (p.ShowMedia) q = q.Include(x => x.Media);
+		if (p.ShowCategories) q = q.Include(x => x.Categories);
+		if (p.ShowUser) q = q.Include(x => x.User);
+		if (p.ShowChildren) q = q.Include(x => x.Children);
+		
+		if (p.ShowChildrenDepth)
 			q = q.Include(x => x.Children)!
 				.ThenInclude(x => x.Children)!
 				.ThenInclude(x => x.Children)!

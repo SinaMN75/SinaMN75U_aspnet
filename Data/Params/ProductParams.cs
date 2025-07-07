@@ -118,14 +118,9 @@ public class ProductReadParams : BaseReadParams<TagProduct> {
 	[UFilterEqual(nameof(ProductEntity.UserId))]
 	public Guid? UserId { get; set; }
 
-	[UInclude(nameof(ProductEntity.Categories))]
 	public bool ShowCategories { get; set; } = false;
-
-	[UInclude(nameof(ProductEntity.Media))]
 	public bool ShowMedia { get; set; } = false;
-	
-	[UInclude(nameof(ProductEntity.User))]
 	public bool ShowUser { get; set; } = false;
-	
 	public bool ShowChildren { get; set; } = false;
+	public bool ShowChildrenDepth { get; set; } = false;
 }
