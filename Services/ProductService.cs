@@ -23,7 +23,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
 			Title = p.Title,
-			Code = p.Code ?? Random.Shared.Next(10000, 99999).ToString(),
+			Code = p.Code,
 			Subtitle = p.Subtitle,
 			Description = p.Description,
 			Latitude = p.Latitude,
@@ -125,7 +125,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 	}
 
 	public async Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct) {
-		await db.Set<ProductEntity>().WhereIn(u => u.Id, p.Ids).ExecuteDeleteAsync(ct);
-		return new UResponse();
+		int count = await db.Set<ProductEntity>().WhereIn(u => u.Id, p.Ids).ExecuteDeleteAsync(ct);
+		return count > 0 ? new UResponse(Usc.Deleted, ls.Get("ProductDeleted")) : new UResponse(Usc.NotFound, ls.Get("ProductNotFound"));
 	}
 }

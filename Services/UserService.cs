@@ -152,7 +152,7 @@ public class UserService(
 				.ThenInclude(x => x.Children)!
 				.ThenInclude(x => x.Children)!
 				.ThenInclude(x => x.Children);
-		return await q.ToResponse(p.ShowMedia, p.ShowCategories).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse<UserEntity?>> Update(UserUpdateParams p, CancellationToken ct) {

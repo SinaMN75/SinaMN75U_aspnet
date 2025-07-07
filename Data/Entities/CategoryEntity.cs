@@ -14,8 +14,10 @@ public class CategoryEntity : BaseEntity<TagCategory, CategoryJson> {
 	[InverseProperty("Parent")]
 	public IEnumerable<CategoryEntity>? Children { get; set; }
 
+	[JsonIgnore]
 	public IEnumerable<ProductEntity>? Products { get; set; }
 
+	[JsonIgnore]
 	public IEnumerable<UserEntity>? Users { get; set; }
 
 	public IEnumerable<MediaEntity>? Media { get; set; }

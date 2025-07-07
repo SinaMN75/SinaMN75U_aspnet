@@ -25,7 +25,7 @@ public class ContentService(DbContext db, ILocalizationService ls, ITokenService
 			}
 		}, ct);
 		await db.SaveChangesAsync(ct);
-		return new UResponse<ContentEntity?>(e.Entity.MapToResponse());
+		return new UResponse<ContentEntity?>(e.Entity);
 	}
 
 	public async Task<UResponse<IEnumerable<ContentEntity>?>> Read(ContentReadParams p, CancellationToken ct) {
@@ -66,7 +66,7 @@ public class ContentService(DbContext db, ILocalizationService ls, ITokenService
 
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
-		return new UResponse<ContentEntity?>(e.MapToResponse());
+		return new UResponse<ContentEntity?>(e);
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
