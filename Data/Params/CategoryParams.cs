@@ -30,10 +30,10 @@ public class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
 	[UAssignIfNotNull(nameof(CategoryEntity.Order))]
 	public int? Order { get; set; }
 
-	[UAssignIfNotNull(nameof(CategoryEntity.Location))]
+	[UAssignNested(nameof(CategoryEntity.JsonData), nameof(CategoryJson.Location))]
 	public string? Location { get; set; }
 
-	[UAssignIfNotNull(nameof(CategoryEntity.Type))]
+	[UAssignNested(nameof(CategoryEntity.JsonData), nameof(CategoryJson.Type))]
 	public string? Type { get; set; }
 }
 
