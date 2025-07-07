@@ -54,21 +54,8 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 
 	public async Task<UResponse<IEnumerable<ProductEntity>?>> Read(ProductReadParams p, CancellationToken ct) {
 		IQueryable<ProductEntity> q = db.Set<ProductEntity>().Where(x => x.ParentId == null);
-		if (p.Code.IsNotNullOrEmpty()) q = q.Where(x => x.Code.Contains(p.Code));
-		if (p.Query.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Query) || (x.Description ?? "").Contains(p.Query) || (x.Subtitle ?? "").Contains(p.Query));
-		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title));
-		if (p.MinPrice.IsNotNullOrEmpty()) q = q.Where(x => x.Price >= p.MinPrice);
-		if (p.MaxPrice.IsNotNullOrEmpty()) q = q.Where(x => x.Price <= p.MaxPrice);
-		if (p.MinStock.IsNotNullOrEmpty()) q = q.Where(x => x.Stock >= p.MinStock);
-		if (p.MaxStock.IsNotNullOrEmpty()) q = q.Where(x => x.Stock >= p.MaxStock);
-		
-		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
-		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(x => x.UserId == p.UserId);
-		if (p.ParentId.IsNotNullOrEmpty()) q = q.Where(x => x.ParentId == p.ParentId);
-		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(u => u.Tags.Any(tag => p.Tags!.Contains(tag)));
-
-		// q = q.ApplyFilters(p);
-		// q = q.ApplySorting(p);
+		q = q.ApplyFilters(p);
+		q = q.ApplySorting(p);
 
 		if (p.ShowMedia) q = q.Include(x => x.Media);
 		if (p.ShowCategories) q = q.Include(x => x.Categories);
