@@ -9,9 +9,11 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 	public required string UserName { get; set; }
 
 	[MaxLength(200)]
+	[JsonIgnore]
 	public required string Password { get; set; }
 
 	[MaxLength(200)]
+	[JsonIgnore]
 	public required string RefreshToken { get; set; }
 
 	[MaxLength(15)]
@@ -39,12 +41,6 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 	public string? City { get; set; }
 
 	public DateTime? Birthdate { get; set; }
-
-	public Guid? ParentId { get; set; }
-	public UserEntity? Parent { get; set; }
-
-	[InverseProperty("Parent")]
-	public IEnumerable<UserEntity>? Children { get; set; }
 
 	public List<CategoryEntity>? Categories { get; set; }
 

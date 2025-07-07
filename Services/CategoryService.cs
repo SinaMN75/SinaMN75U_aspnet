@@ -89,31 +89,7 @@ public class CategoryService(
 
 		return new UResponse<CategoryEntity?>(e);
 	}
-
-	// public async Task<UResponse<CategoryEntity?>> Update(CategoryUpdateParams p, CancellationToken ct) {
-	// 	JwtClaimData? userData = ts.ExtractClaims(p.Token);
-	// 	if (userData == null) return new UResponse<CategoryEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-	// 	CategoryEntity? e = await db.Set<CategoryEntity>().FindAsync(p.Id, ct);
-	// 	if (e == null)
-	// 		return new UResponse<CategoryEntity?>(null, Usc.NotFound, "Category not found");
-	//
-	// 	e.UpdatedAt = DateTime.UtcNow;
-	// 	if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
-	// 	if (p.Type.IsNotNullOrEmpty()) e.Type = p.Type;
-	// 	if (p.Order != null) e.Order = p.Order;
-	// 	if (p.Location.IsNotNullOrEmpty()) e.Location = p.Location;
-	// 	if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
-	// 	if (p.Subtitle.IsNotNullOrEmpty()) e.JsonData.Subtitle = p.Subtitle;
-	// 	if (p.Link.IsNotNullOrEmpty()) e.JsonData.Link = p.Link;
-	//
-	// 	if (p.AddTags != null) e.Tags.AddRangeIfNotExist(p.AddTags);
-	// 	if (p.RemoveTags != null) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
-	//
-	// 	db.Update(e);
-	// 	await db.SaveChangesAsync(ct);
-	// 	return new UResponse<CategoryEntity?>(e.MapToResponse());
-	// }
-
+	
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null)

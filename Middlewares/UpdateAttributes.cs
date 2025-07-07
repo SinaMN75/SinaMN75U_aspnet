@@ -7,7 +7,7 @@ public abstract class UUpdateAttribute(string targetProperty) : Attribute {
 
 public class UUpdateAssignIfNotNullAttribute(string targetProperty) : UUpdateAttribute(targetProperty);
 
-public class UUpdateAssignIfNotEmptyAttribute(string targetProperty) : UUpdateAttribute(targetProperty);
+public class UUpdateAssignIfNotNullOrEmptyAttribute(string targetProperty) : UUpdateAttribute(targetProperty);
 
 public class UUpdateAssignHashedAttribute(string targetProperty) : UUpdateAttribute(targetProperty);
 
@@ -213,7 +213,7 @@ public static class UUpdateExtensions {
 						entityProp.SetValue(entity, value);
 						break;
 
-					case UUpdateAssignIfNotEmptyAttribute when value is string s && !string.IsNullOrWhiteSpace(s):
+					case UUpdateAssignIfNotNullOrEmptyAttribute when value is string s && !string.IsNullOrWhiteSpace(s):
 						entityProp.SetValue(entity, s);
 						break;
 

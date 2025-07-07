@@ -32,7 +32,6 @@ public class UserService(
 			State = p.State,
 			City = p.City,
 			Birthdate = p.Birthdate,
-			ParentId = p.ParentId,
 			JsonData = new UserJson {
 				FcmToken = p.FcmToken,
 				Health1 = p.Health1 ?? [],
@@ -91,7 +90,6 @@ public class UserService(
 			State = userParam.State,
 			City = userParam.City,
 			Birthdate = userParam.Birthdate,
-			ParentId = userParam.ParentId,
 			JsonData = new UserJson {
 				FcmToken = userParam.FcmToken,
 				Health1 = userParam.Health1 ?? [],
@@ -116,81 +114,22 @@ public class UserService(
 	}
 
 	public async Task<UResponse<IEnumerable<UserEntity>?>> Read(UserReadParams p, CancellationToken ct) {
-		IQueryable<UserEntity> q = db.Set<UserEntity>();
-
-		if (p.FromCreatedAt.HasValue) q = q.Where(u => u.CreatedAt >= p.FromCreatedAt.Value);
-		if (p.ToCreatedAt.HasValue) q = q.Where(u => u.CreatedAt <= p.ToCreatedAt.Value);
-
-		if (p.UserName.IsNotNull()) q = q.Where(u => u.UserName.Contains(p.UserName!));
-		if (p.PhoneNumber.IsNotNull()) q = q.Where(u => u.PhoneNumber == p.PhoneNumber);
-		if (p.Email.IsNotNull()) q = q.Where(u => u.Email == p.Email);
-		if (p.Bio.IsNotNull()) q = q.Where(u => u.Bio == p.Bio);
-		if (p.ParentId.IsNotNullOrEmpty()) q = q.Where(u => u.ParentId == p.ParentId);
-		if (p.StartBirthDate.HasValue) q = q.Where(u => u.Birthdate >= p.StartBirthDate.Value);
-		if (p.EndBirthDate.HasValue) q = q.Where(u => u.Birthdate <= p.EndBirthDate.Value);
-		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(u => u.Tags.Any(tag => p.Tags!.Contains(tag)));
-		if (p.Categories.IsNotNullOrEmpty()) q = q.Where(x => x.Categories!.Any(y => p.Categories.Contains(y.Id)));
-		if (p.OrderByLastNameDesc) q = q.OrderByDescending(x => x.LastName);
-
-		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
-		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
-		if (p.OrderByUpdatedAt) q = q.OrderBy(x => x.UpdatedAt);
-		if (p.OrderByUpdatedAtDesc) q = q.OrderByDescending(x => x.UpdatedAt);
-		if (p.OrderByLastName) q = q.OrderBy(x => x.LastName);
-		if (p.OrderByLastNameDesc) q = q.OrderByDescending(x => x.LastName);
-
+		IQueryable<UserEntity> q = db.Set<UserEntity>().ApplyQuery(p);
+		
 		if (p.ShowCategories) q = q.Include(x => x.Categories);
 		if (p.ShowMedia) q = q.Include(x => x.Media);
-		if (p.ShowChildren)
-			q = q.Include(x => x.Children)!
-				.ThenInclude(x => x.Children)!
-				.ThenInclude(x => x.Children)!
-				.ThenInclude(x => x.Children)!
-				.ThenInclude(x => x.Children)!
-				.ThenInclude(x => x.Children)!
-				.ThenInclude(x => x.Children)!
-				.ThenInclude(x => x.Children)!
-				.ThenInclude(x => x.Children)!
-				.ThenInclude(x => x.Children);
+		
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse<UserEntity?>> Update(UserUpdateParams p, CancellationToken ct) {
-		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<UserEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
+		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse<UserEntity?>(null, Usc.NotFound);
 
 		e.UpdatedAt = DateTime.UtcNow;
-
-		if (p.UserName.IsNotNullOrEmpty()) e.UserName = p.UserName;
-		if (p.PhoneNumber.IsNotNullOrEmpty()) e.PhoneNumber = p.PhoneNumber;
-		if (p.Email.IsNotNullOrEmpty()) e.Email = p.Email;
-		if (p.Bio.IsNotNullOrEmpty()) e.Bio = p.Bio;
-		if (p.Birthdate != null) e.Birthdate = p.Birthdate;
-		if (p.Password.IsNotNullOrEmpty()) e.Password = PasswordHasher.Hash(p.Password);
-		if (p.FirstName.IsNotNullOrEmpty()) e.FirstName = p.FirstName;
-		if (p.LastName.IsNotNullOrEmpty()) e.LastName = p.LastName;
-		if (p.City.IsNotNullOrEmpty()) e.City = p.City;
-		if (p.Country.IsNotNullOrEmpty()) e.Country = p.Country;
-		if (p.State.IsNotNullOrEmpty()) e.State = p.State;
-		if (p.ParentId.IsNotNullOrEmpty()) e.ParentId = p.ParentId;
-
-		// Json
-		if (p.FcmToken.IsNotNullOrEmpty()) e.JsonData.FcmToken = p.FcmToken;
-		if (p.FatherName.IsNotNullOrEmpty()) e.JsonData.FatherName = p.FatherName;
-		if (p.Weight.IsNotNullOrEmpty()) e.JsonData.Weight = p.Weight;
-		if (p.Height.IsNotNullOrEmpty()) e.JsonData.Height = p.Height;
-		if (p.Address.IsNotNullOrEmpty()) e.JsonData.Address = p.Address;
-
-		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
-		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
-
-		if (p.AddHealth1.IsNotNullOrEmpty()) e.JsonData.Health1.AddRangeIfNotExist(p.AddHealth1);
-		if (p.RemoveHealth1.IsNotNullOrEmpty()) e.JsonData.Health1.RemoveAll(x => p.RemoveHealth1.Contains(x));
-
-		if (p.Sickness.IsNotNullOrEmpty()) e.JsonData.Sickness = p.Sickness;
-		if (p.DrugAllergies.IsNotNullOrEmpty()) e.JsonData.DrugAllergies = p.DrugAllergies;
-		if (p.FoodAllergies.IsNotNullOrEmpty()) e.JsonData.FoodAllergies = p.FoodAllergies;
 
 		if (p.Categories.IsNotNullOrEmpty()) {
 			List<CategoryEntity>? list = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct);
@@ -210,6 +149,9 @@ public class UserService(
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
 		int count = await db.Set<UserEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 		return count == 0 ? new UResponse(Usc.NotFound, ls.Get("UserNotFound")) : new UResponse(Usc.Deleted, ls.Get("UserDeleted"));
 	}
