@@ -267,4 +267,10 @@ public static class UQueryableFilterExtensions {
 
 		return memberExpression;
 	}
+
+	public static IQueryable<TEntity> ApplyQuery<TEntity, TParams>(this IQueryable<TEntity> query, TParams param) {
+		query = query.ApplyFilters(param);
+		query = query.ApplySorting(param);
+		return query;
+	}
 }

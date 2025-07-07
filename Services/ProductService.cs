@@ -53,19 +53,15 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 
 
 	public async Task<UResponse<IEnumerable<ProductEntity>?>> Read(ProductReadParams p, CancellationToken ct) {
-		IQueryable<ProductEntity> q = db.Set<ProductEntity>().Where(x => x.ParentId == null);
-		q = q.ApplyFilters(p);
-		q = q.ApplySorting(p);
+		IQueryable<ProductEntity> q = db.Set<ProductEntity>().Where(x => x.ParentId == null).ApplyQuery(p);
 
 		if (p.ShowMedia) q = q.Include(x => x.Media);
 		if (p.ShowCategories) q = q.Include(x => x.Categories);
 		if (p.ShowUser) q = q.Include(x => x.User);
 		if (p.ShowChildren) q = q.Include(x => x.Children);
-		
+
 		if (p.ShowChildrenDepth)
 			q = q.Include(x => x.Children)!
-				.ThenInclude(x => x.Children)!
-				.ThenInclude(x => x.Children)!
 				.ThenInclude(x => x.Children)!
 				.ThenInclude(x => x.Children)!
 				.ThenInclude(x => x.Children)!
