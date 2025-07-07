@@ -45,12 +45,12 @@ public class CommentService(
 	}
 
 	public async Task<UResponse<CommentEntity?>> ReadById(IdParams p, CancellationToken ct) {
-		CommentEntity? e = await db.Set<CommentEntity>().Select(x => x.MapToEntity(true)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		CommentEntity? e = await db.Set<CommentEntity>().Select(x => x).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<CommentEntity?>(null, Usc.NotFound, ls.Get("CommentNotFound")) : new UResponse<CommentEntity?>(e);
 	}
 
 	public async Task<UResponse<CommentEntity?>> Update(CommentUpdateParams p, CancellationToken ct) {
-		CommentEntity? e = await db.Set<CommentEntity>().Select(x => x.MapToEntity(false)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		CommentEntity? e = await db.Set<CommentEntity>().Select(x => x).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse<CommentEntity?>(null, Usc.NotFound, ls.Get("CommentNotFound"));
 		if (p.Score.IsNotNullOrEmpty()) e.Score = p.Score.Value;
 		if (p.Description.IsNotNullOrEmpty()) e.Description = p.Description;

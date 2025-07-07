@@ -27,22 +27,6 @@ public class CommentEntity : BaseEntity<TagComment, CommentJson> {
 	public IEnumerable<CommentEntity>? Children { get; set; }
 
 	public IEnumerable<MediaEntity>? Media { get; set; }
-
-	public CommentEntity MapToEntity(bool media = false) => new() {
-		Id = Id,
-		Description = Description,
-		Tags = Tags,
-		Children = Children?.Select(x => x.MapToEntity()),
-		Media = media ? Media?.Select(x => x.MapToEntity()) : null,
-		CreatedAt = CreatedAt,
-		UpdatedAt = UpdatedAt,
-		Score = Score,
-		ParentId = ProductId,
-		JsonData = JsonData,
-		UserId = UserId,
-		ProductId = ProductId,
-		TargetUserId = TargetUserId
-	};
 }
 
 public class CommentJson {
