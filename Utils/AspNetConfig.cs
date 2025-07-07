@@ -39,7 +39,7 @@ public static class AspNetConfig {
 					});
 					break;
 				case SqlDatabaseType.SqlServer:
-					b.UseSqlServer(builder.Configuration.GetConnectionString(sqlDatabaseConnectionStrings), o => { });
+					b.UseSqlServer(builder.Configuration.GetConnectionString(sqlDatabaseConnectionStrings));
 					break;
 				default:
 					throw new ArgumentOutOfRangeException(nameof(sqlDatabaseType), sqlDatabaseType, null);

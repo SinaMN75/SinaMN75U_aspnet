@@ -23,11 +23,9 @@ public class CategoryService(
 		CategoryEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			Title = p.Title,
-			JsonData = new CategoryJson { Subtitle = p.Subtitle, Link = p.Link },
+			JsonData = new CategoryJson { Subtitle = p.Subtitle, Link = p.Link, Location = p.Location, Type = p.Type },
 			Tags = p.Tags,
 			CreatedAt = DateTime.UtcNow,
-			Location = p.Location,
-			Type = p.Type,
 			Order = p.Order,
 			UpdatedAt = DateTime.UtcNow,
 			ParentId = p.ParentId
@@ -58,8 +56,6 @@ public class CategoryService(
 		CategoryEntity? e = await db.Set<CategoryEntity>().Select(x => new CategoryEntity {
 			Title = x.Title,
 			Order = x.Order,
-			Location = x.Location,
-			Type = x.Type,
 			ParentId = x.ParentId,
 			Media = x.Media!.Select(y => new MediaEntity {
 				Path = y.Path,

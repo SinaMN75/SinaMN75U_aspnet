@@ -10,8 +10,6 @@ public class CategoryEntity : BaseEntity<TagCategory, CategoryJson> {
 	public CategoryEntity? Parent { get; set; }
 
 	public int? Order { get; set; }
-	public string? Location { get; set; }
-	public string? Type { get; set; }
 
 	[InverseProperty("Parent")]
 	public IEnumerable<CategoryEntity>? Children { get; set; }
@@ -26,4 +24,6 @@ public class CategoryEntity : BaseEntity<TagCategory, CategoryJson> {
 public class CategoryJson {
 	public string? Subtitle { get; set; }
 	public string? Link { get; set; }
+	public string? Location { get; set; }
+	public string? Type { get; set; }
 }
