@@ -4,6 +4,7 @@ namespace SinaMN75U.Data.Entities;
 [Index(nameof(UserId), Name = "IX_Media_UserId")]
 [Index(nameof(ContentId), Name = "IX_Media_ContentId")]
 [Index(nameof(CategoryId), Name = "IX_Media_CategoryId")]
+[Index(nameof(ProductId), Name = "IX_Media_ProductId")]
 public class MediaEntity : BaseEntity<TagMedia, MediaJson> {
 	[Required]
 	[MaxLength(200)]

@@ -2,7 +2,52 @@ namespace SinaMN75U.Utils;
 
 using Microsoft.EntityFrameworkCore.Query;
 
+[AttributeUsage(AttributeTargets.Property)]
+public class IncludeOnlyAttribute : Attribute;
+
+[AttributeUsage(AttributeTargets.Property)]
+public class ExcludeFromQueryAttribute : Attribute;
+
 public static class LinqExtensions {
+	public static IQueryable<T> ProjectIncludedProperties<T>(this IQueryable<T> query) {
+		List<PropertyInfo> includedProps = typeof(T)
+			.GetProperties()
+			.Where(p => Attribute.IsDefined(p, typeof(IncludeOnlyAttribute)))
+			.ToList();
+
+		if (includedProps.Count == 0)
+			return query;
+
+		ParameterExpression parameter = Expression.Parameter(typeof(T), "x");
+		IEnumerable<MemberBinding> bindings = includedProps
+			.Select(p => Expression.Bind(p, Expression.Property(parameter, p)));
+
+		MemberInitExpression body = Expression.MemberInit(Expression.New(typeof(T)), bindings);
+		Expression<Func<T, T>> lambda = Expression.Lambda<Func<T, T>>(body, parameter);
+
+		return query.Select(lambda);
+	}
+
+	public static IQueryable<T> ProjectExcludingProperties<T>(this IQueryable<T> query) {
+		Type type = typeof(T);
+		List<PropertyInfo> includedProps = type
+			.GetProperties()
+			.Where(p => !Attribute.IsDefined(p, typeof(ExcludeFromQueryAttribute)))
+			.ToList();
+
+		if (includedProps.Count == 0)
+			throw new InvalidOperationException($"No properties left to project for type {type.Name}");
+
+		ParameterExpression parameter = Expression.Parameter(type, "x");
+		IEnumerable<MemberBinding> bindings = includedProps
+			.Select(p => Expression.Bind(p, Expression.Property(parameter, p)));
+
+		MemberInitExpression body = Expression.MemberInit(Expression.New(type), bindings);
+		Expression<Func<T, T>> lambda = Expression.Lambda<Func<T, T>>(body, parameter);
+
+		return query.Select(lambda);
+	}
+
 	public static IQueryable<TEntity> WhereIn<TEntity, TId>(
 		this IQueryable<TEntity> query,
 		Expression<Func<TEntity, TId>> idSelector,
