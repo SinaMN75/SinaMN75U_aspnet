@@ -38,12 +38,6 @@ public class MediaEntity : BaseEntity<TagMedia, MediaJson> {
 
 	[JsonIgnore]
 	public ProductEntity? Product { get; set; }
-	
-	[JsonIgnore]
-	public override required DateTime CreatedAt { get; set; }
-
-	[JsonIgnore]
-	public override required DateTime UpdatedAt { get; set; }
 }
 
 public class MediaJson {

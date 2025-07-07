@@ -7,10 +7,10 @@ public class BaseEntity<T, TJ> {
 	public required Guid Id { get; set; }
 
 	[Required]
-	public virtual required DateTime CreatedAt { get; set; }
+	public required DateTime CreatedAt { get; set; }
 
 	[Required]
-	public virtual required DateTime UpdatedAt { get; set; }
+	public required DateTime UpdatedAt { get; set; }
 
 	[Required]
 	public required TJ JsonData { get; set; }
