@@ -6,6 +6,7 @@ public class MediaCreateParams : BaseCreateParams<TagMedia> {
 	public Guid? ContentId { get; set; }
 	public Guid? CommentId { get; set; }
 	public Guid? CategoryId { get; set; }
+	public Guid? ProductId { get; set; }
 	public string? Title { get; set; }
 	public string? Description { get; set; }
 }

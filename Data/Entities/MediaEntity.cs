@@ -20,27 +20,9 @@ public class MediaEntity : BaseEntity<TagMedia, MediaJson> {
 
 	public Guid? CommentId { get; set; }
 	public CommentEntity? Comment { get; set; }
-
-	public MediaEntity MapToResponse() => new() {
-		Id = Id,
-		Path = $"{Server.ServerAddress}/Media/{Path}",
-		Tags = Tags,
-		JsonData = JsonData,
-		CreatedAt = CreatedAt,
-		UpdatedAt = UpdatedAt
-	};
-
-	public MediaEntity MapToEntity() => new() {
-		Path = $"{Server.ServerAddress}/Media/{Path}",
-		Tags = Tags,
-		CreatedAt = CreatedAt,
-		UpdatedAt = CreatedAt,
-		JsonData = JsonData,
-		Id = Id,
-		CategoryId = CategoryId,
-		UserId = UserId,
-		ContentId = ContentId
-	};
+	
+	public Guid? ProductId { get; set; }
+	public ProductEntity? Product { get; set; }
 }
 
 public class MediaJson {

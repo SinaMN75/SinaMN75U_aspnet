@@ -28,6 +28,7 @@ public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService
 			CategoryId = p.CategoryId,
 			ContentId = p.ContentId,
 			CommentId = p.CommentId,
+			ProductId = p.ProductId,
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
 			Tags = p.Tags,
@@ -39,7 +40,7 @@ public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService
 		await SaveMedia(p.File, name);
 		await db.Set<MediaEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
-		return new UResponse<MediaEntity?>(e.MapToResponse(), message: Path.Combine(env.WebRootPath, "Media"));
+		return new UResponse<MediaEntity?>(e, message: Path.Combine(env.WebRootPath, "Media"));
 	}
 
 	public async Task<UResponse<IEnumerable<MediaEntity>?>> Read(BaseReadParams<TagMedia> p, CancellationToken ct) {
@@ -67,7 +68,7 @@ public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService
 
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
-		return new UResponse<MediaEntity?>(e.MapToResponse());
+		return new UResponse<MediaEntity?>(e);
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
