@@ -30,61 +30,64 @@ public class ProductCreateParams : BaseParams {
 }
 
 public class ProductUpdateParams : BaseUpdateParams<TagProduct> {
-	[UAssignIfNotNull(nameof(ProductEntity.Title))]
+	[UUpdateAssignIfNotNull(nameof(ProductEntity.Title))]
 	public string? Title { get; set; }
 
-	[UAssignIfNotNull(nameof(ProductEntity.Code))]
+	[UUpdateAssignIfNotNull(nameof(ProductEntity.Code))]
 	public string? Code { get; set; }
 
-	[UAssignIfNotNull(nameof(ProductEntity.Subtitle))]
+	[UUpdateAssignIfNotNull(nameof(ProductEntity.Subtitle))]
 	public string? Subtitle { get; set; }
 
-	[UAssignIfNotNull(nameof(ProductEntity.Description))]
+	[UUpdateAssignIfNotNull(nameof(ProductEntity.Description))]
 	public string? Description { get; set; }
 
-	[UAssignNested(nameof(ProductEntity.JsonData), nameof(ProductJson.ActionType))]
+	[UUpdateAssignNested(nameof(ProductEntity.JsonData), nameof(ProductJson.ActionType))]
 	public string? ActionType { get; set; }
 
-	[UAssignNested(nameof(ProductEntity.JsonData), nameof(ProductJson.ActionTitle))]
+	[UUpdateAssignNested(nameof(ProductEntity.JsonData), nameof(ProductJson.ActionTitle))]
 	public string? ActionTitle { get; set; }
 
-	[UAssignNested(nameof(ProductEntity.JsonData), nameof(ProductJson.ActionUri))]
+	[UUpdateAssignNested(nameof(ProductEntity.JsonData), nameof(ProductJson.ActionUri))]
 	public string? ActionUri { get; set; }
 
-	[UAssignIfNotNull(nameof(ProductEntity.Slug))]
+	[UUpdateAssignIfNotNull(nameof(ProductEntity.Slug))]
 	public string? Slug { get; set; }
 
-	[UAssignIfNotNull(nameof(ProductEntity.Type))]
+	[UUpdateAssignIfNotNull(nameof(ProductEntity.Type))]
 	public string? Type { get; set; }
 
-	[UAssignIfNotNull(nameof(ProductEntity.Content))]
+	[UUpdateAssignIfNotNull(nameof(ProductEntity.Content))]
 	public string? Content { get; set; }
 
-	[UAssignIfNotNull(nameof(ProductEntity.Latitude))]
+	[UUpdateAssignIfNotNull(nameof(ProductEntity.Latitude))]
 	public double? Latitude { get; set; }
 
-	[UAssignIfNotNull(nameof(ProductEntity.Longitude))]
+	[UUpdateAssignIfNotNull(nameof(ProductEntity.Longitude))]
 	public double? Longitude { get; set; }
 
-	[UAssignIfNotNull(nameof(ProductEntity.Stock))]
+	[UUpdateAssignIfNotNull(nameof(ProductEntity.Stock))]
 	public int? Stock { get; set; }
 
-	[UAssignIfNotNull(nameof(ProductEntity.Price))]
+	[UUpdateAssignIfNotNull(nameof(ProductEntity.Price))]
 	public double? Price { get; set; }
 
-	[UAssignNested(nameof(ProductEntity.JsonData), nameof(ProductJson.Details))]
+	[UUpdateAssignNested(nameof(ProductEntity.JsonData), nameof(ProductJson.Details))]
 	public string? Details { get; set; }
 
+	[UUpdateAddRangeNestedIfNotExistIfNotNull(nameof(ProductEntity.JsonData), nameof(ProductJson.RelatedProducts))]
 	public IEnumerable<Guid>? AddRelatedProducts { get; set; }
+
+	[UUpdateRemoveNestedMatchingIfNotNull(nameof(ProductEntity.JsonData), nameof(ProductJson.RelatedProducts))]
 	public IEnumerable<Guid>? RemoveRelatedProducts { get; set; }
 
 	public IEnumerable<Guid>? AddCategories { get; set; }
 	public IEnumerable<Guid>? RemoveCategories { get; set; }
 
-	[UAssignIfNotNull(nameof(ProductEntity.ParentId))]
+	[UUpdateAssignIfNotNull(nameof(ProductEntity.ParentId))]
 	public Guid? ParentId { get; set; }
 
-	[UAssignIfNotNull(nameof(ProductEntity.UserId))]
+	[UUpdateAssignIfNotNull(nameof(ProductEntity.UserId))]
 	public Guid? UserId { get; set; }
 }
 

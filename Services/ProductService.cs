@@ -100,23 +100,6 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 		if (e == null) return new UResponse<ProductEntity?>(null, Usc.NotFound, ls.Get("ProductNotFound"));
 
 		e.ApplyUpdates(p);
-		// if (p.Code.IsNotNullOrEmpty()) e.Code = p.Code;
-		// if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
-		// if (p.Description.IsNotNullOrEmpty()) e.Description = p.Description;
-		// if (p.Subtitle.IsNotNullOrEmpty()) e.Subtitle = p.Subtitle;
-		// if (p.Latitude.IsNotNullOrEmpty()) e.Latitude = p.Latitude;
-		// if (p.Longitude.IsNotNullOrEmpty()) e.Longitude = p.Longitude;
-		// if (p.Price.IsNotNullOrEmpty()) e.Price = p.Price;
-		// if (p.ParentId.IsNotNullOrEmpty()) e.ParentId = p.ParentId;
-		// if (p.Stock.IsNotNullOrEmpty()) e.Stock = p.Stock;
-		// if (p.Details.IsNotNullOrEmpty()) e.JsonData.Details = p.Details;
-		// if (p.UserId.IsNotNullOrEmpty()) e.UserId = p.UserId ?? userData.Id;
-
-		// if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
-		// if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
-
-		if (p.AddRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.AddRangeIfNotExist(p.AddRelatedProducts);
-		if (p.RemoveRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.RemoveAll(x => p.RemoveRelatedProducts.Contains(x));
 
 		if (p.AddCategories.IsNotNullOrEmpty()) {
 			IEnumerable<CategoryEntity> newCategories = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.AddCategories }, ct) ?? [];

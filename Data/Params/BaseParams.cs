@@ -45,13 +45,13 @@ public class BaseUpdateParams<T> : BaseParams {
 	[URequired("IdRequired")]
 	public required Guid Id { get; set; }
 
-	[UAddRangeIfNotExist("Tags")]
+	[UUpdateAddRangeIfNotExist("Tags")]
 	public IEnumerable<T>? AddTags { get; set; }
 
-	[URemoveMatching("Tags")]
+	[UUpdateRemoveMatching("Tags")]
 	public IEnumerable<T>? RemoveTags { get; set; }
 
-	[UReplaceListAttribute("Tags")]
+	[UUpdateReplaceList("Tags")]
 	public IEnumerable<T>? Tags { get; set; }
 }
 
