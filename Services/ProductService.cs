@@ -55,10 +55,10 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 	public async Task<UResponse<IEnumerable<ProductEntity>?>> Read(ProductReadParams p, CancellationToken ct) {
 		IQueryable<ProductEntity> q = db.Set<ProductEntity>().Where(x => x.ParentId == null).ApplyQuery(p);
 
-		if (p.ShowMedia) q = q.Include(x => x.Media);
-		if (p.ShowCategories) q = q.Include(x => x.Categories);
-		if (p.ShowUser) q = q.Include(x => x.User);
-		if (p.ShowChildren) q = q.Include(x => x.Children);
+		q = q.IncludeIf(p.ShowMedia, x => x.Media);
+		q = q.IncludeIf(p.ShowCategories, x => x.Categories)!.ThenIncludeIf(p.ShowCategoriesMedia, x => x.Media);
+		q = q.IncludeIf(p.ShowUser, x => x.User).ThenIncludeIf(p.ShowUserCategory, x => x!.Categories)!.ThenIncludeIf(p.ShowCategoriesMedia, x => x.Media).IncludeIf(p.ShowUserMedia, x => x.Media);
+		q = q.IncludeIf(p.ShowChildren, x => x.Children)!.ThenIncludeIf(p.ShowCategories, x => x.Categories)!.ThenIncludeIf(p.ShowCategoriesMedia, x => x.Media).IncludeIf(p.ShowMedia, x => x.Media).IncludeIf(p.ShowUser, x => x.User).ThenIncludeIf(p.ShowUserCategory, x => x!.Categories)!.ThenIncludeIf(p.ShowCategoriesMedia, x => x.Media);
 
 		if (p.ShowChildrenDepth)
 			q = q.Include(x => x.Children)!

@@ -119,8 +119,12 @@ public class ProductReadParams : BaseReadParams<TagProduct> {
 	public Guid? UserId { get; set; }
 
 	public bool ShowCategories { get; set; } = false;
+	public bool ShowCategoriesMedia { get; set; } = false;
 	public bool ShowMedia { get; set; } = false;
 	public bool ShowUser { get; set; } = false;
+	public bool ShowUserMedia { get; set; } = false;
+	public bool ShowUserCategory { get; set; } = false;
+	public bool ShowUserCategoryMedia { get; set; } = false;
 	public bool ShowChildren { get; set; } = false;
 	public bool ShowChildrenDepth { get; set; } = false;
 }

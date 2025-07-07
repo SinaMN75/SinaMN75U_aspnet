@@ -1,5 +1,7 @@
 namespace SinaMN75U.Utils;
 
+using Microsoft.EntityFrameworkCore.Query;
+
 public static class LinqExtensions {
 	public static IQueryable<TEntity> WhereIn<TEntity, TId>(
 		this IQueryable<TEntity> query,
@@ -52,11 +54,40 @@ public static class LinqExtensions {
 
 	// var partialResults = context.Products.SelectPartial(p => new { p.Id, p.Name });
 
-	public static IQueryable<T> IncludeIf<T, TProperty>(
-		this IQueryable<T> query,
+	public static IIncludableQueryable<T, TProperty> IncludeIf<T, TProperty>(
+		this IQueryable<T> source,
 		bool condition,
-		Expression<Func<T, TProperty>> navigationPropertyPath)
-		where T : class => condition ? query.Include(navigationPropertyPath) : query;
+		Expression<Func<T, TProperty>> path)
+		where T : class {
+		return condition ? source.Include(path) : new IncludableQueryable<T, TProperty>(source);
+	}
 
-	// var results = context.Products.IncludeIf(includeCategory, p => p.Category);
+	public static IIncludableQueryable<T, TProperty> ThenIncludeIf<T, TPreviousProperty, TProperty>(
+		this IIncludableQueryable<T, IEnumerable<TPreviousProperty>> source,
+		bool condition,
+		Expression<Func<TPreviousProperty, TProperty>> path)
+		where T : class {
+		return condition ? source.ThenInclude(path) : new IncludableQueryable<T, TProperty>(source);
+	}
+
+	public static IIncludableQueryable<T, TProperty> ThenIncludeIf<T, TPreviousProperty, TProperty>(
+		this IIncludableQueryable<T, TPreviousProperty> source,
+		bool condition,
+		Expression<Func<TPreviousProperty, TProperty>> path)
+		where T : class {
+		return condition ? source.ThenInclude(path) : new IncludableQueryable<T, TProperty>(source);
+	}
+
+	internal class IncludableQueryable<T, TProperty>(IQueryable<T> queryable) : IIncludableQueryable<T, TProperty>, IAsyncEnumerable<T> {
+		public Type ElementType => queryable.ElementType;
+		public Expression Expression => queryable.Expression;
+		public IQueryProvider Provider => queryable.Provider;
+
+		public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = default) {
+			return ((IAsyncEnumerable<T>)queryable).GetAsyncEnumerator(cancellationToken);
+		}
+
+		public IEnumerator<T> GetEnumerator() => queryable.GetEnumerator();
+		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+	}
 }
