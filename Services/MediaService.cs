@@ -20,6 +20,7 @@ public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService
 		if (p.CategoryId != null) folderName = "categories";
 		if (p.CommentId != null) folderName = "comments";
 		if (p.ContentId != null) folderName = "contents";
+		if (p.ProductId != null) folderName = "products";
 		string name = $"{folderName}/{id + Path.GetExtension(p.File.FileName)}";
 		MediaEntity e = new() {
 			Id = id,
