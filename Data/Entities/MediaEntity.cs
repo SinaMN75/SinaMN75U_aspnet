@@ -39,6 +39,9 @@ public class MediaEntity : BaseEntity<TagMedia, MediaJson> {
 
 	[JsonIgnore]
 	public ProductEntity? Product { get; set; }
+	
+	[NotMapped]
+	public string Url => $"{Server.ServerAddress}/Media/{Path}";
 }
 
 public class MediaJson {
