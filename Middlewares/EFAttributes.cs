@@ -202,17 +202,53 @@ public static class UQueryableFilterExtensions {
 	}
 
 	private static Expression BuildHasAnyExpression(Expression target, object value) {
-		Type elementType = target.Type.GetGenericArguments()[0];
-		ParameterExpression param = Expression.Parameter(elementType, "e");
+		if (value is not IEnumerable valueEnumerable)
+			throw new ArgumentException("Value must be an IEnumerable", nameof(value));
 
-		MethodInfo contains = typeof(Enumerable).GetMethods()
+		List<object> valueList = valueEnumerable.Cast<object>().ToList();
+		if (valueList.Count == 0)
+			return Expression.Constant(true);
+		Type targetType = target.Type;
+		if (!typeof(IEnumerable).IsAssignableFrom(targetType) || targetType == typeof(string)) {
+			Type elementType = valueList.First().GetType();
+
+			MethodInfo containsMethod = typeof(Enumerable)
+				.GetMethods()
+				.First(m => m.Name == "Contains" && m.GetParameters().Length == 2)
+				.MakeGenericMethod(elementType);
+
+			return Expression.Call(containsMethod, Expression.Constant(value), target);
+		}
+
+		Type entityItemType = targetType.GetGenericArguments().First();
+
+		ParameterExpression entityParam = Expression.Parameter(entityItemType, "e");
+		PropertyInfo? idProperty = entityItemType.GetProperty("Id");
+		Expression comparisonProperty = idProperty != null
+			? Expression.Property(entityParam, idProperty)
+			: entityParam;
+
+		Type comparisonType = comparisonProperty.Type;
+
+		MethodInfo containsInner = typeof(Enumerable)
+			.GetMethods()
 			.First(m => m.Name == "Contains" && m.GetParameters().Length == 2)
-			.MakeGenericMethod(elementType);
+			.MakeGenericMethod(comparisonType);
 
-		MethodCallExpression call = Expression.Call(contains, Expression.Constant(value), param);
-		LambdaExpression lambda = Expression.Lambda(call, param);
+		MethodCallExpression containsExpr = Expression.Call(
+			containsInner,
+			Expression.Constant(value),
+			comparisonProperty
+		);
 
-		return Expression.Call(typeof(Enumerable), "Any", [elementType], target, lambda);
+		LambdaExpression lambda = Expression.Lambda(containsExpr, entityParam);
+
+		MethodInfo anyMethod = typeof(Enumerable)
+			.GetMethods()
+			.First(m => m.Name == "Any" && m.GetParameters().Length == 2)
+			.MakeGenericMethod(entityItemType);
+
+		return Expression.Call(anyMethod, target, lambda);
 	}
 
 	private static Expression BuildHasAllExpression(Expression target, object value) {

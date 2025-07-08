@@ -92,7 +92,7 @@ public class ProductUpdateParams : BaseUpdateParams<TagProduct> {
 }
 
 public class ProductReadParams : BaseReadParams<TagProduct> {
-	[UFilterIn(nameof(ProductEntity.Id))]
+	[UFilterHasAny(nameof(ProductEntity.Id))]
 	public IEnumerable<Guid>? Ids { get; set; }
 
 	public string? Query { get; set; }
