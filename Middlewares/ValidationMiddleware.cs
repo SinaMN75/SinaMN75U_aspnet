@@ -25,38 +25,42 @@ public abstract class UValidationAttribute(string key) : ValidationAttribute {
 	public override string FormatErrorMessage(string name) => key;
 }
 
-public sealed class URequiredAttribute(string key) : UValidationAttribute(key) {
+public sealed class UValidationRequiredAttribute(string key) : UValidationAttribute(key) {
 	protected override ValidationResult? IsValid(object? value, ValidationContext context) => value == null || value is string str && string.IsNullOrWhiteSpace(str) ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
 }
 
-public sealed class UStringLengthAttribute(int min, int max, string key) : UValidationAttribute(key) {
+public sealed class UValidationStringLengthAttribute(int min, int max, string key) : UValidationAttribute(key) {
 	protected override ValidationResult? IsValid(object? value, ValidationContext context) {
 		if (value is not string str) return ValidationResult.Success;
 		return str.Length < min || str.Length > max ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
 	}
 }
 
-public sealed class UEmailAttribute(string key) : UValidationAttribute(key) {
+public sealed class UValidationEmailAttribute(string key) : UValidationAttribute(key) {
 	protected override ValidationResult? IsValid(object? value, ValidationContext context) => value is string str && !new EmailAddressAttribute().IsValid(str) ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
 }
 
-public sealed class URegexAttribute(string pattern, string key) : UValidationAttribute(key) {
+public sealed class UValidationGuidAttribute(string key) : UValidationAttribute(key) {
+	protected override ValidationResult? IsValid(object? value, ValidationContext context) => value is string str && str.IsGuid() ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
+}
+
+public sealed class UValidationRegexAttribute(string pattern, string key) : UValidationAttribute(key) {
 	protected override ValidationResult? IsValid(object? value, ValidationContext context) => value is string str && !new Regex(pattern).IsMatch(str) ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
 }
 
-public sealed class UCompareAttribute(string otherProperty, string key) : UValidationAttribute(key) {
+public sealed class UValidationCompareAttribute(string otherProperty, string key) : UValidationAttribute(key) {
 	protected override ValidationResult? IsValid(object? value, ValidationContext context) => !Equals(value, context.ObjectType.GetProperty(otherProperty)?.GetValue(context.ObjectInstance)) ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
 }
 
-public sealed class UFutureDateAttribute(string key) : UValidationAttribute(key) {
+public sealed class UValidationFutureDateAttribute(string key) : UValidationAttribute(key) {
 	protected override ValidationResult? IsValid(object? value, ValidationContext context) => value is DateTime date && date < DateTime.Now ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
 }
 
-public sealed class UBeforeDateAttribute(string key) : UValidationAttribute(key) {
+public sealed class UValidationBeforeDateAttribute(string key) : UValidationAttribute(key) {
 	protected override ValidationResult? IsValid(object? value, ValidationContext context) => value is DateTime date && date > DateTime.Now ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
 }
 
-public sealed class UMinCollectionLengthAttribute(int min, string key) : UValidationAttribute(key) {
+public sealed class UValidationMinCollectionLengthAttribute(int min, string key) : UValidationAttribute(key) {
 	protected override ValidationResult? IsValid(object? value, ValidationContext context) {
 		if (value is not IEnumerable collection) return ValidationResult.Success;
 		int count = collection.Cast<object?>().Count();

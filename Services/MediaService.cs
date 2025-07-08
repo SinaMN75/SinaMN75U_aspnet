@@ -63,6 +63,11 @@ public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService
 		if (e == null) return new UResponse<MediaEntity?>(null, Usc.BadRequest);
 		if (p.Title != null) e.JsonData.Title = p.Title;
 		if (p.Description != null) e.JsonData.Description = p.Description;
+		if (p.CategoryId != null) e.CategoryId = p.CategoryId;
+		if (p.CommentId != null) e.CommentId = p.CommentId;
+		if (p.ContentId != null) e.ContentId = p.ContentId;
+		if (p.ProductId != null) e.ProductId = p.ProductId;
+		if (p.UserId != null) e.UserId = p.UserId;
 		if (p.AddTags != null) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags != null) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
 

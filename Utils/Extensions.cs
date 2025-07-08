@@ -12,6 +12,17 @@ public static class StringExtensions {
 	public static bool IsNull([NotNullWhen(false)] this string? s) => s == null;
 	public static bool MinMaxLength(this string? s, int min, int max) => s.IsNotNull() && s.Length >= min && s.Length <= max;
 	public static bool IsEmail(this string email) => !string.IsNullOrWhiteSpace(email) && Regex.IsMatch(email, @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
+
+	public static bool IsGuid(this string s) {
+		try {
+			Guid.Parse(s);
+			return true;
+		}
+		catch (Exception) {
+			return false;
+		}
+	}
+
 	public static string EncodeJson<T>(this T obj) => JsonSerializer.Serialize(obj, UJsonOptions.Default);
 	public static T DecodeJson<T>(this string json) => JsonSerializer.Deserialize<T>(json, UJsonOptions.Default)!;
 

@@ -1,5 +1,6 @@
 {
   "en": {
+    "Required": "Required",
     "InvalidCredentials": "Login Information is Wrong",
     "PhoneNumberNotValid": "Phone number is not valid.",
     "PhoneNumberRequired": "Phone number is required.",
@@ -30,7 +31,8 @@
     "AuthorizationRequired": "Please sign in to continue.",
     "MaxOtpReached": "Too many OTP requests. Please wait and try again.",
     "UserDeleted": "Account deleted successfully.",
-    "AtLeastOneUserRequired": "At Least One User Required"
+    "AtLeastOneUserRequired": "At Least One User Required",
+    "ErrorParsingGUID": "Error Parsing GUID"
   },
   "fa": {
     "InvalidCredentials": "اطلاعات ورود نادرست است",
@@ -63,6 +65,8 @@
     "AuthorizationRequired": "لطفا برای ادامه وارد شوید.",
     "MaxOtpReached": "درخواست‌های کد یکبار مصرف بیش از حد است. لطفا صبر کنید و مجددا تلاش کنید.",
     "UserDeleted": "حساب کاربری با موفقیت حذف شد.",
-    "AtLeastOneUserRequired": "حداقل یک کاربر نیاز است"
+    "AtLeastOneUserRequired": "حداقل یک کاربر نیاز است",
+    "ErrorParsingGUID": "آیدی وارد شده صحیح نیست",
+    "Required": "الزامی است"
   }
 }

@@ -18,7 +18,9 @@ public enum Usc {
 
 	WrongVerificationCode = 601,
 	MaximumLimitReached = 602,
-	UserNotFound = 605
+	UserNotFound = 605,
+	
+	EmptyList = 701
 }
 
 public enum TagUser {
