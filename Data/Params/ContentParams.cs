@@ -1,23 +1,23 @@
 namespace SinaMN75U.Data.Params;
 
 public class ContentCreateParams : BaseParams {
-	[URequired("TitleRequired")]
+	[UValidationRequired("TitleRequired")]
 	public required string Title { get; set; }
 
-	[URequired("DescriptionRequired")]
+	[UValidationRequired("DescriptionRequired")]
 	public required string Description { get; set; }
 
-	[URequired("SubtitleRequired")]
+	[UValidationRequired("SubtitleRequired")]
 	public required string SubTitle { get; set; }
 
 	public string? Instagram { get; set; }
 
-	[UMinCollectionLength(1, "TagsRequired")]
+	[UValidationMinCollectionLength(1, "TagsRequired")]
 	public required List<int> Tags { get; set; }
 }
 
 public class ContentUpdateParams : BaseParams {
-	[URequired("IdRequired")]
+	[UValidationRequired("IdRequired")]
 	public required Guid Id { get; set; }
 
 	public string? Title { get; set; }

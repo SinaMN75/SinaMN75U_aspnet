@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Params;
 
 public class ProductCreateParams : BaseParams {
-	[URequired("TitleRequired")]
+	[UValidationRequired("TitleRequired")]
 	public required string Title { get; set; }
 
 	public string? Code { get; set; }
@@ -20,7 +20,7 @@ public class ProductCreateParams : BaseParams {
 
 	public string? Details { get; set; }
 
-	[UMinCollectionLength(1, "TagsRequired")]
+	[UValidationMinCollectionLength(1, "TagsRequired")]
 	public required List<TagProduct> Tags { get; set; }
 
 	public IEnumerable<Guid>? Categories { get; set; }

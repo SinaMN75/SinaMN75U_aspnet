@@ -42,7 +42,7 @@ public class BaseReadParams<T> : BaseParams {
 }
 
 public class BaseUpdateParams<T> : BaseParams {
-	[URequired("IdRequired")]
+	[UValidationRequired("IdRequired")]
 	public required Guid Id { get; set; }
 
 	[UUpdateAddRangeIfNotExist("Tags")]
@@ -56,8 +56,8 @@ public class BaseUpdateParams<T> : BaseParams {
 }
 
 public class BaseCreateParams<T> : BaseParams {
-	[URequired("TagsRequired")]
-	[UMinCollectionLength(1, "TagsRequired")]
+	[UValidationRequired("TagsRequired")]
+	[UValidationMinCollectionLength(1, "TagsRequired")]
 	public required List<T> Tags { get; set; }
 }
 

@@ -1,12 +1,12 @@
 namespace SinaMN75U.Data.Params;
 
 public class UserCreateParams : BaseParams {
-	[URequired("UserNameRequired")]
-	[UStringLength(2, 100, "UserNameMinLenght")]
+	[UValidationRequired("UserNameRequired")]
+	[UValidationStringLength(2, 100, "UserNameMinLenght")]
 	public required string UserName { get; set; }
 
-	[URequired("PasswordRequired")]
-	[UStringLength(4, 100, "PasswordMinLength")]
+	[UValidationRequired("PasswordRequired")]
+	[UValidationStringLength(4, 100, "PasswordMinLength")]
 	public required string Password { get; set; }
 
 	public required string PhoneNumber { get; set; }
@@ -30,15 +30,15 @@ public class UserCreateParams : BaseParams {
 	public List<string> DrugAllergies { get; set; } = [];
 	public List<string>? Sickness { get; set; }
 
-	[UMinCollectionLength(1, "TagsRequired")]
+	[UValidationMinCollectionLength(1, "TagsRequired")]
 	public required List<TagUser> Tags { get; set; }
 
 	public IEnumerable<Guid>? Categories { get; set; }
 }
 
 public class UserBulkCreateParams : BaseParams {
-	[URequired("UsersRequired")]
-	[UMinCollectionLength(1, "AtLeastOneUserRequired")]
+	[UValidationRequired("UsersRequired")]
+	[UValidationMinCollectionLength(1, "AtLeastOneUserRequired")]
 	public required List<UserCreateParams> Users { get; set; }
 }
 

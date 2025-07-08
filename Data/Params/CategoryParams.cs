@@ -1,12 +1,12 @@
 namespace SinaMN75U.Data.Params;
 
 public class CategoryCreateParams : BaseParams {
-	[URequired("TitleRequired")]
+	[UValidationRequired("TitleRequired")]
 	public required string Title { get; set; }
 
 	public string? Subtitle { get; set; }
 
-	[UMinCollectionLength(1, "TagsRequired")]
+	[UValidationMinCollectionLength(1, "TagsRequired")]
 	public required List<TagCategory> Tags { get; set; }
 
 	public Guid? ParentId { get; set; }

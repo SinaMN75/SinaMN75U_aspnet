@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Params;
 
 public class CommentCreateParams : BaseParams {
-	[URequired("CommentRequired")]
+	[UValidationRequired("CommentRequired")]
 	public required string Description { get; set; }
 
 	public double Score { get; set; } = 0;
@@ -12,8 +12,8 @@ public class CommentCreateParams : BaseParams {
 	public Guid? TargetUserId { get; set; }
 	public Guid? UserId { get; set; }
 
-	[URequired("TagsRequired")]
-	[UMinCollectionLength(1, "TagsRequired")]
+	[UValidationRequired("TagsRequired")]
+	[UValidationMinCollectionLength(1, "TagsRequired")]
 	public required List<TagComment> Tags { get; set; }
 }
 
