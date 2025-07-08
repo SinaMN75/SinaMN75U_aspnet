@@ -15,6 +15,7 @@ public class CategoryCreateParams : BaseParams {
 	public string? Location { get; set; }
 	public string? Type { get; set; }
 	public string? Link { get; set; }
+	public List<Guid>? RelatedProducts { get; set; }
 }
 
 public class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
@@ -35,6 +36,9 @@ public class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
 
 	[UUpdateAssignNested(nameof(CategoryEntity.JsonData), nameof(CategoryJson.Type))]
 	public string? Type { get; set; }
+	
+	[UUpdateAddRangeNestedIfNotExistIfNotNull(nameof(CategoryEntity.JsonData), nameof(CategoryJson.RelatedProducts))]
+	public List<Guid>? RelatedProducts { get; set; }
 }
 
 public class CategoryReadParams : BaseReadParams<TagCategory> {

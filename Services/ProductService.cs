@@ -61,11 +61,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 		q = q.IncludeIf(p.ShowChildren, x => x.Children)!.ThenIncludeIf(p.ShowCategories, x => x.Categories)!.ThenIncludeIf(p.ShowCategoriesMedia, x => x.Media).IncludeIf(p.ShowMedia, x => x.Media).IncludeIf(p.ShowUser, x => x.User).ThenIncludeIf(p.ShowUserCategory, x => x!.Categories)!.ThenIncludeIf(p.ShowCategoriesMedia, x => x.Media);
 
 		if (p.ShowChildrenDepth)
-			q = q.Include(x => x.Children)!
-				.ThenInclude(x => x.Children)!
-				.ThenInclude(x => x.Children)!
-				.ThenInclude(x => x.Children)!
-				.ThenInclude(x => x.Children);
+			q = q.Include(x => x.Children)!.ThenInclude(x => x.Children)!.ThenInclude(x => x.Children)!.ThenInclude(x => x.Children)!.ThenInclude(x => x.Children);
 
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}

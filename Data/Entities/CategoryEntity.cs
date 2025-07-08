@@ -28,4 +28,5 @@ public class CategoryJson {
 	public string? Link { get; set; }
 	public string? Location { get; set; }
 	public string? Type { get; set; }
+	public List<Guid> RelatedProducts { get; set; } = [];
 }

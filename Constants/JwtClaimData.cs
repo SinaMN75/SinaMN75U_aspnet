@@ -9,5 +9,6 @@ public class JwtClaimData {
 	public string? FullName { get; set; }
 	public required DateTime? Expiration { get; set; }
 	public bool IsExpired => Expiration.HasValue && Expiration.Value < DateTime.UtcNow;
+	public bool IsSuperAdmin => Tags.Contains(TagUser.SuperAdmin);
 	public required IEnumerable<TagUser> Tags { get; set; }
 }
