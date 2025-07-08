@@ -33,7 +33,7 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	public Guid? ParentId { get; set; }
 
 	[Required]
-	public required Guid UserId { get; set; }
+	public Guid UserId { get; set; }
 
 	public UserEntity? User { get; set; }
 

@@ -6,15 +6,18 @@ namespace SinaMN75U.Data.Entities;
 [Index(nameof(PhoneNumber), Name = "IX_Users_PhoneNumber")]
 public class UserEntity : BaseEntity<TagUser, UserJson> {
 	[MaxLength(100)]
-	public required string UserName { get; set; }
+	[Required]
+	public string UserName { get; set; } = null!;
 
 	[MaxLength(200)]
 	[JsonIgnore]
-	public required string Password { get; set; }
+	[Required]
+	public string Password { get; set; } = null!;
 
 	[MaxLength(200)]
 	[JsonIgnore]
-	public required string RefreshToken { get; set; }
+	[Required]
+	public string RefreshToken { get; set; } = null!;
 
 	[MaxLength(15)]
 	public string? PhoneNumber { get; set; }
