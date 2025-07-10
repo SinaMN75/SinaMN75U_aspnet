@@ -45,20 +45,20 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 
 	public DateTime? Birthdate { get; set; }
 
-	public List<CategoryEntity>? Categories { get; set; }
+	public ICollection<CategoryEntity> Categories { get; set; } = [];
 
-	public IEnumerable<MediaEntity>? Media { get; set; }
+	public ICollection<MediaEntity> Media { get; set; } = [];
 }
 
 public class UserJson {
 	public string? FcmToken { get; set; }
-	public List<string> Health1 { get; set; } = [];
-	public List<string> FoodAllergies { get; set; } = [];
-	public List<string> DrugAllergies { get; set; } = [];
-	public List<string> Sickness { get; set; } = [];
+	public ICollection<string> Health1 { get; set; } = [];
+	public ICollection<string> FoodAllergies { get; set; } = [];
+	public ICollection<string> DrugAllergies { get; set; } = [];
+	public ICollection<string> Sickness { get; set; } = [];
 	public double? Weight { get; set; }
 	public double? Height { get; set; }
 	public string? Address { get; set; }
 	public string? FatherName { get; set; }
-	public List<UserAnswerJson> UserAnswerJson { get; set; } = [];
+	public ICollection<UserAnswerJson> UserAnswerJson { get; set; } = [];
 }

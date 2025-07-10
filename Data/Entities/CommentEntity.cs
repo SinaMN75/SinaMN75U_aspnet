@@ -24,13 +24,13 @@ public class CommentEntity : BaseEntity<TagComment, CommentJson> {
 	public Guid? ProductId { get; set; }
 
 	[InverseProperty("Parent")]
-	public IEnumerable<CommentEntity>? Children { get; set; }
+	public ICollection<CommentEntity> Children { get; set; } = [];
 
-	public IEnumerable<MediaEntity>? Media { get; set; }
+	public ICollection<MediaEntity> Media { get; set; } = [];
 }
 
 public class CommentJson {
-	public List<CommentReacts> Reacts { get; set; } = [];
+	public ICollection<CommentReacts> Reacts { get; set; } = [];
 }
 
 public class CommentReacts {

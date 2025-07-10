@@ -38,10 +38,10 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	public UserEntity? User { get; set; }
 
 	[InverseProperty("Parent")]
-	public IEnumerable<ProductEntity>? Children { get; set; }
+	public ICollection<ProductEntity> Children { get; set; } = [];
 
-	public IEnumerable<MediaEntity>? Media { get; set; }
-	public List<CategoryEntity>? Categories { get; set; }
+	public ICollection<MediaEntity> Media { get; set; } = [];
+	public ICollection<CategoryEntity> Categories { get; set; } = [];
 }
 
 public class ProductJson {
@@ -49,8 +49,8 @@ public class ProductJson {
 	public string? ActionTitle { get; set; }
 	public string? ActionUri { get; set; }
 	public string? Details { get; set; }
-	public List<VisitCount> VisitCounts { get; set; } = [];
-	public List<Guid> RelatedProducts { get; set; } = [];
+	public ICollection<VisitCount> VisitCounts { get; set; } = [];
+	public ICollection<Guid> RelatedProducts { get; set; } = [];
 }
 
 public class VisitCount {

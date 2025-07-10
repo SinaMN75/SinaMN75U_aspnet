@@ -16,5 +16,5 @@ public class BaseEntity<T, TJ> {
 	public required TJ JsonData { get; set; }
 
 	[Required]
-	public required List<T> Tags { get; set; }
+	public required ICollection<T> Tags { get; set; }
 }
