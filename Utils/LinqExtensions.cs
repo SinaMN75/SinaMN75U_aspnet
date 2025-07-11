@@ -123,7 +123,32 @@ public static class LinqExtensions {
 		return condition ? source.ThenInclude(path) : new IncludableQueryable<T, TProperty>(source);
 	}
 
-	internal class IncludableQueryable<T, TProperty>(IQueryable<T> queryable) : IIncludableQueryable<T, TProperty>, IAsyncEnumerable<T> {
+	public static IOrderedQueryable<T> OrderByIf<T, TKey>(
+		this IQueryable<T> source,
+		bool condition,
+		Expression<Func<T, TKey>> keySelector) => condition ? source.OrderBy(keySelector) : source as IOrderedQueryable<T> ?? source.OrderBy(_ => 0);
+
+	public static IOrderedQueryable<T> OrderByDescendingIf<T, TKey>(
+		this IQueryable<T> source,
+		bool condition,
+		Expression<Func<T, TKey>> keySelector) => condition ? source.OrderByDescending(keySelector) : source as IOrderedQueryable<T> ?? source.OrderBy(_ => 0);
+
+	public static IOrderedQueryable<T> ThenByIf<T, TKey>(
+		this IOrderedQueryable<T> source,
+		bool condition,
+		Expression<Func<T, TKey>> keySelector) => condition ? source.ThenBy(keySelector) : source;
+
+	public static IOrderedQueryable<T> ThenByDescendingIf<T, TKey>(
+		this IOrderedQueryable<T> source,
+		bool condition,
+		Expression<Func<T, TKey>> keySelector) => condition ? source.ThenByDescending(keySelector) : source;
+
+	public static IQueryable<T> WhereIf<T>(
+		this IQueryable<T> source,
+		bool condition,
+		Expression<Func<T, bool>> predicate) => condition ? source.Where(predicate) : source;
+
+	private class IncludableQueryable<T, TProperty>(IQueryable<T> queryable) : IIncludableQueryable<T, TProperty>, IAsyncEnumerable<T> {
 		public Type ElementType => queryable.ElementType;
 		public Expression Expression => queryable.Expression;
 		public IQueryProvider Provider => queryable.Provider;

@@ -19,26 +19,16 @@ public class CategoryCreateParams : BaseParams {
 }
 
 public class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
-	[UUpdateAssignIfNotNull(nameof(CategoryEntity.Title))]
 	public string? Title { get; set; }
-
-	[UUpdateAssignNested(nameof(CategoryEntity.JsonData), nameof(CategoryJson.Subtitle))]
 	public string? Subtitle { get; set; }
-
-	[UUpdateAssignNested(nameof(CategoryEntity.JsonData), nameof(CategoryJson.Link))]
 	public string? Link { get; set; }
-
-	[UUpdateAssignIfNotNull(nameof(CategoryEntity.Order))]
-	public int? Order { get; set; }
-
-	[UUpdateAssignNested(nameof(CategoryEntity.JsonData), nameof(CategoryJson.Location))]
 	public string? Location { get; set; }
-
-	[UUpdateAssignNested(nameof(CategoryEntity.JsonData), nameof(CategoryJson.Type))]
 	public string? Type { get; set; }
-	
-	[UUpdateAddRangeNestedIfNotExistIfNotNull(nameof(CategoryEntity.JsonData), nameof(CategoryJson.RelatedProducts))]
-	public List<Guid>? RelatedProducts { get; set; }
+	public int? Order { get; set; }
+	public Guid? ParentId { get; set; }
+	public ICollection<Guid>? RelatedProducts { get; set; }
+	public ICollection<Guid>? AddRelatedProducts { get; set; }
+	public ICollection<Guid>? RemoveRelatedProducts { get; set; }
 }
 
 public class CategoryReadParams : BaseReadParams<TagCategory> {

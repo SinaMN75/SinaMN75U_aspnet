@@ -114,11 +114,25 @@ public class UserService(
 	}
 
 	public async Task<UResponse<IEnumerable<UserEntity>?>> Read(UserReadParams p, CancellationToken ct) {
-		IQueryable<UserEntity> q = db.Set<UserEntity>().ApplyQuery(p);
-		
-		if (p.ShowCategories) q = q.Include(x => x.Categories);
-		if (p.ShowMedia) q = q.Include(x => x.Media);
-		
+		IQueryable<UserEntity> q = db.Set<UserEntity>();
+
+		q = q.WhereIf(p.UserName.IsNotNull(), u => u.UserName.Contains(p.UserName!));
+		q = q.WhereIf(p.PhoneNumber.IsNotNull(), u => u.PhoneNumber == p.PhoneNumber);
+		q = q.WhereIf(p.Email.IsNotNull(), u => u.Email == p.Email);
+		q = q.WhereIf(p.Bio.IsNotNull(), u => u.Bio == p.Bio);
+		q = q.WhereIf(p.StartBirthDate.HasValue, u => u.Birthdate >= p.StartBirthDate);
+		q = q.WhereIf(p.EndBirthDate.HasValue, u => u.Birthdate <= p.EndBirthDate);
+		q = q.WhereIf(p.Tags.IsNotNullOrEmpty(), u => u.Tags.Any(tag => p.Tags!.Contains(tag)));
+		q = q.WhereIf(p.Categories.IsNotNullOrEmpty(), x => x.Categories.Any(y => p.Categories!.Contains(y.Id)));
+
+		q = q.IncludeIf(p.ShowCategories, x => x.Categories);
+		q = q.IncludeIf(p.ShowMedia, x => x.Media);
+
+		q = q.OrderByIf(p.OrderByCreatedAt, x => x.CreatedAt);
+		q = q.OrderByDescendingIf(p.OrderByCreatedAtDesc, x => x.CreatedAt);
+		q = q.OrderByIf(p.OrderByLastName, x => x.LastName);
+		q = q.OrderByDescendingIf(p.OrderByLastNameDesc, x => x.LastName);
+
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 

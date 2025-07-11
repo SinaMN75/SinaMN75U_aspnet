@@ -67,12 +67,17 @@ public static class StringExtensions {
 	}
 }
 
+public static class GuidExtensions {
+	public static bool IsNotNull([NotNullWhen(true)] this Guid? s) => s != null;
+	public static bool IsNotOrEmpty([NotNullWhen(true)] this Guid? s) => s != null && s == Guid.Empty;
+}
+
 public static class NumberExtensions {
-	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this double? s) => s != null;
-	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this int? s) => s != null;
-	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this decimal? s) => s != null;
-	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this float? s) => s != null;
-	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this long? s) => s != null;
+	public static bool IsNotNull([NotNullWhen(true)] this double? s) => s != null;
+	public static bool IsNotNull([NotNullWhen(true)] this int? s) => s != null;
+	public static bool IsNotNull([NotNullWhen(true)] this decimal? s) => s != null;
+	public static bool IsNotNull([NotNullWhen(true)] this float? s) => s != null;
+	public static bool IsNotNull([NotNullWhen(true)] this long? s) => s != null;
 	public static bool IsNotNullOrZero([NotNullWhen(true)] this int? s) => s != null && s != 0;
 	public static bool IsBetween(this int value, int min, int max) => value >= min && value <= max;
 	public static bool IsBetween(this double value, double min, double max) => value >= min && value <= max;
@@ -223,6 +228,19 @@ public static class EnumerableExtensions {
 		foreach (T item in items)
 			if (!collection.Contains(item))
 				collection.Add(item);
+	}
+
+	public static void RemoveRangeIfExist<T>(this IEnumerable<T> list, IEnumerable<T> itemsToRemove) {
+		ArgumentNullException.ThrowIfNull(list);
+		ArgumentNullException.ThrowIfNull(itemsToRemove);
+		HashSet<T> itemsToRemoveSet = new(itemsToRemove);
+		list.RemoveAll(item => itemsToRemoveSet.Contains(item));
+	}
+
+	public static IEnumerable<T> RemoveAll<T>(this IEnumerable<T> source, Func<T, bool> predicate) {
+		ArgumentNullException.ThrowIfNull(source);
+		ArgumentNullException.ThrowIfNull(predicate);
+		return source.Where(item => !predicate(item));
 	}
 
 	// New enumerable extensions

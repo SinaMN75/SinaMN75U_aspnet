@@ -39,14 +39,14 @@ public class ContentService(DbContext db, ILocalizationService ls, ITokenService
 			JsonData = x.JsonData,
 			CreatedAt = x.CreatedAt,
 			UpdatedAt = x.UpdatedAt,
-			Media = p.ShowMedia ? x.Media!.Select(m => new MediaEntity {
+			Media = p.ShowMedia ? x.Media.Select(m => new MediaEntity {
 				Path = m.Path,
 				Id = m.Id,
 				Tags = m.Tags,
 				JsonData = m.JsonData,
 				CreatedAt = m.CreatedAt,
 				UpdatedAt = m.UpdatedAt
-			}) : null
+			}).ToList() : new List<MediaEntity>()
 		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 

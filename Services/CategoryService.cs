@@ -23,12 +23,18 @@ public class CategoryService(
 		CategoryEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			Title = p.Title,
-			JsonData = new CategoryJson { Subtitle = p.Subtitle, Link = p.Link, Location = p.Location, Type = p.Type },
+			JsonData = new CategoryJson {
+				Subtitle = p.Subtitle,
+				Link = p.Link,
+				Location = p.Location,
+				Type = p.Type,
+				RelatedProducts = p.RelatedProducts ?? []
+			},
 			Tags = p.Tags,
 			CreatedAt = DateTime.UtcNow,
 			Order = p.Order,
 			UpdatedAt = DateTime.UtcNow,
-			ParentId = p.ParentId
+			ParentId = p.ParentId,
 		};
 
 		db.Set<CategoryEntity>().Add(e);
@@ -57,14 +63,14 @@ public class CategoryService(
 			Title = x.Title,
 			Order = x.Order,
 			ParentId = x.ParentId,
-			Media = x.Media!.Select(y => new MediaEntity {
+			Media = x.Media.Select(y => new MediaEntity {
 				Path = y.Path,
 				Id = y.Id,
 				Tags = y.Tags,
 				JsonData = y.JsonData,
 				CreatedAt = y.CreatedAt,
 				UpdatedAt = y.UpdatedAt
-			}),
+			}).ToList(),
 			Id = x.Id,
 			CreatedAt = x.CreatedAt,
 			UpdatedAt = x.UpdatedAt,
@@ -82,14 +88,27 @@ public class CategoryService(
 		if (e == null) return new UResponse<CategoryEntity?>(null, Usc.NotFound, ls.Get("CategoryNotFound"));
 
 		e.UpdatedAt = DateTime.UtcNow;
-		e.ApplyUpdates(p);
+		if (p.Title.IsNotNull()) e.Title = p.Title;
+		if (p.ParentId.IsNotNullOrEmpty()) e.ParentId = p.ParentId;
+		if (p.Order.IsNotNull()) e.Order = p.Order;
+
+		if (p.Subtitle.IsNotNull()) e.JsonData.Subtitle = p.Subtitle;
+		if (p.Link.IsNotNull()) e.JsonData.Link = p.Link;
+		if (p.Location.IsNotNull()) e.JsonData.Location = p.Location;
+		if (p.Type.IsNotNull()) e.JsonData.Type = p.Type;
+		if (p.Subtitle.IsNotNull()) e.JsonData.Subtitle = p.Subtitle;
+		if (p.Subtitle.IsNotNull()) e.JsonData.Subtitle = p.Subtitle;
+
+		if (p.RelatedProducts.IsNotNull()) e.JsonData.RelatedProducts = p.RelatedProducts;
+		if (p.AddRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.AddRangeIfNotExist(p.AddRelatedProducts);
+		if (p.RemoveRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.RemoveRangeIfExist(p.RemoveRelatedProducts);
 
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse<CategoryEntity?>(e);
 	}
-	
+
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null)
