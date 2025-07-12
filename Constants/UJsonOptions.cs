@@ -5,6 +5,7 @@ public class UJsonOptions {
 		WriteIndented = false,
 		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
 		ReferenceHandler = ReferenceHandler.IgnoreCycles,
-		DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+		DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+		Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
 	};
 }

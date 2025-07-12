@@ -20,12 +20,12 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 			// Enable buffering to read the request body once
 			context.Request.EnableBuffering();
 
-			using (StreamReader reader = new StreamReader(context.Request.Body, Encoding.UTF8, leaveOpen: true)) {
+			string decodedRequestBody;
+			using (StreamReader reader = new(context.Request.Body, Encoding.UTF8, leaveOpen: true)) {
 				rawRequestBody = await reader.ReadToEndAsync();
 				context.Request.Body.Position = 0;
 
 				// 🔓 Decode request body from Base64 if configured
-				string decodedRequestBody;
 				if (bool.TryParse(_config["MiddlewareDecryptParams"], out bool decrypt) && decrypt) {
 					try {
 						byte[] bytes = Convert.FromBase64String(rawRequestBody);
@@ -60,16 +60,20 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 				}
 			}
 
+			// Replace the request body with the decoded content
+			MemoryStream decodedBodyStream = new(Encoding.UTF8.GetBytes(decodedRequestBody));
+			context.Request.Body = decodedBodyStream;
+
 			// 🧼 Intercept response
 			Stream originalBody = context.Response.Body;
-			using (MemoryStream memStream = new MemoryStream()) {
+			using (MemoryStream memStream = new()) {
 				context.Response.Body = memStream;
 
 				try {
 					await _next(context);
 
 					memStream.Position = 0;
-					using StreamReader resReader = new StreamReader(memStream);
+					using StreamReader resReader = new(memStream);
 					responseBody = await resReader.ReadToEndAsync();
 					memStream.Position = 0;
 
@@ -92,6 +96,7 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 				}
 				finally {
 					context.Response.Body = originalBody;
+					await decodedBodyStream.DisposeAsync();
 				}
 			}
 		}

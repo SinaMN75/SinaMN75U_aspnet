@@ -24,6 +24,7 @@ public class ProductCreateParams : BaseParams {
 	public required List<TagProduct> Tags { get; set; }
 
 	public IEnumerable<Guid>? Categories { get; set; }
+	public IEnumerable<Guid>? RelatedProducts { get; set; }
 
 	public Guid? ParentId { get; set; }
 	public Guid? UserId { get; set; }

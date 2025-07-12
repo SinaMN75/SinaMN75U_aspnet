@@ -43,7 +43,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 				ActionUri = p.ActionUri,
 				ActionType = p.ActionType,
 				VisitCounts = [],
-				RelatedProducts = []
+				RelatedProducts = p.RelatedProducts?.ToList() ?? []
 			}
 		};
 		await db.Set<ProductEntity>().AddAsync(e, ct);
@@ -55,29 +55,58 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 	public async Task<UResponse<IEnumerable<ProductEntity>?>> Read(ProductReadParams p, CancellationToken ct) {
 		IQueryable<ProductEntity> q = db.Set<ProductEntity>().Where(x => x.ParentId == null);
 
-		q = q.WhereIf(p.Query.IsNotNullOrEmpty(), x => x.Title.Contains(p.Query!) || (x.Description ?? "").Contains(p.Query!) || (x.Subtitle ?? "").Contains(p.Query!));
-		q = q.WhereIf(p.Title.IsNotNullOrEmpty(), x => x.Title.Contains(p.Title!));
-		q = q.WhereIf(p.Code.IsNotNullOrEmpty(), x => (x.Code ?? "").Contains(p.Code!));
-		q = q.WhereIf(p.ParentId.IsNotNullOrEmpty(), x => x.ParentId == p.ParentId);
-		q = q.WhereIf(p.UserId.IsNotNullOrEmpty(), x => x.UserId == p.UserId);
-		q = q.WhereIf(p.Ids.IsNotNullOrEmpty(), x => p.Ids!.Contains(x.UserId));
-		q = q.WhereIf(p.MinStock.IsNotNull(), x => x.Stock >= p.MinStock);
-		q = q.WhereIf(p.MaxStock.IsNotNull(), x => x.Stock <= p.MaxStock);
-		q = q.WhereIf(p.MinPrice.IsNotNull(), x => x.Price >= p.MinPrice);
-		q = q.WhereIf(p.MaxPrice.IsNotNull(), x => x.Price <= p.MaxPrice);
+		if (p.Query.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Query!) || (x.Description ?? "").Contains(p.Query!) || (x.Subtitle ?? "").Contains(p.Query!));
+		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
+		if (p.Code.IsNotNullOrEmpty()) q = q.Where(x => (x.Code ?? "").Contains(p.Code!));
+		if (p.ParentId.IsNotNullOrEmpty()) q = q.Where(x => x.ParentId == p.ParentId);
+		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(x => x.UserId == p.UserId);
+		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids!.Contains(x.UserId));
+		if (p.MinStock.IsNotNull()) q = q.Where(x => x.Stock >= p.MinStock);
+		if (p.MaxStock.IsNotNull()) q = q.Where(x => x.Stock <= p.MaxStock);
+		if (p.MinPrice.IsNotNull()) q = q.Where(x => x.Price >= p.MinPrice);
+		if (p.MaxPrice.IsNotNull()) q = q.Where(x => x.Price <= p.MaxPrice);
 
-		q = q.IncludeIf(p.ShowMedia, x => x.Media);
-		q = q.IncludeIf(p.ShowCategories, x => x.Categories).ThenIncludeIf(p.ShowCategoriesMedia, x => x.Media);
-		q = q.IncludeIf(p.ShowUser, x => x.User).ThenIncludeIf(p.ShowUserCategory, x => x!.Categories).ThenIncludeIf(p.ShowCategoriesMedia, x => x.Media).IncludeIf(p.ShowUserMedia, x => x.Media);
-		q = q.IncludeIf(p.ShowChildren, x => x.Children).ThenIncludeIf(p.ShowCategories, x => x.Categories).ThenIncludeIf(p.ShowCategoriesMedia, x => x.Media).IncludeIf(p.ShowMedia, x => x.Media).IncludeIf(p.ShowUser, x => x.User).ThenIncludeIf(p.ShowUserCategory, x => x!.Categories).ThenIncludeIf(p.ShowCategoriesMedia, x => x.Media);
+		if (p.ShowMedia) q = q.Include(x => x.Media);
 
-		q = q.OrderByIf(p.OrderByCreatedAt, x => x.CreatedAt);
-		q = q.OrderByDescendingIf(p.OrderByCreatedAt, x => x.CreatedAt);
+		if (p.ShowUser) {
+			q = q.Include(x => x.User);
+			if (p.ShowUserMedia) q = q.Include(x => x.User).ThenInclude(x => x.Media);
+			if (p.ShowUserCategory) {
+				if (p.ShowCategoriesMedia) q = q.Include(x => x.User).ThenInclude(x => x.Categories).ThenInclude(x => x.Media);
+				else q = q.Include(x => x.User).ThenInclude(x => x.Categories);
+			}
+		}
+
+		if (p.ShowCategories) {
+			if (p.ShowCategoriesMedia) q = q.Include(x => x.Categories).ThenInclude(x => x.Media);
+			else q = q.Include(x => x.Categories);
+		}
+
+		if (p.ShowChildren) {
+			if (p.ShowMedia) q = q.Include(x => x.Children).Include(x => x.Media);
+
+			if (p.ShowUser) {
+				q = q.Include(x => x.Children).Include(x => x.User);
+				if (p.ShowUserMedia) q = q.Include(x => x.Children).Include(x => x.User).ThenInclude(x => x.Media);
+				if (p.ShowUserCategory) {
+					if (p.ShowCategoriesMedia) q = q.Include(x => x.Children).ThenInclude(x => x.User).ThenInclude(x => x.Categories).ThenInclude(x => x.Media);
+					else q = q.Include(x => x.Children).ThenInclude(x => x.User).ThenInclude(x => x.Categories);
+				}
+			}
+
+			if (p.ShowCategories) {
+				if (p.ShowCategoriesMedia) q = q.Include(x => x.Children).ThenInclude(x => x.Categories).ThenInclude(x => x.Media);
+				else q = q.Include(x => x.Children).ThenInclude(x => x.Categories);
+			}
+		}
 
 		if (p.ShowChildrenDepth)
 			q = q.Include(x => x.Children).ThenInclude(x => x.Children).ThenInclude(x => x.Children).ThenInclude(x => x.Children).ThenInclude(x => x.Children);
 
-		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
+		if (p.OrderByCreatedAt) q = q.OrderByDescending(x => x.CreatedAt);
+
+		return await q.OrderBy(x => x.CreatedAt).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse<ProductEntity?>> ReadById(IdParams p, CancellationToken ct) {
