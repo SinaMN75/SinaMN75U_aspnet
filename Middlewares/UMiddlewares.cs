@@ -5,7 +5,6 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 	private readonly IConfiguration _config = config ?? throw new ArgumentNullException(nameof(config));
 
 	public async Task InvokeAsync(HttpContext context) {
-		// Only process POST requests
 		if (!context.Request.Method.Equals("POST", StringComparison.OrdinalIgnoreCase)) {
 			await _next(context);
 			return;
@@ -17,7 +16,6 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 		string rawRequestBody = string.Empty;
 
 		try {
-			// Enable buffering to read the request body once
 			context.Request.EnableBuffering();
 
 			string decodedRequestBody;
@@ -25,7 +23,7 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 				rawRequestBody = await reader.ReadToEndAsync();
 				context.Request.Body.Position = 0;
 
-				// 🔓 Decode request body from Base64 if configured
+				// Decode request body
 				if (bool.TryParse(_config["MiddlewareDecryptParams"], out bool decrypt) && decrypt) {
 					try {
 						byte[] bytes = Convert.FromBase64String(rawRequestBody);
@@ -41,7 +39,7 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 					decodedRequestBody = rawRequestBody;
 				}
 
-				// 🔑 API Key Validation
+				// API Key Validation
 				if (bool.TryParse(_config["MiddlewareRequireApiKey"], out bool requireApiKey) && requireApiKey) {
 					try {
 						JsonElement json = JsonSerializer.Deserialize<JsonElement>(decodedRequestBody);
@@ -64,7 +62,7 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 			MemoryStream decodedBodyStream = new(Encoding.UTF8.GetBytes(decodedRequestBody));
 			context.Request.Body = decodedBodyStream;
 
-			// 🧼 Intercept response
+			// Intercept response
 			Stream originalBody = context.Response.Body;
 			using (MemoryStream memStream = new()) {
 				context.Response.Body = memStream;
@@ -77,7 +75,7 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 					responseBody = await resReader.ReadToEndAsync();
 					memStream.Position = 0;
 
-					// 📦 Encode response to base64 if configured
+					// Encode response to base64 if configured
 					if (bool.TryParse(_config["MiddlewareEncryptResponse"], out bool encrypt) && encrypt) {
 						string base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(responseBody));
 						byte[] base64Bytes = Encoding.UTF8.GetBytes(base64);
@@ -139,14 +137,10 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 		string logFileName = $"{now:dd}_{(isSuccess ? "success" : "failed")}.json";
 		string logFilePath = Path.Combine(logDir, logFileName);
 
-		// Convert request/response to actual objects if possible
-		object? parsedRequestBody = TryParseJson(requestBody);
-		object? parsedResponseBody = TryParseJson(responseBody);
-
 		var logEntry = new {
 			summary = $"{timestamp:yyyy-MM-dd HH:mm:ss} | {method} {path} | {statusCode} | {elapsedMs}ms",
-			requestBody = parsedRequestBody ?? requestBody,
-			responseBody = parsedResponseBody ?? responseBody,
+			requestBody = TryParseJson(requestBody.EncodeJson()) ?? requestBody,
+			responseBody = TryParseJson(responseBody.EncodeJson()) ?? responseBody,
 			exception = exception != null
 				? new {
 					type = exception.GetType().Name,
@@ -172,33 +166,29 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 			File.WriteAllText(logFilePath, updatedJson);
 		}
 		catch {
-			// fail silently
+			// ignored
 		}
 	}
 
 	private static object? TryParseJson(string json) {
 		try {
-			using JsonDocument doc = JsonDocument.Parse(json);
-			return JsonElementToDynamic(doc.RootElement);
+			return JsonElementToDynamic(JsonDocument.Parse(json).RootElement);
 		}
 		catch {
 			return null;
 		}
 	}
 
-	private static object? JsonElementToDynamic(JsonElement element) {
-		return element.ValueKind switch {
-			JsonValueKind.Object => element.EnumerateObject().ToDictionary(
-				prop => prop.Name,
-				prop => JsonElementToDynamic(prop.Value)
-			),
-			JsonValueKind.Array => element.EnumerateArray().Select(JsonElementToDynamic).ToList(),
-			JsonValueKind.String => element.GetString(),
-			JsonValueKind.Number => element.TryGetInt64(out long l) ? l :
-				element.TryGetDouble(out double d) ? d : null,
-			JsonValueKind.True => true,
-			JsonValueKind.False => false,
-			_ => null
-		};
-	}
+	private static object? JsonElementToDynamic(JsonElement element) => element.ValueKind switch {
+		JsonValueKind.Object => element.EnumerateObject().ToDictionary(
+			prop => prop.Name,
+			prop => JsonElementToDynamic(prop.Value)
+		),
+		JsonValueKind.Array => element.EnumerateArray().Select(JsonElementToDynamic).ToList(),
+		JsonValueKind.String => element.GetString(),
+		JsonValueKind.Number => element.TryGetInt64(out long l) ? l : element.TryGetDouble(out double d) ? d : null,
+		JsonValueKind.True => true,
+		JsonValueKind.False => false,
+		_ => null
+	};
 }
