@@ -24,7 +24,7 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 				context.Request.Body.Position = 0;
 
 				// Decode request body
-				if (bool.TryParse(_config["MiddlewareDecryptParams"], out bool decrypt) && decrypt) {
+				if (bool.Parse(_config["MiddlewareDecryptParams"] ?? "false")) {
 					try {
 						byte[] bytes = Convert.FromBase64String(rawRequestBody);
 						decodedRequestBody = Encoding.UTF8.GetString(bytes);
@@ -40,7 +40,7 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 				}
 
 				// API Key Validation
-				if (bool.TryParse(_config["MiddlewareRequireApiKey"], out bool requireApiKey) && requireApiKey) {
+				if (bool.Parse(_config["MiddlewareRequireApiKey"] ?? "false")) {
 					try {
 						JsonElement json = JsonSerializer.Deserialize<JsonElement>(decodedRequestBody);
 						if (!json.TryGetProperty("apiKey", out JsonElement apiKey) ||
@@ -76,7 +76,7 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 					memStream.Position = 0;
 
 					// Encode response to base64 if configured
-					if (bool.TryParse(_config["MiddlewareEncryptResponse"], out bool encrypt) && encrypt) {
+					if (bool.Parse(_config["MiddlewareEncryptResponse"] ?? "false")) {
 						string base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(responseBody));
 						byte[] base64Bytes = Encoding.UTF8.GetBytes(base64);
 						context.Response.ContentLength = base64Bytes.Length;
@@ -105,9 +105,8 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 			responseBody = "Internal server error";
 		}
 		finally {
-			if (bool.TryParse(_config["MiddlewareLog"], out bool log) && log) {
-				LogToFile(
-					DateTime.UtcNow,
+			if (bool.Parse(_config["MiddlewareLog"] ?? "false")) {
+				LogToFile(DateTime.UtcNow,
 					context.Request.Method,
 					context.Request.Path,
 					context.Response.StatusCode,

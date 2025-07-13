@@ -14,9 +14,6 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 			Title = p.Title,
 			Description = p.Description,
 			CategoryId = p.CategoryId,
-			Id = Guid.CreateVersion7(),
-			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			JsonData = new ExamJson {
 				Questions = p.Questions,
 				ScoreDetails = p.ScoreDetails

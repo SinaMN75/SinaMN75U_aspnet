@@ -25,7 +25,6 @@ public class AuthService(
 			return new UResponse<LoginResponse?>(null, Usc.Conflict, ls.Get("UserAlreadyExist"));
 
 		UserEntity user = new() {
-			Id = Guid.CreateVersion7(),
 			UserName = p.UserName,
 			Email = p.Email,
 			PhoneNumber = p.PhoneNumber,
@@ -35,8 +34,6 @@ public class AuthService(
 			Tags = p.Tags,
 			FirstName = p.FirstName,
 			LastName = p.LastName,
-			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow
 		};
 
 		await db.Set<UserEntity>().AddAsync(user, ct);

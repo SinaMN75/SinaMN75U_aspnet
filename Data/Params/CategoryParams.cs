@@ -1,6 +1,8 @@
 namespace SinaMN75U.Data.Params;
 
 public class CategoryCreateParams : BaseParams {
+	public Guid? Id { get; set; }
+
 	[UValidationRequired("TitleRequired")]
 	public required string Title { get; set; }
 

@@ -4,13 +4,13 @@ namespace SinaMN75U.Data.Entities;
 [Index(nameof(Tags), Name = "IX_Tags")]
 public class BaseEntity<T, TJ> {
 	[Key]
-	public required Guid Id { get; set; }
+	public Guid Id { get; set; } = Guid.CreateVersion7();
 
 	[Required]
-	public required DateTime CreatedAt { get; set; }
+	public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
 	[Required]
-	public required DateTime UpdatedAt { get; set; }
+	public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
 	[Required]
 	public required TJ JsonData { get; set; }

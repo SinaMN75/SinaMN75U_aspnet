@@ -73,6 +73,11 @@ public static class AspNetConfig {
 	}
 
 	public static void UseUServices(this WebApplication app) {
+		app.Use(async (context, next) => {
+			context.Request.EnableBuffering();
+			await next();
+		});
+		
 		app.UseStaticFiles();
 		app.UseCors(o => o.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 		app.UseResponseCompression();

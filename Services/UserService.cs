@@ -19,7 +19,6 @@ public class UserService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<UserEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		UserEntity e = new() {
-			Id = Guid.CreateVersion7(),
 			UserName = p.UserName,
 			Password = PasswordHasher.Hash(p.Password),
 			RefreshToken = "",
@@ -43,9 +42,7 @@ public class UserService(
 				FoodAllergies = p.FoodAllergies ?? [],
 				DrugAllergies = p.DrugAllergies
 			},
-			Tags = p.Tags,
-			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow
+			Tags = p.Tags
 		};
 
 		if (p.Categories.IsNotNullOrEmpty()) {

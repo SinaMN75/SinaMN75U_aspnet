@@ -1,6 +1,7 @@
 namespace SinaMN75U.Services;
 
 public interface IProductService {
+	public Task<UResponse> BulkCreate(List<ProductCreateParams> p, CancellationToken ct);
 	public Task<UResponse<ProductEntity?>> Create(ProductCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<ProductEntity>?>> Read(ProductReadParams p, CancellationToken ct);
 	public Task<UResponse<ProductEntity?>> ReadById(IdParams p, CancellationToken ct);
@@ -10,6 +11,47 @@ public interface IProductService {
 }
 
 public class ProductService(DbContext db, ITokenService ts, ILocalizationService ls, ICategoryService categoryService) : IProductService {
+	public async Task<UResponse> BulkCreate(List<ProductCreateParams> p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.First().Token);
+		if (userData == null) return new UResponse<ProductEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		List<ProductEntity> list = [];
+
+		foreach (ProductCreateParams i in p) {
+			List<CategoryEntity> categories = [];
+			if (i.Categories.IsNotNullOrEmpty()) categories = await categoryService.ReadEntity(new CategoryReadParams { Ids = i.Categories }, ct) ?? [];
+			list.Add(new ProductEntity {
+				Title = i.Title,
+				Code = i.Code,
+				Subtitle = i.Subtitle,
+				Description = i.Description,
+				Latitude = i.Latitude,
+				Longitude = i.Longitude,
+				Stock = i.Stock,
+				Price = i.Price,
+				ParentId = i.ParentId,
+				UserId = i.UserId ?? userData.Id,
+				Tags = i.Tags,
+				Categories = categories,
+				Type = i.Type,
+				Content = i.Content,
+				Slug = i.Slug,
+				JsonData = new ProductJson {
+					Details = i.Details,
+					ActionTitle = i.ActionTitle,
+					ActionUri = i.ActionUri,
+					ActionType = i.ActionType,
+					VisitCounts = [],
+					RelatedProducts = i.RelatedProducts?.ToList() ?? []
+				}
+			});
+		}
+
+		await db.AddRangeAsync(list);
+		await db.SaveChangesAsync();
+		return new UResponse();
+	}
+
 	public async Task<UResponse<ProductEntity?>> Create(ProductCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ProductEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
@@ -19,9 +61,6 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 			categories = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct) ?? [];
 
 		ProductEntity e = new() {
-			Id = Guid.CreateVersion7(),
-			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			Title = p.Title,
 			Code = p.Code,
 			Subtitle = p.Subtitle,

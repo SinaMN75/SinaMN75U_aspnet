@@ -1,6 +1,7 @@
 namespace SinaMN75U.Services;
 
 public interface ICategoryService {
+	Task<UResponse> BulkCreate(IEnumerable<CategoryCreateParams> p, CancellationToken ct);
 	Task<UResponse<CategoryEntity?>> Create(CategoryCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<CategoryEntity>?>> Read(CategoryReadParams p, CancellationToken ct);
 	Task<UResponse<CategoryEntity?>> ReadById(IdParams p, CancellationToken ct);
@@ -11,17 +12,33 @@ public interface ICategoryService {
 	Task<List<CategoryEntity>?> ReadEntity(CategoryReadParams p, CancellationToken ct);
 }
 
-public class CategoryService(
-	DbContext db,
-	IMediaService mediaService,
-	ILocalizationService ls,
-	ITokenService ts
-) : ICategoryService {
+public class CategoryService(DbContext db, IMediaService mediaService, ILocalizationService ls, ITokenService ts) : ICategoryService {
+	public async Task<UResponse> BulkCreate(IEnumerable<CategoryCreateParams> p, CancellationToken ct) {
+		List<CategoryEntity> list = [];
+		list.AddRange(p.Select(i => new CategoryEntity {
+			Id = i.Id ?? Guid.CreateVersion7(),
+			Title = i.Title,
+			Tags = i.Tags,
+			Order = i.Order,
+			ParentId = i.ParentId,
+			JsonData = new CategoryJson {
+				Subtitle = i.Subtitle,
+				Link = i.Link,
+				Location = i.Location,
+				Type = i.Type,
+				RelatedProducts = i.RelatedProducts ?? []
+			}
+		}));
+		await db.AddRangeAsync(list);
+		await db.SaveChangesAsync();
+		return new UResponse();
+	}
+
 	public async Task<UResponse<CategoryEntity?>> Create(CategoryCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<CategoryEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		CategoryEntity e = new() {
-			Id = Guid.CreateVersion7(),
+			Id = p.Id ?? Guid.CreateVersion7(),
 			Title = p.Title,
 			JsonData = new CategoryJson {
 				Subtitle = p.Subtitle,
@@ -31,13 +48,11 @@ public class CategoryService(
 				RelatedProducts = p.RelatedProducts ?? []
 			},
 			Tags = p.Tags,
-			CreatedAt = DateTime.UtcNow,
 			Order = p.Order,
-			UpdatedAt = DateTime.UtcNow,
 			ParentId = p.ParentId,
 		};
 
-		db.Set<CategoryEntity>().Add(e);
+		await db.Set<CategoryEntity>().AddAsync(e);
 		await db.SaveChangesAsync(ct);
 		return new UResponse<CategoryEntity?>(e);
 	}
@@ -67,9 +82,7 @@ public class CategoryService(
 				Path = y.Path,
 				Id = y.Id,
 				Tags = y.Tags,
-				JsonData = y.JsonData,
-				CreatedAt = y.CreatedAt,
-				UpdatedAt = y.UpdatedAt
+				JsonData = y.JsonData
 			}).ToList(),
 			Id = x.Id,
 			CreatedAt = x.CreatedAt,

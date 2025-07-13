@@ -14,9 +14,6 @@ public class ContentService(DbContext db, ILocalizationService ls, ITokenService
 
 		EntityEntry<ContentEntity> e = await db.AddAsync(new ContentEntity {
 			Tags = p.Tags,
-			Id = Guid.CreateVersion7(),
-			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			JsonData = new ContentJson {
 				Instagram = p.Instagram,
 				Description = p.Description,

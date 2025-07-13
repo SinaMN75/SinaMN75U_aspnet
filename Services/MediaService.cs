@@ -23,15 +23,12 @@ public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService
 		if (p.ProductId != null) folderName = "products";
 		string name = $"{folderName}/{id + Path.GetExtension(p.File.FileName)}";
 		MediaEntity e = new() {
-			Id = id,
 			Path = name,
 			UserId = p.UserId,
 			CategoryId = p.CategoryId,
 			ContentId = p.ContentId,
 			CommentId = p.CommentId,
 			ProductId = p.ProductId,
-			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			Tags = p.Tags,
 			JsonData = new MediaJson {
 				Title = p.Title,

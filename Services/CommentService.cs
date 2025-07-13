@@ -18,9 +18,6 @@ public class CommentService(
 		if (userData == null) return new UResponse<CommentEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		EntityEntry<CommentEntity> e = await db.Set<CommentEntity>().AddAsync(new CommentEntity {
-			Id = Guid.CreateVersion7(),
-			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			Score = p.Score,
 			JsonData = new CommentJson(),
 			Description = p.Description,

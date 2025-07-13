@@ -9,6 +9,11 @@ public static class ProductRoutes {
 			return (await s.Create(p, c)).ToResult();
 		}).Produces<UResponse<ProductEntity>>();
 
+		r.MapPost("BulkCreate", async (List<ProductCreateParams> p, IProductService s, ILocalStorageService ls, CancellationToken c) => {
+			ls.DeleteAllByPartialKey(tag);
+			return (await s.BulkCreate(p, c)).ToResult();
+		}).Produces<UResponse<ProductEntity>>();
+
 		r.MapPost("Read", async (ProductReadParams p, IProductService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Cache(60).Produces<UResponse<IEnumerable<ProductEntity>>>();
 
 		r.MapPost("ReadById", async (IdParams p, IProductService s, CancellationToken c) => (await s.ReadById(p, c)).ToResult()).Produces<UResponse<ProductEntity>>();
