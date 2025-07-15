@@ -35,7 +35,7 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	[Required]
 	public Guid UserId { get; set; }
 
-	public UserEntity? User { get; set; }
+	public UserEntity User { get; set; } = null!;
 
 	[InverseProperty("Parent")]
 	public ICollection<ProductEntity> Children { get; set; } = [];
