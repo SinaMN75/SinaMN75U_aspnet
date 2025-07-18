@@ -14,30 +14,4 @@ public class Server {
 	}
 
 	public static void Configure(IHttpContextAccessor? accessor) => _httpContextAccessor = accessor;
-
-	public static async Task RunCommand(string command, string args) {
-		Console.WriteLine("COMMAND Started");
-		Console.WriteLine(command);
-		try {
-			Process process = new() {
-				StartInfo = new ProcessStartInfo {
-					FileName = command,
-					Arguments = args,
-					RedirectStandardOutput = true,
-					RedirectStandardError = true,
-					UseShellExecute = true,
-					CreateNoWindow = true
-				}
-			};
-			process.Start();
-			string output = await process.StandardOutput.ReadToEndAsync();
-			Console.WriteLine("COMMAND LOG");
-			Console.WriteLine(output);
-			await process.WaitForExitAsync();
-		}
-		catch (Exception e) {
-			Console.WriteLine("COMMAND Exception");
-			Console.WriteLine(e.Message);
-		}
-	}
 }

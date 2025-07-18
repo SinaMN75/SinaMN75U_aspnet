@@ -1,33 +1,22 @@
 namespace SinaMN75U.Utils;
 
-using System.IO.Compression;
-
 public static class AspNetConfig {
 	public static void AddUServices<T>(
 		this WebApplicationBuilder builder,
 		SqlDatabaseType sqlDatabaseType,
 		string sqlDatabaseConnectionStrings
 	) where T : DbContext {
-		builder.Services.AddCors(c => c.AddPolicy("AllowOrigin", o => o.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+		builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 		builder.Services.AddUSwagger();
 		builder.Services.AddHttpContextAccessor();
 		builder.Services.AddHttpClient();
 		builder.Services.AddURateLimiter();
-		builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 		builder.Services.ConfigureHttpJsonOptions(o => {
 			o.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 			o.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 			o.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 			o.SerializerOptions.WriteIndented = false;
 		});
-		builder.Services.AddResponseCompression(o => {
-			o.EnableForHttps = true;
-			o.Providers.Add<GzipCompressionProvider>();
-			o.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(["application/json", "text/plain"]);
-		});
-
-		builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
-		builder.Services.AddScoped<DbContext, T>();
 		builder.Services.AddDbContextPool<T>(b => {
 			b.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
 			switch (sqlDatabaseType) {
@@ -54,8 +43,6 @@ public static class AspNetConfig {
 			x.MultipartHeadersLengthLimit = int.MaxValue;
 		});
 
-		Server.Configure(builder.Services.BuildServiceProvider().GetService<IServiceProvider>()?.GetService<IHttpContextAccessor>());
-
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
 		builder.Services.AddSingleton<IHttpClientService, HttpClientService>();
 		builder.Services.AddSingleton<ILocalStorageService, StaticCacheService>();
@@ -77,10 +64,9 @@ public static class AspNetConfig {
 			context.Request.EnableBuffering();
 			await next();
 		});
-		
+		Server.Configure(app.Services.GetRequiredService<IHttpContextAccessor>());
 		app.UseStaticFiles();
-		app.UseCors(o => o.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-		app.UseResponseCompression();
+		app.UseCors();
 		app.UseDeveloperExceptionPage();
 		app.UseUSwagger();
 		app.UseHttpsRedirection();
