@@ -13,7 +13,7 @@ public static class DashboardRoutes {
 				[nameof(TagMedia)] = EnumExtensions.GetValues<TagMedia>(),
 				[nameof(TagProduct)] = EnumExtensions.GetValues<TagProduct>(),
 				[nameof(TagComment)] = EnumExtensions.GetValues<TagComment>(),
-				[nameof(TagReaction)] = EnumExtensions.GetValues<TagReaction>(),
+				[nameof(TagReaction)] = EnumExtensions.GetValues<TagReaction>()
 			};
 
 			return Results.Ok(result);

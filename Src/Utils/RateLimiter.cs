@@ -10,7 +10,7 @@ public static class RateLimiter {
 						PermitLimit = 2,
 						QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
 						QueueLimit = 4,
-						Window = TimeSpan.FromSeconds(1),
+						Window = TimeSpan.FromSeconds(1)
 					}
 				));
 
@@ -21,7 +21,7 @@ public static class RateLimiter {
 						PermitLimit = 200,
 						QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
 						QueueLimit = 0,
-						Window = TimeSpan.FromMinutes(1),
+						Window = TimeSpan.FromMinutes(1)
 					}
 				));
 		});

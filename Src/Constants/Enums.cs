@@ -71,4 +71,6 @@ public enum TagReaction {
 	DisLike = 102
 }
 
-public enum TagExam;
+public enum TagExam {
+	Test = 101
+};

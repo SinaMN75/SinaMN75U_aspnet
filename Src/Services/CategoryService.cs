@@ -49,7 +49,7 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 			},
 			Tags = p.Tags,
 			Order = p.Order,
-			ParentId = p.ParentId,
+			ParentId = p.ParentId
 		};
 
 		await db.Set<CategoryEntity>().AddAsync(e);

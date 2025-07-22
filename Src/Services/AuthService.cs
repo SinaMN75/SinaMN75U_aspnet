@@ -33,7 +33,7 @@ public class AuthService(
 			JsonData = new UserJson(),
 			Tags = p.Tags,
 			FirstName = p.FirstName,
-			LastName = p.LastName,
+			LastName = p.LastName
 		};
 
 		await db.Set<UserEntity>().AddAsync(user, ct);
