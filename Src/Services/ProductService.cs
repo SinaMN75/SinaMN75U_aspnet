@@ -99,7 +99,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 		if (p.Code.IsNotNullOrEmpty()) q = q.Where(x => (x.Code ?? "").Contains(p.Code!));
 		if (p.ParentId.IsNotNullOrEmpty()) q = q.Where(x => x.ParentId == p.ParentId);
 		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(x => x.UserId == p.UserId);
-		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids!.Contains(x.UserId));
+		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids!.Contains(x.Id));
 		if (p.MinStock.IsNotNull()) q = q.Where(x => x.Stock >= p.MinStock);
 		if (p.MaxStock.IsNotNull()) q = q.Where(x => x.Stock <= p.MaxStock);
 		if (p.MinPrice.IsNotNull()) q = q.Where(x => x.Price >= p.MinPrice);
