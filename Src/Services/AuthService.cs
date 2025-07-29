@@ -177,7 +177,10 @@ public class AuthService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<UserEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		UserEntity? user = await db.Set<UserEntity>().FindAsync(userData.Id, ct);
+		UserEntity? user = await db.Set<UserEntity>()
+			.Include(x => x.Media)
+			.Include(x => x.Categories)
+			.FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
 		return user == null ? new UResponse<UserEntity?>(null, Usc.NotFound, ls.Get("UserNotFound")) : new UResponse<UserEntity?>(user);
 	}
 
