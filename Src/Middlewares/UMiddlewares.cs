@@ -1,12 +1,9 @@
 namespace SinaMN75U.Middlewares;
 
 public class UMiddleware(RequestDelegate next, IConfiguration config) {
-	private readonly RequestDelegate _next = next ?? throw new ArgumentNullException(nameof(next));
-	private readonly IConfiguration _config = config ?? throw new ArgumentNullException(nameof(config));
-
 	public async Task InvokeAsync(HttpContext context) {
 		if (!context.Request.Method.Equals("POST", StringComparison.OrdinalIgnoreCase)) {
-			await _next(context);
+			await next(context);
 			return;
 		}
 
@@ -24,7 +21,7 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 				context.Request.Body.Position = 0;
 
 				// Decode request body
-				if (bool.Parse(_config["MiddlewareDecryptParams"] ?? "false")) {
+				if (bool.Parse(config["MiddlewareDecryptParams"] ?? "false")) {
 					try {
 						byte[] bytes = Convert.FromBase64String(rawRequestBody);
 						decodedRequestBody = Encoding.UTF8.GetString(bytes);
@@ -40,11 +37,11 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 				}
 
 				// API Key Validation
-				if (bool.Parse(_config["MiddlewareRequireApiKey"] ?? "false")) {
+				if (bool.Parse(config["MiddlewareRequireApiKey"] ?? "false")) {
 					try {
 						JsonElement json = JsonSerializer.Deserialize<JsonElement>(decodedRequestBody);
 						if (!json.TryGetProperty("apiKey", out JsonElement apiKey) ||
-						    apiKey.GetString() != _config["ApiKey"]) {
+						    apiKey.GetString() != config["ApiKey"]) {
 							context.Response.StatusCode = StatusCodes.Status401Unauthorized;
 							await context.Response.WriteAsync("Invalid API key");
 							return;
@@ -68,7 +65,7 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 				context.Response.Body = memStream;
 
 				try {
-					await _next(context);
+					await next(context);
 
 					memStream.Position = 0;
 					using StreamReader resReader = new(memStream);
@@ -76,7 +73,7 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 					memStream.Position = 0;
 
 					// Encode response to base64 if configured
-					if (bool.Parse(_config["MiddlewareEncryptResponse"] ?? "false")) {
+					if (bool.Parse(config["MiddlewareEncryptResponse"] ?? "false")) {
 						string base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(responseBody));
 						byte[] base64Bytes = Encoding.UTF8.GetBytes(base64);
 						context.Response.ContentLength = base64Bytes.Length;
@@ -105,7 +102,7 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 			responseBody = "Internal server error";
 		}
 		finally {
-			if (bool.Parse(_config["MiddlewareLog"] ?? "false")) {
+			if (bool.Parse(config["MiddlewareLog"] ?? "false")) {
 				LogToFile(DateTime.UtcNow,
 					context.Request.Method,
 					context.Request.Path,
