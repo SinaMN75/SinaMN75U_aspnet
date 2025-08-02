@@ -83,7 +83,7 @@ public static class AspNetConfig {
 		app.MapCommentRoutes("api/comment/");
 		app.MapCategoryRoutes("api/category/");
 		app.MapExamRoutes("api/exam/");
-		app.MapDashboardRoutes("api/dashboard/");
-		app.MapDataModelRoutes("api/datamodel/");
+		app.MapDashboardRoutes("dashboard/");
+		app.MapDataModelRoutes("datamodel/");
 	}
 }

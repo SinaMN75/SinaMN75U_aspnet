@@ -18,8 +18,8 @@ public static class DashboardRoutes {
 
 			return Results.Ok(result);
 		});
-		
-		r.MapPost("/api/logs/structure", () => {
+
+		r.MapPost("Logs/structure", () => {
 			string logPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Logs");
 
 			if (!Directory.Exists(logPath))
@@ -29,39 +29,20 @@ public static class DashboardRoutes {
 			return Results.Ok(new { logs = structure });
 		});
 
-		r.MapPost("/api/logs/content", (LogFileRequest request) => {
-			if (string.IsNullOrEmpty(request.Id))
-				return Results.BadRequest("Id parameter is required");
-
-			if (request.Id.Length < 8 || !request.Id.EndsWith("success") && !request.Id.EndsWith("failed"))
-				return Results.BadRequest("Invalid ID format");
-
-			string status = request.Id.EndsWith("success") ? "success" : "failed";
-			string datePart = request.Id.Substring(0, request.Id.Length - status.Length);
-
-			if (datePart.Length < 7)
-				return Results.BadRequest("Invalid date format in ID");
-
-			string year = datePart.Substring(0, 4);
-			string month = datePart.Substring(4, 2);
-			string day = datePart.Substring(6);
-
-			string filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Logs", year, month, $"{day}_{status}.json");
-
-			if (!File.Exists(filePath))
-				return Results.NotFound("Log file not found");
-
+		r.MapPost("Logs/content", async (LogFileRequest request) => {
 			try {
-				string fileContent = File.ReadAllText(filePath);
-				object? jsonContent = JsonSerializer.Deserialize<object>(fileContent);
-				return Results.Ok(jsonContent);
+				string status = request.Id.EndsWith("success") ? "success" : "failed";
+				string datePart = request.Id[..^status.Length];
+				string filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Logs", datePart[..4], datePart.Substring(4, 2), $"{datePart[6..]}_{status}.json");
+				string content = await File.ReadAllTextAsync(filePath);
+				return Results.Ok(content.DecodeJson<object>());
 			}
-			catch (Exception ex) {
-				return Results.Problem($"Error reading log file: {ex.Message}");
+			catch (Exception e) {
+				return Results.Problem(e.Message);
 			}
 		});
 	}
-	
+
 	private static List<YearLog> GetStructuredLogDirectory(string path) {
 		List<YearLog> result = [];
 
@@ -69,10 +50,7 @@ public static class DashboardRoutes {
 			string yearName = Path.GetFileName(yearDir);
 			if (!int.TryParse(yearName, out int year)) continue;
 
-			YearLog yearLog = new() {
-				Year = year,
-				Months = []
-			};
+			YearLog yearLog = new() { Year = year, Months = [] };
 
 			foreach (string monthDir in Directory.GetDirectories(yearDir)) {
 				string monthName = Path.GetFileName(monthDir);
@@ -94,17 +72,19 @@ public static class DashboardRoutes {
 						monthLog.Days.Add(existingDay);
 					}
 
-					if (parts[1] == "success")
-						existingDay.Success = $"{year}{month:00}{day:00}success";
-					else if (parts[1] == "failed")
-						existingDay.Failed = $"{year}{month:00}{day:00}failed";
+					switch (parts[1]) {
+						case "success":
+							existingDay.Success = $"{year}{month:00}{day:00}success";
+							break;
+						case "failed":
+							existingDay.Failed = $"{year}{month:00}{day:00}failed";
+							break;
+					}
 				}
 
 				if (monthLog.Days.Count == 0) continue;
-				{
-					monthLog.Days = monthLog.Days.OrderBy(d => d.Day).ToList();
-					yearLog.Months.Add(monthLog);
-				}
+				monthLog.Days = monthLog.Days.OrderBy(d => d.Day).ToList();
+				yearLog.Months.Add(monthLog);
 			}
 
 			if (yearLog.Months.Count == 0) continue;
@@ -114,22 +94,22 @@ public static class DashboardRoutes {
 
 		return result.OrderBy(y => y.Year).ToList();
 	}
-	
+
 	private class LogFileRequest {
 		public string Id { get; set; } = string.Empty;
 	}
 
-	private class YearLog {
+	private record YearLog {
 		public int Year { get; set; }
-		public List<MonthLog> Months { get; set; } = new();
+		public List<MonthLog> Months { get; set; } = [];
 	}
 
-	private class MonthLog {
+	private record MonthLog {
 		public int Month { get; set; }
-		public List<DayLog> Days { get; set; } = new();
+		public List<DayLog> Days { get; set; } = [];
 	}
 
-	private class DayLog {
+	private record DayLog {
 		public int Day { get; set; }
 		public string? Success { get; set; }
 		public string? Failed { get; set; }
