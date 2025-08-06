@@ -4,7 +4,7 @@ public interface IFollowService {
 	Task<UResponse> Follow(FollowParams p, CancellationToken c);
 	Task<UResponse> Unfollow(FollowParams p, CancellationToken c);
 	Task<UResponse<IEnumerable<UserEntity>>> ReadFollowers(UserIdParams p, CancellationToken c);
-	Task<UResponse<IEnumerable<UserEntity>>> ReadFollowing(UserIdParams p, CancellationToken c);
+	Task<UResponse<IEnumerable<UserEntity>>> ReadFollowings(UserIdParams p, CancellationToken c);
 	Task<UResponse<FollowerFollowingCountResponse>> ReadFollowerFollowingCount(UserIdParams p, CancellationToken c);
 }
 
@@ -67,7 +67,7 @@ public class FollowService(DbContext db, ILocalizationService ls, ITokenService 
 		return new UResponse<IEnumerable<UserEntity>>(followers);
 	}
 
-	public async Task<UResponse<IEnumerable<UserEntity>>> ReadFollowing(UserIdParams p, CancellationToken c) {
+	public async Task<UResponse<IEnumerable<UserEntity>>> ReadFollowings(UserIdParams p, CancellationToken c) {
 		List<UserEntity> following = (await db.Set<FollowEntity>()
 			.Where(uf => uf.FollowerUserId == p.UserId)
 			.Select(uf => uf.FollowedUser)
