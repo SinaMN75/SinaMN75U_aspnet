@@ -45,3 +45,7 @@ public class BaseParams {
 	public string ApiKey { get; set; } = null!;
 	public string Token { get; set; } = null!;
 }
+
+public class UserIdParams: BaseParams {
+	public Guid? UserId { get; set; }
+}

@@ -57,6 +57,7 @@ public static class AspNetConfig {
 		builder.Services.AddScoped<IProductService, ProductService>();
 		builder.Services.AddScoped<ICommentService, CommentService>();
 		builder.Services.AddScoped<IExamService, ExamService>();
+		builder.Services.AddScoped<IFollowService, FollowService>();
 		builder.Services.AddScoped<IDashboardService, DashboardService>();
 	}
 
@@ -79,6 +80,7 @@ public static class AspNetConfig {
 		app.MapUserRoutes("api/user/");
 		app.MapMediaRoutes("api/media/");
 		app.MapContentRoutes("api/content/");
+		app.MapFollowRoutes("api/follow/");
 		app.MapProductRoutes("api/product/");
 		app.MapCommentRoutes("api/comment/");
 		app.MapCategoryRoutes("api/category/");

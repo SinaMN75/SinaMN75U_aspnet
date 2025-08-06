@@ -18,3 +18,8 @@ public class BaseEntity<T, TJ> {
 	[Required]
 	public required ICollection<T> Tags { get; set; }
 }
+
+public class VisitCount {
+	public required Guid UserId { get; set; }
+	public required int Count { get; set; } = 1;
+}

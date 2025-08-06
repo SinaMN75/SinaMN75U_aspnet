@@ -154,9 +154,20 @@ public class UserService(
 	}
 
 	public async Task<UResponse<UserEntity?>> ReadById(IdParams p, CancellationToken ct) {
-		UserEntity? user = await db.Set<UserEntity>().FindAsync(p.Id, ct);
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 
-		return user == null ? new UResponse<UserEntity?>(null, Usc.NotFound, ls.Get("UserNotFound")) : new UResponse<UserEntity?>(user);
+		UserEntity? e = await db.Set<UserEntity>()
+			.Include(x => x.Media)
+			.Include(x => x.Categories).ThenInclude(x => x.Media)
+			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse<UserEntity?>(null, Usc.NotFound, ls.Get("UserNotFound"));
+
+		VisitCount? visitCount = e.JsonData.VisitCounts.FirstOrDefault(v => v.UserId == (userData?.Id ?? Guid.Empty));
+
+		if (visitCount != null) visitCount.Count++;
+		else e.JsonData.VisitCounts.Add(new VisitCount { UserId = userData?.Id ?? Guid.Empty, Count = 1 });
+
+		return new UResponse<UserEntity?>(e);
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {

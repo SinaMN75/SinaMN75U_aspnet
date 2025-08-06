@@ -102,7 +102,7 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 			responseBody = "Internal server error";
 		}
 		finally {
-			if (bool.Parse(config["MiddlewareLog"] ?? "false")) {
+			if (bool.Parse(config["MiddlewareLog"] ?? "false") && context.Response.StatusCode is <= 299 and >= 200) {
 				LogToFile(DateTime.UtcNow,
 					context.Request.Method,
 					context.Request.Path,

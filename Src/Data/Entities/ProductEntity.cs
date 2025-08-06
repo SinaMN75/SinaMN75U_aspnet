@@ -52,8 +52,3 @@ public class ProductJson {
 	public ICollection<VisitCount> VisitCounts { get; set; } = [];
 	public ICollection<Guid> RelatedProducts { get; set; } = [];
 }
-
-public class VisitCount {
-	public required Guid UserId { get; set; }
-	public required int Count { get; set; } = 1;
-}
