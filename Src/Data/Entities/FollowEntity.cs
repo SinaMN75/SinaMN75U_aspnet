@@ -1,14 +1,20 @@
 namespace SinaMN75U.Data.Entities;
 
-public class FollowEntity {
-	[Key]
-	public Guid Id { get; set; } = Guid.CreateVersion7();
+public class FollowEntity: BaseEntity<TagFollow, FollowJson> {
 	
-	public required Guid FollowedUserId { get; set; }
-	public UserEntity? FollowedUser { get; set; }
+	public required Guid UserId { get; set; }
+	public UserEntity? User { get; set; }
 	
-	public required Guid FollowerUserId { get; set; }
-	public UserEntity? FollowerUser { get; set; }
+	public Guid? TargetUserId { get; set; }
+	public UserEntity? TargetUser { get; set; }	
+	
+	public Guid? TargetProductId { get; set; }
+	public ProductEntity? TargetProduct { get; set; }
+	
+	public Guid? TargetCategoryId { get; set; }
+	public CategoryEntity? TargetCategory { get; set; }
+}
 
-	public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+public class FollowJson {
+	public string? Subtitle { get; set; }
 }

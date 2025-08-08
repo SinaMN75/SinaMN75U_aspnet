@@ -35,19 +35,23 @@ public enum TagCategory {
 	Exam = 101,
 	User = 102,
 	Menu = 103,
+	Speciality = 104,
 	Enabled = 201,
 	Disabled = 202,
 	Hidden = 203
 }
 
 public enum TagMedia {
-	Image = 100
+	Image = 100,
+	Profile = 101,
+	Test = 999
 }
 
 public enum TagProduct {
 	Product = 101,
 	Content = 102,
 	Blog = 103,
+	Case = 104,
 	New = 201,
 	KindOfNew = 202,
 	Used = 203,
@@ -72,5 +76,17 @@ public enum TagReaction {
 }
 
 public enum TagExam {
-	Test = 101
+	Test = 999
+};
+
+public enum TagFollow {
+	User = 101,
+	Product = 102,
+	Category = 102
+};
+
+public enum TagContent {
+	AboutUs = 101,
+	Terms = 102,
+	HomeSlider1 = 103
 };

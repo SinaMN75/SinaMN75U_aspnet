@@ -42,6 +42,9 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 
 	public ICollection<MediaEntity> Media { get; set; } = [];
 	public ICollection<CategoryEntity> Categories { get; set; } = [];
+
+	[NotMapped]
+	public int CommentCounts { get; set; } = 0;
 }
 
 public class ProductJson {
