@@ -9,7 +9,6 @@ public static class CommentRoutes {
 		}).Produces<UResponse<CommentEntity>>();
 
 		r.MapPost("Read", async (CommentReadParams p, ICommentService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Cache(60).Produces<UResponse<IEnumerable<CommentEntity>>>();
-		
 		r.MapPost("ReadById", async (IdParams p, ICommentService s, CancellationToken c) => (await s.ReadById(p, c)).ToResult()).Cache(60).Produces<UResponse<CommentEntity>>();
 		
 		r.MapPost("Update", async (CommentUpdateParams d, ICommentService s, ILocalStorageService ls, CancellationToken c) => {
@@ -21,5 +20,8 @@ public static class CommentRoutes {
 			ls.DeleteAllByPartialKey(tag);
 			return (await s.Delete(d, c)).ToResult();
 		}).Produces<UResponse>();
+		
+		r.MapPost("ReadProductCommentCount", async (IdParams p, ICommentService s, CancellationToken c) => (await s.ReadProductCommentCount(p, c)).ToResult()).Cache(60).Produces<UResponse<int>>();
+		r.MapPost("ReadUserCommentCount", async (IdParams p, ICommentService s, CancellationToken c) => (await s.ReadUserCommentCount(p, c)).ToResult()).Cache(60).Produces<UResponse<int>>();
 	}
 }

@@ -6,6 +6,8 @@ public interface ICommentService {
 	public Task<UResponse<CommentEntity?>> ReadById(IdParams p, CancellationToken ct);
 	public Task<UResponse<CommentEntity?>> Update(CommentUpdateParams p, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
+	public Task<UResponse<int>> ReadProductCommentCount(IdParams p, CancellationToken ct);
+	public Task<UResponse<int>> ReadUserCommentCount(IdParams p, CancellationToken ct);
 }
 
 public class CommentService(
@@ -61,5 +63,15 @@ public class CommentService(
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		await db.Set<CommentEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 		return new UResponse();
+	}
+
+	public async Task<UResponse<int>> ReadProductCommentCount(IdParams p, CancellationToken ct) {
+		int count = await db.Set<CommentEntity>().Where(x => x.ProductId == p.Id).CountAsync(ct);
+		return new UResponse<int>(count);
+	}
+	
+	public async Task<UResponse<int>> ReadUserCommentCount(IdParams p, CancellationToken ct) {
+		int count = await db.Set<CommentEntity>().Where(x => x.TargetUserId == p.Id).CountAsync(ct);
+		return new UResponse<int>(count);
 	}
 }
