@@ -33,14 +33,14 @@ public class FollowService(DbContext db, ILocalizationService ls, ITokenService 
 			bool alreadyFollowing = await db.Set<FollowEntity>()
 				.AnyAsync(x => x.UserId == p.UserId && x.TargetProductId == p.TargetProductId, ct);
 			if (alreadyFollowing)
-				return new UResponse(Usc.Conflict, ls.Get("AlreadyFollowingUser"));
+				return new UResponse(Usc.Conflict, ls.Get("AlreadyBookmarked"));
 		}
 
 		if (p.TargetCategoryId != null) {
 			bool alreadyFollowing = await db.Set<FollowEntity>()
 				.AnyAsync(x => x.UserId == p.UserId && x.TargetCategoryId == p.TargetCategoryId, ct);
 			if (alreadyFollowing)
-				return new UResponse(Usc.Conflict, ls.Get("AlreadyFollowingUser"));
+				return new UResponse(Usc.Conflict, ls.Get("AlreadyBookmarked"));
 		}
 
 		FollowEntity userFollower = new() {
