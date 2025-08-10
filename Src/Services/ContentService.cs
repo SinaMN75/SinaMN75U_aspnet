@@ -15,10 +15,13 @@ public class ContentService(DbContext db, ILocalizationService ls, ITokenService
 		EntityEntry<ContentEntity> e = await db.AddAsync(new ContentEntity {
 			Tags = p.Tags,
 			JsonData = new ContentJson {
-				Instagram = p.Instagram,
 				Description = p.Description,
 				Title = p.Title,
-				SubTitle = p.SubTitle
+				SubTitle = p.SubTitle,
+				Instagram = p.Instagram,
+				Phone = p.Phone,
+				Telegram = p.Telegram,
+				Whatsapp = p.Whatsapp,
 			}
 		}, ct);
 		await db.SaveChangesAsync(ct);
@@ -36,14 +39,16 @@ public class ContentService(DbContext db, ILocalizationService ls, ITokenService
 			JsonData = x.JsonData,
 			CreatedAt = x.CreatedAt,
 			UpdatedAt = x.UpdatedAt,
-			Media = p.ShowMedia ? x.Media.Select(m => new MediaEntity {
-				Path = m.Path,
-				Id = m.Id,
-				Tags = m.Tags,
-				JsonData = m.JsonData,
-				CreatedAt = m.CreatedAt,
-				UpdatedAt = m.UpdatedAt
-			}).ToList() : new List<MediaEntity>()
+			Media = p.ShowMedia
+				? x.Media.Select(m => new MediaEntity {
+					Path = m.Path,
+					Id = m.Id,
+					Tags = m.Tags,
+					JsonData = m.JsonData,
+					CreatedAt = m.CreatedAt,
+					UpdatedAt = m.UpdatedAt
+				}).ToList()
+				: new List<MediaEntity>()
 		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
@@ -57,6 +62,9 @@ public class ContentService(DbContext db, ILocalizationService ls, ITokenService
 		if (p.SubTitle.IsNotNullOrEmpty()) e.JsonData.SubTitle = p.SubTitle;
 		if (p.Description.IsNotNullOrEmpty()) e.JsonData.Description = p.Description;
 		if (p.Instagram.IsNotNullOrEmpty()) e.JsonData.Instagram = p.Instagram;
+		if (p.Phone.IsNotNullOrEmpty()) e.JsonData.Phone = p.Phone;
+		if (p.Telegram.IsNotNullOrEmpty()) e.JsonData.Telegram = p.Telegram;
+		if (p.Whatsapp.IsNotNullOrEmpty()) e.JsonData.Whatsapp = p.Whatsapp;
 
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
