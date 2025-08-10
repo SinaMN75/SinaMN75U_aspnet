@@ -3,11 +3,14 @@ namespace SinaMN75U.Services;
 public interface IFollowService {
 	Task<UResponse> Follow(FollowParams p, CancellationToken ct);
 	Task<UResponse> Unfollow(FollowParams p, CancellationToken ct);
-	Task<UResponse<IEnumerable<UserEntity>>> ReadFollowers(UserIdParams p, CancellationToken ct);
-	Task<UResponse<IEnumerable<UserEntity>>> ReadFollowedUsers(UserIdParams p, CancellationToken ct);
-	Task<UResponse<IEnumerable<ProductEntity>>> ReadFollowedProducts(UserIdParams p, CancellationToken ct);
-	Task<UResponse<IEnumerable<CategoryEntity>>> ReadFollowedCategories(UserIdParams p, CancellationToken ct);
-	Task<UResponse<FollowerFollowingCountResponse>> ReadFollowerFollowingCount(UserIdParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<UserEntity>>> ReadFollowers(IdParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<UserEntity>>> ReadFollowedUsers(IdParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<ProductEntity>>> ReadFollowedProducts(IdParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<CategoryEntity>>> ReadFollowedCategories(IdParams p, CancellationToken ct);
+	Task<UResponse<FollowerFollowingCountResponse>> ReadFollowerFollowingCount(IdParams p, CancellationToken ct);
+	Task<UResponse<bool?>> IsFollowingUser(FollowParams p, CancellationToken ct);
+	Task<UResponse<bool?>> IsFollowingProduct(FollowParams p, CancellationToken ct);
+	Task<UResponse<bool?>> IsFollowingCategory(FollowParams p, CancellationToken ct);
 }
 
 public class FollowService(DbContext db, ILocalizationService ls, ITokenService ts) : IFollowService {
@@ -63,18 +66,18 @@ public class FollowService(DbContext db, ILocalizationService ls, ITokenService 
 
 		FollowEntity? userFollower = null;
 
-		if (p.TargetUserId != null) 
+		if (p.TargetUserId != null)
 			userFollower = await db.Set<FollowEntity>()
 				.FirstOrDefaultAsync(x => x.UserId == p.UserId && x.TargetUserId == p.TargetUserId, ct);
 
-		if (p.TargetProductId != null) 
+		if (p.TargetProductId != null)
 			userFollower = await db.Set<FollowEntity>()
 				.FirstOrDefaultAsync(x => x.UserId == p.UserId && x.TargetProductId == p.TargetProductId, ct);
 
-		if (p.TargetCategoryId != null) 
+		if (p.TargetCategoryId != null)
 			userFollower = await db.Set<FollowEntity>()
 				.FirstOrDefaultAsync(x => x.UserId == p.UserId && x.TargetCategoryId == p.TargetCategoryId, ct);
-		
+
 		if (userFollower == null)
 			return new UResponse(Usc.NotFound, ls.Get("FollowRelationshipNotFound"));
 
@@ -84,60 +87,86 @@ public class FollowService(DbContext db, ILocalizationService ls, ITokenService 
 		return new UResponse(Usc.Success, ls.Get("UnfollowSuccess"));
 	}
 
-	public async Task<UResponse<IEnumerable<UserEntity>>> ReadFollowers(UserIdParams p, CancellationToken ct) {
+	public async Task<UResponse<IEnumerable<UserEntity>>> ReadFollowers(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IEnumerable<UserEntity>>([], Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		p.UserId ??= userData.Id;
+		p.Id ??= userData.Id;
 
 		List<UserEntity> followers = (await db.Set<FollowEntity>()
-			.Where(x => x.TargetUserId == p.UserId)
+			.Where(x => x.TargetUserId == p.Id)
 			.Select(x => x.User)
 			.ToListAsync(ct))!;
 
 		return new UResponse<IEnumerable<UserEntity>>(followers);
 	}
 
-	public async Task<UResponse<IEnumerable<UserEntity>>> ReadFollowedUsers(UserIdParams p, CancellationToken ct) {
+	public async Task<UResponse<IEnumerable<UserEntity>>> ReadFollowedUsers(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IEnumerable<UserEntity>>([], Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		p.UserId ??= userData.Id;
+		p.Id ??= userData.Id;
 		List<UserEntity> following = (await db.Set<FollowEntity>()
-			.Where(x => x.UserId == p.UserId)
+			.Where(x => x.UserId == p.Id)
 			.Select(x => x.TargetUser)
 			.ToListAsync(ct))!;
 
 		return new UResponse<IEnumerable<UserEntity>>(following);
 	}
-	
-	public async Task<UResponse<IEnumerable<ProductEntity>>> ReadFollowedProducts(UserIdParams p, CancellationToken ct) {
+
+	public async Task<UResponse<IEnumerable<ProductEntity>>> ReadFollowedProducts(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IEnumerable<ProductEntity>>([], Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		p.UserId ??= userData.Id;
+		p.Id ??= userData.Id;
 		List<ProductEntity> following = (await db.Set<FollowEntity>()
-			.Where(x => x.UserId == p.UserId)
+			.Where(x => x.UserId == p.Id)
 			.Select(x => x.TargetProduct)
 			.ToListAsync(ct))!;
-		
+
 		return new UResponse<IEnumerable<ProductEntity>>(following);
-	}	
-	
-	public async Task<UResponse<IEnumerable<CategoryEntity>>> ReadFollowedCategories(UserIdParams p, CancellationToken ct) {
+	}
+
+	public async Task<UResponse<IEnumerable<CategoryEntity>>> ReadFollowedCategories(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IEnumerable<CategoryEntity>>([], Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		p.UserId ??= userData.Id;
+		p.Id ??= userData.Id;
 		List<CategoryEntity> following = (await db.Set<FollowEntity>()
-			.Where(x => x.UserId == p.UserId)
+			.Where(x => x.UserId == p.Id)
 			.Select(x => x.TargetCategory)
 			.ToListAsync(ct))!;
-		
+
 		return new UResponse<IEnumerable<CategoryEntity>>(following);
 	}
 
-	public async Task<UResponse<FollowerFollowingCountResponse>> ReadFollowerFollowingCount(UserIdParams p, CancellationToken ct) => new(
-		new FollowerFollowingCountResponse {
-			Followers = await db.Set<FollowEntity>().CountAsync(x => x.TargetUserId == p.UserId, ct),
-			FollowedUsers = await db.Set<FollowEntity>().CountAsync(x => x.UserId == p.UserId, ct),
-			FollowedProducts = await db.Set<FollowEntity>().CountAsync(x => x.UserId == p.UserId && x.TargetProductId != null, ct),
-			FollowedCategories = await db.Set<FollowEntity>().CountAsync(x => x.UserId == p.UserId && x.TargetCategoryId != null, ct),
-		});
+	public async Task<UResponse<FollowerFollowingCountResponse>> ReadFollowerFollowingCount(IdParams p, CancellationToken ct) {
+		return new UResponse<FollowerFollowingCountResponse>(
+			new FollowerFollowingCountResponse {
+				Followers = await db.Set<FollowEntity>().CountAsync(x => x.TargetUserId == p.Id, ct),
+				FollowedUsers = await db.Set<FollowEntity>().CountAsync(x => x.UserId == p.Id, ct),
+				FollowedProducts = await db.Set<FollowEntity>().CountAsync(x => x.UserId == p.Id && x.TargetProductId != null, ct),
+				FollowedCategories = await db.Set<FollowEntity>().CountAsync(x => x.UserId == p.Id && x.TargetCategoryId != null, ct),
+			});
+	}
+
+	public async Task<UResponse<bool?>> IsFollowingUser(FollowParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<bool?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		p.UserId ??= userData.Id;
+		bool isFollowing = await db.Set<FollowEntity>().AnyAsync(x => x.UserId == p.UserId && x.TargetUserId == p.TargetUserId, ct);
+		return new UResponse<bool?>(isFollowing);
+	}
+
+	public async Task<UResponse<bool?>> IsFollowingProduct(FollowParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<bool?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		p.UserId ??= userData.Id;
+		bool isFollowing = await db.Set<FollowEntity>().AnyAsync(x => x.UserId == p.UserId && x.TargetProductId == p.TargetProductId, ct);
+		return new UResponse<bool?>(isFollowing);
+	}
+
+	public async Task<UResponse<bool?>> IsFollowingCategory(FollowParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<bool?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		p.UserId ??= userData.Id;
+		bool isFollowing = await db.Set<FollowEntity>().AnyAsync(x => x.UserId == p.UserId && x.TargetCategoryId == p.TargetCategoryId, ct);
+		return new UResponse<bool?>(isFollowing);
+	}
 }

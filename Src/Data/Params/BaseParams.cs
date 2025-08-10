@@ -1,8 +1,7 @@
 namespace SinaMN75U.Data.Params;
 
 public class IdParams : BaseParams {
-	[Required]
-	public required Guid Id { get; set; }
+	public required Guid? Id { get; set; }
 }
 
 public class IdListParams : BaseParams {
@@ -44,8 +43,4 @@ public class BaseCreateParams<T> : BaseParams {
 public class BaseParams {
 	public string ApiKey { get; set; } = null!;
 	public string Token { get; set; } = null!;
-}
-
-public class UserIdParams: BaseParams {
-	public Guid? UserId { get; set; }
 }
