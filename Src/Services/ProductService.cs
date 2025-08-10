@@ -36,6 +36,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 				Type = i.Type,
 				Content = i.Content,
 				Slug = i.Slug,
+				Point = i.Point ?? 0,
 				JsonData = new ProductJson {
 					Details = i.Details,
 					ActionTitle = i.ActionTitle,
@@ -76,6 +77,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 			Type = p.Type,
 			Content = p.Content,
 			Slug = p.Slug,
+			Point = p.Point ?? 0,
 			JsonData = new ProductJson {
 				Details = p.Details,
 				ActionTitle = p.ActionTitle,
@@ -189,6 +191,7 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 		if (p.Longitude.IsNotNull()) e.Longitude = p.Longitude;
 		if (p.Stock.IsNotNull()) e.Stock = p.Stock;
 		if (p.Price.IsNotNull()) e.Price = p.Price;
+		if (p.Point.IsNotNull()) e.Point = p.Point.Value;
 		if (p.ParentId.IsNotNullOrEmpty()) e.ParentId = p.ParentId;
 		if (p.UserId.IsNotNull()) e.UserId = p.UserId.Value;
 		if (p.ActionType.IsNotNull()) e.JsonData.ActionType = p.ActionType;

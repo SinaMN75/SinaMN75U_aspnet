@@ -16,6 +16,7 @@ public class ProductCreateParams : BaseParams {
 	public double? Latitude { get; set; }
 	public double? Longitude { get; set; }
 	public int? Stock { get; set; }
+	public int? Point { get; set; }
 	public double? Price { get; set; }
 
 	public string? Details { get; set; }
@@ -41,6 +42,7 @@ public class ProductUpdateParams : BaseUpdateParams<TagProduct> {
 	public double? Latitude { get; set; }
 	public double? Longitude { get; set; }
 	public int? Stock { get; set; }
+	public int? Point { get; set; }
 	public double? Price { get; set; }
 	public Guid? ParentId { get; set; }
 	public Guid? UserId { get; set; }
