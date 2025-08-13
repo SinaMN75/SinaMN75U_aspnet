@@ -20,6 +20,7 @@ public static class DbModelBuilder {
 		builder.Entity<ProductEntity>().OwnsOne(e => e.JsonData, b => {
 			b.ToJson();
 			b.OwnsMany(i => i.VisitCounts);
+			b.OwnsMany(i => i.PointCounts);
 		});
 		builder.Entity<CommentEntity>().OwnsOne(e => e.JsonData, b => {
 			b.ToJson();
