@@ -75,5 +75,8 @@ public class ProductReadParams : BaseReadParams<TagProduct> {
 	public bool ShowUserCategory { get; set; } = false;
 	public bool ShowChildren { get; set; } = false;
 	public bool ShowChildrenDepth { get; set; } = false;
+	public bool ShowCommentCount { get; set; }
+	public bool ShowIsFollowing { get; set; }
+	public bool ShowChildrenCount { get; set; }
 	public IEnumerable<Guid>? Ids { get; set; }
 }

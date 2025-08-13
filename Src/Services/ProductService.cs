@@ -10,7 +10,14 @@ public interface IProductService {
 	public Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct);
 }
 
-public class ProductService(DbContext db, ITokenService ts, ILocalizationService ls, ICategoryService categoryService) : IProductService {
+public class ProductService(
+	DbContext db,
+	ITokenService ts,
+	ILocalizationService ls,
+	ICategoryService categoryService,
+	ICommentService commentService,
+	IFollowService followService
+) : IProductService {
 	public async Task<UResponse> BulkCreate(List<ProductCreateParams> p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.First().Token);
 		if (userData == null) return new UResponse<ProductEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
@@ -94,6 +101,8 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 
 
 	public async Task<UResponse<IEnumerable<ProductEntity>?>> Read(ProductReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+
 		IQueryable<ProductEntity> q = db.Set<ProductEntity>().Where(x => x.ParentId == null);
 
 		if (p.Query.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Query!) || (x.Description ?? "").Contains(p.Query!) || (x.Subtitle ?? "").Contains(p.Query!));
@@ -147,7 +156,36 @@ public class ProductService(DbContext db, ITokenService ts, ILocalizationService
 		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
 		if (p.OrderByCreatedAt) q = q.OrderByDescending(x => x.CreatedAt);
 
-		return await q.OrderBy(x => x.CreatedAt).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		UResponse<IEnumerable<ProductEntity>?> list = await q.OrderBy(x => x.CreatedAt).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+
+		foreach (ProductEntity i in list.Result ?? []) {
+			foreach (VisitCount visit in i.JsonData.VisitCounts) i.VisitCount += visit.Count;
+		}
+
+		if (p.ShowCommentCount)
+			foreach (ProductEntity i in list.Result ?? []) {
+				UResponse<int> commentCount = await commentService.ReadProductCommentCount(new IdParams {
+					Id = i.Id
+				}, ct);
+				i.CommentCount = commentCount.Result;
+			}
+
+		if (p.ShowChildrenCount)
+			foreach (ProductEntity i in list.Result ?? []) {
+				if (p.ShowChildren || p.ShowChildrenDepth)
+					i.ChildrenCount = i.Children.Count;
+				else
+					i.ChildrenCount = await db.Set<ProductEntity>().Where(x => x.ParentId == i.Id).CountAsync();
+			}
+
+		
+		if (p.ShowIsFollowing && userData?.Id != null)
+			foreach (ProductEntity i in list.Result ?? []) {
+				UResponse<bool?> isFollowing = await followService.IsFollowingProduct(new FollowParams { UserId = userData?.Id, TargetProductId = i.Id }, ct);
+				i.IsFollowing = isFollowing.Result ?? false;
+			}
+
+		return list;
 	}
 
 	public async Task<UResponse<ProductEntity?>> ReadById(IdParams p, CancellationToken ct) {

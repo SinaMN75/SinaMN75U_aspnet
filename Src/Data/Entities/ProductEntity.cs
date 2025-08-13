@@ -20,7 +20,7 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 
 	[MaxLength(100)]
 	public string? Type { get; set; }
-	
+
 	public string? Content { get; set; }
 
 	public double? Latitude { get; set; }
@@ -43,6 +43,18 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 
 	public ICollection<MediaEntity> Media { get; set; } = [];
 	public ICollection<CategoryEntity> Categories { get; set; } = [];
+
+	[NotMapped]
+	public int CommentCount { get; set; }
+
+	[NotMapped]
+	public bool IsFollowing { get; set; }
+
+	[NotMapped]
+	public int VisitCount { get; set; }
+
+	[NotMapped]
+	public int ChildrenCount { get; set; }
 }
 
 public class ProductJson {
@@ -51,5 +63,11 @@ public class ProductJson {
 	public string? ActionUri { get; set; }
 	public string? Details { get; set; }
 	public ICollection<VisitCount> VisitCounts { get; set; } = [];
+	public ICollection<PointCount> PointCounts { get; set; } = [];
 	public ICollection<Guid> RelatedProducts { get; set; } = [];
+}
+
+public class PointCount {
+	public required string UserId { get; set; }
+	public required int Point { get; set; }
 }
