@@ -181,8 +181,8 @@ public class ProductService(
 		
 		if (p.ShowIsFollowing && userData?.Id != null)
 			foreach (ProductEntity i in list.Result ?? []) {
-				UResponse<bool?> isFollowing = await followService.IsFollowingProduct(new FollowParams { UserId = userData?.Id, TargetProductId = i.Id }, ct);
-				i.IsFollowing = isFollowing.Result ?? false;
+				UResponse<bool?> isFollowing = await followService.IsFollowingProduct(new FollowParams { UserId = userData?.Id, TargetProductId = i.Id, Token = p.Token}, ct);
+				i.IsFollowing = isFollowing.Result ?? null;
 			}
 
 		return list;
