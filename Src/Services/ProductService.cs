@@ -179,10 +179,10 @@ public class ProductService(
 					i.ChildrenCount = await db.Set<ProductEntity>().Where(x => x.ParentId == i.Id).CountAsync();
 			}
 
-		
+
 		if (p.ShowIsFollowing && userData?.Id != null)
 			foreach (ProductEntity i in list.Result ?? []) {
-				UResponse<bool?> isFollowing = await followService.IsFollowingProduct(new FollowParams { UserId = userData?.Id, TargetProductId = i.Id, Token = p.Token}, ct);
+				UResponse<bool?> isFollowing = await followService.IsFollowingProduct(new FollowParams { UserId = userData?.Id, TargetProductId = i.Id, Token = p.Token }, ct);
 				i.IsFollowing = isFollowing.Result ?? null;
 			}
 
