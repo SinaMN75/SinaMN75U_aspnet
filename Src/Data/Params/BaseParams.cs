@@ -23,7 +23,7 @@ public class BaseReadParams<T> : BaseParams {
 	public bool OrderByCreatedAtDesc { get; set; } = false;
 	public bool OrderByUpdatedAt { get; set; } = false;
 	public bool OrderByUpdatedAtDesc { get; set; } = false;
-	public List<T>? Tags { get; set; }
+	public ICollection<T>? Tags { get; set; }
 }
 
 public class BaseUpdateParams<T> : BaseParams {
