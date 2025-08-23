@@ -19,8 +19,10 @@ public enum Usc {
 	WrongVerificationCode = 601,
 	MaximumLimitReached = 602,
 	UserNotFound = 605,
-	
-	EmptyList = 701
+
+	EmptyList = 701,
+
+	MediaTypeNotEntered = 801
 }
 
 public enum TagUser {
@@ -44,6 +46,7 @@ public enum TagCategory {
 public enum TagMedia {
 	Image = 100,
 	Profile = 101,
+	Editor = 201,
 	Test = 999
 }
 

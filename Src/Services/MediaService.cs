@@ -14,14 +14,18 @@ public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService
 		if (!allowedExtensions.Contains(Path.GetExtension(p.File.FileName.ToLower())))
 			return new UResponse<MediaEntity?>(null, Usc.BadRequest);
 
-		Guid id = Guid.NewGuid();
-		string folderName = "";
-		if (p.UserId != null) folderName = "users";
-		if (p.CategoryId != null) folderName = "categories";
-		if (p.CommentId != null) folderName = "comments";
-		if (p.ContentId != null) folderName = "contents";
-		if (p.ProductId != null) folderName = "products";
-		string name = $"{folderName}/{id + Path.GetExtension(p.File.FileName)}";
+		string folderName;
+		if (p.Tags.Contains(TagMedia.Editor)) folderName = "editor";
+		else {
+			if (p.UserId != null) folderName = "users";
+			else if (p.CategoryId != null) folderName = "categories";
+			else if (p.CommentId != null) folderName = "comments";
+			else if (p.ContentId != null) folderName = "contents";
+			else if (p.ProductId != null) folderName = "products";
+			else return new UResponse<MediaEntity?>(null, Usc.MediaTypeNotEntered);
+		}
+
+		string name = $"{folderName}/{Guid.CreateVersion7() + Path.GetExtension(p.File.FileName)}";
 		MediaEntity e = new() {
 			Path = name,
 			UserId = p.UserId,

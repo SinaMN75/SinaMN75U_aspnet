@@ -36,4 +36,6 @@ public class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
 public class CategoryReadParams : BaseReadParams<TagCategory> {
 	public IEnumerable<Guid>? Ids { get; set; }
 	public bool ShowMedia { get; set; } = false;
+	public bool ShowChildren { get; set; } = false;
+	public bool ShowChildrenMedia { get; set; } = false;
 }

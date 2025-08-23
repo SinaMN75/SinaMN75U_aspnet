@@ -4,6 +4,7 @@ public interface ICategoryService {
 	Task<UResponse> BulkCreate(IEnumerable<CategoryCreateParams> p, CancellationToken ct);
 	Task<UResponse<CategoryEntity?>> Create(CategoryCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<CategoryEntity>?>> Read(CategoryReadParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<CategoryEntity>?>> ReadDept(CategoryReadParams p, CancellationToken ct);
 	Task<UResponse<CategoryEntity?>> ReadById(IdParams p, CancellationToken ct);
 	Task<UResponse<CategoryEntity?>> Update(CategoryUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
@@ -59,16 +60,42 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 
 	public async Task<UResponse<IEnumerable<CategoryEntity>?>> Read(CategoryReadParams p, CancellationToken ct) {
 		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>()
-			.Include(x => x.Children)
-			.Include(x => x.Media)
 			.Where(x => x.ParentId == null)
 			.OrderBy(x => x.Id);
 
-		if (p.Tags.IsNotNullOrEmpty())
-			q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
+		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
+		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
 
-		if (p.Ids.IsNotNullOrEmpty())
-			q = q.Where(x => p.Ids.Contains(x.Id));
+		if (p.ShowMedia) q = q.Include(x => x.Media);
+
+		if (p.ShowChildren) {
+			if (p.ShowChildrenMedia) q = q.Include(x => x.Children).ThenInclude(x => x.Media);
+			else q = q.Include(x => x.Children);
+		}
+
+		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	}
+
+	public async Task<UResponse<IEnumerable<CategoryEntity>?>> ReadDept(CategoryReadParams p, CancellationToken ct) {
+		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>()
+			.Where(x => x.ParentId == null)
+			.OrderBy(x => x.Id);
+
+		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
+		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
+
+		if (p.ShowMedia) q = q.Include(x => x.Media);
+
+		if (p.ShowChildren)
+			q = q.Include(x => x.Children)
+				.ThenInclude(x => x.Children)
+				.ThenInclude(x => x.Children)
+				.ThenInclude(x => x.Children)
+				.ThenInclude(x => x.Children)
+				.ThenInclude(x => x.Children)
+				.ThenInclude(x => x.Children)
+				.ThenInclude(x => x.Children)
+				.ThenInclude(x => x.Children);
 
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
