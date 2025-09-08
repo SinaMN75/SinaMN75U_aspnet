@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Params;
 
-public class ProductCreateParams : BaseParams {
+public class ProductCreateParams : BaseCreateParams<TagProduct> {
 	[UValidationRequired("TitleRequired")]
 	public required string Title { get; set; }
 
@@ -20,12 +20,10 @@ public class ProductCreateParams : BaseParams {
 	public double? Price { get; set; }
 
 	public string? Details { get; set; }
-
-	[UValidationMinCollectionLength(1, "TagsRequired")]
-	public required List<TagProduct> Tags { get; set; }
-
+	
 	public IEnumerable<Guid>? Categories { get; set; }
 	public IEnumerable<Guid>? RelatedProducts { get; set; }
+	public IEnumerable<ProductCreateParams> Children { get; set; } = [];
 
 	public Guid? ParentId { get; set; }
 	public Guid? UserId { get; set; }
@@ -61,6 +59,7 @@ public class ProductReadParams : BaseReadParams<TagProduct> {
 	public string? Query { get; set; }
 	public string? Title { get; set; }
 	public string? Code { get; set; }
+	public string? Slug { get; set; }
 	public Guid? ParentId { get; set; }
 	public Guid? UserId { get; set; }
 	public int? MinStock { get; set; }

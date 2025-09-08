@@ -187,7 +187,7 @@ public static class DataModelRoutes {
 					SubTitle = "",
 					Description = "",
 					Instagram = ""
-				},
+				}
 			};
 
 			ExamEntity exam = new ExamEntity {
@@ -244,13 +244,13 @@ public static class DataModelRoutes {
 				GetMobileVerificationCodeForLoginParams = new GetMobileVerificationCodeForLoginParams {
 					PhoneNumber = "",
 					ApiKey = "",
-					Token = "",
+					Token = ""
 				},
 				LoginWithEmailPasswordParams = new LoginWithEmailPasswordParams {
 					Email = "",
 					Password = "",
 					ApiKey = "",
-					Token = "",
+					Token = ""
 				},
 				LoginWithUserNamePasswordParams = new LoginWithUserNamePasswordParams {
 					UserName = "",
@@ -275,7 +275,7 @@ public static class DataModelRoutes {
 					FirstName = "",
 					LastName = "",
 					ApiKey = "",
-					Token = "",
+					Token = ""
 				},
 				CategoryCreateParams = new CategoryCreateParams {
 					Title = "",
@@ -306,13 +306,13 @@ public static class DataModelRoutes {
 					Id = guid,
 					AddTags = [TagCategory.Category],
 					RemoveTags = [TagCategory.Category],
-					Tags = [TagCategory.Category],
+					Tags = [TagCategory.Category]
 				},
 				CategoryReadParams = new CategoryReadParams {
 					Ids = [guid, guid],
 					ShowMedia = true,
 					ApiKey = "",
-					Token = "",
+					Token = ""
 				},
 				CommentCreateParams = new CommentCreateParams {
 					Description = "",
@@ -324,7 +324,7 @@ public static class DataModelRoutes {
 					UserId = guid,
 					Tags = [TagComment.InQueue],
 					ApiKey = "",
-					Token = "",
+					Token = ""
 				},
 				CommentUpdateParams = new CommentUpdateParams {
 					Description = "",
@@ -334,7 +334,7 @@ public static class DataModelRoutes {
 					Id = guid,
 					AddTags = [TagComment.InQueue],
 					RemoveTags = [TagComment.InQueue],
-					Tags = [TagComment.InQueue],
+					Tags = [TagComment.InQueue]
 				},
 				CommentReadParams = new CommentReadParams {
 					UserId = guid,
@@ -351,7 +351,7 @@ public static class DataModelRoutes {
 					OrderByCreatedAtDesc = false,
 					OrderByUpdatedAt = false,
 					OrderByUpdatedAtDesc = false,
-					Tags = [TagComment.InQueue],
+					Tags = [TagComment.InQueue]
 				},
 				ContentCreateParams = new ContentCreateParams {
 					Title = "",
@@ -385,7 +385,7 @@ public static class DataModelRoutes {
 					OrderByCreatedAtDesc = false,
 					OrderByUpdatedAt = false,
 					OrderByUpdatedAtDesc = false,
-					Tags = [1],
+					Tags = [1]
 				},
 				ExamCreateParams = new ExamCreateParams {
 					Title = "",
@@ -501,7 +501,7 @@ public static class DataModelRoutes {
 					Id = guid,
 					AddTags = [TagProduct.AwaitingPayment],
 					RemoveTags = [TagProduct.AwaitingPayment],
-					Tags = [TagProduct.AwaitingPayment],
+					Tags = [TagProduct.AwaitingPayment]
 				},
 				ProductReadParams = new ProductReadParams {
 					Query = "",
@@ -532,7 +532,7 @@ public static class DataModelRoutes {
 					OrderByCreatedAtDesc = false,
 					OrderByUpdatedAt = false,
 					OrderByUpdatedAtDesc = false,
-					Tags = [TagProduct.AwaitingPayment],
+					Tags = [TagProduct.AwaitingPayment]
 				},
 				UserCreateParams = new UserCreateParams {
 					UserName = "",
@@ -582,7 +582,7 @@ public static class DataModelRoutes {
 					OrderByCreatedAtDesc = false,
 					OrderByUpdatedAt = false,
 					OrderByUpdatedAtDesc = false,
-					Tags = [TagUser.Female],
+					Tags = [TagUser.Female]
 				},
 				UserUpdateParams = new UserUpdateParams {
 					Password = "",
@@ -613,7 +613,7 @@ public static class DataModelRoutes {
 					Id = guid,
 					AddTags = [TagUser.Female],
 					RemoveTags = [TagUser.Female],
-					Tags = [TagUser.Female],
+					Tags = [TagUser.Female]
 				}
 			};
 			return Results.Ok(response);

@@ -19,82 +19,24 @@ public class ProductService(
 	IFollowService followService
 ) : IProductService {
 	public async Task<UResponse> BulkCreate(List<ProductCreateParams> p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.First().Token);
-		if (userData == null) return new UResponse<ProductEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-
-		List<ProductEntity> list = [];
-
-		foreach (ProductCreateParams i in p) {
-			List<CategoryEntity> categories = [];
-			if (i.Categories.IsNotNullOrEmpty()) categories = await categoryService.ReadEntity(new CategoryReadParams { Ids = i.Categories }, ct) ?? [];
-			list.Add(new ProductEntity {
-				Title = i.Title,
-				Code = i.Code,
-				Subtitle = i.Subtitle,
-				Description = i.Description,
-				Latitude = i.Latitude,
-				Longitude = i.Longitude,
-				Stock = i.Stock,
-				Price = i.Price,
-				ParentId = i.ParentId,
-				UserId = i.UserId ?? userData.Id,
-				Tags = i.Tags,
-				Categories = categories,
-				Type = i.Type,
-				Content = i.Content,
-				Slug = i.Slug,
-				Point = i.Point ?? 0,
-				JsonData = new ProductJson {
-					Details = i.Details,
-					ActionTitle = i.ActionTitle,
-					ActionUri = i.ActionUri,
-					ActionType = i.ActionType,
-					VisitCounts = [],
-					RelatedProducts = i.RelatedProducts?.ToList() ?? []
-				}
-			});
-		}
-
-		await db.AddRangeAsync(list);
-		await db.SaveChangesAsync();
+		foreach (ProductCreateParams param in p) await Create(param, ct);
 		return new UResponse();
 	}
 
 	public async Task<UResponse<ProductEntity?>> Create(ProductCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ProductEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null)
+			return new UResponse<ProductEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		List<CategoryEntity> categories = [];
-		if (p.Categories.IsNotNullOrEmpty())
-			categories = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct) ?? [];
+		List<CategoryEntity> categories = p.Categories.IsNotNullOrEmpty()
+			? await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct) ?? []
+			: [];
 
-		ProductEntity e = new() {
-			Title = p.Title,
-			Code = p.Code,
-			Subtitle = p.Subtitle,
-			Description = p.Description,
-			Latitude = p.Latitude,
-			Longitude = p.Longitude,
-			Stock = p.Stock,
-			Price = p.Price,
-			ParentId = p.ParentId,
-			UserId = p.UserId ?? userData.Id,
-			Tags = p.Tags,
-			Categories = categories,
-			Type = p.Type,
-			Content = p.Content,
-			Slug = p.Slug,
-			Point = p.Point ?? 0,
-			JsonData = new ProductJson {
-				Details = p.Details,
-				ActionTitle = p.ActionTitle,
-				ActionUri = p.ActionUri,
-				ActionType = p.ActionType,
-				VisitCounts = [],
-				RelatedProducts = p.RelatedProducts?.ToList() ?? []
-			}
-		};
+		ProductEntity e = FillData(p, userData.Id, p.ParentId, categories);
 		await db.Set<ProductEntity>().AddAsync(e, ct);
+
+		if (p.Children.IsNotNullOrEmpty()) await AddChildrenRecursively(p.Children, userData.Id, e.Id, categories, ct);
+
 		await db.SaveChangesAsync(ct);
 		return new UResponse<ProductEntity?>(e);
 	}
@@ -108,6 +50,7 @@ public class ProductService(
 		if (p.Query.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Query!) || (x.Description ?? "").Contains(p.Query!) || (x.Subtitle ?? "").Contains(p.Query!));
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.Code.IsNotNullOrEmpty()) q = q.Where(x => (x.Code ?? "").Contains(p.Code!));
+		if (p.Slug.IsNotNullOrEmpty()) q = q.Where(x => (x.Slug ?? "") == p.Code!);
 		if (p.ParentId.IsNotNullOrEmpty()) q = q.Where(x => x.ParentId == p.ParentId);
 		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(x => x.UserId == p.UserId);
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids!.Contains(x.Id));
@@ -270,5 +213,57 @@ public class ProductService(
 
 		int count = await db.Set<ProductEntity>().WhereIn(u => u.Id, p.Ids).ExecuteDeleteAsync(ct);
 		return count > 0 ? new UResponse(Usc.Deleted, ls.Get("ProductDeleted")) : new UResponse(Usc.NotFound, ls.Get("ProductNotFound"));
+	}
+
+	private async Task AddChildrenRecursively(
+		IEnumerable<ProductCreateParams> children,
+		Guid userId,
+		Guid parentId,
+		List<CategoryEntity> categories,
+		CancellationToken ct) {
+		foreach (ProductCreateParams childParams in children) {
+			ProductEntity childEntity = FillData(childParams, userId, parentId, categories);
+			await db.Set<ProductEntity>().AddAsync(childEntity, ct);
+
+			if (childParams.Children.IsNotNullOrEmpty()) {
+				await AddChildrenRecursively(childParams.Children, userId, childEntity.Id, categories, ct);
+			}
+		}
+	}
+
+	private static ProductEntity FillData(
+		ProductCreateParams p,
+		Guid userId,
+		Guid? parentId = null,
+		List<CategoryEntity>? categories = null
+	) {
+		ProductEntity e = new() {
+			Id = p.Id ?? Guid.CreateVersion7(),
+			Title = p.Title,
+			Code = p.Code,
+			Subtitle = p.Subtitle,
+			Description = p.Description,
+			Latitude = p.Latitude,
+			Longitude = p.Longitude,
+			Stock = p.Stock,
+			Price = p.Price,
+			ParentId = parentId ?? p.ParentId,
+			UserId = p.UserId ?? userId,
+			Tags = p.Tags,
+			Categories = categories ?? [],
+			Type = p.Type,
+			Content = p.Content,
+			Slug = p.Slug,
+			Point = p.Point ?? 0,
+			JsonData = new ProductJson {
+				Details = p.Details,
+				ActionTitle = p.ActionTitle,
+				ActionUri = p.ActionUri,
+				ActionType = p.ActionType,
+				VisitCounts = [],
+				RelatedProducts = p.RelatedProducts?.ToList() ?? []
+			}
+		};
+		return e;
 	}
 }

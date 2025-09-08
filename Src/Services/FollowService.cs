@@ -142,7 +142,7 @@ public class FollowService(DbContext db, ILocalizationService ls, ITokenService 
 				Followers = await db.Set<FollowEntity>().CountAsync(x => x.TargetUserId == p.Id, ct),
 				FollowedUsers = await db.Set<FollowEntity>().CountAsync(x => x.UserId == p.Id, ct),
 				FollowedProducts = await db.Set<FollowEntity>().CountAsync(x => x.UserId == p.Id && x.TargetProductId != null, ct),
-				FollowedCategories = await db.Set<FollowEntity>().CountAsync(x => x.UserId == p.Id && x.TargetCategoryId != null, ct),
+				FollowedCategories = await db.Set<FollowEntity>().CountAsync(x => x.UserId == p.Id && x.TargetCategoryId != null, ct)
 			});
 	}
 

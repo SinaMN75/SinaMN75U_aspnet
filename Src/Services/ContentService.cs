@@ -21,7 +21,7 @@ public class ContentService(DbContext db, ILocalizationService ls, ITokenService
 				Instagram = p.Instagram,
 				Phone = p.Phone,
 				Telegram = p.Telegram,
-				Whatsapp = p.Whatsapp,
+				Whatsapp = p.Whatsapp
 			}
 		}, ct);
 		await db.SaveChangesAsync(ct);

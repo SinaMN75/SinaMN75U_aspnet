@@ -18,6 +18,8 @@ public class CategoryCreateParams : BaseParams {
 	public string? Type { get; set; }
 	public string? Link { get; set; }
 	public List<Guid>? RelatedProducts { get; set; }
+
+	public IEnumerable<CategoryCreateParams> Children { get; set; } = [];
 }
 
 public class CategoryUpdateParams : BaseUpdateParams<TagCategory> {

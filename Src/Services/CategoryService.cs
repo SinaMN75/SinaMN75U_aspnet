@@ -15,45 +15,19 @@ public interface ICategoryService {
 
 public class CategoryService(DbContext db, IMediaService mediaService, ILocalizationService ls, ITokenService ts) : ICategoryService {
 	public async Task<UResponse> BulkCreate(IEnumerable<CategoryCreateParams> p, CancellationToken ct) {
-		List<CategoryEntity> list = [];
-		list.AddRange(p.Select(i => new CategoryEntity {
-			Id = i.Id ?? Guid.CreateVersion7(),
-			Title = i.Title,
-			Tags = i.Tags,
-			Order = i.Order,
-			ParentId = i.ParentId,
-			JsonData = new CategoryJson {
-				Subtitle = i.Subtitle,
-				Link = i.Link,
-				Location = i.Location,
-				Type = i.Type,
-				RelatedProducts = i.RelatedProducts ?? []
-			}
-		}));
-		await db.AddRangeAsync(list);
-		await db.SaveChangesAsync();
+		foreach (CategoryCreateParams param in p) await Create(param, ct);
 		return new UResponse();
 	}
 
 	public async Task<UResponse<CategoryEntity?>> Create(CategoryCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<CategoryEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		CategoryEntity e = new() {
-			Id = p.Id ?? Guid.CreateVersion7(),
-			Title = p.Title,
-			JsonData = new CategoryJson {
-				Subtitle = p.Subtitle,
-				Link = p.Link,
-				Location = p.Location,
-				Type = p.Type,
-				RelatedProducts = p.RelatedProducts ?? []
-			},
-			Tags = p.Tags,
-			Order = p.Order,
-			ParentId = p.ParentId
-		};
 
-		await db.Set<CategoryEntity>().AddAsync(e);
+		CategoryEntity e = FillData(p);
+		await db.Set<CategoryEntity>().AddAsync(e, ct);
+
+		if (p.Children.IsNotNullOrEmpty()) await AddChildrenRecursively(p.Children, e.Id, ct);
+
 		await db.SaveChangesAsync(ct);
 		return new UResponse<CategoryEntity?>(e);
 	}
@@ -182,5 +156,31 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>().AsTracking().OrderByDescending(x => x.Id);
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
 		return await q.ToListAsync(ct);
+	}
+
+	private async Task AddChildrenRecursively(IEnumerable<CategoryCreateParams> children, Guid parentId, CancellationToken ct) {
+		foreach (CategoryCreateParams childParams in children) {
+			CategoryEntity childEntity = FillData(childParams, parentId);
+			await db.Set<CategoryEntity>().AddAsync(childEntity, ct);
+			if (childParams.Children.IsNotNullOrEmpty()) await AddChildrenRecursively(childParams.Children, childEntity.Id, ct);
+		}
+	}
+
+	private static CategoryEntity FillData(CategoryCreateParams p, Guid? parentId = null) {
+		CategoryEntity e = new() {
+			Id = p.Id ?? Guid.CreateVersion7(),
+			Title = p.Title,
+			JsonData = new CategoryJson {
+				Subtitle = p.Subtitle,
+				Link = p.Link,
+				Location = p.Location,
+				Type = p.Type,
+				RelatedProducts = p.RelatedProducts ?? []
+			},
+			Tags = p.Tags,
+			Order = p.Order,
+			ParentId = parentId ?? p.ParentId
+		};
+		return e;
 	}
 }
