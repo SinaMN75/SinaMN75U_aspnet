@@ -35,7 +35,7 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 	public async Task<UResponse<IEnumerable<CategoryEntity>?>> Read(CategoryReadParams p, CancellationToken ct) {
 		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>()
 			.Where(x => x.ParentId == null)
-			.OrderBy(x => x.Id);
+			.OrderBy(x => x.CreatedAt);
 
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
@@ -90,7 +90,7 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 			UpdatedAt = x.UpdatedAt,
 			Tags = x.Tags,
 			JsonData = x.JsonData
-		}).FirstOrDefaultAsync(x => x.Id == p.Id);
+		}).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<CategoryEntity?>(null, Usc.NotFound, ls.Get("CategoryNotFound")) : new UResponse<CategoryEntity?>(e);
 	}
 
