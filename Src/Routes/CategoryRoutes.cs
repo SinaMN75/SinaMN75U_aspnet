@@ -9,7 +9,7 @@ public static class CategoryRoutes {
 			return (await s.Create(p, c)).ToResult();
 		}).Produces<UResponse<CategoryEntity>>();
 
-		r.MapPost("BulkCreate", async (IEnumerable<CategoryCreateParams> p, ICategoryService s, ILocalStorageService ls, CancellationToken c) => {
+		r.MapPost("BulkCreate", async (List<CategoryCreateParams> p, ICategoryService s, ILocalStorageService ls, CancellationToken c) => {
 			ls.DeleteAllByPartialKey(tag);
 			return (await s.BulkCreate(p, c)).ToResult();
 		}).Produces<UResponse<CategoryEntity>>();
