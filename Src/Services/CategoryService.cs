@@ -35,7 +35,7 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 	public async Task<UResponse<IEnumerable<CategoryEntity>?>> Read(CategoryReadParams p, CancellationToken ct) {
 		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>()
 			.Where(x => x.ParentId == null)
-			.OrderBy(x => x.CreatedAt);
+			.OrderBy(x => x.Id);
 
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
@@ -46,6 +46,9 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 			if (p.ShowChildrenMedia) q = q.Include(x => x.Children).ThenInclude(x => x.Media);
 			else q = q.Include(x => x.Children);
 		}
+		
+		if (p.OrderByOrder)  q = q.OrderBy(x => x.Order);
+		if (p.OrderByOrderDesc)  q = q.OrderByDescending(x => x.Order);
 
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}

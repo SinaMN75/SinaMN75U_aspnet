@@ -40,4 +40,6 @@ public class CategoryReadParams : BaseReadParams<TagCategory> {
 	public bool ShowMedia { get; set; } = false;
 	public bool ShowChildren { get; set; } = false;
 	public bool ShowChildrenMedia { get; set; } = false;
+	public bool OrderByOrder { get; set; } = false;
+	public bool OrderByOrderDesc { get; set; } = false;
 }
