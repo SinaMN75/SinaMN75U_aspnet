@@ -73,7 +73,10 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 				.ThenInclude(x => x.Children)
 				.ThenInclude(x => x.Children)
 				.ThenInclude(x => x.Children);
-
+				
+		if (p.OrderByOrder)  q = q.OrderBy(x => x.Order);
+		if (p.OrderByOrderDesc)  q = q.OrderByDescending(x => x.Order);
+		
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
