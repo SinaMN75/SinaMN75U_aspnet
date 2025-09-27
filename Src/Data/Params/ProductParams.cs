@@ -21,7 +21,7 @@ public class ProductCreateParams : BaseCreateParams<TagProduct> {
 
 	public string? Details { get; set; }
 	
-	public IEnumerable<Guid>? Categories { get; set; }
+	public ICollection<Guid>? Categories { get; set; }
 	public IEnumerable<Guid>? RelatedProducts { get; set; }
 	public IEnumerable<ProductCreateParams> Children { get; set; } = [];
 
@@ -77,5 +77,4 @@ public class ProductReadParams : BaseReadParams<TagProduct> {
 	public bool ShowCommentCount { get; set; }
 	public bool ShowIsFollowing { get; set; }
 	public bool ShowChildrenCount { get; set; }
-	public IEnumerable<Guid>? Ids { get; set; }
 }

@@ -79,5 +79,5 @@ public class UserUpdateParams : BaseUpdateParams<TagUser> {
 	public List<string>? DrugAllergies { get; set; }
 	public List<string>? Sickness { get; set; }
 	public List<string>? Health1 { get; set; }
-	public IEnumerable<Guid>? Categories { get; set; }
+	public ICollection<Guid>? Categories { get; set; }
 }

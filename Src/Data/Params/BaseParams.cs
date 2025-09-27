@@ -24,6 +24,7 @@ public class BaseReadParams<T> : BaseParams {
 	public bool OrderByUpdatedAt { get; set; } = false;
 	public bool OrderByUpdatedAtDesc { get; set; } = false;
 	public ICollection<T>? Tags { get; set; }
+	public ICollection<Guid> Ids { get; set; } = [];
 }
 
 public class BaseUpdateParams<T> : BaseParams {
