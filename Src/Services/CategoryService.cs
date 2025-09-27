@@ -29,6 +29,7 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 		if (p.Children.IsNotNullOrEmpty()) await AddChildrenRecursively(p.Children, e.Id, ct);
 
 		await db.SaveChangesAsync(ct);
+		await AddMedia(e.Id, p.Media, ct);
 		return new UResponse<CategoryEntity?>(e);
 	}
 
@@ -46,9 +47,9 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 			if (p.ShowChildrenMedia) q = q.Include(x => x.Children).ThenInclude(x => x.Media);
 			else q = q.Include(x => x.Children);
 		}
-		
-		if (p.OrderByOrder)  q = q.OrderBy(x => x.Order);
-		if (p.OrderByOrderDesc)  q = q.OrderByDescending(x => x.Order);
+
+		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
+		if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
 
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
@@ -73,10 +74,10 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 				.ThenInclude(x => x.Children)
 				.ThenInclude(x => x.Children)
 				.ThenInclude(x => x.Children);
-				
-		if (p.OrderByOrder)  q = q.OrderBy(x => x.Order);
-		if (p.OrderByOrderDesc)  q = q.OrderByDescending(x => x.Order);
-		
+
+		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
+		if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
+
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
@@ -125,7 +126,7 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
-
+		await AddMedia(e.Id, p.Media, ct);
 		return new UResponse<CategoryEntity?>(e);
 	}
 
@@ -188,5 +189,12 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 			ParentId = parentId ?? p.ParentId
 		};
 		return e;
+	}
+
+	private async Task AddMedia(Guid categoryId, ICollection<Guid> ids, CancellationToken ct) {
+		if (ids.IsNullOrEmpty()) return;
+		List<MediaEntity> media = await mediaService.ReadEntity(new BaseReadParams<TagMedia> { Ids = ids }, ct) ?? [];
+		if (media.Count == 0) return;
+		foreach (MediaEntity i in media) await mediaService.Update(new MediaUpdateParams { Id = i.Id, CategoryId = categoryId }, ct);
 	}
 }

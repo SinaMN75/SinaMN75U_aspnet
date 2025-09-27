@@ -20,6 +20,7 @@ public class CategoryCreateParams : BaseParams {
 	public List<Guid>? RelatedProducts { get; set; }
 
 	public IEnumerable<CategoryCreateParams> Children { get; set; } = [];
+	public ICollection<Guid> Media { get; set; } = [];
 }
 
 public class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
@@ -33,6 +34,7 @@ public class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
 	public ICollection<Guid>? RelatedProducts { get; set; }
 	public ICollection<Guid>? AddRelatedProducts { get; set; }
 	public ICollection<Guid>? RemoveRelatedProducts { get; set; }
+	public ICollection<Guid> Media { get; set; } = [];
 }
 
 public class CategoryReadParams : BaseReadParams<TagCategory> {
