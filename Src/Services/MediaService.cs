@@ -17,7 +17,7 @@ public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService
 			return new UResponse<MediaEntity?>(null, Usc.BadRequest);
 
 		string folderName;
-		if (p.Tags.Contains(TagMedia.Editor)) folderName = "editor";
+		if (p.Tags.Contains(TagMedia.Editor)) folderName = "generic";
 		else {
 			if (p.UserId != null) folderName = "users";
 			else if (p.CategoryId != null) folderName = "categories";
@@ -104,6 +104,7 @@ public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService
 		IQueryable<MediaEntity> q = db.Set<MediaEntity>().AsTracking().OrderByDescending(x => x.Id);
 
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
+		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
 
 		return await q.ToListAsync(ct);
 	}

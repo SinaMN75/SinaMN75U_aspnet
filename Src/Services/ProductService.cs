@@ -16,7 +16,8 @@ public class ProductService(
 	ILocalizationService ls,
 	ICategoryService categoryService,
 	ICommentService commentService,
-	IFollowService followService
+	IFollowService followService,
+	IMediaService mediaService
 ) : IProductService {
 	public async Task<UResponse> BulkCreate(List<ProductCreateParams> p, CancellationToken ct) {
 		foreach (ProductCreateParams param in p) await Create(param, ct);
@@ -38,6 +39,9 @@ public class ProductService(
 		if (p.Children.IsNotNullOrEmpty()) await AddChildrenRecursively(p.Children, userData.Id, e.Id, categories, ct);
 
 		await db.SaveChangesAsync(ct);
+
+		await AddMedia(e.Id, p.Media, ct);
+
 		return new UResponse<ProductEntity?>(e);
 	}
 
@@ -119,7 +123,7 @@ public class ProductService(
 				if (p.ShowChildren || p.ShowChildrenDepth)
 					i.ChildrenCount = i.Children.Count;
 				else
-					i.ChildrenCount = await db.Set<ProductEntity>().Where(x => x.ParentId == i.Id).CountAsync();
+					i.ChildrenCount = await db.Set<ProductEntity>().Where(x => x.ParentId == i.Id).CountAsync(ct);
 			}
 
 
@@ -196,6 +200,8 @@ public class ProductService(
 
 		db.Set<ProductEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
+
+		await AddMedia(p.Id, p.Media, ct);
 		return new UResponse<ProductEntity?>(e);
 	}
 
@@ -265,5 +271,15 @@ public class ProductService(
 			}
 		};
 		return e;
+	}
+
+	private async Task AddMedia(Guid productId, ICollection<Guid> ids, CancellationToken ct) {
+		if (ids.IsNullOrEmpty()) return;
+
+		List<MediaEntity> media = await mediaService.ReadEntity(new BaseReadParams<TagMedia> { Ids = ids }, ct) ?? [];
+
+		if (media.Count == 0) return;
+
+		foreach (MediaEntity i in media) await mediaService.Update(new MediaUpdateParams { Id = i.Id, ProductId = productId }, ct);
 	}
 }

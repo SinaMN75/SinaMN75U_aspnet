@@ -27,6 +27,8 @@ public class ProductCreateParams : BaseCreateParams<TagProduct> {
 
 	public Guid? ParentId { get; set; }
 	public Guid? UserId { get; set; }
+	
+	public ICollection<Guid> Media { get; set; } = [];
 }
 
 public class ProductUpdateParams : BaseUpdateParams<TagProduct> {
@@ -53,6 +55,8 @@ public class ProductUpdateParams : BaseUpdateParams<TagProduct> {
 	public ICollection<Guid>? RemoveRelatedProducts { get; set; }
 	public ICollection<Guid>? AddCategories { get; set; }
 	public ICollection<Guid>? RemoveCategories { get; set; }
+	
+	public ICollection<Guid> Media { get; set; } = [];
 }
 
 public class ProductReadParams : BaseReadParams<TagProduct> {
