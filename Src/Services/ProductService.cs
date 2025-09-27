@@ -104,7 +104,7 @@ public class ProductService(
 		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
 		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
 
-		UResponse<IEnumerable<ProductEntity>?> list = await q.OrderBy(x => x.CreatedAt).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		UResponse<IEnumerable<ProductEntity>?> list = await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 
 		foreach (ProductEntity i in list.Result ?? []) {
 			foreach (VisitCount visit in i.JsonData.VisitCounts) i.VisitCount += visit.Count;
