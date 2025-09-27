@@ -1,7 +1,5 @@
 namespace SinaMN75U.Utils;
 
-using Microsoft.EntityFrameworkCore.Metadata;
-
 public static class DbModelBuilder {
 	public static void SetupModelBuilder(this ModelBuilder builder) {
 		foreach (IMutableEntityType entityType in builder.Model.GetEntityTypes())

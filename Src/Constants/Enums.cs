@@ -80,20 +80,20 @@ public enum TagReaction {
 
 public enum TagExam {
 	Test = 999
-};
+}
 
 public enum TagFollow {
 	User = 101,
 	Product = 102,
 	Category = 103
-};
+}
 
 public enum TagContent {
 	AboutUs = 101,
 	Terms = 102,
 	HomeSlider1 = 103
-};
+}
 
 public enum TagBadge {
 	Test = 999
-};
+}

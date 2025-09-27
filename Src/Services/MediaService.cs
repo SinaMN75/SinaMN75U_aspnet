@@ -6,6 +6,8 @@ public interface IMediaService {
 	Task<UResponse<MediaEntity?>> Update(MediaUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	Task<UResponse> DeleteRange(IEnumerable<Guid> ids, CancellationToken ct);
+
+	Task<List<MediaEntity>?> ReadEntity(BaseReadParams<TagMedia> p, CancellationToken ct);
 }
 
 public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService {
@@ -96,6 +98,14 @@ public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService
 	public async Task<UResponse> DeleteRange(IEnumerable<Guid> ids, CancellationToken ct) {
 		await db.Set<MediaEntity>().Where(x => ids.Contains(x.Id)).ExecuteDeleteAsync(ct);
 		return new UResponse();
+	}
+
+	public async Task<List<MediaEntity>?> ReadEntity(BaseReadParams<TagMedia> p, CancellationToken ct) {
+		IQueryable<MediaEntity> q = db.Set<MediaEntity>().AsTracking().OrderByDescending(x => x.Id);
+
+		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
+
+		return await q.ToListAsync(ct);
 	}
 
 	private async Task SaveMedia(IFormFile file, string name) {

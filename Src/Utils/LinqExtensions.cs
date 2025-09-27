@@ -1,7 +1,5 @@
 namespace SinaMN75U.Utils;
 
-using Microsoft.EntityFrameworkCore.Query;
-
 [AttributeUsage(AttributeTargets.Property)]
 public class IncludeOnlyAttribute : Attribute;
 

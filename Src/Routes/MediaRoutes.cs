@@ -1,8 +1,5 @@
 namespace SinaMN75U.Routes;
 
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.StaticFiles;
-
 public static class MediaRoutes {
 	public static void MapMediaRoutes(this IEndpointRouteBuilder app, string tag) {
 		RouteGroupBuilder r = app.MapGroup(tag).WithTags(tag).AddEndpointFilter<UValidationFilter>();
