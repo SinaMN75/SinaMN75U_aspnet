@@ -55,6 +55,7 @@ public class ProductUpdateParams : BaseUpdateParams<TagProduct> {
 	public ICollection<Guid>? RemoveRelatedProducts { get; set; }
 	public ICollection<Guid>? AddCategories { get; set; }
 	public ICollection<Guid>? RemoveCategories { get; set; }
+	public ICollection<Guid>? Categories { get; set; }
 	
 	public ICollection<Guid> Media { get; set; } = [];
 }

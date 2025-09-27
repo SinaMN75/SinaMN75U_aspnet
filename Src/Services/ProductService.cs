@@ -201,6 +201,11 @@ public class ProductService(
 			IEnumerable<CategoryEntity> categoriesToRemove = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.RemoveCategories }, ct) ?? [];
 			e.Categories.RemoveRangeIfExist(categoriesToRemove);
 		}
+		
+		if (p.Categories.IsNotNullOrEmpty()) {
+			ICollection<CategoryEntity> categories = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct) ?? [];
+			e.Categories = categories;
+		}
 
 		db.Set<ProductEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
