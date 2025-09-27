@@ -102,7 +102,7 @@ public class ProductService(
 			q = q.Include(x => x.Children).ThenInclude(x => x.Children).ThenInclude(x => x.Children).ThenInclude(x => x.Children).ThenInclude(x => x.Children);
 
 		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
-		if (p.OrderByCreatedAt) q = q.OrderByDescending(x => x.CreatedAt);
+		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
 
 		UResponse<IEnumerable<ProductEntity>?> list = await q.OrderBy(x => x.CreatedAt).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 
