@@ -46,7 +46,6 @@ public enum TagCategory {
 public enum TagMedia {
 	Image = 100,
 	Profile = 101,
-	Editor = 201,
 	Test = 999
 }
 
