@@ -192,19 +192,15 @@ public class ProductService(
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
 		if (p.Tags.IsNotNullOrEmpty()) e.Tags = p.Tags;
 		
-		if (p.AddCategories.IsNotNullOrEmpty()) {
-			IEnumerable<CategoryEntity> newCategories = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.AddCategories }, ct) ?? [];
-			e.Categories.AddRangeIfNotExist(newCategories);
-		}
+		if (p.AddCategories.IsNotNullOrEmpty()) 
+			e.Categories.AddRangeIfNotExist(await categoryService.ReadEntity(new CategoryReadParams { Ids = p.AddCategories }, ct) ?? []);
 
-		if (p.RemoveCategories.IsNotNullOrEmpty()) {
-			IEnumerable<CategoryEntity> categoriesToRemove = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.RemoveCategories }, ct) ?? [];
-			e.Categories.RemoveRangeIfExist(categoriesToRemove);
-		}
+		if (p.RemoveCategories.IsNotNullOrEmpty()) 
+			e.Categories.RemoveRangeIfExist(await categoryService.ReadEntity(new CategoryReadParams { Ids = p.RemoveCategories }, ct) ?? []);
 		
-		if (p.Categories.IsNotNullOrEmpty()) {
-			ICollection<CategoryEntity> categories = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct) ?? [];
-			e.Categories = categories;
+		if (p.Categories.IsNotNull()) {
+			if (p.Categories.Count == 0) e.Categories = [];
+			e.Categories = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct) ?? [];
 		}
 
 		db.Set<ProductEntity>().Update(e);
