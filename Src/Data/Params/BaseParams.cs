@@ -31,9 +31,9 @@ public class BaseUpdateParams<T> : BaseParams {
 	[UValidationRequired("IdRequired")]
 	public required Guid Id { get; set; }
 
-	public IEnumerable<T>? AddTags { get; set; }
-	public IEnumerable<T>? RemoveTags { get; set; }
-	public IEnumerable<T>? Tags { get; set; }
+	public ICollection<T>? AddTags { get; set; }
+	public ICollection<T>? RemoveTags { get; set; }
+	public ICollection<T>? Tags { get; set; }
 }
 
 public class BaseCreateParams<T> : BaseParams {

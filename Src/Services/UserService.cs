@@ -146,6 +146,10 @@ public class UserService(
 			List<CategoryEntity>? list = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct);
 			e.Categories.AddRangeIfNotExist(list);
 		}
+		
+		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
+		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
+		if (p.Tags.IsNotNullOrEmpty()) e.Tags = p.Tags;
 
 		db.Set<UserEntity>().Update(e);
 		await db.SaveChangesAsync(ct);

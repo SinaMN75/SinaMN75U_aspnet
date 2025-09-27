@@ -117,9 +117,11 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 		if (p.Link.IsNotNull()) e.JsonData.Link = p.Link;
 		if (p.Location.IsNotNull()) e.JsonData.Location = p.Location;
 		if (p.Type.IsNotNull()) e.JsonData.Type = p.Type;
-		if (p.Subtitle.IsNotNull()) e.JsonData.Subtitle = p.Subtitle;
-		if (p.Subtitle.IsNotNull()) e.JsonData.Subtitle = p.Subtitle;
-
+		
+		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
+		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
+		if (p.Tags.IsNotNullOrEmpty()) e.Tags = p.Tags;
+		
 		if (p.RelatedProducts.IsNotNull()) e.JsonData.RelatedProducts = p.RelatedProducts;
 		if (p.AddRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.AddRangeIfNotExist(p.AddRelatedProducts);
 		if (p.RemoveRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.RemoveRangeIfExist(p.RemoveRelatedProducts);
