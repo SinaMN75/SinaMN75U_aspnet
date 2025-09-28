@@ -200,7 +200,7 @@ public class ProductService(
 		
 		if (p.Categories.IsNotNull()) {
 			if (p.Categories.Count == 0) e.Categories = [];
-			e.Categories = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct) ?? [];
+			else e.Categories = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct) ?? [];
 		}
 
 		db.Set<ProductEntity>().Update(e);
