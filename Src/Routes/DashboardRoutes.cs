@@ -35,7 +35,7 @@ public static class DashboardRoutes {
 				string datePart = request.Id[..^status.Length];
 				string filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Logs", datePart[..4], datePart.Substring(4, 2), $"{datePart[6..]}_{status}.json");
 				string content = await File.ReadAllTextAsync(filePath);
-				return Results.Ok(content.DecodeJson<object>());
+				return Results.Ok(content.FromJson<object>());
 			}
 			catch (Exception e) {
 				return Results.Problem(e.Message);
@@ -95,9 +95,7 @@ public static class DashboardRoutes {
 		return result.OrderBy(y => y.Year).ToList();
 	}
 
-	private class LogFileRequest {
-		public string Id { get; set; } = string.Empty;
-	}
+	private record LogFileRequest(string Id = "");
 
 	private record YearLog {
 		public int Year { get; set; }

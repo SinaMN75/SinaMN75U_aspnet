@@ -60,7 +60,7 @@ public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService
 	}
 
 	public async Task<UResponse<MediaEntity?>> Update(MediaUpdateParams p, CancellationToken ct) {
-		MediaEntity? e = await db.Set<MediaEntity>().FindAsync(p.Id, ct);
+		MediaEntity? e = await db.Set<MediaEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse<MediaEntity?>(null, Usc.BadRequest);
 		if (p.Title != null) e.JsonData.Title = p.Title;
 		if (p.Description != null) e.JsonData.Description = p.Description;
@@ -78,7 +78,7 @@ public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
-		MediaEntity media = (await db.Set<MediaEntity>().FindAsync(p.Id))!;
+		MediaEntity media = (await db.Set<MediaEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
 
 		try {
 			File.Delete(Path.Combine(env.WebRootPath, "Media", media.Path));

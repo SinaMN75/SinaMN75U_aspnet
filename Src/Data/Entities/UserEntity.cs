@@ -57,6 +57,7 @@ public class UserJson {
 	public double? Weight { get; set; }
 	public double? Height { get; set; }
 	public ICollection<string> Health1 { get; set; } = [];
+	public ICollection<string> Health2 { get; set; } = [];
 	public ICollection<string> FoodAllergies { get; set; } = [];
 	public ICollection<string> DrugAllergies { get; set; } = [];
 	public ICollection<string> Sickness { get; set; } = [];

@@ -105,7 +105,7 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<CategoryEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		CategoryEntity? e = await db.Set<CategoryEntity>().FindAsync(p.Id, ct);
+		CategoryEntity? e = await db.Set<CategoryEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse<CategoryEntity?>(null, Usc.NotFound, ls.Get("CategoryNotFound"));
 
 		e.UpdatedAt = DateTime.UtcNow;

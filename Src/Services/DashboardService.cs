@@ -75,7 +75,7 @@ public class DashboardService(
 					await memProcess.WaitForExitAsync();
 
 					string[] lines = memOutput.Split('\n');
-					double pageSize = 4096.0;
+					const double pageSize = 4096.0;
 					double free = double.Parse(lines[1].Split(':')[1].Trim().Split(' ')[0]) * pageSize;
 					double active = double.Parse(lines[2].Split(':')[1].Trim().Split(' ')[0]) * pageSize;
 					double inactive = double.Parse(lines[3].Split(':')[1].Trim().Split(' ')[0]) * pageSize;
@@ -126,13 +126,13 @@ public class DashboardService(
 		UResponse<IEnumerable<ProductEntity>?> newProducts = await productService.Read(new ProductReadParams { PageSize = 5 }, ct);
 
 		return new DashboardResponse {
-			Categories = await db.Set<CategoryEntity>().CountAsync(),
-			Comments = await db.Set<CommentEntity>().CountAsync(),
-			Contents = await db.Set<ContentEntity>().CountAsync(),
-			Exams = await db.Set<ExamEntity>().CountAsync(),
-			Media = await db.Set<MediaEntity>().CountAsync(),
-			Products = await db.Set<ProductEntity>().CountAsync(),
-			Users = await db.Set<UserEntity>().CountAsync(),
+			Categories = await db.Set<CategoryEntity>().CountAsync(ct),
+			Comments = await db.Set<CommentEntity>().CountAsync(ct),
+			Contents = await db.Set<ContentEntity>().CountAsync(ct),
+			Exams = await db.Set<ExamEntity>().CountAsync(ct),
+			Media = await db.Set<MediaEntity>().CountAsync(ct),
+			Products = await db.Set<ProductEntity>().CountAsync(ct),
+			Users = await db.Set<UserEntity>().CountAsync(ct),
 			NewUsers = newUsers.Result ?? [],
 			NewCategories = newCategories.Result ?? [],
 			NewComments = newComments.Result ?? [],

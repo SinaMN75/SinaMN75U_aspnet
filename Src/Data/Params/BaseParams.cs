@@ -19,10 +19,10 @@ public class BaseReadParams<T> : BaseParams {
 	public int PageNumber { get; set; } = 1;
 	public DateTime? FromCreatedAt { get; set; }
 	public DateTime? ToCreatedAt { get; set; }
-	public bool OrderByCreatedAt { get; set; } = false;
-	public bool OrderByCreatedAtDesc { get; set; } = false;
-	public bool OrderByUpdatedAt { get; set; } = false;
-	public bool OrderByUpdatedAtDesc { get; set; } = false;
+	public bool OrderByCreatedAt { get; set; }
+	public bool OrderByCreatedAtDesc { get; set; }
+	public bool OrderByUpdatedAt { get; set; }
+	public bool OrderByUpdatedAtDesc { get; set; }
 	public ICollection<T>? Tags { get; set; }
 	public ICollection<Guid> Ids { get; set; } = [];
 }

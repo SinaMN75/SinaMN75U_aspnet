@@ -130,10 +130,8 @@ public class AuthService(
 			Tags = []
 		};
 
-		UserEntity response = e;
-
 		await db.SaveChangesAsync(ct);
-		if (!await smsNotificationService.SendOtpSms(response)) return new UResponse(Usc.MaximumLimitReached, ls.Get("MaxOtpReached"));
+		if (!await smsNotificationService.SendOtpSms(e)) return new UResponse(Usc.MaximumLimitReached, ls.Get("MaxOtpReached"));
 		return new UResponse();
 	}
 
@@ -146,7 +144,7 @@ public class AuthService(
 		user.LastName = p.LastName ?? user.LastName;
 
 		db.Update(user);
-		await db.SaveChangesAsync();
+		await db.SaveChangesAsync(ct);
 
 		return p.Otp == "1375" || p.Otp == cache.Get(user.Id.ToString())
 			? new UResponse<LoginResponse?>(new LoginResponse {

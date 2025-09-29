@@ -19,7 +19,7 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 				ScoreDetails = p.ScoreDetails
 			},
 			Tags = p.Tags
-		});
+		}, ct);
 		await db.SaveChangesAsync(ct);
 		return new UResponse<ExamEntity>(new ExamEntity {
 			Title = e.Entity.Title,

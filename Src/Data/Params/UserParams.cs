@@ -50,10 +50,10 @@ public class UserReadParams : BaseReadParams<TagUser> {
 	public DateTime? StartBirthDate { get; set; }
 	public DateTime? EndBirthDate { get; set; }
 	public IEnumerable<Guid>? Categories { get; set; }
-	public bool ShowCategories { get; set; } = false;
-	public bool ShowMedia { get; set; } = false;
-	public bool OrderByLastName { get; set; } = false;
-	public bool OrderByLastNameDesc { get; set; } = false;
+	public bool ShowCategories { get; set; }
+	public bool ShowMedia { get; set; }
+	public bool OrderByLastName { get; set; }
+	public bool OrderByLastNameDesc { get; set; }
 }
 
 public class UserUpdateParams : BaseUpdateParams<TagUser> {
@@ -75,6 +75,8 @@ public class UserUpdateParams : BaseUpdateParams<TagUser> {
 	public double? Height { get; set; }
 	public List<string>? AddHealth1 { get; set; }
 	public List<string>? RemoveHealth1 { get; set; }
+	public List<string>? AddHealth2 { get; set; }
+	public List<string>? RemoveHealth2 { get; set; }
 	public List<string>? FoodAllergies { get; set; }
 	public List<string>? DrugAllergies { get; set; }
 	public List<string>? Sickness { get; set; }

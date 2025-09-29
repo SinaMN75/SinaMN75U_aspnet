@@ -27,7 +27,7 @@ public class ProductCreateParams : BaseCreateParams<TagProduct> {
 
 	public Guid? ParentId { get; set; }
 	public Guid? UserId { get; set; }
-	
+
 	public ICollection<Guid> Media { get; set; } = [];
 }
 
@@ -71,14 +71,14 @@ public class ProductReadParams : BaseReadParams<TagProduct> {
 	public int? MaxStock { get; set; }
 	public double? MinPrice { get; set; }
 	public double? MaxPrice { get; set; }
-	public bool ShowCategories { get; set; } = false;
-	public bool ShowCategoriesMedia { get; set; } = false;
-	public bool ShowMedia { get; set; } = false;
-	public bool ShowUser { get; set; } = false;
-	public bool ShowUserMedia { get; set; } = false;
-	public bool ShowUserCategory { get; set; } = false;
-	public bool ShowChildren { get; set; } = false;
-	public bool ShowChildrenDepth { get; set; } = false;
+	public bool ShowCategories { get; set; }
+	public bool ShowCategoriesMedia { get; set; }
+	public bool ShowMedia { get; set; }
+	public bool ShowUser { get; set; }
+	public bool ShowUserMedia { get; set; }
+	public bool ShowUserCategory { get; set; }
+	public bool ShowChildren { get; set; }
+	public bool ShowChildrenDepth { get; set; }
 	public bool ShowCommentCount { get; set; }
 	public bool ShowIsFollowing { get; set; }
 	public bool ShowChildrenCount { get; set; }

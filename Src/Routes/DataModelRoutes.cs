@@ -190,7 +190,7 @@ public static class DataModelRoutes {
 				}
 			};
 
-			ExamEntity exam = new ExamEntity {
+			ExamEntity exam = new() {
 				Id = guid,
 				CreatedAt = dateTime,
 				UpdatedAt = dateTime,

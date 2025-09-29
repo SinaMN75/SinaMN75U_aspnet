@@ -35,5 +35,5 @@ public class ContentUpdateParams : BaseParams {
 }
 
 public class ContentReadParams : BaseReadParams<int> {
-	public bool ShowMedia { get; set; } = false;
+	public bool ShowMedia { get; set; }
 }

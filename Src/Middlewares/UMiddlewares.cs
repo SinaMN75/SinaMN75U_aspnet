@@ -135,8 +135,8 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 
 		var logEntry = new {
 			summary = $"{timestamp:yyyy-MM-dd HH:mm:ss} | {method} {path} | {statusCode} | {elapsedMs}ms",
-			requestBody = TryParseJson(requestBody.EncodeJson()) ?? requestBody,
-			responseBody = TryParseJson(responseBody.EncodeJson()) ?? responseBody,
+			requestBody = TryParseJson(requestBody.ToJson()) ?? requestBody,
+			responseBody = TryParseJson(responseBody.ToJson()) ?? responseBody,
 			exception = exception != null
 				? new {
 					type = exception.GetType().Name,

@@ -1,6 +1,6 @@
 ﻿namespace SinaMN75U.Utils;
 
-public class Server {
+public static class Server {
 	private static IHttpContextAccessor? _httpContextAccessor;
 	private static string? _serverAddress;
 

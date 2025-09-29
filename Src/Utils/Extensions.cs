@@ -1,28 +1,20 @@
 namespace SinaMN75U.Utils;
 
-public static class StringExtensions {
-	public static string EncodeBase64(this string plainText) => Convert.ToBase64String(Encoding.UTF8.GetBytes(plainText));
-	public static string DecodeBase64(this string base64EncodedData) => Encoding.UTF8.GetString(Convert.FromBase64String(base64EncodedData));
+public static partial class StringExtensions {
+	public static string ToBase64(this string plainText) => Convert.ToBase64String(Encoding.UTF8.GetBytes(plainText));
+	public static string FromBase64(this string base64EncodedData) => Encoding.UTF8.GetString(Convert.FromBase64String(base64EncodedData));
 	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this string? s) => s is { Length: > 0 };
 	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this Guid? s) => s != null;
 	public static bool IsNotNull([NotNullWhen(true)] this string? s) => s != null;
 	public static bool IsNullOrEmpty([NotNullWhen(false)] this string? s) => string.IsNullOrEmpty(s);
 	public static bool IsNull([NotNullWhen(false)] this string? s) => s == null;
 	public static bool MinMaxLength(this string? s, int min, int max) => s.IsNotNull() && s.Length >= min && s.Length <= max;
-	public static bool IsEmail(this string email) => !string.IsNullOrWhiteSpace(email) && Regex.IsMatch(email, @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
+	public static bool IsEmail(this string email) => !string.IsNullOrWhiteSpace(email) && MyRegex().IsMatch(email);
 
-	public static bool IsGuid(this string s) {
-		try {
-			Guid.Parse(s);
-			return true;
-		}
-		catch (Exception) {
-			return false;
-		}
-	}
+	public static bool IsGuid(this string s) => Guid.TryParse(s, out Guid _);
 
-	public static string EncodeJson<T>(this T obj) => JsonSerializer.Serialize(obj, UJsonOptions.Default);
-	public static T DecodeJson<T>(this string json) => JsonSerializer.Deserialize<T>(json, UJsonOptions.Default)!;
+	public static string ToJson<T>(this T obj) => JsonSerializer.Serialize(obj, UJsonOptions.Default);
+	public static T FromJson<T>(this string json) => JsonSerializer.Deserialize<T>(json, UJsonOptions.Default)!;
 
 	public static string FirstChars(this string? input, int range) {
 		if (input.IsNullOrEmpty()) return input ?? "";
@@ -63,6 +55,9 @@ public static class StringExtensions {
 			return 0;
 		}
 	}
+
+    [GeneratedRegex(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")]
+    private static partial Regex MyRegex();
 }
 
 public static class GuidExtensions {
@@ -227,6 +222,12 @@ public static class EnumerableExtensions {
 			if (!collection.Contains(item))
 				collection.Add(item);
 	}
+	public static void AddRangeIfNotExist<T>(this ICollection<T>? collection, ICollection<T>? items) {
+		if (collection == null || items == null) return;
+		foreach (T item in items)
+			if (!collection.Contains(item))
+				collection.Add(item);
+	}
 
 	public static void RemoveRangeIfExist<T>(this IEnumerable<T> list, IEnumerable<T> itemsToRemove) {
 		ArgumentNullException.ThrowIfNull(list);
@@ -261,7 +262,8 @@ public static class EnumerableExtensions {
 
 	public static IEnumerable<T> Flatten<T>(this IEnumerable<IEnumerable<T>> source) => source.SelectMany(x => x);
 
-	public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this IEnumerable<KeyValuePair<TKey, TValue>> source) where TKey : notnull => source.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+	public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this IEnumerable<KeyValuePair<TKey, TValue>> source) where TKey : notnull =>
+		source.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
 	public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> source) => source.OrderBy(_ => Guid.NewGuid());
 
