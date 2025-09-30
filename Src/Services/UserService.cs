@@ -34,6 +34,7 @@ public class UserService(
 			JsonData = new UserJson {
 				FcmToken = p.FcmToken,
 				Health1 = p.Health1 ?? [],
+				Health2 = p.Health2 ?? [],
 				Sickness = p.Sickness ?? [],
 				Weight = p.Weight,
 				Height = p.Height,

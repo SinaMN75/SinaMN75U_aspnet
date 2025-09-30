@@ -26,6 +26,7 @@ public class UserCreateParams : BaseParams {
 	public string? FatherName { get; set; }
 	public string? FcmToken { get; set; }
 	public List<string>? Health1 { get; set; }
+	public List<string>? Health2 { get; set; }
 	public List<string>? FoodAllergies { get; set; }
 	public List<string> DrugAllergies { get; set; } = [];
 	public List<string>? Sickness { get; set; }
