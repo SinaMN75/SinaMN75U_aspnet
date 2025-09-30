@@ -1,7 +1,7 @@
 namespace SinaMN75U.Services;
 
 public interface IUserService {
-	public Task<UResponse<UserEntity?>> Create(UserCreateParams p, CancellationToken ct);
+	public Task<UResponse<UserEntity?>> Create(UserCreateParams p, bool auth, CancellationToken ct);
 	public Task<UResponse> BulkCreate(UserBulkCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<UserEntity>?>> Read(UserReadParams p, CancellationToken ct);
 	public Task<UResponse<UserEntity?>> ReadById(IdParams p, CancellationToken ct);
@@ -15,9 +15,9 @@ public class UserService(
 	ITokenService ts,
 	ICategoryService categoryService
 ) : IUserService {
-	public async Task<UResponse<UserEntity?>> Create(UserCreateParams p, CancellationToken ct) {
+	public async Task<UResponse<UserEntity?>> Create(UserCreateParams p, bool auth, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<UserEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null && auth) return new UResponse<UserEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		UserEntity e = new() {
 			UserName = p.UserName,
 			Password = PasswordHasher.Hash(p.Password),
@@ -146,16 +146,16 @@ public class UserService(
 		if (p.RemoveHealth1.IsNotNullOrEmpty()) e.JsonData.Health1.RemoveAll(x => p.RemoveHealth1.Contains(x));
 		if (p.AddHealth2.IsNotNullOrEmpty()) e.JsonData.Health1.AddRangeIfNotExist(p.AddHealth2);
 		if (p.RemoveHealth2.IsNotNullOrEmpty()) e.JsonData.Health1.RemoveAll(x => p.RemoveHealth2.Contains(x));
-		
+
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
 		if (p.Tags.IsNotNullOrEmpty()) e.Tags = p.Tags;
-		
+
 		if (p.Categories.IsNotNullOrEmpty()) {
 			List<CategoryEntity>? list = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct);
 			e.Categories.AddRangeIfNotExist(list);
 		}
-		
+
 		db.Set<UserEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
 

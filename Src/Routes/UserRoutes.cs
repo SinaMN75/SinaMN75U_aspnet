@@ -4,9 +4,9 @@ public static class UserRoutes {
 	public static void MapUserRoutes(this IEndpointRouteBuilder app, string tag) {
 		RouteGroupBuilder r = app.MapGroup(tag).WithTags(tag).AddEndpointFilter<UValidationFilter>();
 
-		r.MapPost("Create", async (UserCreateParams d, IUserService s, ILocalStorageService ls, CancellationToken c) => {
+		r.MapPost("Create", async (UserCreateParams p, IUserService s, ILocalStorageService ls, CancellationToken c) => {
 			ls.DeleteAllByPartialKey(tag);
-			return (await s.Create(d, c)).ToResult();
+			return (await s.Create(p, true, c)).ToResult();
 		}).Produces<UResponse<UserEntity>>();
 		r.MapPost("BulkCreate", async (UserBulkCreateParams d, IUserService s, ILocalStorageService ls, CancellationToken c) => {
 			ls.DeleteAllByPartialKey(tag);
