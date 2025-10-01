@@ -172,10 +172,14 @@ public class UserService(
 			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse<UserEntity?>(null, Usc.NotFound, ls.Get("UserNotFound"));
 
-		VisitCount? visitCount = e.JsonData.VisitCounts.FirstOrDefault(v => v.UserId == (userData?.Id ?? Guid.Empty));
-
-		if (visitCount != null) visitCount.Count++;
-		else e.JsonData.VisitCounts.Add(new VisitCount { UserId = userData?.Id ?? Guid.Empty, Count = 1 });
+		try {
+			VisitCount? visitCount = e.JsonData.VisitCounts.FirstOrDefault(v => v.UserId == (userData?.Id ?? Guid.Empty));
+			if (visitCount != null) visitCount.Count++;
+			else e.JsonData.VisitCounts.Add(new VisitCount { UserId = userData?.Id ?? Guid.Empty, Count = 1 });
+		}
+		catch (Exception) {
+			// ignored
+		}
 
 		return new UResponse<UserEntity?>(e);
 	}
