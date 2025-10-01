@@ -145,8 +145,8 @@ public class UserService(
 
 		if (p.AddHealth1.IsNotNullOrEmpty()) e.JsonData.Health1.AddRangeIfNotExist(p.AddHealth1);
 		if (p.RemoveHealth1.IsNotNullOrEmpty()) e.JsonData.Health1.RemoveAll(x => p.RemoveHealth1.Contains(x));
-		if (p.AddHealth2.IsNotNullOrEmpty()) e.JsonData.Health1.AddRangeIfNotExist(p.AddHealth2);
-		if (p.RemoveHealth2.IsNotNullOrEmpty()) e.JsonData.Health1.RemoveAll(x => p.RemoveHealth2.Contains(x));
+		if (p.AddHealth2.IsNotNullOrEmpty()) e.JsonData.Health2.AddRangeIfNotExist(p.AddHealth2);
+		if (p.RemoveHealth2.IsNotNullOrEmpty()) e.JsonData.Health2.RemoveAll(x => p.RemoveHealth2.Contains(x));
 
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
