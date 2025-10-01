@@ -5,7 +5,7 @@ public interface IUserService {
 	public Task<UResponse> BulkCreate(UserBulkCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<UserEntity>?>> Read(UserReadParams p, CancellationToken ct);
 	public Task<UResponse<UserEntity?>> ReadById(IdParams p, CancellationToken ct);
-	public Task<UResponse<UserEntity?>> Update(UserUpdateParams p, CancellationToken ct);
+	public Task<UResponse<UserEntity?>> Update(UserUpdateParams p, bool auth, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
 }
 
@@ -134,9 +134,9 @@ public class UserService(
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
-	public async Task<UResponse<UserEntity?>> Update(UserUpdateParams p, CancellationToken ct) {
+	public async Task<UResponse<UserEntity?>> Update(UserUpdateParams p, bool auth, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<UserEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null && auth) return new UResponse<UserEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse<UserEntity?>(null, Usc.NotFound);

@@ -16,7 +16,7 @@ public static class UserRoutes {
 		r.MapPost("ReadById", async (IdParams d, IUserService s, CancellationToken c) => (await s.ReadById(d, c)).ToResult()).Produces<UResponse<UserEntity>>();
 		r.MapPost("Update", async (UserUpdateParams d, IUserService s, ILocalStorageService ls, CancellationToken c) => {
 			ls.DeleteAllByPartialKey(tag);
-			return (await s.Update(d, c)).ToResult();
+			return (await s.Update(d, true, c)).ToResult();
 		}).Produces<UResponse<UserEntity>>();
 		r.MapPost("Delete", async (IdParams d, IUserService s, ILocalStorageService ls, CancellationToken c) => {
 			ls.DeleteAllByPartialKey(tag);
