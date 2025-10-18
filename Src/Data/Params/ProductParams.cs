@@ -17,6 +17,7 @@ public class ProductCreateParams : BaseCreateParams<TagProduct> {
 	public double? Longitude { get; set; }
 	public int? Stock { get; set; }
 	public int? Point { get; set; }
+	public int? Order { get; set; }
 	public double? Price { get; set; }
 
 	public string? Details { get; set; }
@@ -43,6 +44,7 @@ public class ProductUpdateParams : BaseUpdateParams<TagProduct> {
 	public double? Longitude { get; set; }
 	public int? Stock { get; set; }
 	public int? Point { get; set; }
+	public int? Order { get; set; }
 	public double? Price { get; set; }
 	public Guid? ParentId { get; set; }
 	public Guid? UserId { get; set; }
@@ -82,4 +84,6 @@ public class ProductReadParams : BaseReadParams<TagProduct> {
 	public bool ShowCommentCount { get; set; }
 	public bool ShowIsFollowing { get; set; }
 	public bool ShowChildrenCount { get; set; }
+	public bool OrderByOrder { get; set; }
+	public bool OrderByOrderDesc { get; set; }
 }

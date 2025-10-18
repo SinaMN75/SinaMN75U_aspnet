@@ -26,8 +26,10 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	public double? Latitude { get; set; }
 	public double? Longitude { get; set; }
 
-	public int? Stock { get; set; }
+	public int Stock { get; set; }
 	public int Point { get; set; }
+	public int Order { get; set; }
+
 	public double? Price { get; set; }
 
 	public ProductEntity? Parent { get; set; }
@@ -43,7 +45,7 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 
 	public ICollection<MediaEntity> Media { get; set; } = [];
 	public ICollection<CategoryEntity> Categories { get; set; } = [];
-	
+
 	[NotMapped]
 	public int? CommentCount { get; set; }
 

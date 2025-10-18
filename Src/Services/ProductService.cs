@@ -104,6 +104,9 @@ public class ProductService(
 		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
 		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
 
+		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
+		if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
+
 		UResponse<IEnumerable<ProductEntity>?> list = await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 
 		foreach (ProductEntity i in list.Result ?? []) {
@@ -175,9 +178,10 @@ public class ProductService(
 		if (p.Content.IsNotNull()) e.Content = p.Content;
 		if (p.Latitude.IsNotNull()) e.Latitude = p.Latitude;
 		if (p.Longitude.IsNotNull()) e.Longitude = p.Longitude;
-		if (p.Stock.IsNotNull()) e.Stock = p.Stock;
-		if (p.Price.IsNotNull()) e.Price = p.Price;
+		if (p.Stock.IsNotNull()) e.Stock = p.Stock.Value;
+		if (p.Price.IsNotNull()) e.Price = p.Price.Value;
 		if (p.Point.IsNotNull()) e.Point = p.Point.Value;
+		if (p.Order.IsNotNull()) e.Order = p.Order.Value;
 		if (p.ParentId.IsNotNullOrEmpty()) e.ParentId = p.ParentId;
 		if (p.UserId.IsNotNull()) e.UserId = p.UserId.Value;
 		if (p.ActionType.IsNotNull()) e.JsonData.ActionType = p.ActionType;
@@ -191,13 +195,13 @@ public class ProductService(
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
 		if (p.Tags.IsNotNullOrEmpty()) e.Tags = p.Tags;
-		
-		if (p.AddCategories.IsNotNullOrEmpty()) 
+
+		if (p.AddCategories.IsNotNullOrEmpty())
 			e.Categories.AddRangeIfNotExist(await categoryService.ReadEntity(new CategoryReadParams { Ids = p.AddCategories }, ct) ?? []);
 
-		if (p.RemoveCategories.IsNotNullOrEmpty()) 
+		if (p.RemoveCategories.IsNotNullOrEmpty())
 			e.Categories.RemoveRangeIfExist(await categoryService.ReadEntity(new CategoryReadParams { Ids = p.RemoveCategories }, ct) ?? []);
-		
+
 		if (p.Categories.IsNotNull()) {
 			if (p.Categories.Count == 0) e.Categories = [];
 			else e.Categories = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct) ?? [];
@@ -256,7 +260,6 @@ public class ProductService(
 			Description = p.Description,
 			Latitude = p.Latitude,
 			Longitude = p.Longitude,
-			Stock = p.Stock,
 			Price = p.Price,
 			ParentId = parentId ?? p.ParentId,
 			UserId = p.UserId ?? userId,
@@ -265,7 +268,9 @@ public class ProductService(
 			Type = p.Type,
 			Content = p.Content,
 			Slug = p.Slug,
+			Stock = p.Stock ?? 0,
 			Point = p.Point ?? 0,
+			Order = p.Order ?? 0,
 			JsonData = new ProductJson {
 				Details = p.Details,
 				ActionTitle = p.ActionTitle,
