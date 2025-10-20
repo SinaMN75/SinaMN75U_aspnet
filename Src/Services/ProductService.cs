@@ -239,6 +239,7 @@ public class ProductService(
 		foreach (ProductCreateParams childParams in children) {
 			ProductEntity childEntity = FillData(childParams, userId, parentId, categories);
 			await db.Set<ProductEntity>().AddAsync(childEntity, ct);
+			await AddMedia(childEntity.Id, childParams.Media, ct);
 
 			if (childParams.Children.IsNotNullOrEmpty()) {
 				await AddChildrenRecursively(childParams.Children, userId, childEntity.Id, categories, ct);
