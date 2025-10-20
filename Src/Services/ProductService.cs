@@ -36,9 +36,9 @@ public class ProductService(
 		ProductEntity e = FillData(p, userData.Id, p.ParentId, categories);
 		await db.Set<ProductEntity>().AddAsync(e, ct);
 
-		if (p.Children.IsNotNullOrEmpty()) await AddChildrenRecursively(p.Children, userData.Id, e.Id, categories, ct);
-
 		await db.SaveChangesAsync(ct);
+
+		if (p.Children.IsNotNullOrEmpty()) await AddChildrenRecursively(p.Children, userData.Id, e.Id, categories, ct);
 
 		await AddMedia(e.Id, p.Media, ct);
 
@@ -236,9 +236,16 @@ public class ProductService(
 		Guid parentId,
 		List<CategoryEntity> categories,
 		CancellationToken ct) {
+		List<ProductEntity> childEntities = [];
 		foreach (ProductCreateParams childParams in children) {
 			ProductEntity childEntity = FillData(childParams, userId, parentId, categories);
+			childEntities.Add(childEntity);
 			await db.Set<ProductEntity>().AddAsync(childEntity, ct);
+		}
+
+		await db.SaveChangesAsync(ct);
+
+		foreach ((ProductEntity childEntity, ProductCreateParams childParams) in childEntities.Zip(children, (e, p) => (e, p))) {
 			await AddMedia(childEntity.Id, childParams.Media, ct);
 
 			if (childParams.Children.IsNotNullOrEmpty()) {
@@ -288,6 +295,11 @@ public class ProductService(
 		if (ids.IsNullOrEmpty()) return;
 		List<MediaEntity> media = await mediaService.ReadEntity(new BaseReadParams<TagMedia> { Ids = ids }, ct) ?? [];
 		if (media.Count == 0) return;
-		foreach (MediaEntity i in media) await mediaService.Update(new MediaUpdateParams { Id = i.Id, ProductId = productId }, ct);
+		foreach (MediaEntity i in media) {
+			await db.Set<MediaEntity>().Where(x => x.Id == i.Id).ExecuteUpdateAsync(
+				u => u.SetProperty(y => y.ProductId, productId),
+				ct
+			);
+		}
 	}
 }
