@@ -229,7 +229,7 @@ public static class DataModelRoutes {
 				User = user
 			};
 			return Results.Ok(response);
-		}).Cache(60).Produces<DataModelResponse>();
+		}).Cache(1).Produces<DataModelResponse>();
 
 		r.MapGet("Params", () => {
 			Guid guid = Guid.CreateVersion7();
@@ -617,6 +617,6 @@ public static class DataModelRoutes {
 				}
 			};
 			return Results.Ok(response);
-		}).Cache(60).Produces<DataModelResponse>();
+		}).Cache(1).Produces<DataModelResponse>();
 	}
 }
