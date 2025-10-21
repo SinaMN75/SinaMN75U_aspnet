@@ -14,7 +14,7 @@ public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService
 	public async Task<UResponse<MediaEntity?>> Create(MediaCreateParams p, CancellationToken ct) {
 		IEnumerable<string> allowedExtensions = [".png", ".gif", ".jpg", ".jpeg", ".svg", ".webp", ".mp4", ".mov", ".mp3", ".pdf", ".aac", ".apk", ".zip", ".rar", ".mkv"];
 		if (!allowedExtensions.Contains(Path.GetExtension(p.File.FileName.ToLower())))
-			return new UResponse<MediaEntity?>(null, Usc.BadRequest);
+			return new UResponse<MediaEntity?>(null, Usc.MediaTypeNotSupported);
 
 		string folderName;
 		if (p.UserId != null) folderName = "users";
