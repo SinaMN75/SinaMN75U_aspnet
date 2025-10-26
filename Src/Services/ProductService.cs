@@ -70,17 +70,19 @@ public class ProductService(
 		if (p.ShowUser) include.Add("User");
 		if (p.ShowUserMedia) include.AddRecursive("User.Media");
 		if (p.ShowCategories) include.Add("Categories");
+		if (p.ShowUserCategory) include.AddRecursive("User.Categories");
 		if (p.ShowCategoriesMedia) include.AddRecursive("Categories.Media");
+		if (p.ShowCategoriesMedia) include.AddRecursive("User.Categories.Media");
 		if (p.ShowChildren) {
-			include.MaxChildrenDepth = 10;
+			include.MaxChildrenDepth = 5;
 			include.IncludeChildren = true;
 			include.AddRecursive("Children");
 			if (p.ShowMedia) include.AddRecursive("Children.Media");
-			if (p.ShowCategories) include.AddRecursive("Children.Categories");
-			if (p.ShowCategoriesMedia) include.AddRecursive("Children.Categories.Media");
 			if (p.ShowUser) include.AddRecursive("Children.User");
 			if (p.ShowUserMedia) include.AddRecursive("Children.User.Media");
+			if (p.ShowCategories) include.AddRecursive("Children.Categories");
 			if (p.ShowUserCategory) include.AddRecursive("Children.User.Categories");
+			if (p.ShowCategoriesMedia) include.AddRecursive("Children.Categories.Media");
 			if (p.ShowCategoriesMedia) include.AddRecursive("Children.User.Categories.Media");
 		}
 
@@ -113,8 +115,7 @@ public class ProductService(
 				else
 					i.ChildrenCount = await db.Set<ProductEntity>().Where(x => x.ParentId == i.Id).CountAsync(ct);
 			}
-
-
+		
 		if (p.ShowIsFollowing && userData?.Id != null)
 			foreach (ProductEntity i in list.Result ?? []) {
 				UResponse<bool?> isFollowing = await followService.IsFollowingProduct(new FollowParams { UserId = userData?.Id, TargetProductId = i.Id, Token = p.Token }, ct);
