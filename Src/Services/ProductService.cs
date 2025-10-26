@@ -67,12 +67,18 @@ public class ProductService(
 		IncludeOptions include = new();
 
 		if (p.ShowMedia) include.Add("Media");
-		if (p.ShowUser) include.Add("User");
-		if (p.ShowUserMedia) include.AddRecursive("User.Media");
-		if (p.ShowCategories) include.Add("Categories");
-		if (p.ShowUserCategory) include.AddRecursive("User.Categories");
-		if (p.ShowCategoriesMedia) include.AddRecursive("Categories.Media");
-		if (p.ShowCategoriesMedia) include.AddRecursive("User.Categories.Media");
+
+		if (p.ShowUser) {
+			include.Add("User");
+			if (p.ShowUserMedia) include.AddRecursive("User.Media");
+			if (p.ShowUserCategory) include.AddRecursive("User.Categories");
+			if (p.ShowCategoriesMedia) include.AddRecursive("User.Categories.Media");
+		}
+		if (p.ShowCategories) {
+			include.Add("Categories");
+			if (p.ShowCategoriesMedia) include.AddRecursive("Categories.Media");
+		}
+		
 		if (p.ShowChildren) {
 			include.MaxChildrenDepth = 5;
 			include.IncludeChildren = true;
