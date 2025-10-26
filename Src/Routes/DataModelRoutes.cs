@@ -520,7 +520,6 @@ public static class DataModelRoutes {
 					ShowUserMedia = true,
 					ShowUserCategory = true,
 					ShowChildren = true,
-					ShowChildrenDepth = true,
 					Ids = [guid],
 					ApiKey = "",
 					Token = "",

@@ -80,7 +80,6 @@ public class ProductReadParams : BaseReadParams<TagProduct> {
 	public bool ShowUserMedia { get; set; }
 	public bool ShowUserCategory { get; set; }
 	public bool ShowChildren { get; set; }
-	public bool ShowChildrenDepth { get; set; }
 	public bool ShowCommentCount { get; set; }
 	public bool ShowIsFollowing { get; set; }
 	public bool ShowChildrenCount { get; set; }

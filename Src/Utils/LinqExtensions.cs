@@ -30,60 +30,48 @@ public static class LinqExtensions {
 		return query.Where(lambdaExpression);
 	}
 
-	public static IQueryable<T> IncludeRecursive<T>(
-		this IQueryable<T> source,
-		uint maxDepth,
-		string childrenProperty = "Children",
-		string mediaProperty = "Media"
-	)
+	public static IQueryable<T> ApplyIncludeOptions<T>(
+		this IQueryable<T> query,
+		IncludeOptions opts,
+		string childrenProperty = "Children")
 		where T : class {
-		if (maxDepth < 1)
-			return source;
+		// ✅ Include root navigation props
+		query = opts.RootIncludes.Aggregate(query, (current, inc) => current.Include(inc));
 
-		// Always include media for the root
-		source = source.Include(mediaProperty);
+		// ✅ Apply recursive includes only when requested
+		if (opts.IncludeChildren && opts.MaxChildrenDepth > 0) {
+			string basePath = childrenProperty;
 
-		string includePath = childrenProperty;
+			for (uint d = 1; d <= opts.MaxChildrenDepth; d++) {
+				// Include: Children
+				query = query.Include(basePath);
 
-		for (int depth = 1; depth <= maxDepth; depth++) {
-			// Include: Children
-			source = source.Include(includePath);
+				// Include: Children.<EachRecursiveNavigation>
+				query = opts.RecursiveIncludes.Aggregate(query, (current, nav) => current.Include($"{basePath}.{nav}"));
 
-			// Include: Children.Media
-			source = source.Include($"{includePath}.{mediaProperty}");
-
-			// Build next level: Children.Children
-			includePath += $".{childrenProperty}";
+				// Next level: Children.Children
+				basePath += $".{childrenProperty}";
+			}
 		}
 
-		return source;
+		return query;
+	}
+}
+
+public class IncludeOptions {
+	public bool IncludeChildren { get; set; }
+	public uint MaxChildrenDepth { get; set; } = 0;
+
+	public List<string> RootIncludes { get; set; } = [];
+	public List<string> RecursiveIncludes { get; set; } = [];
+
+	public IncludeOptions Add(string include) {
+		RootIncludes.Add(include);
+		return this;
 	}
 
-	private static IQueryable<T> IncludeChildren<T>(
-		IQueryable<T> source,
-		uint maxDepth,
-		Expression<Func<T, IEnumerable<T>>> childrenSelector,
-		Expression<Func<T, object>> mediaSelector,
-		uint currentDepth
-	) where T : class {
-		while (true) {
-			if (currentDepth >= maxDepth) return source;
-
-			// Include Children for the current level
-			IIncludableQueryable<T, IEnumerable<T>> include = source.Include(childrenSelector);
-
-			// Include Media for the current level of Children
-			IIncludableQueryable<T, object> withMedia = include.ThenInclude(mediaSelector);
-
-			// Recursively include deeper levels of Children
-			if (currentDepth + 1 < maxDepth) {
-				// Create a new queryable for the next level
-				source = withMedia;
-				currentDepth += 1;
-				continue;
-			}
-
-			return withMedia;
-		}
+	public IncludeOptions AddRecursive(string include) {
+		RecursiveIncludes.Add(include);
+		return this;
 	}
 }

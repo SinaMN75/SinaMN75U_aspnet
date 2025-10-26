@@ -63,43 +63,28 @@ public class ProductService(
 		if (p.MaxStock.IsNotNull()) q = q.Where(x => x.Stock <= p.MaxStock);
 		if (p.MinPrice.IsNotNull()) q = q.Where(x => x.Price >= p.MinPrice);
 		if (p.MaxPrice.IsNotNull()) q = q.Where(x => x.Price <= p.MaxPrice);
+		
+		IncludeOptions include = new();
 
-		if (p.ShowMedia) q = q.Include(x => x.Media);
-
-		if (p.ShowUser) {
-			q = q.Include(x => x.User);
-			if (p.ShowUserMedia) q = q.Include(x => x.User).ThenInclude(x => x.Media);
-			if (p.ShowUserCategory) {
-				if (p.ShowCategoriesMedia) q = q.Include(x => x.User).ThenInclude(x => x.Categories).ThenInclude(x => x.Media);
-				else q = q.Include(x => x.User).ThenInclude(x => x.Categories);
-			}
-		}
-
-		if (p.ShowCategories) {
-			if (p.ShowCategoriesMedia) q = q.Include(x => x.Categories).ThenInclude(x => x.Media);
-			else q = q.Include(x => x.Categories);
-		}
-
+		if (p.ShowMedia) include.Add("Media");
+		if (p.ShowUser) include.Add("User");
+		if (p.ShowUserMedia) include.AddRecursive("User.Media");
+		if (p.ShowCategories) include.Add("Categories");
+		if (p.ShowCategoriesMedia) include.AddRecursive("Categories.Media");
 		if (p.ShowChildren) {
-			if (p.ShowMedia) q = q.Include(x => x.Children).Include(x => x.Media);
-
-			if (p.ShowUser) {
-				q = q.Include(x => x.Children).Include(x => x.User);
-				if (p.ShowUserMedia) q = q.Include(x => x.Children).Include(x => x.User).ThenInclude(x => x.Media);
-				if (p.ShowUserCategory) {
-					if (p.ShowCategoriesMedia) q = q.Include(x => x.Children).ThenInclude(x => x.User).ThenInclude(x => x.Categories).ThenInclude(x => x.Media);
-					else q = q.Include(x => x.Children).ThenInclude(x => x.User).ThenInclude(x => x.Categories);
-				}
-			}
-
-			if (p.ShowCategories) {
-				if (p.ShowCategoriesMedia) q = q.Include(x => x.Children).ThenInclude(x => x.Categories).ThenInclude(x => x.Media);
-				else q = q.Include(x => x.Children).ThenInclude(x => x.Categories);
-			}
+			include.MaxChildrenDepth = 10;
+			include.IncludeChildren = true;
+			include.AddRecursive("Children");
+			if (p.ShowMedia) include.AddRecursive("Children.Media");
+			if (p.ShowCategories) include.AddRecursive("Children.Categories");
+			if (p.ShowCategoriesMedia) include.AddRecursive("Children.Categories.Media");
+			if (p.ShowUser) include.AddRecursive("Children.User");
+			if (p.ShowUserMedia) include.AddRecursive("Children.User.Media");
+			if (p.ShowUserCategory) include.AddRecursive("Children.User.Categories");
+			if (p.ShowCategoriesMedia) include.AddRecursive("Children.User.Categories.Media");
 		}
 
-		if (p.ShowChildrenDepth)
-			q = q.IncludeRecursive(maxDepth: 10, childrenProperty: "Children", mediaProperty: "Media");
+		q = q.ApplyIncludeOptions(include);
 
 		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
 		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
@@ -123,7 +108,7 @@ public class ProductService(
 
 		if (p.ShowChildrenCount)
 			foreach (ProductEntity i in list.Result ?? []) {
-				if (p.ShowChildren || p.ShowChildrenDepth)
+				if (p.ShowChildren)
 					i.ChildrenCount = i.Children.Count;
 				else
 					i.ChildrenCount = await db.Set<ProductEntity>().Where(x => x.ParentId == i.Id).CountAsync(ct);
