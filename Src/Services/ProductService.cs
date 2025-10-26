@@ -63,7 +63,7 @@ public class ProductService(
 		if (p.MaxStock.IsNotNull()) q = q.Where(x => x.Stock <= p.MaxStock);
 		if (p.MinPrice.IsNotNull()) q = q.Where(x => x.Price >= p.MinPrice);
 		if (p.MaxPrice.IsNotNull()) q = q.Where(x => x.Price <= p.MaxPrice);
-		
+
 		IncludeOptions include = new();
 
 		if (p.ShowMedia) include.Add("Media");
@@ -74,14 +74,17 @@ public class ProductService(
 			if (p.ShowUserCategory) include.AddRecursive("User.Categories");
 			if (p.ShowCategoriesMedia) include.AddRecursive("User.Categories.Media");
 		}
+
 		if (p.ShowCategories) {
 			include.Add("Categories");
 			if (p.ShowCategoriesMedia) include.AddRecursive("Categories.Media");
 		}
-		
+
 		if (p.ShowChildren) {
 			include.MaxChildrenDepth = 5;
 			include.IncludeChildren = true;
+			include.Add("Children");
+			if (p.ShowMedia) include.Add("Children.Media");
 			include.AddRecursive("Children");
 			if (p.ShowMedia) include.AddRecursive("Children.Media");
 			if (p.ShowUser) include.AddRecursive("Children.User");
@@ -121,7 +124,7 @@ public class ProductService(
 				else
 					i.ChildrenCount = await db.Set<ProductEntity>().Where(x => x.ParentId == i.Id).CountAsync(ct);
 			}
-		
+
 		if (p.ShowIsFollowing && userData?.Id != null)
 			foreach (ProductEntity i in list.Result ?? []) {
 				UResponse<bool?> isFollowing = await followService.IsFollowingProduct(new FollowParams { UserId = userData?.Id, TargetProductId = i.Id, Token = p.Token }, ct);
