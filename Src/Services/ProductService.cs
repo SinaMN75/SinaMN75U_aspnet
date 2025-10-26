@@ -99,7 +99,7 @@ public class ProductService(
 		}
 
 		if (p.ShowChildrenDepth)
-			q = q.Include(x => x.Children).ThenInclude(x => x.Children).ThenInclude(x => x.Children).ThenInclude(x => x.Children).ThenInclude(x => x.Children);
+			q = q.IncludeRecursive(maxDepth: 10, childrenProperty: "Children", mediaProperty: "Media");
 
 		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
 		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
@@ -231,7 +231,7 @@ public class ProductService(
 	}
 
 	private async Task AddChildrenRecursively(
-		IEnumerable<ProductCreateParams> children,
+		ICollection<ProductCreateParams> children,
 		Guid userId,
 		Guid parentId,
 		List<CategoryEntity> categories,

@@ -24,7 +24,7 @@ public class ProductCreateParams : BaseCreateParams<TagProduct> {
 	
 	public ICollection<Guid>? Categories { get; set; }
 	public IEnumerable<Guid>? RelatedProducts { get; set; }
-	public IEnumerable<ProductCreateParams> Children { get; set; } = [];
+	public ICollection<ProductCreateParams> Children { get; set; } = [];
 
 	public Guid? ParentId { get; set; }
 	public Guid? UserId { get; set; }

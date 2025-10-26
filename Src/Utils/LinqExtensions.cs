@@ -29,4 +29,61 @@ public static class LinqExtensions {
 
 		return query.Where(lambdaExpression);
 	}
+
+	public static IQueryable<T> IncludeRecursive<T>(
+		this IQueryable<T> source,
+		uint maxDepth,
+		string childrenProperty = "Children",
+		string mediaProperty = "Media"
+	)
+		where T : class {
+		if (maxDepth < 1)
+			return source;
+
+		// Always include media for the root
+		source = source.Include(mediaProperty);
+
+		string includePath = childrenProperty;
+
+		for (int depth = 1; depth <= maxDepth; depth++) {
+			// Include: Children
+			source = source.Include(includePath);
+
+			// Include: Children.Media
+			source = source.Include($"{includePath}.{mediaProperty}");
+
+			// Build next level: Children.Children
+			includePath += $".{childrenProperty}";
+		}
+
+		return source;
+	}
+
+	private static IQueryable<T> IncludeChildren<T>(
+		IQueryable<T> source,
+		uint maxDepth,
+		Expression<Func<T, IEnumerable<T>>> childrenSelector,
+		Expression<Func<T, object>> mediaSelector,
+		uint currentDepth
+	) where T : class {
+		while (true) {
+			if (currentDepth >= maxDepth) return source;
+
+			// Include Children for the current level
+			IIncludableQueryable<T, IEnumerable<T>> include = source.Include(childrenSelector);
+
+			// Include Media for the current level of Children
+			IIncludableQueryable<T, object> withMedia = include.ThenInclude(mediaSelector);
+
+			// Recursively include deeper levels of Children
+			if (currentDepth + 1 < maxDepth) {
+				// Create a new queryable for the next level
+				source = withMedia;
+				currentDepth += 1;
+				continue;
+			}
+
+			return withMedia;
+		}
+	}
 }
