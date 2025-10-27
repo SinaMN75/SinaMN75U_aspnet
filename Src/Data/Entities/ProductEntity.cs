@@ -64,6 +64,8 @@ public class ProductJson {
 	public string? ActionTitle { get; set; }
 	public string? ActionUri { get; set; }
 	public string? Details { get; set; }
+	public string? PhoneNumber { get; set; }
+	public string? Address { get; set; }
 	public ICollection<VisitCount> VisitCounts { get; set; } = [];
 	public ICollection<PointCount> PointCounts { get; set; } = [];
 	public ICollection<Guid> RelatedProducts { get; set; } = [];

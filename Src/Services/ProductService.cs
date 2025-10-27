@@ -183,6 +183,8 @@ public class ProductService(
 		if (p.ActionTitle.IsNotNull()) e.JsonData.ActionTitle = p.ActionTitle;
 		if (p.ActionUri.IsNotNull()) e.JsonData.ActionUri = p.ActionUri;
 		if (p.Details.IsNotNull()) e.JsonData.Details = p.Details;
+		if (p.PhoneNumber.IsNotNull()) e.JsonData.PhoneNumber = p.PhoneNumber;
+		if (p.Address.IsNotNull()) e.JsonData.Address = p.Address;
 		if (p.RelatedProducts.IsNotNull()) e.JsonData.RelatedProducts = p.RelatedProducts;
 		if (p.AddRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.AddRangeIfNotExist(p.AddRelatedProducts);
 		if (p.RemoveRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.RemoveRangeIfExist(p.RemoveRelatedProducts);
@@ -279,6 +281,8 @@ public class ProductService(
 				ActionTitle = p.ActionTitle,
 				ActionUri = p.ActionUri,
 				ActionType = p.ActionType,
+				PhoneNumber = p.PhoneNumber,
+				Address = p.Address,
 				VisitCounts = [],
 				RelatedProducts = p.RelatedProducts?.ToList() ?? []
 			}

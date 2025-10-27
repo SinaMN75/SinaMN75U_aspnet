@@ -21,7 +21,9 @@ public class ProductCreateParams : BaseCreateParams<TagProduct> {
 	public double? Price { get; set; }
 
 	public string? Details { get; set; }
-	
+	public string? PhoneNumber { get; set; }
+	public string? Address { get; set; }
+
 	public ICollection<Guid>? Categories { get; set; }
 	public IEnumerable<Guid>? RelatedProducts { get; set; }
 	public ICollection<ProductCreateParams> Children { get; set; } = [];
@@ -52,6 +54,8 @@ public class ProductUpdateParams : BaseUpdateParams<TagProduct> {
 	public string? ActionTitle { get; set; }
 	public string? ActionUri { get; set; }
 	public string? Details { get; set; }
+	public string? PhoneNumber { get; set; }
+	public string? Address { get; set; }
 	public ICollection<Guid>? RelatedProducts { get; set; }
 	public ICollection<Guid>? AddRelatedProducts { get; set; }
 	public ICollection<Guid>? RemoveRelatedProducts { get; set; }
