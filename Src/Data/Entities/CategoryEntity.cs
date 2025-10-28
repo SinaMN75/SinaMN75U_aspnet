@@ -11,6 +11,8 @@ public class CategoryEntity : BaseEntity<TagCategory, CategoryJson> {
 
 	public int? Order { get; set; }
 
+	public string? Code { get; set; }
+
 	[InverseProperty("Parent")]
 	public ICollection<CategoryEntity> Children { get; set; } = [];
 
@@ -28,5 +30,7 @@ public class CategoryJson {
 	public string? Link { get; set; }
 	public string? Location { get; set; }
 	public string? Type { get; set; }
+	public string? Address { get; set; }
+	public string? PhoneNumber { get; set; }
 	public ICollection<Guid> RelatedProducts { get; set; } = [];
 }

@@ -112,11 +112,14 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 		if (p.Title.IsNotNull()) e.Title = p.Title;
 		if (p.ParentId.IsNotNullOrEmpty()) e.ParentId = p.ParentId;
 		if (p.Order.IsNotNull()) e.Order = p.Order;
+		if (p.Code.IsNotNull()) e.Code = p.Code;
 
 		if (p.Subtitle.IsNotNull()) e.JsonData.Subtitle = p.Subtitle;
 		if (p.Link.IsNotNull()) e.JsonData.Link = p.Link;
 		if (p.Location.IsNotNull()) e.JsonData.Location = p.Location;
 		if (p.Type.IsNotNull()) e.JsonData.Type = p.Type;
+		if (p.Address.IsNotNull()) e.JsonData.Address = p.Address;
+		if (p.PhoneNumber.IsNotNull()) e.JsonData.PhoneNumber = p.PhoneNumber;
 		
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
@@ -179,11 +182,14 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 		CategoryEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			Title = p.Title,
+			Code = p.Code,
 			JsonData = new CategoryJson {
 				Subtitle = p.Subtitle,
 				Link = p.Link,
 				Location = p.Location,
 				Type = p.Type,
+				Address = p.Address,
+				PhoneNumber = p.PhoneNumber,
 				RelatedProducts = p.RelatedProducts ?? []
 			},
 			Tags = p.Tags,

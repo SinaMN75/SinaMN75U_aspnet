@@ -39,6 +39,9 @@ public enum TagCategory {
 	User = 102,
 	Menu = 103,
 	Speciality = 104,
+	Dorm = 105,
+	Room = 106,
+	Bed = 107, 
 	Enabled = 201,
 	Disabled = 202,
 	Hidden = 203
