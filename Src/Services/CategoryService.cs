@@ -38,7 +38,7 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 			.Where(x => x.ParentId == null)
 			.OrderBy(x => x.Id);
 
-		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
+		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => p.Tags.All(tag => x.Tags.Contains(tag)));
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
 
 		if (p.ShowMedia) q = q.Include(x => x.Media);
