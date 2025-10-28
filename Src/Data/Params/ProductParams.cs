@@ -89,4 +89,5 @@ public class ProductReadParams : BaseReadParams<TagProduct> {
 	public bool ShowChildrenCount { get; set; }
 	public bool OrderByOrder { get; set; }
 	public bool OrderByOrderDesc { get; set; }
+	public ICollection<Guid>? Categories { get; set; }
 }

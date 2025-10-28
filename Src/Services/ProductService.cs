@@ -64,6 +64,7 @@ public class ProductService(
 		if (p.MinPrice.IsNotNull()) q = q.Where(x => x.Price >= p.MinPrice);
 		if (p.MaxPrice.IsNotNull()) q = q.Where(x => x.Price <= p.MaxPrice);
 
+		if (p.Categories.IsNotNullOrEmpty()) q = q.Where(x => x.Categories.All(y => p.Categories.Contains(y.Id)));
 		IncludeOptions include = new();
 
 		if (p.ShowMedia) include.Add("Media");
