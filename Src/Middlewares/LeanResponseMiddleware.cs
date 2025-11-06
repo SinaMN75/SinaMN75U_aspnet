@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
@@ -10,44 +9,47 @@ namespace SinaMN75U.Middlewares;
 /// </summary>
 public static class LeanResponseExtensions {
 	public static WebApplication UseLeanResponses(this WebApplication app) {
-		// 1. Response compression (Brotli > Gzip)
-		app.Services.GetRequiredService<IServiceProvider>(); // force registration
-		app.Services.GetRequiredService<ResponseCompressionMiddleware>(); // ensure added
-		app.UseResponseCompression();
-
-		// 2. Kestrel – no Server header
+		// 1. Kestrel – disable Server header (safe, runs on startup)
 		app.Lifetime.ApplicationStarted.Register(() => {
 			IOptions<KestrelServerOptions>? kestrel = app.Services.GetService<IOptions<KestrelServerOptions>>();
-			if (kestrel?.Value != null) kestrel.Value.AddServerHeader = false;
+			if (kestrel != null) kestrel.Value.AddServerHeader = false;
 		});
 
-		// 3. Global header-stripping + optional cache headers
-		app.Use(async (ctx, next) => {
+		// 2. HEADER CLEANUP: MUST RUN BEFORE compression & body write
+		app.Use(async (context, next) => {
+			// Hook into OnStarting: runs just before headers are sent
+			context.Response.OnStarting(() => {
+				IHeaderDictionary headers = context.Response.Headers;
+
+				// --- Remove unnecessary headers ---
+				headers.Remove("X-Powered-By");
+				headers.Remove("Server");
+				headers.Remove("X-AspNet-Version");
+				headers.Remove("Via");
+				headers.Remove("Date"); // Optional
+
+				// --- Dev headers only in non-prod ---
+				if (app.Environment.IsProduction()) {
+					headers.Remove("X-Cache-Hit");
+					headers.Remove("X-Cache-Store");
+				}
+
+				// --- Smart Cache-Control for cached JSON ---
+				if (context.Response.StatusCode == 200 &&
+				    context.Response.ContentType?.StartsWith("application/json", StringComparison.OrdinalIgnoreCase) == true &&
+				    headers.ContainsKey("X-Cache-Hit")) {
+					headers.CacheControl = "public, max-age=120";
+					headers.Expires = DateTimeOffset.UtcNow.AddSeconds(120).ToString("R");
+				}
+
+				return Task.CompletedTask;
+			});
+
 			await next();
-
-			IHeaderDictionary h = ctx.Response.Headers;
-
-			// --- Always remove ---
-			h.Remove("X-Powered-By");
-			h.Remove("Server");
-			h.Remove("X-AspNet-Version");
-			h.Remove("Via");
-
-			// --- Optional: strip Date (29 B) ---
-			h.Remove("Date");
-
-			// --- Dev-only headers ---
-			if (app.Environment.IsProduction()) {
-				h.Remove("X-Cache-Hit");
-				h.Remove("X-Cache-Store");
-			}
-
-			// --- Smart Cache-Control for cached JSON hits ---
-			if (ctx.Response.StatusCode == 200 && ctx.Response.ContentType?.StartsWith("application/json") == true && h.ContainsKey("X-Cache-Hit")) {
-				h.CacheControl = $"public, max-age=120";
-				h.Expires = DateTimeOffset.UtcNow.AddSeconds(120).ToString("R");
-			}
 		});
+
+		// 3. Compression – runs AFTER headers are set, BEFORE body write
+		app.UseResponseCompression();
 
 		return app;
 	}
