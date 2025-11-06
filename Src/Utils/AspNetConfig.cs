@@ -6,6 +6,8 @@ public static class AspNetConfig {
 		SqlDatabaseType sqlDatabaseType,
 		string sqlDatabaseConnectionStrings
 	) where T : DbContext {
+		builder.Services.Configure<KestrelServerOptions>(o => o.AllowSynchronousIO = false);
+		builder.Services.Configure<IISServerOptions>(o => o.AllowSynchronousIO = false);
 		builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 		builder.Services.AddUSwagger();
 		builder.Services.AddHttpContextAccessor();
@@ -62,10 +64,6 @@ public static class AspNetConfig {
 	}
 
 	public static void UseUServices(this WebApplication app) {
-		app.Use(async (context, next) => {
-			context.Request.EnableBuffering();
-			await next();
-		});
 		Server.Configure(app.Services.GetRequiredService<IHttpContextAccessor>());
 		app.UseStaticFiles();
 		app.UseCors();
@@ -73,7 +71,7 @@ public static class AspNetConfig {
 		app.UseUSwagger();
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
-		
+
 		// app.UseMiddleware<UMiddleware>();
 
 		app.MapAuthRoutes("api/auth/");
