@@ -6,7 +6,11 @@ public class UMiddleware(RequestDelegate next, IConfiguration config) {
 	private static readonly Lock LogLock = new();
 
 	public async Task InvokeAsync(HttpContext context) {
-		if (!context.Request.Method.Equals("POST", StringComparison.OrdinalIgnoreCase)) {
+		if (
+			!context.Request.Method.Equals("POST", StringComparison.OrdinalIgnoreCase) ||
+			!context.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase) ||
+			context.Request.Path.Value?.Contains("media", StringComparison.OrdinalIgnoreCase) == true
+		) {
 			await next(context);
 			return;
 		}

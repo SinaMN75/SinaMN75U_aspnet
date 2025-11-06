@@ -19,7 +19,6 @@ public static class AspNetConfig {
 			o.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 			o.SerializerOptions.WriteIndented = false;
 		});
-		builder.Services.AddScoped<DbContext, T>();
 		builder.Services.AddDbContextPool<T>(b => {
 			b.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
 			switch (sqlDatabaseType) {
@@ -72,7 +71,7 @@ public static class AspNetConfig {
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
 
-		// app.UseMiddleware<UMiddleware>();
+		app.UseMiddleware<UMiddleware>();
 
 		app.MapAuthRoutes("api/auth/");
 		app.MapUserRoutes("api/user/");

@@ -1,29 +1,34 @@
+using Microsoft.AspNetCore.RateLimiting;
+
 namespace SinaMN75U.Utils;
 
 public static class RateLimiter {
 	public static void AddURateLimiter(this IServiceCollection services) {
 		services.AddRateLimiter(o => {
-			o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-				RateLimitPartition.GetFixedWindowLimiter(
-					partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "global",
-					factory: _ => new FixedWindowRateLimiterOptions {
-						PermitLimit = 2,
-						QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-						QueueLimit = 4,
-						Window = TimeSpan.FromSeconds(1)
-					}
-				));
+			o.AddConcurrencyLimiter("global-concurrency", opts => {
+				opts.PermitLimit = 50; // simultaneous requests
+			});
 
-			o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+			o.AddFixedWindowLimiter("per-ip-minute", opts => {
+				opts.PermitLimit = 200;
+				opts.Window = TimeSpan.FromMinutes(1);
+				opts.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+				opts.QueueLimit = 10;
+			});
+
+			o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(ctx =>
 				RateLimitPartition.GetFixedWindowLimiter(
-					partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "global",
+					partitionKey: ctx.GetRealIp() ?? "unknown",
 					factory: _ => new FixedWindowRateLimiterOptions {
 						PermitLimit = 200,
-						QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-						QueueLimit = 0,
-						Window = TimeSpan.FromMinutes(1)
-					}
-				));
+						Window = TimeSpan.FromMinutes(1),
+						QueueLimit = 10
+					}));
 		});
+	}
+
+	private static string? GetRealIp(this HttpContext ctx) {
+		string? forwarded = ctx.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+		return forwarded?.Split(',')[0].Trim() ?? ctx.Connection.RemoteIpAddress?.ToString();
 	}
 }
