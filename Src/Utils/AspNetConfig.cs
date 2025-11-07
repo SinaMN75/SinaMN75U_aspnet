@@ -69,6 +69,8 @@ public static class AspNetConfig {
 		builder.Services.AddScoped<IExamService, ExamService>();
 		builder.Services.AddScoped<IFollowService, FollowService>();
 		builder.Services.AddScoped<IDashboardService, DashboardService>();
+		builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+		builder.Services.AddScoped<IContractService, ContractService>();
 	}
 
 	public static void UseUServices(this WebApplication app) {
