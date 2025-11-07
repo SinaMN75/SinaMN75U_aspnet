@@ -2,7 +2,7 @@ namespace SinaMN75U.Data.Entities;
 
 [Index(nameof(Id), IsUnique = true, Name = "IX_Id")]
 [Index(nameof(Tags), Name = "IX_Tags")]
-public class BaseEntity<T, TJ> {
+public class BaseEntity<T, TJ> where T : Enum where TJ : class {
 	[Key]
 	public Guid Id { get; set; } = Guid.CreateVersion7();
 
@@ -11,6 +11,8 @@ public class BaseEntity<T, TJ> {
 
 	[Required]
 	public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+	
+	public DateTime? DeletedAt { get; set; }
 
 	[Required]
 	public required TJ JsonData { get; set; }

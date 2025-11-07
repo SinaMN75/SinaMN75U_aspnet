@@ -92,6 +92,8 @@ public static class AspNetConfig {
 		app.MapCategoryRoutes("api/category/");
 		app.MapExamRoutes("api/exam/");
 		app.MapDashboardRoutes("api/dashboard/");
+		app.MapContractRoutes("api/contract/");
+		app.MapInvoiceRoutes("api/invoice/");
 		app.MapDataModelRoutes("api/datamodel/");
 	}
 }

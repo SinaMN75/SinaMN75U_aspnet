@@ -18,7 +18,8 @@ public class ProductCreateParams : BaseCreateParams<TagProduct> {
 	public int? Stock { get; set; }
 	public int? Point { get; set; }
 	public int? Order { get; set; }
-	public double? Price { get; set; }
+	public double? Price1 { get; set; }
+	public double? Price2 { get; set; }
 
 	public string? Details { get; set; }
 	public string? PhoneNumber { get; set; }
@@ -47,7 +48,8 @@ public class ProductUpdateParams : BaseUpdateParams<TagProduct> {
 	public int? Stock { get; set; }
 	public int? Point { get; set; }
 	public int? Order { get; set; }
-	public double? Price { get; set; }
+	public double? Price1 { get; set; }
+	public double? Price2 { get; set; }
 	public Guid? ParentId { get; set; }
 	public Guid? UserId { get; set; }
 	public string? ActionType { get; set; }
@@ -75,8 +77,8 @@ public class ProductReadParams : BaseReadParams<TagProduct> {
 	public Guid? UserId { get; set; }
 	public int? MinStock { get; set; }
 	public int? MaxStock { get; set; }
-	public double? MinPrice { get; set; }
-	public double? MaxPrice { get; set; }
+	public double? MinPrice1 { get; set; }
+	public double? MaxPrice1 { get; set; }
 	public bool ShowCategories { get; set; }
 	public bool ShowCategoriesMedia { get; set; }
 	public bool ShowMedia { get; set; }

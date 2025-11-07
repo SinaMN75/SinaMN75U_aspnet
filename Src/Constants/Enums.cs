@@ -103,3 +103,18 @@ public enum TagContent {
 public enum TagBadge {
 	Test = 999
 }
+
+public enum TagContract {
+	Test = 999
+}
+
+public enum TagInvoice {
+	Deposit = 101,
+	Rent = 102,
+	
+	Paid = 201,
+	NotPaid = 202,
+	Due = 203,
+	
+	Test = 999
+}

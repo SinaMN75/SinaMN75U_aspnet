@@ -25,13 +25,13 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 
 	public double? Latitude { get; set; }
 	public double? Longitude { get; set; }
+	public double? Price1 { get; set; }
+	public double? Price2 { get; set; }
 
 	public int Stock { get; set; }
 	public int Point { get; set; }
 	public int Order { get; set; }
-
-	public double? Price { get; set; }
-
+	
 	public ProductEntity? Parent { get; set; }
 	public Guid? ParentId { get; set; }
 

@@ -55,7 +55,7 @@ public sealed class CacheResponseFilter(ILocalStorageService cache, int minutes)
 		string sortedQuery = string.Join("&",
 			request.Query
 				.OrderBy(kvp => kvp.Key, StringComparer.Ordinal)
-				.Select(kvp => $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value)}"));
+				.Select(kvp => $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value!)}"));
 
 		if (!string.IsNullOrEmpty(sortedQuery))
 			sb.Append('?').Append(sortedQuery);

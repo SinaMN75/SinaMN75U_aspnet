@@ -61,8 +61,8 @@ public class ProductService(
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => p.Tags.All(tag => x.Tags.Contains(tag)));
 		if (p.MinStock.IsNotNull()) q = q.Where(x => x.Stock >= p.MinStock);
 		if (p.MaxStock.IsNotNull()) q = q.Where(x => x.Stock <= p.MaxStock);
-		if (p.MinPrice.IsNotNull()) q = q.Where(x => x.Price >= p.MinPrice);
-		if (p.MaxPrice.IsNotNull()) q = q.Where(x => x.Price <= p.MaxPrice);
+		if (p.MaxPrice1.IsNotNull()) q = q.Where(x => x.Price1 >= p.MaxPrice1);
+		if (p.MinPrice1.IsNotNull()) q = q.Where(x => x.Price1 <= p.MinPrice1);
 
 		if (p.Categories.IsNotNullOrEmpty()) q = q.Where(x => x.Categories.Any(y => p.Categories.Contains(y.Id)));
 		IncludeOptions include = new();
@@ -175,7 +175,7 @@ public class ProductService(
 		if (p.Latitude.IsNotNull()) e.Latitude = p.Latitude;
 		if (p.Longitude.IsNotNull()) e.Longitude = p.Longitude;
 		if (p.Stock.IsNotNull()) e.Stock = p.Stock.Value;
-		if (p.Price.IsNotNull()) e.Price = p.Price.Value;
+		if (p.Price1.IsNotNull()) e.Price1 = p.Price1.Value;
 		if (p.Point.IsNotNull()) e.Point = p.Point.Value;
 		if (p.Order.IsNotNull()) e.Order = p.Order.Value;
 		if (p.ParentId.IsNotNullOrEmpty()) e.ParentId = p.ParentId;
@@ -266,7 +266,8 @@ public class ProductService(
 			Description = p.Description,
 			Latitude = p.Latitude,
 			Longitude = p.Longitude,
-			Price = p.Price,
+			Price1 = p.Price1,
+			Price2 = p.Price2,
 			ParentId = parentId ?? p.ParentId,
 			UserId = p.UserId ?? userId,
 			Tags = p.Tags,

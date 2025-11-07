@@ -40,16 +40,16 @@ public class CommentService(
 		if (p.TargetUserId.IsNotNullOrEmpty()) q = q.Where(x => x.TargetUserId == p.TargetUserId);
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
 
-		return await q.Select(x => x).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse<CommentEntity?>> ReadById(IdParams p, CancellationToken ct) {
-		CommentEntity? e = await db.Set<CommentEntity>().Select(x => x).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		CommentEntity? e = await db.Set<CommentEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<CommentEntity?>(null, Usc.NotFound, ls.Get("CommentNotFound")) : new UResponse<CommentEntity?>(e);
 	}
 
 	public async Task<UResponse<CommentEntity?>> Update(CommentUpdateParams p, CancellationToken ct) {
-		CommentEntity? e = await db.Set<CommentEntity>().Select(x => x).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		CommentEntity? e = await db.Set<CommentEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse<CommentEntity?>(null, Usc.NotFound, ls.Get("CommentNotFound"));
 		if (p.Score.IsNotNull()) e.Score = p.Score.Value;
 		if (p.Description.IsNotNullOrEmpty()) e.Description = p.Description;

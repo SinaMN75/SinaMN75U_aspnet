@@ -30,9 +30,7 @@ public class ContentService(DbContext db, ILocalizationService ls, ITokenService
 
 	public async Task<UResponse<IEnumerable<ContentEntity>?>> Read(ContentReadParams p, CancellationToken ct) {
 		IQueryable<ContentEntity> q = db.Set<ContentEntity>();
-
-		if (p.Tags != null) q = q.Where(u => u.Tags.Any(tag => p.Tags.Contains(tag)));
-
+		
 		return await q.Select(x => new ContentEntity {
 			Id = x.Id,
 			Tags = x.Tags,

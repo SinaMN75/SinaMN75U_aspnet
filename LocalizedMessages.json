@@ -16,6 +16,9 @@
     "TitleRequired": "Title is Required",
     "DescriptionRequired": "Description is Required",
     "SubTitleRequired": "Subtitle is Required",
+    "StartDateRequired": "Start Date is Required",
+    "EndDateRequired": "End Date is Required",
+    "PriceRequired": "Price is Required",
     "UserNotFound": "Account not found. Please check your details.",
     "EmailInvalid": "Please enter a valid email.",
     "UserNameInvalid": "Username is invalid. Please try another.",
@@ -37,6 +40,8 @@
     "AlreadyBookmarked": "Already Bookmarked",
     "FollowSuccess": "Your now Following: ",
     "FollowRelationshipNotFound": "Error Finding the relation",
+    "FutureDateSelected": "Future Date Selected",
+    "BeforeDateSelected": "Wrong Date Selected",
     "UnfollowSuccess": "You no Longer following: "
   }
 }

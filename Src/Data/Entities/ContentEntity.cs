@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Contents")]
-public class ContentEntity : BaseEntity<int, ContentJson> {
+public class ContentEntity : BaseEntity<TagContent, ContentJson> {
 	public ICollection<MediaEntity> Media { get; set; } = [];
 }
 
