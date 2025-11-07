@@ -1,5 +1,6 @@
 namespace SinaMN75U.Data.Entities;
 
+[Table("Contracts")]
 public class ContractEntity : BaseEntity<TagContract, ContractJson> {
 	public required DateTime StartDate { get; set; }
 	public required DateTime EndDate { get; set; }

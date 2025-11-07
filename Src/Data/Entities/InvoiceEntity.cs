@@ -1,5 +1,6 @@
 namespace SinaMN75U.Data.Entities;
 
+[Table("Invoices")]
 public class InvoiceEntity: BaseEntity<TagInvoice, InvoiceJson> {
 	public required double DebtAmount { get; set; }
 	public required double CreditorAmount { get; set; }

@@ -4,7 +4,6 @@ public class ContractCreateParams : BaseCreateParams<TagContract> {
 	[UValidationRequired("StartDateRequired")]
 	public required DateTime StartDate { get; set; }
 
-	[UValidationBeforeDate("BeforeDateSelected")]
 	[UValidationRequired("EndDateRequired")]
 	public required DateTime EndDate { get; set; }
 
