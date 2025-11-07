@@ -8,7 +8,7 @@ public class InvoiceCreateParams : BaseCreateParams<TagInvoice> {
 	public required double CreditorAmount { get; set; }
 
 	[UValidationRequired("PriceRequired")]
-	public required double SettlementAmount { get; set; }
+	public required double PaidAmount { get; set; }
 
 	[UValidationRequired("PriceRequired")]
 	public required double PenaltyAmount { get; set; }
@@ -19,13 +19,21 @@ public class InvoiceCreateParams : BaseCreateParams<TagInvoice> {
 	[UValidationRequired("ContractIdRequired")]
 	public required Guid ContractId { get; set; }
 
+	[UValidationRequired("DateRequired")]
+	public required DateTime MaxDueDateWithoutPenalty { get; set; }
+
+	public DateTime? PaidDate { get; set; }
+
+	[UValidationRequired("DateRequired")]
+	public DateTime DueDate { get; set; }
+
 	public required string Description { get; set; }
 }
 
 public class InvoiceUpdateParams : BaseUpdateParams<TagInvoice> {
 	public double? DebtAmount { get; set; }
 	public double? CreditorAmount { get; set; }
-	public double? SettlementAmount { get; set; }
+	public double? PaidAmount { get; set; }
 	public double? PenaltyAmount { get; set; }
 }
 

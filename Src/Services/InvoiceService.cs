@@ -5,6 +5,11 @@ public interface IInvoiceService {
 	Task<UResponse<IEnumerable<InvoiceEntity>?>> Read(InvoiceReadParams p, CancellationToken ct);
 	Task<UResponse<InvoiceEntity?>> Update(InvoiceUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
+
+	Task<UResponse> Pay(IdParams p, CancellationToken ct);
+
+	Task<UResponse> CheckDueDate(CancellationToken ct);
+	Task<UResponse> CheckPenalty(CancellationToken ct);
 }
 
 public class InvoiceService(DbContext db, ILocalizationService ls, ITokenService ts) : IInvoiceService {
@@ -16,10 +21,13 @@ public class InvoiceService(DbContext db, ILocalizationService ls, ITokenService
 			Tags = p.Tags,
 			DebtAmount = p.DebtAmount,
 			CreditorAmount = p.CreditorAmount,
-			SettlementAmount = p.SettlementAmount,
+			PaidAmount = p.PaidAmount,
 			PenaltyAmount = p.PenaltyAmount,
 			UserId = p.UserId,
 			ContractId = p.ContractId,
+			DueDate = p.DueDate,
+			MaxDueDateWithoutPenalty = p.MaxDueDateWithoutPenalty,
+			PaidDate = p.PaidDate,
 			JsonData = new InvoiceJson {
 				Description = p.Description,
 			}
@@ -48,7 +56,7 @@ public class InvoiceService(DbContext db, ILocalizationService ls, ITokenService
 		if (p.CreditorAmount.HasValue) e.CreditorAmount = p.CreditorAmount.Value;
 		if (p.DebtAmount.HasValue) e.DebtAmount = p.DebtAmount.Value;
 		if (p.PenaltyAmount.HasValue) e.PenaltyAmount = p.PenaltyAmount.Value;
-		if (p.SettlementAmount.HasValue) e.SettlementAmount = p.SettlementAmount.Value;
+		if (p.PaidAmount.HasValue) e.PaidAmount = p.PaidAmount.Value;
 
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
@@ -64,6 +72,76 @@ public class InvoiceService(DbContext db, ILocalizationService ls, ITokenService
 		if (userData == null) return new UResponse<InvoiceEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<InvoiceEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> Pay(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		InvoiceEntity? e = await db.Set<InvoiceEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("InvoiceNotFound"));
+
+		e.PaidAmount = e.DebtAmount - e.CreditorAmount;
+		e.Tags = [TagInvoice.PaidOnline];
+		e.PaidDate = DateTime.UtcNow;
+		e.TrackingNumber = "123456789";
+		db.Update(e);
+
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> CheckDueDate(CancellationToken ct) {
+		IQueryable<InvoiceEntity> invoices = db.Set<InvoiceEntity>().AsTracking()
+			.Where(x => x.NextInvoiceIssueDate != null && DateTime.UtcNow >= x.NextInvoiceIssueDate)
+			.Include(x => x.Contract);
+
+		foreach (InvoiceEntity invoice in invoices) {
+			ProductEntity? p = await db.Set<ProductEntity>().FirstOrDefaultAsync(x => x.Id == invoice.Contract.ProductId, ct);
+			if (p != null) {
+				PersianDateTime date = invoice.DueDate.ToPersian();
+				int daysInMonth = PersianDateTime.UtcNow.DaysInMonth();
+				int daysUntilEndOfMonth = daysInMonth - date.Day;
+				double debtAmount = p.Price2!.Value;
+				if (daysUntilEndOfMonth <= 2) {
+					debtAmount = p.Price2!.Value / daysInMonth * daysUntilEndOfMonth;
+				}
+
+				await db.Set<InvoiceEntity>().AddAsync(
+					new InvoiceEntity {
+						Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
+						DebtAmount = debtAmount,
+						CreditorAmount = 0,
+						PaidAmount = 0,
+						PenaltyAmount = 0,
+						UserId = invoice.UserId,
+						ContractId = invoice.ContractId,
+						MaxDueDateWithoutPenalty = invoice.MaxDueDateWithoutPenalty.AddMonths(1).AddDays(2),
+						DueDate = invoice.DueDate.AddMonths(1),
+						JsonData = new InvoiceJson {
+							Description = ""
+						}
+					},
+					ct
+				);
+			}
+		}
+
+		return new UResponse();
+	}
+
+	public async Task<UResponse> CheckPenalty(CancellationToken ct) {
+		IQueryable<InvoiceEntity> invoices = db.Set<InvoiceEntity>().AsTracking()
+			.Where(x => DateTime.UtcNow >= x.NextInvoiceIssueDate);
+
+		foreach (InvoiceEntity invoice in invoices) {
+			invoice.PenaltyAmount += invoice.DebtAmount * 1 / 100;
+			invoice.DebtAmount += invoice.PenaltyAmount;
+			db.Set<InvoiceEntity>().Update(invoice);
+			await db.SaveChangesAsync(ct);
+		}
+
 		return new UResponse();
 	}
 }

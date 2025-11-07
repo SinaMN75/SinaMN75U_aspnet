@@ -34,30 +34,47 @@ public class ContractService(DbContext db, ILocalizationService ls, ITokenServic
 			Tags = p.Tags
 		}, ct);
 
-		EntityEntry<InvoiceEntity> invoice1 = await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
-			Id = Guid.CreateVersion7(),
-			Tags = [TagInvoice.NotPaid, TagInvoice.Deposit],
-			DebtAmount = product.Price1!.Value,
-			CreditorAmount = 0,
-			SettlementAmount = 0,
-			PenaltyAmount = 0,
-			UserId = user.Id,
-			ContractId = contractId,
-			JsonData = new InvoiceJson { Description = "" }
-		}, ct);
+		if (product.Price1 != null)
+			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
+				Tags = [TagInvoice.NotPaid, TagInvoice.Deposit],
+				DebtAmount = product.Price1!.Value,
+				CreditorAmount = 0,
+				PaidAmount = 0,
+				PenaltyAmount = 0,
+				UserId = user.Id,
+				ContractId = contractId,
+				DueDate = p.StartDate,
+				MaxDueDateWithoutPenalty = p.StartDate.AddDays(2),
+				JsonData = new InvoiceJson { Description = "" }
+			}, ct);
 
-		EntityEntry<InvoiceEntity> invoice2 = await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
-			Id = Guid.CreateVersion7(),
-			Tags = [TagInvoice.NotPaid, TagInvoice.Deposit],
-			DebtAmount = product.Price2!.Value,
-			CreditorAmount = 0,
-			SettlementAmount = 0,
-			PenaltyAmount = 0,
-			UserId = user.Id,
-			ContractId = contractId,
-			JsonData = new InvoiceJson { Description = "" },
-		}, ct);
-		
+		if (product.Price2 != null) {
+			bool hasNextInvoice = (p.EndDate - p.StartDate).TotalDays >= 32;
+			DateTime nextInvoiceIssueDate = p.StartDate.AddMonths(1).AddDays(-1);
+			nextInvoiceIssueDate = new DateTime(
+				nextInvoiceIssueDate.Year,
+				nextInvoiceIssueDate.Month,
+				nextInvoiceIssueDate.Day,
+				10,
+				30,
+				0,
+				nextInvoiceIssueDate.Kind
+			);
+			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
+				Tags = [TagInvoice.NotPaid, TagInvoice.Deposit],
+				DebtAmount = product.Price2!.Value,
+				CreditorAmount = 0,
+				PaidAmount = 0,
+				PenaltyAmount = 0,
+				UserId = user.Id,
+				ContractId = contractId,
+				DueDate = p.StartDate,
+				MaxDueDateWithoutPenalty = p.StartDate.AddDays(2),
+				NextInvoiceIssueDate = hasNextInvoice ? nextInvoiceIssueDate : null,
+				JsonData = new InvoiceJson { Description = "" },
+			}, ct);
+		}
+
 		await db.SaveChangesAsync(ct);
 		return new UResponse<ContractEntity?>(e.Entity);
 	}

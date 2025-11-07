@@ -4,8 +4,15 @@ namespace SinaMN75U.Data.Entities;
 public class InvoiceEntity: BaseEntity<TagInvoice, InvoiceJson> {
 	public required double DebtAmount { get; set; }
 	public required double CreditorAmount { get; set; }
-	public required double SettlementAmount { get; set; }
+	public required double PaidAmount { get; set; }
 	public required double PenaltyAmount { get; set; }
+
+	public DateTime? PaidDate { get; set; }
+	public required DateTime DueDate { get; set; }
+	public DateTime MaxDueDateWithoutPenalty { get; set; }
+	public DateTime? NextInvoiceIssueDate { get; set; }
+
+	public string? TrackingNumber { get; set; }
 
 	public UserEntity User { get; set; } = null!;
 	public required Guid UserId { get; set; }
