@@ -72,10 +72,7 @@ public sealed class CacheResponseFilter(ILocalStorageService cache, int minutes)
 
 			sb.Append('-').Append(ComputeSha256Hash(hashableBody));
 		}
-
-		string key = sb.ToString();
-		Console.WriteLine($"Cache Key: {key}");
-		return key;
+		return sb.ToString();
 	}
 
 	private static string ComputeSha256Hash(string rawData) =>
