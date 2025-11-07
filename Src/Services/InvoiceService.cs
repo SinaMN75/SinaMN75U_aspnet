@@ -19,6 +19,7 @@ public class InvoiceService(DbContext db, ILocalizationService ls, ITokenService
 			SettlementAmount = p.SettlementAmount,
 			PenaltyAmount = p.PenaltyAmount,
 			UserId = p.UserId,
+			ContractId = p.ContractId,
 			JsonData = new InvoiceJson {
 				Description = p.Description,
 			}

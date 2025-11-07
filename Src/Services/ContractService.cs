@@ -42,6 +42,7 @@ public class ContractService(DbContext db, ILocalizationService ls, ITokenServic
 			SettlementAmount = 0,
 			PenaltyAmount = 0,
 			UserId = user.Id,
+			ContractId = contractId,
 			JsonData = new InvoiceJson { Description = "" }
 		}, ct);
 
@@ -53,6 +54,7 @@ public class ContractService(DbContext db, ILocalizationService ls, ITokenServic
 			SettlementAmount = 0,
 			PenaltyAmount = 0,
 			UserId = user.Id,
+			ContractId = contractId,
 			JsonData = new InvoiceJson { Description = "" },
 		}, ct);
 		

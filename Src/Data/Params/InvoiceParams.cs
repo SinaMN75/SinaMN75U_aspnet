@@ -13,8 +13,12 @@ public class InvoiceCreateParams : BaseCreateParams<TagInvoice> {
 	[UValidationRequired("PriceRequired")]
 	public required double PenaltyAmount { get; set; }
 
+	[UValidationRequired("UserIdRequired")]
 	public required Guid UserId { get; set; }
-	
+
+	[UValidationRequired("ContractIdRequired")]
+	public required Guid ContractId { get; set; }
+
 	public required string Description { get; set; }
 }
 

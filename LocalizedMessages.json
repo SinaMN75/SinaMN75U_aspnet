@@ -19,6 +19,8 @@
     "StartDateRequired": "Start Date is Required",
     "EndDateRequired": "End Date is Required",
     "PriceRequired": "Price is Required",
+    "UserIdRequired": "User is Required",
+    "ContractIdRequired": "Contract is Required",
     "UserNotFound": "Account not found. Please check your details.",
     "EmailInvalid": "Please enter a valid email.",
     "UserNameInvalid": "Username is invalid. Please try another.",

@@ -8,6 +8,9 @@ public class InvoiceEntity: BaseEntity<TagInvoice, InvoiceJson> {
 
 	public UserEntity User { get; set; } = null!;
 	public required Guid UserId { get; set; }
+
+	public ContractEntity Contract { get; set; } = null!;
+	public required Guid ContractId { get; set; }
 }
 
 public class InvoiceJson {
