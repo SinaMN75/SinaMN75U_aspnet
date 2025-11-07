@@ -12,19 +12,50 @@ public class ContractService(DbContext db, ILocalizationService ls, ITokenServic
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ContractEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
+		ProductEntity? product = await db.Set<ProductEntity>().FirstOrDefaultAsync(x => x.Id == p.ProductId, ct);
+		if (product == null) return new UResponse<ContractEntity?>(null, Usc.NotFound, ls.Get("ProductNotFound"));
+
+		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
+		if (user == null) return new UResponse<ContractEntity?>(null, Usc.NotFound, ls.Get("UserNotFound"));
+
+		Guid contractId = Guid.CreateVersion7();
 		EntityEntry<ContractEntity> e = await db.AddAsync(new ContractEntity {
+			Id = contractId,
 			StartDate = p.StartDate,
 			EndDate = p.EndDate,
 			Price1 = p.Price1,
 			Price2 = p.Price2,
-			UserId = p.UserId,
-			CreatorId = p.CreatorId,
-			ProductId = p.ProductId,
+			UserId = user.Id,
+			CreatorId = userData.Id,
+			ProductId = product.Id,
 			JsonData = new ContractJson {
 				Description = p.Description
 			},
 			Tags = p.Tags
 		}, ct);
+
+		EntityEntry<InvoiceEntity> invoice1 = await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
+			Id = Guid.CreateVersion7(),
+			Tags = [TagInvoice.NotPaid, TagInvoice.Deposit],
+			DebtAmount = product.Price1!.Value,
+			CreditorAmount = 0,
+			SettlementAmount = 0,
+			PenaltyAmount = 0,
+			UserId = user.Id,
+			JsonData = new InvoiceJson { Description = "" }
+		}, ct);
+
+		EntityEntry<InvoiceEntity> invoice2 = await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
+			Id = Guid.CreateVersion7(),
+			Tags = [TagInvoice.NotPaid, TagInvoice.Deposit],
+			DebtAmount = product.Price2!.Value,
+			CreditorAmount = 0,
+			SettlementAmount = 0,
+			PenaltyAmount = 0,
+			UserId = user.Id,
+			JsonData = new InvoiceJson { Description = "" },
+		}, ct);
+		
 		await db.SaveChangesAsync(ct);
 		return new UResponse<ContractEntity?>(e.Entity);
 	}

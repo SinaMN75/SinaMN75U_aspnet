@@ -15,7 +15,6 @@ public class ContractCreateParams : BaseCreateParams<TagContract> {
 	public required double Price2 { get; set; }
 
 	public required Guid UserId { get; set; }
-	public required Guid CreatorId { get; set; }
 	public required Guid ProductId { get; set; }
 	
 	public string? Description { get; set; }

@@ -21,7 +21,7 @@ public sealed class UMiddleware(RequestDelegate next, IConfiguration config) {
 		context.Request.EnableBuffering();
 
 		try {
-			using StreamReader reader = new StreamReader(context.Request.Body, Encoding.UTF8, leaveOpen: true);
+			using StreamReader reader = new(context.Request.Body, Encoding.UTF8, leaveOpen: true);
 			rawRequestBody = await reader.ReadToEndAsync();
 		}
 		finally {
@@ -35,7 +35,7 @@ public sealed class UMiddleware(RequestDelegate next, IConfiguration config) {
 		}
 
 		Stream originalResponseStream = context.Response.Body;
-		using MemoryStream captureStream = new MemoryStream();
+		using MemoryStream captureStream = new();
 		context.Response.Body = captureStream;
 
 		try {
@@ -168,9 +168,9 @@ public sealed class UMiddleware(RequestDelegate next, IConfiguration config) {
 
 		// Truncate large bodies in logs
 		const int maxLen = 10_000;
-		if (rawReq.Length > maxLen) rawReq = rawReq.Substring(0, maxLen) + "...<truncated>";
-		if (decodedReq.Length > maxLen) decodedReq = decodedReq.Substring(0, maxLen) + "...<truncated>";
-		if (res.Length > maxLen) res = res.Substring(0, maxLen) + "...<truncated>";
+		if (rawReq.Length > maxLen) rawReq = rawReq[..maxLen] + "...<truncated>";
+		if (decodedReq.Length > maxLen) decodedReq = decodedReq[..maxLen] + "...<truncated>";
+		if (res.Length > maxLen) res = res[..maxLen] + "...<truncated>";
 
 		LogToFile(DateTime.UtcNow, ctx.Request.Method, ctx.Request.Path, ctx.Response.StatusCode, ms, rawReq, decodedReq, res, ex);
 	}

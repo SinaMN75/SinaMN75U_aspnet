@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.ResponseCompression;
+using SinaMN75U.SchedulingServices;
 
 namespace SinaMN75U.Utils;
 
@@ -53,6 +54,8 @@ public static class AspNetConfig {
 			x.MultipartBodyLengthLimit = int.MaxValue;
 			x.MultipartHeadersLengthLimit = int.MaxValue;
 		});
+
+		// builder.Services.AddHostedService<SimpleSchedulerService>();
 
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
 		builder.Services.AddSingleton<IHttpClientService, HttpClientService>();

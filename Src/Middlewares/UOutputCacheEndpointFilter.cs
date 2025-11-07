@@ -29,7 +29,7 @@ public sealed class CacheResponseFilter(ILocalStorageService cache, int minutes)
 		request.EnableBuffering();
 
 		try {
-			using StreamReader reader = new StreamReader(
+			using StreamReader reader = new(
 				request.Body,
 				encoding: Encoding.UTF8,
 				detectEncodingFromByteOrderMarks: false,
@@ -68,10 +68,11 @@ public sealed class CacheResponseFilter(ILocalStorageService cache, int minutes)
 		if (!string.IsNullOrEmpty(body)) {
 			string hashableBody = body.Length <= 1024
 				? body
-				: body.Substring(0, 1024) + "$LEN:" + body.Length;
+				: body[..1024] + "$LEN:" + body.Length;
 
 			sb.Append('-').Append(ComputeSha256Hash(hashableBody));
 		}
+
 		return sb.ToString();
 	}
 
@@ -95,7 +96,7 @@ public class ModifiedResult : IResult {
 	public async Task ExecuteAsync(HttpContext httpContext) {
 		Stream originalBodyStream = httpContext.Response.Body;
 
-		await using MemoryStream memoryStream = new MemoryStream();
+		await using MemoryStream memoryStream = new();
 		httpContext.Response.Body = memoryStream;
 
 		try {
@@ -103,7 +104,7 @@ public class ModifiedResult : IResult {
 
 			if (httpContext.Response.StatusCode == StatusCodes.Status200OK) {
 				memoryStream.Seek(0, SeekOrigin.Begin);
-				using StreamReader reader = new StreamReader(memoryStream, Encoding.UTF8, leaveOpen: true);
+				using StreamReader reader = new(memoryStream, Encoding.UTF8, leaveOpen: true);
 				string responseBody = await reader.ReadToEndAsync();
 
 				// Size limit: don't cache > 1MB responses

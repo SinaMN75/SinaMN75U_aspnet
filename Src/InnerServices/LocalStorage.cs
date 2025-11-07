@@ -45,7 +45,7 @@ public sealed class StaticCacheService : ILocalStorageService {
 
 	public void Set(string key, string value, TimeSpan expireTime) {
 		DateTime now = DateTime.UtcNow;
-		CacheEntry entry = new CacheEntry(value, now.Add(expireTime));
+		CacheEntry entry = new(value, now.Add(expireTime));
 
 		// Evict if over limit (simple FIFO - use Keys.First() for oldest)
 		if (Cache.Count >= 10_000) {

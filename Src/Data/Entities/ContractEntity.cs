@@ -15,6 +15,8 @@ public class ContractEntity : BaseEntity<TagContract, ContractJson> {
 
 	public ProductEntity Product { get; set; } = null!;
 	public required Guid ProductId { get; set; }
+
+	public ICollection<InvoiceEntity> Invoices { get; set; } = [];
 }
 
 public class ContractJson {
