@@ -26,7 +26,6 @@ public class InvoiceService(DbContext db, ILocalizationService ls, ITokenService
 			UserId = p.UserId,
 			ContractId = p.ContractId,
 			DueDate = p.DueDate,
-			MaxDueDateWithoutPenalty = p.MaxDueDateWithoutPenalty,
 			PaidDate = p.PaidDate,
 			JsonData = new InvoiceJson {
 				Description = p.Description,
@@ -98,34 +97,32 @@ public class InvoiceService(DbContext db, ILocalizationService ls, ITokenService
 			.Include(x => x.Contract);
 
 		foreach (InvoiceEntity invoice in invoices) {
-			ProductEntity? p = await db.Set<ProductEntity>().FirstOrDefaultAsync(x => x.Id == invoice.Contract.ProductId, ct);
-			if (p != null) {
-				PersianDateTime date = invoice.DueDate.ToPersian();
-				int daysInMonth = PersianDateTime.UtcNow.DaysInMonth();
-				int daysUntilEndOfMonth = daysInMonth - date.Day;
-				double debtAmount = p.Price2!.Value;
-				if (daysUntilEndOfMonth <= 2) {
-					debtAmount = p.Price2!.Value / daysInMonth * daysUntilEndOfMonth;
-				}
+			PersianDateTime date = invoice.NextInvoiceIssueDate!.Value.ToPersian();
+			int daysInMonth = PersianDateTime.UtcNow.DaysInMonth();
+			int daysUntilEndOfMonth = daysInMonth - date.Day;
+			double debtAmount = invoice.Contract.Price2;
 
-				await db.Set<InvoiceEntity>().AddAsync(
-					new InvoiceEntity {
-						Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
-						DebtAmount = debtAmount,
-						CreditorAmount = 0,
-						PaidAmount = 0,
-						PenaltyAmount = 0,
-						UserId = invoice.UserId,
-						ContractId = invoice.ContractId,
-						MaxDueDateWithoutPenalty = invoice.MaxDueDateWithoutPenalty.AddMonths(1).AddDays(2),
-						DueDate = invoice.DueDate.AddMonths(1),
-						JsonData = new InvoiceJson {
-							Description = ""
-						}
-					},
-					ct
-				);
+			DateTime dueDate = invoice.DueDate;
+			if (daysUntilEndOfMonth <= 2) {
+				debtAmount = (invoice.Contract.Price2 / daysInMonth) * daysUntilEndOfMonth;
+				PersianDateTime now = PersianDateTime.Now;
+				dueDate = new PersianDateTime(now.Year, now.Month, daysInMonth).ToDateTime();
 			}
+
+			await db.Set<InvoiceEntity>().AddAsync(
+				new InvoiceEntity {
+					Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
+					DebtAmount = debtAmount,
+					CreditorAmount = 0,
+					PaidAmount = 0,
+					PenaltyAmount = 0,
+					UserId = invoice.UserId,
+					ContractId = invoice.ContractId,
+					DueDate = dueDate,
+					JsonData = new InvoiceJson { Description = "" }
+				},
+				ct
+			);
 		}
 
 		return new UResponse();
@@ -133,7 +130,7 @@ public class InvoiceService(DbContext db, ILocalizationService ls, ITokenService
 
 	public async Task<UResponse> CheckPenalty(CancellationToken ct) {
 		IQueryable<InvoiceEntity> invoices = db.Set<InvoiceEntity>().AsTracking()
-			.Where(x => DateTime.UtcNow >= x.NextInvoiceIssueDate);
+			.Where(x => DateTime.UtcNow >= x.DueDate.AddDays(2));
 
 		foreach (InvoiceEntity invoice in invoices) {
 			invoice.PenaltyAmount += invoice.DebtAmount * 1 / 100;

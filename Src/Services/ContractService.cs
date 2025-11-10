@@ -44,7 +44,6 @@ public class ContractService(DbContext db, ILocalizationService ls, ITokenServic
 				UserId = user.Id,
 				ContractId = contractId,
 				DueDate = p.StartDate,
-				MaxDueDateWithoutPenalty = p.StartDate.AddDays(2),
 				JsonData = new InvoiceJson { Description = "" }
 			}, ct);
 
@@ -61,7 +60,7 @@ public class ContractService(DbContext db, ILocalizationService ls, ITokenServic
 				nextInvoiceIssueDate.Kind
 			);
 			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
-				Tags = [TagInvoice.NotPaid, TagInvoice.Deposit],
+				Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
 				DebtAmount = product.Price2!.Value,
 				CreditorAmount = 0,
 				PaidAmount = 0,
@@ -69,7 +68,6 @@ public class ContractService(DbContext db, ILocalizationService ls, ITokenServic
 				UserId = user.Id,
 				ContractId = contractId,
 				DueDate = p.StartDate,
-				MaxDueDateWithoutPenalty = p.StartDate.AddDays(2),
 				NextInvoiceIssueDate = hasNextInvoice ? nextInvoiceIssueDate : null,
 				JsonData = new InvoiceJson { Description = "" },
 			}, ct);

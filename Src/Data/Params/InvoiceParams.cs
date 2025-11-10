@@ -18,10 +18,7 @@ public class InvoiceCreateParams : BaseCreateParams<TagInvoice> {
 
 	[UValidationRequired("ContractIdRequired")]
 	public required Guid ContractId { get; set; }
-
-	[UValidationRequired("DateRequired")]
-	public required DateTime MaxDueDateWithoutPenalty { get; set; }
-
+	
 	public DateTime? PaidDate { get; set; }
 
 	[UValidationRequired("DateRequired")]
