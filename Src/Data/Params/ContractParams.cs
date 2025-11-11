@@ -7,11 +7,8 @@ public class ContractCreateParams : BaseCreateParams<TagContract> {
 	[UValidationRequired("EndDateRequired")]
 	public required DateTime EndDate { get; set; }
 
-	[UValidationRequired("PriceRequired")]
-	public required double Price1 { get; set; }
-
-	[UValidationRequired("PriceRequired")]
-	public required double Price2 { get; set; }
+	public double? Price1 { get; set; }
+	public double? Price2 { get; set; }
 
 	public required Guid UserId { get; set; }
 	public required Guid ProductId { get; set; }
