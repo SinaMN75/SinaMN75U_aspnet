@@ -15,9 +15,19 @@ public static class InvoiceRoutes {
 			return (await s.Update(d, c)).ToResult();
 		}).Produces<UResponse<InvoiceEntity>>();
 
-		r.MapPost("Delete", async (IdParams d, IInvoiceService s, ILocalStorageService ls, CancellationToken c) => {
+		r.MapPost("Pay", async (IdParams d, IInvoiceService s, ILocalStorageService ls, CancellationToken c) => {
 			ls.DeleteAllByPartialKey(tag);
-			return (await s.Delete(d, c)).ToResult();
+			return (await s.Pay(d, c)).ToResult();
+		}).Produces<UResponse>();
+
+		r.MapPost("CheckDueDate", async (IInvoiceService s, ILocalStorageService ls, CancellationToken c) => {
+			ls.DeleteAllByPartialKey(tag);
+			return (await s.CheckDueDate(c)).ToResult();
+		}).Produces<UResponse>();
+
+		r.MapPost("CheckPenalty", async (IInvoiceService s, ILocalStorageService ls, CancellationToken c) => {
+			ls.DeleteAllByPartialKey(tag);
+			return (await s.CheckPenalty(c)).ToResult();
 		}).Produces<UResponse>();
 	}
 }
