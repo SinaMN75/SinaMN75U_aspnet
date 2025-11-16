@@ -5,13 +5,21 @@ public sealed class CacheResponseFilter(ILocalStorageService cache, int minutes)
 		HttpContext httpContext = context.HttpContext;
 		HttpRequest request = httpContext.Request;
 
+		// Read and cache the body
 		string body = await ReadRequestBodyAsync(request);
-		string cacheKey = BuildCacheKey(request, body);
+		string cacheKey = $"{request.Path}{body}";
+
+		// Debug output - remove in production
+		Console.WriteLine($"Cache Key: {cacheKey}");
+		Console.WriteLine($"Body: {body}");
 
 		if (cache.Get(cacheKey) is { } cachedJson) {
 			httpContext.Response.Headers.TryAdd("X-Cache-Hit", "true");
 			return Results.Content(cachedJson, "application/json", Encoding.UTF8);
 		}
+
+		// Restore the body for the actual endpoint
+		await RestoreRequestBodyAsync(request, body);
 
 		object? result = await next(context);
 
@@ -23,76 +31,45 @@ public sealed class CacheResponseFilter(ILocalStorageService cache, int minutes)
 	}
 
 	private static async Task<string> ReadRequestBodyAsync(HttpRequest request) {
-		if (!HttpMethods.IsPost(request.Method) && !HttpMethods.IsPut(request.Method))
-			return string.Empty;
-
-		request.EnableBuffering();
+		// Enable buffering if not already enabled
+		if (!request.Body.CanSeek) {
+			request.EnableBuffering();
+		}
 
 		try {
-			using StreamReader reader = new(
-				request.Body,
-				encoding: Encoding.UTF8,
-				detectEncodingFromByteOrderMarks: false,
-				bufferSize: 1024,
-				leaveOpen: true);
-
-			string body = await reader.ReadToEndAsync();
 			request.Body.Position = 0;
+			using StreamReader reader = new(request.Body, Encoding.UTF8, leaveOpen: true);
+			string body = await reader.ReadToEndAsync();
 			return body.Trim();
 		}
-		catch {
-			request.Body.Position = 0;
+		catch (Exception ex) {
+			Console.WriteLine($"Error reading request body: {ex.Message}");
 			return string.Empty;
 		}
 	}
 
-	private static string BuildCacheKey(HttpRequest request, string body) {
-		StringBuilder sb = new StringBuilder(256)
-			.Append(request.Method).Append(':')
-			.Append(request.Path);
+	private static Task RestoreRequestBodyAsync(HttpRequest request, string body) {
+		if (string.IsNullOrEmpty(body))
+			return Task.CompletedTask;
 
-		// Normalized query string (sorted params)
-		string sortedQuery = string.Join("&",
-			request.Query
-				.OrderBy(kvp => kvp.Key, StringComparer.Ordinal)
-				.Select(kvp => $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value!)}"));
+		try {
+			byte[] bytes = Encoding.UTF8.GetBytes(body);
+			request.Body = new MemoryStream(bytes);
+			request.Body.Position = 0;
+			request.ContentLength = bytes.Length;
 
-		if (!string.IsNullOrEmpty(sortedQuery))
-			sb.Append('?').Append(sortedQuery);
-
-		// Locale header
-		if (request.Headers.TryGetValue("locale", out StringValues locale))
-			sb.Append('-').Append(locale.ToString());
-
-		// Body hash (first 1KB + length for large bodies)
-		if (!string.IsNullOrEmpty(body)) {
-			string hashableBody = body.Length <= 1024
-				? body
-				: body[..1024] + "$LEN:" + body.Length;
-
-			sb.Append('-').Append(ComputeSha256Hash(hashableBody));
+			// Also update the ContentLength header
+			request.Headers.ContentLength = bytes.Length;
+		}
+		catch (Exception ex) {
+			Console.WriteLine($"Error restoring request body: {ex.Message}");
 		}
 
-		return sb.ToString();
+		return Task.CompletedTask;
 	}
-
-	private static string ComputeSha256Hash(string rawData) =>
-		Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawData)));
 }
 
-public class ModifiedResult : IResult {
-	private readonly IResult _originalResult;
-	private readonly string _key;
-	private readonly ILocalStorageService _cache;
-	private readonly TimeSpan _duration;
-
-	public ModifiedResult(IResult originalResult, string key, ILocalStorageService cache, TimeSpan duration) {
-		_originalResult = originalResult;
-		_key = key;
-		_cache = cache;
-		_duration = duration;
-	}
-
+public class ModifiedResult(IResult originalResult, string key, ILocalStorageService cache, TimeSpan duration) : IResult {
 	public async Task ExecuteAsync(HttpContext httpContext) {
 		Stream originalBodyStream = httpContext.Response.Body;
 
@@ -100,18 +77,14 @@ public class ModifiedResult : IResult {
 		httpContext.Response.Body = memoryStream;
 
 		try {
-			await _originalResult.ExecuteAsync(httpContext);
+			await originalResult.ExecuteAsync(httpContext);
 
+			// Only cache successful responses
 			if (httpContext.Response.StatusCode == StatusCodes.Status200OK) {
 				memoryStream.Seek(0, SeekOrigin.Begin);
 				using StreamReader reader = new(memoryStream, Encoding.UTF8, leaveOpen: true);
 				string responseBody = await reader.ReadToEndAsync();
-
-				// Size limit: don't cache > 1MB responses
-				if (responseBody.Length <= 1_048_576) {
-					_cache.Set(_key, responseBody, _duration);
-					httpContext.Response.Headers.TryAdd("X-Cache-Store", "true");
-				}
+				cache.Set(key, responseBody, duration);
 
 				// Copy back to original stream
 				memoryStream.Seek(0, SeekOrigin.Begin);
@@ -137,11 +110,7 @@ public class ModifiedResult : IResult {
 
 public static class CacheFilterExtensions {
 	public static TBuilder Cache<TBuilder>(this TBuilder builder, int minutes)
-		where TBuilder : IEndpointConventionBuilder {
-		return builder.AddEndpointFilter(async (context, next) => {
-			ILocalStorageService cache = context.HttpContext.RequestServices.GetRequiredService<ILocalStorageService>();
-			CacheResponseFilter filter = new(cache, minutes);
-			return await filter.InvokeAsync(context, next);
-		});
-	}
+		where TBuilder : IEndpointConventionBuilder =>
+		builder.AddEndpointFilter(async (context, next) =>
+			await new CacheResponseFilter(context.HttpContext.RequestServices.GetRequiredService<ILocalStorageService>(), minutes).InvokeAsync(context, next));
 }
