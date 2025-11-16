@@ -48,24 +48,23 @@ public sealed class CacheResponseFilter(ILocalStorageService cache, int minutes)
 		}
 	}
 
-	private static Task RestoreRequestBodyAsync(HttpRequest request, string body) {
-		if (string.IsNullOrEmpty(body))
-			return Task.CompletedTask;
+	private static async Task RestoreRequestBodyAsync(HttpRequest request, string body) {
+		if (string.IsNullOrEmpty(body)) return;
 
-		try {
-			byte[] bytes = Encoding.UTF8.GetBytes(body);
+		byte[] bytes = Encoding.UTF8.GetBytes(body);
+
+		// Reuse the existing stream if possible, rather than creating new ones
+		if (request.Body is MemoryStream memoryStream) {
+			memoryStream.SetLength(0); // Clear existing content
+			await memoryStream.WriteAsync(bytes);
+			memoryStream.Position = 0;
+		}
+		else {
 			request.Body = new MemoryStream(bytes);
-			request.Body.Position = 0;
-			request.ContentLength = bytes.Length;
-
-			// Also update the ContentLength header
-			request.Headers.ContentLength = bytes.Length;
-		}
-		catch (Exception ex) {
-			Console.WriteLine($"Error restoring request body: {ex.Message}");
 		}
 
-		return Task.CompletedTask;
+		request.ContentLength = bytes.Length;
+		request.Headers.ContentLength = bytes.Length;
 	}
 }
 
@@ -96,7 +95,7 @@ public class ModifiedResult(IResult originalResult, string key, ILocalStorageSer
 				await memoryStream.CopyToAsync(originalBodyStream);
 			}
 		}
-		catch (Exception) {
+		catch (Exception ex) {
 			// On error: copy whatever we have
 			memoryStream.Seek(0, SeekOrigin.Begin);
 			await memoryStream.CopyToAsync(originalBodyStream);
