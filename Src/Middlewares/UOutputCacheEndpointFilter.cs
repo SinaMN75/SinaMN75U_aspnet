@@ -9,10 +9,6 @@ public sealed class CacheResponseFilter(ILocalStorageService cache, int minutes)
 		string body = await ReadRequestBodyAsync(request);
 		string cacheKey = $"{request.Path}{body}";
 
-		// Debug output - remove in production
-		Console.WriteLine($"Cache Key: {cacheKey}");
-		Console.WriteLine($"Body: {body}");
-
 		if (cache.Get(cacheKey) is { } cachedJson) {
 			httpContext.Response.Headers.TryAdd("X-Cache-Hit", "true");
 			return Results.Content(cachedJson, "application/json", Encoding.UTF8);
@@ -42,8 +38,7 @@ public sealed class CacheResponseFilter(ILocalStorageService cache, int minutes)
 			string body = await reader.ReadToEndAsync();
 			return body.Trim();
 		}
-		catch (Exception ex) {
-			Console.WriteLine($"Error reading request body: {ex.Message}");
+		catch (Exception) {
 			return string.Empty;
 		}
 	}
@@ -95,7 +90,7 @@ public class ModifiedResult(IResult originalResult, string key, ILocalStorageSer
 				await memoryStream.CopyToAsync(originalBodyStream);
 			}
 		}
-		catch (Exception ex) {
+		catch (Exception) {
 			// On error: copy whatever we have
 			memoryStream.Seek(0, SeekOrigin.Begin);
 			await memoryStream.CopyToAsync(originalBodyStream);
