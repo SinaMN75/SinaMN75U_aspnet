@@ -8,6 +8,7 @@ public static class AspNetConfig {
 		SqlDatabaseType sqlDatabaseType,
 		string sqlDatabaseConnectionStrings
 	) where T : DbContext {
+		Server.Configure(builder.Configuration);
 		builder.Services.Configure<KestrelServerOptions>(o => o.AllowSynchronousIO = false);
 		builder.Services.Configure<IISServerOptions>(o => o.AllowSynchronousIO = false);
 		builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
@@ -77,7 +78,6 @@ public static class AspNetConfig {
 
 	public static void UseUServices(this WebApplication app) {
 		app.UseLeanResponses();
-		Server.Configure(app.Services.GetRequiredService<IHttpContextAccessor>());
 		app.UseStaticFiles();
 		app.UseCors();
 		app.UseDeveloperExceptionPage();

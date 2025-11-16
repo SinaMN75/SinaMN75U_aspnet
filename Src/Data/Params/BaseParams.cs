@@ -1,5 +1,11 @@
 namespace SinaMN75U.Data.Params;
 
+public class BaseParams {
+	public string ApiKey { get; set; } = null!;
+	public string Token { get; set; } = null!;
+	public string Locale { get; set; } = "en";
+}
+
 public class IdParams : BaseParams {
 	public required Guid? Id { get; set; }
 }
@@ -42,9 +48,4 @@ public class BaseCreateParams<T> : BaseParams {
 	public required List<T> Tags { get; set; }
 
 	public Guid? Id { get; set; }
-}
-
-public class BaseParams {
-	public string ApiKey { get; set; } = null!;
-	public string Token { get; set; } = null!;
 }

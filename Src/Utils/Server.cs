@@ -1,17 +1,13 @@
 ﻿namespace SinaMN75U.Utils;
 
+using Microsoft.Extensions.Configuration;
+
 public static class Server {
-	private static IHttpContextAccessor? _httpContextAccessor;
-	private static string? _serverAddress;
+	private static string? _baseUrl;
 
-	public static string ServerAddress {
-		get {
-			if (_serverAddress != null) return _serverAddress;
-			HttpRequest? request = _httpContextAccessor?.HttpContext?.Request;
-			_serverAddress = $"{request?.Scheme}://{request?.Host.ToUriComponent()}{request?.PathBase.ToUriComponent()}";
-			return _serverAddress;
-		}
+	public static string BaseUrl => _baseUrl ?? throw new InvalidOperationException("Server not configured. Call Configure() at startup.");
+
+	public static void Configure(IConfiguration config) {
+		_baseUrl = config["BaseUrl"]?.TrimEnd('/');
 	}
-
-	public static void Configure(IHttpContextAccessor? accessor) => _httpContextAccessor = accessor;
 }
