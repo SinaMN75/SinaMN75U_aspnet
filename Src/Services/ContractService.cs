@@ -19,7 +19,7 @@ public class ContractService(DbContext db, ILocalizationService ls, ITokenServic
 		if (user == null) return new UResponse<ContractEntity?>(null, Usc.NotFound, ls.Get("UserNotFound"));
 
 		Guid contractId = Guid.CreateVersion7();
-		EntityEntry<ContractEntity> e = await db.AddAsync(new ContractEntity {
+		ContractEntity e = new() {
 			Id = contractId,
 			StartDate = p.StartDate,
 			EndDate = p.EndDate,
@@ -28,53 +28,83 @@ public class ContractService(DbContext db, ILocalizationService ls, ITokenServic
 			UserId = user.Id,
 			CreatorId = userData.Id,
 			ProductId = product.Id,
-			JsonData = new ContractJson {
-				Description = p.Description
-			},
+			JsonData = new ContractJson { Description = p.Description },
 			Tags = p.Tags
+		};
+		await db.Set<ContractEntity>().AddAsync(e, ct);
+
+		await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
+			Tags = [TagInvoice.Deposit],
+			DebtAmount = product.Price1!.Value,
+			CreditorAmount = 0,
+			PaidAmount = 0,
+			PenaltyAmount = 0,
+			UserId = user.Id,
+			ContractId = contractId,
+			DueDate = p.StartDate,
+			JsonData = new InvoiceJson { Description = "ودیعه" }
 		}, ct);
 
-		if (product.Price1 != null)
-			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
-				Tags = [TagInvoice.NotPaid, TagInvoice.Deposit],
-				DebtAmount = product.Price1!.Value,
-				CreditorAmount = 0,
-				PaidAmount = 0,
-				PenaltyAmount = 0,
-				UserId = user.Id,
-				ContractId = contractId,
-				DueDate = p.StartDate,
-				JsonData = new InvoiceJson { Description = "" }
-			}, ct);
+		PersianDateTime startDate = e.StartDate.ToPersian();
+		PersianDateTime endDate = e.EndDate.ToPersian();
 
-		if (product.Price2 != null) {
-			bool hasNextInvoice = (p.EndDate - p.StartDate).TotalDays >= 32;
-			DateTime nextInvoiceIssueDate = p.StartDate.AddMonths(1).AddDays(-1);
-			nextInvoiceIssueDate = new DateTime(
-				nextInvoiceIssueDate.Year,
-				nextInvoiceIssueDate.Month,
-				nextInvoiceIssueDate.Day,
-				10,
-				30,
-				0,
-				nextInvoiceIssueDate.Kind
-			);
+		double monthlyPrice = product.Price2!.Value;
+
+		int totalMonths = (endDate.Year - startDate.Year) * 12 + (endDate.Month - startDate.Month);
+		if (endDate.Day < startDate.Day) {
+			totalMonths--;
+		}
+
+		await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
+			Tags = [TagInvoice.Rent],
+			DebtAmount = monthlyPrice,
+			CreditorAmount = 0,
+			PaidAmount = 0,
+			PenaltyAmount = 0,
+			UserId = user.Id,
+			ContractId = contractId,
+			DueDate = startDate.ToDateTime(),
+			JsonData = new InvoiceJson { Description = "قسط اول - قیمت کامل" },
+		}, ct);
+
+		if (totalMonths >= 1) {
+			int remainingDaysInFirstMonth = PersianDateTime.DaysInMonth(startDate.Year, startDate.Month) - startDate.Day + 1;
+			int totalDaysInFirstMonth = PersianDateTime.DaysInMonth(startDate.Year, startDate.Month);
+			double proportionalPrice = (remainingDaysInFirstMonth / (double)totalDaysInFirstMonth) * monthlyPrice;
+
+			PersianDateTime firstOfNextMonth = startDate.AddMonths(1).StartOfMonth;
+
 			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 				Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
-				DebtAmount = product.Price2!.Value,
+				DebtAmount = Math.Round(proportionalPrice, 2),
 				CreditorAmount = 0,
 				PaidAmount = 0,
 				PenaltyAmount = 0,
 				UserId = user.Id,
 				ContractId = contractId,
-				DueDate = p.StartDate,
-				NextInvoiceIssueDate = hasNextInvoice ? nextInvoiceIssueDate : null,
-				JsonData = new InvoiceJson { Description = "" },
+				DueDate = firstOfNextMonth.ToDateTime(),
+				JsonData = new InvoiceJson { Description = $"قسط دوم - قیمت متناسب ({remainingDaysInFirstMonth} روز از {totalDaysInFirstMonth} روز)" },
+			}, ct);
+		}
+
+		for (int i = 2; i <= totalMonths; i++) {
+			PersianDateTime firstOfMonth = startDate.AddMonths(i).StartOfMonth;
+
+			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
+				Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
+				DebtAmount = monthlyPrice,
+				CreditorAmount = 0,
+				PaidAmount = 0,
+				PenaltyAmount = 0,
+				UserId = user.Id,
+				ContractId = contractId,
+				DueDate = firstOfMonth.ToDateTime(),
+				JsonData = new InvoiceJson { Description = $"قسط {i + 1} - قیمت کامل" },
 			}, ct);
 		}
 
 		await db.SaveChangesAsync(ct);
-		return new UResponse<ContractEntity?>(e.Entity);
+		return new UResponse<ContractEntity?>(e);
 	}
 
 	public async Task<UResponse<IEnumerable<ContractEntity>?>> Read(ContractReadParams p, CancellationToken ct) {

@@ -9,7 +9,6 @@ public class InvoiceEntity: BaseEntity<TagInvoice, InvoiceJson> {
 
 	public DateTime? PaidDate { get; set; }
 	public required DateTime DueDate { get; set; }
-	public DateTime? NextInvoiceIssueDate { get; set; }
 
 	public string? TrackingNumber { get; set; }
 

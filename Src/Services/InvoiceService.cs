@@ -2,14 +2,11 @@
 
 public interface IInvoiceService {
 	Task<UResponse<InvoiceEntity?>> Create(InvoiceCreateParams p, CancellationToken ct);
-	Task<UResponse<IEnumerable<InvoiceEntity>?>> Read(InvoiceReadParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<InvoiceEntity>>> Read(InvoiceReadParams p, CancellationToken ct);
 	Task<UResponse<InvoiceEntity?>> Update(InvoiceUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 
 	Task<UResponse> Pay(IdParams p, CancellationToken ct);
-
-	Task<UResponse> CheckDueDate(CancellationToken ct);
-	Task<UResponse> CheckPenalty(CancellationToken ct);
 }
 
 public class InvoiceService(DbContext db, ILocalizationService ls, ITokenService ts) : IInvoiceService {
@@ -35,15 +32,31 @@ public class InvoiceService(DbContext db, ILocalizationService ls, ITokenService
 		return new UResponse<InvoiceEntity?>(e.Entity);
 	}
 
-	public async Task<UResponse<IEnumerable<InvoiceEntity>?>> Read(InvoiceReadParams p, CancellationToken ct) {
-		IQueryable<InvoiceEntity> q = db.Set<InvoiceEntity>();
+	public async Task<UResponse<IEnumerable<InvoiceEntity>>> Read(InvoiceReadParams p, CancellationToken ct) {
+		IQueryable<InvoiceEntity> q = db.Set<InvoiceEntity>().AsTracking();
 
 		if (p.Tags != null) q = q.Where(u => u.Tags.Any(tag => p.Tags.Contains(tag)));
 		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(u => u.UserId == p.UserId);
 		if (p.FromCreatedAt.HasValue) q = q.Where(u => u.CreatedAt >= p.FromCreatedAt);
 		if (p.ToCreatedAt.HasValue) q = q.Where(u => u.CreatedAt <= p.ToCreatedAt);
 
-		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		UResponse<IEnumerable<InvoiceEntity>> response = (await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct))!;
+
+		foreach (InvoiceEntity i in response.Result!) {
+			int daysLate = Math.Max(0, (DateTime.UtcNow - i.DueDate).Days);
+			double expectedPenalty = i.DebtAmount * 0.01 * daysLate;
+			bool needsPenaltyUpdate = i.PaidAmount < i.DebtAmount + i.PenaltyAmount &&
+			                          i.DueDate <= DateTime.UtcNow &&
+			                          i.PenaltyAmount < expectedPenalty;
+
+			if (needsPenaltyUpdate) {
+				i.PenaltyAmount = i.DebtAmount * (0.01 * daysLate);
+				db.Update(i);
+				await db.SaveChangesAsync(ct);
+			}
+		}
+
+		return response;
 	}
 
 	public async Task<UResponse<InvoiceEntity?>> Update(InvoiceUpdateParams p, CancellationToken ct) {
@@ -88,57 +101,6 @@ public class InvoiceService(DbContext db, ILocalizationService ls, ITokenService
 		db.Update(e);
 
 		await db.SaveChangesAsync(ct);
-		return new UResponse();
-	}
-
-	public async Task<UResponse> CheckDueDate(CancellationToken ct) {
-		IQueryable<InvoiceEntity> invoices = db.Set<InvoiceEntity>().AsTracking()
-			.Where(x => x.NextInvoiceIssueDate != null && DateTime.UtcNow >= x.NextInvoiceIssueDate)
-			.Include(x => x.Contract);
-
-		foreach (InvoiceEntity invoice in invoices) {
-			PersianDateTime date = invoice.NextInvoiceIssueDate!.Value.ToPersian();
-			int daysInMonth = PersianDateTime.UtcNow.DaysInMonth();
-			int daysUntilEndOfMonth = daysInMonth - date.Day;
-			double debtAmount = invoice.Contract.Price2;
-
-			DateTime dueDate = invoice.DueDate;
-			if (daysUntilEndOfMonth <= 2) {
-				debtAmount = (invoice.Contract.Price2 / daysInMonth) * daysUntilEndOfMonth;
-				PersianDateTime now = PersianDateTime.Now;
-				dueDate = new PersianDateTime(now.Year, now.Month, daysInMonth).ToDateTime();
-			}
-
-			await db.Set<InvoiceEntity>().AddAsync(
-				new InvoiceEntity {
-					Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
-					DebtAmount = debtAmount,
-					CreditorAmount = 0,
-					PaidAmount = 0,
-					PenaltyAmount = 0,
-					UserId = invoice.UserId,
-					ContractId = invoice.ContractId,
-					DueDate = dueDate,
-					JsonData = new InvoiceJson { Description = "" }
-				},
-				ct
-			);
-		}
-
-		return new UResponse();
-	}
-
-	public async Task<UResponse> CheckPenalty(CancellationToken ct) {
-		IQueryable<InvoiceEntity> invoices = db.Set<InvoiceEntity>().AsTracking()
-			.Where(x => DateTime.UtcNow >= x.DueDate.AddDays(2));
-
-		foreach (InvoiceEntity invoice in invoices) {
-			invoice.PenaltyAmount += invoice.DebtAmount * 1 / 100;
-			invoice.DebtAmount += invoice.PenaltyAmount;
-			db.Set<InvoiceEntity>().Update(invoice);
-			await db.SaveChangesAsync(ct);
-		}
-
 		return new UResponse();
 	}
 }
