@@ -35,7 +35,7 @@ public class ContractService(DbContext db, ILocalizationService ls, ITokenServic
 
 		await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 			Tags = [TagInvoice.Deposit],
-			DebtAmount = product.Price1!.Value,
+			DebtAmount = p.Price1 ?? product.Price1 ?? 0,
 			CreditorAmount = 0,
 			PaidAmount = 0,
 			PenaltyAmount = 0,
@@ -48,7 +48,7 @@ public class ContractService(DbContext db, ILocalizationService ls, ITokenServic
 		PersianDateTime startDate = e.StartDate.ToPersian();
 		PersianDateTime endDate = e.EndDate.ToPersian();
 
-		double monthlyPrice = product.Price2!.Value;
+		double monthlyPrice = p.Price2 ?? product.Price2 ?? 0;
 
 		int totalMonths = (endDate.Year - startDate.Year) * 12 + (endDate.Month - startDate.Month);
 		if (endDate.Day < startDate.Day) {
