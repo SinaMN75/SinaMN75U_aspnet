@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Params;
 
-public class InvoiceCreateParams : BaseCreateParams<TagInvoice> {
+public sealed class InvoiceCreateParams : BaseCreateParams<TagInvoice> {
 	[UValidationRequired("PriceRequired")]
 	public required double DebtAmount { get; set; }
 
@@ -27,13 +27,13 @@ public class InvoiceCreateParams : BaseCreateParams<TagInvoice> {
 	public required string Description { get; set; }
 }
 
-public class InvoiceUpdateParams : BaseUpdateParams<TagInvoice> {
+public sealed class InvoiceUpdateParams : BaseUpdateParams<TagInvoice> {
 	public double? DebtAmount { get; set; }
 	public double? CreditorAmount { get; set; }
 	public double? PaidAmount { get; set; }
 	public double? PenaltyAmount { get; set; }
 }
 
-public class InvoiceReadParams : BaseReadParams<TagInvoice> {
+public sealed class InvoiceReadParams : BaseReadParams<TagInvoice> {
 	public Guid? UserId { get; set; }
 }

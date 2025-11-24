@@ -205,10 +205,25 @@ public class ProductService(
 			else e.Categories = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct) ?? [];
 		}
 
+		if (p is { UpdateInvoicesPrices: true, Price2: not null }) {
+			IQueryable<ContractEntity> contracts = db.Set<ContractEntity>()
+				.Where(x => x.ProductId == p.Id)
+				.Include(x => x.Invoices);
+
+			foreach (ContractEntity contract in contracts) {
+				foreach (InvoiceEntity invoice in contract.Invoices) {
+					if (invoice.Tags.Contains(TagInvoice.NotPaid)) {
+						invoice.DebtAmount = p.Price2.Value;
+						db.Update(invoice);
+					}
+				}
+			}
+		}
+		
 		db.Set<ProductEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
-
 		await AddMedia(p.Id, p.Media, ct);
+		
 		return new UResponse<ProductEntity?>(e);
 	}
 

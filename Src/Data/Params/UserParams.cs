@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Params;
 
-public class UserCreateParams : BaseParams {
+public sealed class UserCreateParams : BaseParams {
 	[UValidationRequired("UserNameRequired")]
 	[UValidationStringLength(2, 100, "UserNameMinLenght")]
 	public required string UserName { get; set; }
@@ -37,13 +37,13 @@ public class UserCreateParams : BaseParams {
 	public IEnumerable<Guid>? Categories { get; set; }
 }
 
-public class UserBulkCreateParams : BaseParams {
+public sealed class UserBulkCreateParams : BaseParams {
 	[UValidationRequired("UsersRequired")]
 	[UValidationMinCollectionLength(1, "AtLeastOneUserRequired")]
 	public required List<UserCreateParams> Users { get; set; }
 }
 
-public class UserReadParams : BaseReadParams<TagUser> {
+public sealed class UserReadParams : BaseReadParams<TagUser> {
 	public string? UserName { get; set; }
 	public string? PhoneNumber { get; set; }
 	public string? Email { get; set; }
@@ -57,7 +57,7 @@ public class UserReadParams : BaseReadParams<TagUser> {
 	public bool OrderByLastNameDesc { get; set; }
 }
 
-public class UserUpdateParams : BaseUpdateParams<TagUser> {
+public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {
 	public string? Password { get; set; }
 	public string? FirstName { get; set; }
 	public string? LastName { get; set; }

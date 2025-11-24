@@ -34,7 +34,7 @@ public class ContractService(DbContext db, ILocalizationService ls, ITokenServic
 		await db.Set<ContractEntity>().AddAsync(e, ct);
 
 		await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
-			Tags = [TagInvoice.Deposit],
+			Tags = [TagInvoice.NotPaid, TagInvoice.Deposit],
 			DebtAmount = p.Price1 ?? product.Price1 ?? 0,
 			CreditorAmount = 0,
 			PaidAmount = 0,
@@ -56,7 +56,7 @@ public class ContractService(DbContext db, ILocalizationService ls, ITokenServic
 		}
 
 		await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
-			Tags = [TagInvoice.Rent],
+			Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
 			DebtAmount = monthlyPrice,
 			CreditorAmount = 0,
 			PaidAmount = 0,

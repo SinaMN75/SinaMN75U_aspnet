@@ -120,14 +120,23 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 		if (p.Type.IsNotNull()) e.JsonData.Type = p.Type;
 		if (p.Address.IsNotNull()) e.JsonData.Address = p.Address;
 		if (p.PhoneNumber.IsNotNull()) e.JsonData.PhoneNumber = p.PhoneNumber;
-		
+
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
 		if (p.Tags.IsNotNullOrEmpty()) e.Tags = p.Tags;
-		
+
 		if (p.RelatedProducts.IsNotNull()) e.JsonData.RelatedProducts = p.RelatedProducts;
 		if (p.AddRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.AddRangeIfNotExist(p.AddRelatedProducts);
 		if (p.RemoveRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.RemoveRangeIfExist(p.RemoveRelatedProducts);
+
+		if (p.ProductPrice1.IsNotNull())
+			await db.Set<ProductEntity>()
+				.Where(x => x.Categories.Any(c => c.Id == e.Id))
+				.ExecuteUpdateAsync(y => y.SetProperty(z => z.Price1, p.ProductPrice1), ct);
+		if (p.ProductPrice2.IsNotNull())
+			await db.Set<ProductEntity>()
+				.Where(x => x.Categories.Any(c => c.Id == e.Id))
+				.ExecuteUpdateAsync(y => y.SetProperty(z => z.Price2, p.ProductPrice2), ct);
 
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
@@ -199,10 +208,10 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 		return e;
 	}
 
-	private async Task AddMedia(Guid categoryId, ICollection<Guid> ids, CancellationToken ct) {
+	private async Task AddMedia(Guid id, ICollection<Guid> ids, CancellationToken ct) {
 		if (ids.IsNullOrEmpty()) return;
 		List<MediaEntity> media = await mediaService.ReadEntity(new BaseReadParams<TagMedia> { Ids = ids }, ct) ?? [];
 		if (media.Count == 0) return;
-		foreach (MediaEntity i in media) await mediaService.Update(new MediaUpdateParams { Id = i.Id, CategoryId = categoryId }, ct);
+		foreach (MediaEntity i in media) await db.Set<MediaEntity>().Where(x => x.Id == i.Id).ExecuteUpdateAsync(u => u.SetProperty(y => y.CategoryId, id), ct);
 	}
 }

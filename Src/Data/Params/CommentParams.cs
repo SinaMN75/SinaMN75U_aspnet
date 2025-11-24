@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Params;
 
-public class CommentCreateParams : BaseParams {
+public sealed class CommentCreateParams : BaseParams {
 	[UValidationRequired("CommentRequired")]
 	public required string Description { get; set; }
 
@@ -17,12 +17,12 @@ public class CommentCreateParams : BaseParams {
 	public required List<TagComment> Tags { get; set; }
 }
 
-public class CommentUpdateParams : BaseUpdateParams<TagComment> {
+public sealed class CommentUpdateParams : BaseUpdateParams<TagComment> {
 	public string? Description { get; set; }
 	public double? Score { get; set; }
 }
 
-public class CommentReadParams : BaseReadParams<TagComment> {
+public sealed class CommentReadParams : BaseReadParams<TagComment> {
 	public Guid? UserId { get; set; }
 	public Guid? ProductId { get; set; }
 	public Guid? TargetUserId { get; set; }

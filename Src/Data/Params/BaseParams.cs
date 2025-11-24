@@ -6,16 +6,16 @@ public class BaseParams {
 	public string Locale { get; set; } = "en";
 }
 
-public class IdParams : BaseParams {
+public sealed class IdParams : BaseParams {
 	public required Guid? Id { get; set; }
 }
 
-public class IdListParams : BaseParams {
+public sealed class IdListParams : BaseParams {
 	[Required]
 	public required IEnumerable<Guid> Ids { get; set; }
 }
 
-public class IdTitleParams : BaseParams {
+public sealed class IdTitleParams : BaseParams {
 	public int? Id { get; set; }
 	public string? Title { get; set; }
 }

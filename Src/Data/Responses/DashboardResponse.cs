@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Responses;
 
-public record SystemMetricsResponse(
+public sealed record SystemMetricsResponse(
 	double CpuUsage,
 	double MemoryUsage,
 	double DiskUsage,
@@ -11,7 +11,7 @@ public record SystemMetricsResponse(
 	DateTime Date
 );
 
-public class DashboardResponse {
+public sealed class DashboardResponse {
 	public required int Categories { get; set; }
 	public required int Comments { get; set; }
 	public required int Contents { get; set; }

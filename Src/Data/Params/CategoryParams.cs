@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Params;
 
-public class CategoryCreateParams : BaseParams {
+public sealed class CategoryCreateParams : BaseParams {
 	public Guid? Id { get; set; }
 
 	[UValidationRequired("TitleRequired")]
@@ -26,7 +26,7 @@ public class CategoryCreateParams : BaseParams {
 	public ICollection<Guid> Media { get; set; } = [];
 }
 
-public class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
+public sealed class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
 	public string? Title { get; set; }
 	public string? Subtitle { get; set; }
 	public string? Link { get; set; }
@@ -41,9 +41,12 @@ public class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
 	public ICollection<Guid>? AddRelatedProducts { get; set; }
 	public ICollection<Guid>? RemoveRelatedProducts { get; set; }
 	public ICollection<Guid> Media { get; set; } = [];
+
+	public double? ProductPrice1 { get; set; }
+	public double? ProductPrice2 { get; set; }
 }
 
-public class CategoryReadParams : BaseReadParams<TagCategory> {
+public sealed class CategoryReadParams : BaseReadParams<TagCategory> {
 	public bool ShowMedia { get; set; }
 	public bool ShowChildren { get; set; }
 	public bool ShowChildrenMedia { get; set; }

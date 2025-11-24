@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Params;
 
-public class ProductCreateParams : BaseCreateParams<TagProduct> {
+public sealed class ProductCreateParams : BaseCreateParams<TagProduct> {
 	[UValidationRequired("TitleRequired")]
 	public required string Title { get; set; }
 
@@ -35,7 +35,7 @@ public class ProductCreateParams : BaseCreateParams<TagProduct> {
 	public ICollection<Guid> Media { get; set; } = [];
 }
 
-public class ProductUpdateParams : BaseUpdateParams<TagProduct> {
+public sealed class ProductUpdateParams : BaseUpdateParams<TagProduct> {
 	public string? Title { get; set; }
 	public string? Code { get; set; }
 	public string? Subtitle { get; set; }
@@ -66,9 +66,11 @@ public class ProductUpdateParams : BaseUpdateParams<TagProduct> {
 	public ICollection<Guid>? Categories { get; set; }
 	
 	public ICollection<Guid> Media { get; set; } = [];
+
+	public bool UpdateInvoicesPrices { get; set; } = false;
 }
 
-public class ProductReadParams : BaseReadParams<TagProduct> {
+public sealed class ProductReadParams : BaseReadParams<TagProduct> {
 	public string? Query { get; set; }
 	public string? Title { get; set; }
 	public string? Code { get; set; }

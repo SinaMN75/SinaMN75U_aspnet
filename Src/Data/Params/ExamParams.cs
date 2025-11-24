@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Params;
 
-public class ExamCreateParams : BaseCreateParams<TagExam> {
+public sealed class ExamCreateParams : BaseCreateParams<TagExam> {
 	[UValidationRequired("TitleRequired")]
 	public required string Title { get; set; }
 	
@@ -13,11 +13,11 @@ public class ExamCreateParams : BaseCreateParams<TagExam> {
 	public required Guid CategoryId { get; set; }
 }
 
-public class ExamReadParams : BaseReadParams<TagExam> {
+public sealed class ExamReadParams : BaseReadParams<TagExam> {
 	public Guid? CategoryId { get; set; }
 }
 
-public class SubmitAnswersParams : BaseParams {
+public sealed class SubmitAnswersParams : BaseParams {
 	public required List<UserAnswerResultJson> Answers { get; set; }
 	public required Guid UserId { get; set; }
 	public required Guid ExamId { get; set; }

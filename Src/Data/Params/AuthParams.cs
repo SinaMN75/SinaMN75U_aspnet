@@ -1,16 +1,16 @@
 namespace SinaMN75U.Data.Params;
 
-public class RefreshTokenParams : BaseParams {
+public sealed class RefreshTokenParams : BaseParams {
 	public required string RefreshToken { get; set; }
 }
 
-public class GetMobileVerificationCodeForLoginParams : BaseParams {
+public sealed class GetMobileVerificationCodeForLoginParams : BaseParams {
 	[UValidationRequired("PhoneNumberRequired")]
 	[UValidationStringLength(9, 12, "PhoneNumberNotValid")]
 	public required string PhoneNumber { get; set; }
 }
 
-public class LoginWithEmailPasswordParams : BaseParams {
+public sealed class LoginWithEmailPasswordParams : BaseParams {
 	[UValidationRequired("EmailRequired")]
 	[UValidationEmail("EmailInvalid")]
 	public required string Email { get; set; }
@@ -20,7 +20,7 @@ public class LoginWithEmailPasswordParams : BaseParams {
 	public required string Password { get; set; }
 }
 
-public class LoginWithUserNamePasswordParams : BaseParams {
+public sealed class LoginWithUserNamePasswordParams : BaseParams {
 	[UValidationRequired("UserNameRequired")]
 	[UValidationStringLength(2, 100, "UserNameMinLenght")]
 	public required string UserName { get; set; }
@@ -30,7 +30,7 @@ public class LoginWithUserNamePasswordParams : BaseParams {
 	public required string Password { get; set; }
 }
 
-public class RegisterParams : BaseParams {
+public sealed class RegisterParams : BaseParams {
 	[UValidationRequired("UserNameRequired")]
 	[UValidationStringLength(2, 100, "UserNameMinLenght")]
 	public required string UserName { get; set; }
@@ -50,7 +50,7 @@ public class RegisterParams : BaseParams {
 	public required List<TagUser> Tags { get; set; }
 }
 
-public class VerifyMobileForLoginParams : BaseParams {
+public sealed class VerifyMobileForLoginParams : BaseParams {
 	[UValidationRequired("PhoneNumberRequired")]
 	[UValidationStringLength(9, 12, "PhoneNumberNotValid")]
 	public required string PhoneNumber { get; set; }

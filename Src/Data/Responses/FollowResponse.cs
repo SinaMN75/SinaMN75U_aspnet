@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Responses;
 
-public class FollowerFollowingCountResponse {
+public sealed class FollowerFollowingCountResponse {
 	public int Followers { get; set; }
 	public int FollowedUsers { get; set; }
 	public int FollowedProducts { get; set; }

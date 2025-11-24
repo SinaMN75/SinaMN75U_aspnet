@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Params;
 
-public class ContractCreateParams : BaseCreateParams<TagContract> {
+public sealed class ContractCreateParams : BaseCreateParams<TagContract> {
 	[UValidationRequired("StartDateRequired")]
 	public required DateTime StartDate { get; set; }
 
@@ -17,7 +17,7 @@ public class ContractCreateParams : BaseCreateParams<TagContract> {
 	
 }
 
-public class ContractUpdateParams : BaseUpdateParams<TagContract> {
+public sealed class ContractUpdateParams : BaseUpdateParams<TagContract> {
 	public DateTime? StartDate { get; set; }
 	public DateTime? EndDate { get; set; }
 	public double? Price1 { get; set; }

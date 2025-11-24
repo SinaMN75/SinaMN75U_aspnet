@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Responses;
 
-public class DataModelResponse {
+public sealed class DataModelResponse {
 	public required CategoryEntity Category { get; set; }
 	public required CommentEntity Comment { get; set; }
 	public required ContentEntity Content { get; set; }
@@ -10,7 +10,7 @@ public class DataModelResponse {
 	public required UserEntity User { get; set; }
 }
 
-public class ParamsResponse {
+public sealed class ParamsResponse {
 	public required RefreshTokenParams RefreshTokenParams { get; set; }
 	public required GetMobileVerificationCodeForLoginParams GetMobileVerificationCodeForLoginParams { get; set; }
 	public required LoginWithEmailPasswordParams LoginWithEmailPasswordParams { get; set; }

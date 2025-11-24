@@ -54,9 +54,7 @@ public static class AspNetConfig {
 			x.MultipartBodyLengthLimit = int.MaxValue;
 			x.MultipartHeadersLengthLimit = int.MaxValue;
 		});
-
-		// builder.Services.AddHostedService<SimpleSchedulerService>();
-
+		
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
 		builder.Services.AddSingleton<IHttpClientService, HttpClientService>();
 		builder.Services.AddSingleton<ILocalStorageService, StaticCacheService>();
@@ -74,6 +72,7 @@ public static class AspNetConfig {
 		builder.Services.AddScoped<IDashboardService, DashboardService>();
 		builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 		builder.Services.AddScoped<IContractService, ContractService>();
+		builder.Services.AddScoped<ContractService>();
 	}
 
 	public static void UseUServices(this WebApplication app) {

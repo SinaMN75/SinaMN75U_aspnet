@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Params;
 
-public class ContentCreateParams : BaseParams {
+public sealed class ContentCreateParams : BaseParams {
 	[UValidationRequired("TitleRequired")]
 	public required string Title { get; set; }
 
@@ -19,7 +19,7 @@ public class ContentCreateParams : BaseParams {
 	public required List<TagContent> Tags { get; set; }
 }
 
-public class ContentUpdateParams : BaseUpdateParams<TagContent> {
+public sealed class ContentUpdateParams : BaseUpdateParams<TagContent> {
 	public string? Title { get; set; }
 	public string? SubTitle { get; set; }
 	public string? Description { get; set; }
@@ -29,6 +29,6 @@ public class ContentUpdateParams : BaseUpdateParams<TagContent> {
 	public string? Phone { get; set; }
 }
 
-public class ContentReadParams : BaseReadParams<int> {
+public sealed class ContentReadParams : BaseReadParams<int> {
 	public bool ShowMedia { get; set; }
 }
