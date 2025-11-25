@@ -6,15 +6,6 @@ public static class SwaggerSetup {
 		services.AddSwaggerGen(c => {
 			c.UseInlineDefinitionsForEnums();
 			c.OrderActionsBy(s => s.RelativePath);
-			c.AddSecurityDefinition("locale", new OpenApiSecurityScheme {
-				Description = "Locale",
-				Name = "Locale",
-				In = ParameterLocation.Header,
-				Type = SecuritySchemeType.ApiKey
-			});
-			c.AddSecurityRequirement(new OpenApiSecurityRequirement {
-				{ new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "locale" } }, [] }
-			});
 		});
 	}
 
