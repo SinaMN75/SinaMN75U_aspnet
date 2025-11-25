@@ -110,7 +110,7 @@ public class ContractService(DbContext db, ILocalizationService ls, ITokenServic
 	public async Task<UResponse<IEnumerable<ContractEntity>?>> Read(ContractReadParams p, CancellationToken ct) {
 		IQueryable<ContractEntity> q = db.Set<ContractEntity>();
 
-		if (p.Tags != null) q = q.Where(u => u.Tags.Any(tag => p.Tags.Contains(tag)));
+		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(u => u.Tags.Any(tag => p.Tags.Contains(tag)));
 		if (p.CreatorId.IsNotNullOrEmpty()) q = q.Where(u => u.CreatorId == p.CreatorId);
 		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(u => u.UserId == p.UserId);
 		if (p.ProductId.IsNotNullOrEmpty()) q = q.Where(u => u.ProductId == p.ProductId);

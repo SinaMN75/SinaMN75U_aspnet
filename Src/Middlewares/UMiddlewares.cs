@@ -193,7 +193,7 @@ public sealed class UMiddleware(RequestDelegate next, IConfiguration config) {
 			lock (LogLock) {
 				List<object> list = File.Exists(file)
 					? JsonSerializer.Deserialize<List<object>>(File.ReadAllText(file), UJsonOptions.Default) ?? new()
-					: new List<object>();
+					: [];
 				list.Add(entry);
 				File.WriteAllText(file, JsonSerializer.Serialize(list, UJsonOptions.Default));
 			}

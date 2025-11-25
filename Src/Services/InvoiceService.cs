@@ -35,7 +35,7 @@ public class InvoiceService(DbContext db, ILocalizationService ls, ITokenService
 	public async Task<UResponse<IEnumerable<InvoiceEntity>>> Read(InvoiceReadParams p, CancellationToken ct) {
 		IQueryable<InvoiceEntity> q = db.Set<InvoiceEntity>().AsTracking();
 
-		if (p.Tags != null) q = q.Where(u => u.Tags.Any(tag => p.Tags.Contains(tag)));
+		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(u => u.Tags.Any(tag => p.Tags.Contains(tag)));
 		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(u => u.UserId == p.UserId);
 		if (p.FromCreatedAt.HasValue) q = q.Where(u => u.CreatedAt >= p.FromCreatedAt);
 		if (p.ToCreatedAt.HasValue) q = q.Where(u => u.CreatedAt <= p.ToCreatedAt);
