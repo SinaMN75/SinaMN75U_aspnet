@@ -10,18 +10,37 @@ public interface IMediaService {
 	Task<List<MediaEntity>?> ReadEntity(BaseReadParams<TagMedia> p, CancellationToken ct);
 }
 
-public class MediaService(IWebHostEnvironment env, DbContext db) : IMediaService {
+public class MediaService(
+	IWebHostEnvironment env,
+	DbContext db,
+	ILocalStorageService cache
+) : IMediaService {
 	public async Task<UResponse<MediaEntity?>> Create(MediaCreateParams p, CancellationToken ct) {
 		IEnumerable<string> allowedExtensions = [".png", ".gif", ".jpg", ".jpeg", ".svg", ".webp", ".mp4", ".mov", ".mp3", ".pdf", ".aac", ".apk", ".zip", ".rar", ".mkv"];
 		if (!allowedExtensions.Contains(Path.GetExtension(p.File.FileName.ToLower())))
 			return new UResponse<MediaEntity?>(null, Usc.MediaTypeNotSupported);
 
 		string folderName;
-		if (p.UserId != null) folderName = "users";
-		else if (p.CategoryId != null) folderName = "categories";
-		else if (p.CommentId != null) folderName = "comments";
-		else if (p.ContentId != null) folderName = "contents";
-		else if (p.ProductId != null) folderName = "products";
+		if (p.UserId != null) {
+			folderName = "users";
+			cache.DeleteAllByPartialKey(RouteTags.User);
+		}
+		else if (p.CategoryId != null) {
+			folderName = "categories";
+			cache.DeleteAllByPartialKey(RouteTags.Category);
+		}
+		else if (p.CommentId != null) {
+			folderName = "comments";
+			cache.DeleteAllByPartialKey(RouteTags.Comment);
+		}
+		else if (p.ContentId != null) {
+			folderName = "contents";
+			cache.DeleteAllByPartialKey(RouteTags.Content);
+		}
+		else if (p.ProductId != null) {
+			folderName = "products";
+			cache.DeleteAllByPartialKey(RouteTags.Product);
+		}
 		else folderName = "generic";
 
 		string name = $"{folderName}/{Guid.CreateVersion7() + Path.GetExtension(p.File.FileName)}";

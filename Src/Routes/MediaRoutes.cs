@@ -8,16 +8,10 @@ public static class MediaRoutes {
 		r.MapPost("Update", async (MediaUpdateParams d, IMediaService s, CancellationToken c) => (await s.Update(d, c)).ToResult()).Produces<UResponse<MediaEntity>>();
 		r.MapPost("Delete", async (IdParams d, IMediaService s, CancellationToken c) => (await s.Delete(d, c)).ToResult()).Produces<UResponse>();
 		r.MapGet("Download", (string filePath, IWebHostEnvironment env) => {
-			if (!File.Exists(filePath))
-				return Task.FromResult(Results.NotFound("File not found"));
-
+			if (!File.Exists(filePath)) return Task.FromResult(Results.NotFound("File not found"));
 			FileExtensionContentTypeProvider provider = new();
-			if (!provider.TryGetContentType(filePath, out string? contentType)) {
-				contentType = "application/octet-stream";
-			}
-
-			FileStream fileStream = new(filePath, FileMode.Open, FileAccess.Read);
-			return Task.FromResult(Results.File(fileStream, contentType, fileDownloadName: Path.Combine(env.WebRootPath, "Media", filePath)));
+			if (!provider.TryGetContentType(filePath, out string? contentType)) contentType = "application/octet-stream";
+			return Task.FromResult(Results.File(new FileStream(filePath, FileMode.Open, FileAccess.Read), contentType, fileDownloadName: Path.Combine(env.WebRootPath, "Media", filePath)));
 		});
 	}
 }

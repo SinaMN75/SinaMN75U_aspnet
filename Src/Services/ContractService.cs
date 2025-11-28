@@ -7,7 +7,12 @@ public interface IContractService {
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 }
 
-public class ContractService(DbContext db, ILocalizationService ls, ITokenService ts) : IContractService {
+public class ContractService(
+	DbContext db,
+	ILocalizationService ls,
+	ITokenService ts,
+	ILocalStorageService cache
+) : IContractService {
 	public async Task<UResponse<ContractEntity?>> Create(ContractCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ContractEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
@@ -104,6 +109,9 @@ public class ContractService(DbContext db, ILocalizationService ls, ITokenServic
 		}
 
 		await db.SaveChangesAsync(ct);
+		
+		cache.DeleteAllByPartialKey(RouteTags.Contract);
+		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse<ContractEntity?>(e);
 	}
 
@@ -139,6 +147,9 @@ public class ContractService(DbContext db, ILocalizationService ls, ITokenServic
 
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
+		
+		cache.DeleteAllByPartialKey(RouteTags.Contract);
+		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse<ContractEntity?>(e);
 	}
 
@@ -147,6 +158,9 @@ public class ContractService(DbContext db, ILocalizationService ls, ITokenServic
 		if (userData == null) return new UResponse<ContractEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<ContractEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
+		
+		cache.DeleteAllByPartialKey(RouteTags.Contract);
+		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse();
 	}
 }

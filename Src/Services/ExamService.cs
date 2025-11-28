@@ -8,7 +8,12 @@ public interface IExamService {
 	public Task<UResponse> SubmitAnswers(SubmitAnswersParams p, CancellationToken ct);
 }
 
-public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts) : IExamService {
+public class ExamService(
+	DbContext db,
+	ILocalizationService ls,
+	ITokenService ts,
+	ILocalStorageService cache
+	) : IExamService {
 	public async Task<UResponse<ExamEntity>> Create(ExamCreateParams p, CancellationToken ct) {
 		EntityEntry<ExamEntity> e = await db.AddAsync(new ExamEntity {
 			Title = p.Title,
@@ -21,6 +26,8 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 			Tags = p.Tags
 		}, ct);
 		await db.SaveChangesAsync(ct);
+		
+		cache.DeleteAllByPartialKey(RouteTags.Exam);
 		return new UResponse<ExamEntity>(new ExamEntity {
 			Title = e.Entity.Title,
 			Description = e.Entity.Description,
@@ -84,6 +91,7 @@ public class ExamService(DbContext db, ILocalizationService ls, ITokenService ts
 
 	public async Task<UResponse> Delete(IdListParams p, CancellationToken ct) {
 		int? count = await db.Set<ExamEntity>().Where(x => p.Ids.Contains(x.Id)).ExecuteDeleteAsync(ct);
+		cache.DeleteAllByPartialKey(RouteTags.Exam);
 		return count.IsNotNullOrZero() ? new UResponse<ExamEntity?>(null, Usc.NotFound, ls.Get("ExamNotFound")) : new UResponse();
 	}
 

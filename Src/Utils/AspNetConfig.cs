@@ -85,18 +85,17 @@ public static class AspNetConfig {
 		app.UseRateLimiter();
 		app.UseMiddleware<UMiddleware>();
 
-		app.MapAuthRoutes("api/auth/");
-		app.MapUserRoutes("api/user/");
-		app.MapMediaRoutes("api/media/");
-		app.MapContentRoutes("api/content/");
-		app.MapFollowRoutes("api/follow/");
-		app.MapProductRoutes("api/product/");
-		app.MapCommentRoutes("api/comment/");
-		app.MapCategoryRoutes("api/category/");
-		app.MapExamRoutes("api/exam/");
-		app.MapDashboardRoutes("api/dashboard/");
-		app.MapContractRoutes("api/contract/");
-		app.MapInvoiceRoutes("api/invoice/");
-		app.MapDataModelRoutes("api/datamodel/");
+		app.MapAuthRoutes(RouteTags.Auth);
+		app.MapUserRoutes(RouteTags.User);
+		app.MapMediaRoutes(RouteTags.Media);
+		app.MapContentRoutes(RouteTags.Content);
+		app.MapFollowRoutes(RouteTags.Follow);
+		app.MapProductRoutes(RouteTags.Product);
+		app.MapCommentRoutes(RouteTags.Comment);
+		app.MapCategoryRoutes(RouteTags.Category);
+		app.MapExamRoutes(RouteTags.Exam);
+		app.MapDashboardRoutes(RouteTags.Dashboard);
+		app.MapContractRoutes(RouteTags.Contract);
+		app.MapInvoiceRoutes(RouteTags.Invoice);
 	}
 }

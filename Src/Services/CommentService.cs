@@ -13,7 +13,8 @@ public interface ICommentService {
 public class CommentService(
 	DbContext db,
 	ILocalizationService ls,
-	ITokenService ts
+	ITokenService ts,
+	ILocalStorageService cache
 ) : ICommentService {
 	public async Task<UResponse<CommentEntity?>> Create(CommentCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
@@ -30,6 +31,8 @@ public class CommentService(
 			TargetUserId = p.TargetUserId
 		}, ct);
 		await db.SaveChangesAsync(ct);
+		
+		cache.DeleteAllByPartialKey(RouteTags.Comment);
 		return new UResponse<CommentEntity?>(e.Entity);
 	}
 
@@ -57,11 +60,15 @@ public class CommentService(
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
 		db.Set<CommentEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
+		
+		cache.DeleteAllByPartialKey(RouteTags.Comment);
 		return new UResponse<CommentEntity?>(e);
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		await db.Set<CommentEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
+		
+		cache.DeleteAllByPartialKey(RouteTags.Comment);
 		return new UResponse();
 	}
 

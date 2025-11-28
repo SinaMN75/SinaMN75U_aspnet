@@ -70,6 +70,11 @@ public sealed class ProductUpdateParams : BaseUpdateParams<TagProduct> {
 	public bool UpdateInvoicesPrices { get; set; } = false;
 }
 
+public sealed class ProductUpdateRangeParams {
+	public required ProductReadParams ReadParams { get; set; }
+	public required ProductUpdateParams UpdateParams { get; set; }
+}
+
 public sealed class ProductReadParams : BaseReadParams<TagProduct> {
 	public string? Query { get; set; }
 	public string? Title { get; set; }

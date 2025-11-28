@@ -9,7 +9,12 @@ public interface IInvoiceService {
 	Task<UResponse> Pay(IdParams p, CancellationToken ct);
 }
 
-public class InvoiceService(DbContext db, ILocalizationService ls, ITokenService ts) : IInvoiceService {
+public class InvoiceService(
+	DbContext db,
+	ILocalizationService ls,
+	ITokenService ts,
+	ILocalStorageService cache
+) : IInvoiceService {
 	public async Task<UResponse<InvoiceEntity?>> Create(InvoiceCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<InvoiceEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
@@ -29,6 +34,8 @@ public class InvoiceService(DbContext db, ILocalizationService ls, ITokenService
 			}
 		}, ct);
 		await db.SaveChangesAsync(ct);
+		
+		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse<InvoiceEntity?>(e.Entity);
 	}
 
@@ -76,6 +83,8 @@ public class InvoiceService(DbContext db, ILocalizationService ls, ITokenService
 
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
+		
+		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse<InvoiceEntity?>(e);
 	}
 
@@ -84,6 +93,8 @@ public class InvoiceService(DbContext db, ILocalizationService ls, ITokenService
 		if (userData == null) return new UResponse<InvoiceEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<InvoiceEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
+		
+		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse();
 	}
 
@@ -101,6 +112,8 @@ public class InvoiceService(DbContext db, ILocalizationService ls, ITokenService
 		db.Update(e);
 
 		await db.SaveChangesAsync(ct);
+		
+		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse();
 	}
 }

@@ -44,6 +44,7 @@ public sealed class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
 
 	public double? ProductPrice1 { get; set; }
 	public double? ProductPrice2 { get; set; }
+	public bool UpdateInvoicesPrices { get; set; } = false;
 }
 
 public sealed class CategoryReadParams : BaseReadParams<TagCategory> {

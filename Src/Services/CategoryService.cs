@@ -13,7 +13,13 @@ public interface ICategoryService {
 	Task<List<CategoryEntity>?> ReadEntity(CategoryReadParams p, CancellationToken ct);
 }
 
-public class CategoryService(DbContext db, IMediaService mediaService, ILocalizationService ls, ITokenService ts) : ICategoryService {
+public class CategoryService(
+	DbContext db,
+	ILocalizationService ls,
+	ITokenService ts,
+	ILocalStorageService cache,
+	IMediaService mediaService
+) : ICategoryService {
 	public async Task<UResponse> BulkCreate(IEnumerable<CategoryCreateParams> p, CancellationToken ct) {
 		foreach (CategoryCreateParams param in p) await Create(param, ct);
 		return new UResponse();
@@ -30,6 +36,8 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 
 		await db.SaveChangesAsync(ct);
 		await AddMedia(e.Id, p.Media, ct);
+		
+		cache.DeleteAllByPartialKey(RouteTags.Category);
 		return new UResponse<CategoryEntity?>(e);
 	}
 
@@ -129,18 +137,43 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 		if (p.AddRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.AddRangeIfNotExist(p.AddRelatedProducts);
 		if (p.RemoveRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.RemoveRangeIfExist(p.RemoveRelatedProducts);
 
-		if (p.ProductPrice1.IsNotNull())
+		if (p.ProductPrice1.IsNotNull()) {
 			await db.Set<ProductEntity>()
 				.Where(x => x.Categories.Any(c => c.Id == e.Id))
-				.ExecuteUpdateAsync(y => y.SetProperty(z => z.Price1, p.ProductPrice1), ct);
-		if (p.ProductPrice2.IsNotNull())
+				.ExecuteUpdateAsync(set => set.SetProperty(x => x.Price1, p.ProductPrice1.Value), cancellationToken: ct);
+
+			if (p.UpdateInvoicesPrices) {
+				await db.Set<InvoiceEntity>()
+					.Where(inv => inv.Tags.Contains(TagInvoice.NotPaid)
+					              && inv.Contract.Product.Categories.Any(c => c.Id == e.Id))
+					.ExecuteUpdateAsync(set => set.SetProperty(i => i.DebtAmount, p.ProductPrice1.Value), cancellationToken: ct);
+			}
+			
+			cache.DeleteAllByPartialKey(RouteTags.Invoice);
+		}
+
+		if (p.ProductPrice2.IsNotNull()) {
 			await db.Set<ProductEntity>()
 				.Where(x => x.Categories.Any(c => c.Id == e.Id))
-				.ExecuteUpdateAsync(y => y.SetProperty(z => z.Price2, p.ProductPrice2), ct);
+				.ExecuteUpdateAsync(set => set.SetProperty(x => x.Price2, p.ProductPrice2.Value), cancellationToken: ct);
+
+			if (p.UpdateInvoicesPrices) {
+				await db.Set<InvoiceEntity>()
+					.Where(inv => inv.Tags.Contains(TagInvoice.NotPaid)
+					              && inv.Contract.Product.Categories.Any(c => c.Id == e.Id))
+					.ExecuteUpdateAsync(set => set.SetProperty(i => i.DebtAmount, p.ProductPrice2.Value), cancellationToken: ct);
+			}
+			cache.DeleteAllByPartialKey(RouteTags.Invoice);
+		}
 
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
 		await AddMedia(e.Id, p.Media, ct);
+		
+		cache.DeleteAllByPartialKey(RouteTags.Category);
+		cache.DeleteAllByPartialKey(RouteTags.Product);
+		cache.DeleteAllByPartialKey(RouteTags.User);
+		
 		return new UResponse<CategoryEntity?>(e);
 	}
 
@@ -161,6 +194,10 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 
 		db.Set<CategoryEntity>().Remove(category);
 		await db.SaveChangesAsync(ct);
+		
+		cache.DeleteAllByPartialKey(RouteTags.Category);
+		cache.DeleteAllByPartialKey(RouteTags.Product);
+		cache.DeleteAllByPartialKey(RouteTags.User);
 		return new UResponse();
 	}
 
@@ -170,6 +207,10 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 			return new UResponse<CategoryEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<CategoryEntity>().WhereIn(u => u.Id, p.Ids).ExecuteDeleteAsync(ct);
+		
+		cache.DeleteAllByPartialKey(RouteTags.Category);
+		cache.DeleteAllByPartialKey(RouteTags.Product);
+		cache.DeleteAllByPartialKey(RouteTags.User);
 		return new UResponse();
 	}
 
@@ -212,6 +253,8 @@ public class CategoryService(DbContext db, IMediaService mediaService, ILocaliza
 		if (ids.IsNullOrEmpty()) return;
 		List<MediaEntity> media = await mediaService.ReadEntity(new BaseReadParams<TagMedia> { Ids = ids }, ct) ?? [];
 		if (media.Count == 0) return;
-		foreach (MediaEntity i in media) await db.Set<MediaEntity>().Where(x => x.Id == i.Id).ExecuteUpdateAsync(u => u.SetProperty(y => y.CategoryId, id), ct);
+		foreach (MediaEntity i in media)
+			await db.Set<MediaEntity>().Where(x => x.Id == i.Id)
+				.ExecuteUpdateAsync(u => u.SetProperty(y => y.CategoryId, id), ct);
 	}
 }

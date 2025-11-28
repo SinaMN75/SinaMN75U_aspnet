@@ -7,7 +7,12 @@ public interface IContentService {
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 }
 
-public class ContentService(DbContext db, ILocalizationService ls, ITokenService ts) : IContentService {
+public class ContentService(
+	DbContext db, 
+	ILocalizationService ls,
+	ITokenService ts,
+	ILocalStorageService cache
+	) : IContentService {
 	public async Task<UResponse<ContentEntity?>> Create(ContentCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ContentEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
@@ -24,6 +29,8 @@ public class ContentService(DbContext db, ILocalizationService ls, ITokenService
 				Whatsapp = p.Whatsapp
 			}
 		}, ct);
+		
+		cache.DeleteAllByPartialKey(RouteTags.Content);
 		await db.SaveChangesAsync(ct);
 		return new UResponse<ContentEntity?>(e.Entity);
 	}
@@ -69,6 +76,8 @@ public class ContentService(DbContext db, ILocalizationService ls, ITokenService
 
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
+		
+		cache.DeleteAllByPartialKey(RouteTags.Content);
 		return new UResponse<ContentEntity?>(e);
 	}
 
@@ -77,6 +86,8 @@ public class ContentService(DbContext db, ILocalizationService ls, ITokenService
 		if (userData == null) return new UResponse<ContentEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
 		await db.Set<ContentEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
+		
+		cache.DeleteAllByPartialKey(RouteTags.Content);
 		return new UResponse();
 	}
 }

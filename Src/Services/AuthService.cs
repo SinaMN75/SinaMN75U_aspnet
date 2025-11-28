@@ -38,6 +38,8 @@ public class AuthService(
 
 		await db.Set<UserEntity>().AddAsync(user, ct);
 		await db.SaveChangesAsync(ct);
+		
+		cache.DeleteAllByPartialKey(RouteTags.User);
 
 		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = CreateToken(user),
@@ -132,6 +134,8 @@ public class AuthService(
 
 		await db.SaveChangesAsync(ct);
 		if (!await smsNotificationService.SendOtpSms(e)) return new UResponse(Usc.MaximumLimitReached, ls.Get("MaxOtpReached"));
+		
+		cache.DeleteAllByPartialKey(RouteTags.User);
 		return new UResponse();
 	}
 

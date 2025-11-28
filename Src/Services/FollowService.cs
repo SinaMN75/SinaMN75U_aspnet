@@ -13,7 +13,12 @@ public interface IFollowService {
 	Task<UResponse<bool?>> IsFollowingCategory(FollowParams p, CancellationToken ct);
 }
 
-public class FollowService(DbContext db, ILocalizationService ls, ITokenService ts) : IFollowService {
+public class FollowService(
+	DbContext db,
+	ILocalizationService ls,
+	ITokenService ts,
+	ILocalStorageService cache
+) : IFollowService {
 	public async Task<UResponse> Follow(FollowParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
@@ -55,6 +60,7 @@ public class FollowService(DbContext db, ILocalizationService ls, ITokenService 
 		await db.Set<FollowEntity>().AddAsync(userFollower, ct);
 		await db.SaveChangesAsync(ct);
 
+		cache.DeleteAllByPartialKey(RouteTags.Follow);
 		return new UResponse(Usc.Success, ls.Get("FollowSuccess"));
 	}
 
@@ -84,6 +90,7 @@ public class FollowService(DbContext db, ILocalizationService ls, ITokenService 
 		db.Set<FollowEntity>().Remove(userFollower);
 		await db.SaveChangesAsync(ct);
 
+		cache.DeleteAllByPartialKey(RouteTags.Follow);
 		return new UResponse(Usc.Success, ls.Get("UnfollowSuccess"));
 	}
 
