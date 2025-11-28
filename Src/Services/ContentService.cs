@@ -36,25 +36,8 @@ public class ContentService(
 	}
 
 	public async Task<UResponse<IEnumerable<ContentEntity>?>> Read(ContentReadParams p, CancellationToken ct) {
-		IQueryable<ContentEntity> q = db.Set<ContentEntity>();
-		
-		return await q.Select(x => new ContentEntity {
-			Id = x.Id,
-			Tags = x.Tags,
-			JsonData = x.JsonData,
-			CreatedAt = x.CreatedAt,
-			UpdatedAt = x.UpdatedAt,
-			Media = p.ShowMedia
-				? x.Media.Select(m => new MediaEntity {
-					Path = m.Path,
-					Id = m.Id,
-					Tags = m.Tags,
-					JsonData = m.JsonData,
-					CreatedAt = m.CreatedAt,
-					UpdatedAt = m.UpdatedAt
-				}).ToList()
-				: new List<MediaEntity>()
-		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		IQueryable<ContentEntity> q = db.Set<ContentEntity>().Include(x => x.Media);
+		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse<ContentEntity?>> Update(ContentUpdateParams p, CancellationToken ct) {
