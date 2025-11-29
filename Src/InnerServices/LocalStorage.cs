@@ -1,3 +1,5 @@
+using Microsoft.Extensions.ObjectPool;
+
 namespace SinaMN75U.InnerServices;
 
 public interface ILocalStorageService {
@@ -5,82 +7,76 @@ public interface ILocalStorageService {
 	string? Get(string key);
 	void Delete(string key);
 	void DeleteAllByPartialKey(string partialKey);
+	public void DeleteAllExcept(string partialKey, string keepSubstring);
 }
 
-public sealed class StaticCacheService : ILocalStorageService {
-	private static readonly ConcurrentDictionary<string, CacheEntry> Cache = new();
-	private static int _cleanupLock;
+public sealed class UMemoryCacheService : ILocalStorageService {
+	private readonly MemoryCache _cache;
+	private readonly ConcurrentDictionary<string, byte> _keys;
+	private readonly ObjectPool<MemoryCacheEntryOptions> _optionsPool;
 
-	private record CacheEntry(string Value, DateTime Expiry);
+	private const int MaxSize = 10_000;
+
+	public UMemoryCacheService() {
+		_cache = new MemoryCache(new MemoryCacheOptions {
+			SizeLimit = null,
+			ExpirationScanFrequency = TimeSpan.FromHours(1)
+		});
+
+		_keys = new ConcurrentDictionary<string, byte>();
+
+		DefaultObjectPoolProvider provider = new DefaultObjectPoolProvider();
+		_optionsPool = provider.Create<MemoryCacheEntryOptions>();
+	}
 
 	public void Set(string key, string value, TimeSpan expireTime) {
-		if (Cache.Count >= 10_000) {
-			string oldestKey = Cache.Keys.First();
-			Cache.TryRemove(oldestKey, out _);
-		}
-
-		Cache[key] = new CacheEntry(value, DateTime.UtcNow.Add(expireTime));
-
-		if (Interlocked.CompareExchange(ref _cleanupLock, 1, 0) == 0) {
-			try {
-				CleanupExpiredEntries();
-			}
-			finally {
-				Interlocked.Exchange(ref _cleanupLock, 0);
+		if (_keys.Count >= MaxSize) {
+			foreach (KeyValuePair<string, byte> kv in _keys) {
+				Delete(kv.Key);
+				break;
 			}
 		}
+
+		MemoryCacheEntryOptions options = _optionsPool.Get();
+		options.AbsoluteExpirationRelativeToNow = expireTime;
+
+		_cache.Set(key, value, options);
+		_optionsPool.Return(options);
+
+		_keys[key] = 0;
 	}
 
 	public string? Get(string key) {
-		if (!Cache.TryGetValue(key, out CacheEntry? entry)) return null;
-		if (DateTime.UtcNow < entry.Expiry) return entry.Value;
-		Cache.TryRemove(key, out _);
-		return null;
+		return _cache.TryGetValue(key, out string? value) ? value : null;
 	}
-
-	public void Delete(string key) => Cache.TryRemove(key, out _);
-
-	public void DeleteAllByPartialKey(string partialKey) {
-		foreach (string key in Cache.Keys
-			         .Where(k => k.Contains(partialKey, StringComparison.Ordinal))
-			         .ToArray()
-		        ) Cache.TryRemove(key, out _);
-	}
-
-	private static void CleanupExpiredEntries() {
-		foreach (string key in Cache
-			         .Where(kvp => DateTime.UtcNow >= kvp.Value.Expiry)
-			         .Select(kvp => kvp.Key)
-			         .ToArray()
-		        ) Cache.TryRemove(key, out _);
-	}
-}
-
-public class MemoryCacheService(IMemoryCache cache) : ILocalStorageService {
-	private readonly ConcurrentDictionary<string, byte> _keys = new();
-
-	public void Set(string key, string value, TimeSpan expireTime) {
-		MemoryCacheEntryOptions cacheEntryOptions = new();
-		cacheEntryOptions.SetAbsoluteExpiration(expireTime);
-		cacheEntryOptions.SetSlidingExpiration(expireTime);
-
-		cache.Set(key, value, cacheEntryOptions);
-		_keys.TryAdd(key, 0);
-	}
-
-	public string? Get(string key) => cache.Get<string>(key);
 
 	public void Delete(string key) {
-		if (string.IsNullOrEmpty(key)) return;
-		cache.Remove(key);
+		_cache.Remove(key);
 		_keys.TryRemove(key, out _);
 	}
 
 	public void DeleteAllByPartialKey(string partialKey) {
-		if (string.IsNullOrEmpty(partialKey)) return;
-		List<string> keysToRemove = _keys.Keys.Where(k => k.Contains(partialKey)).ToList();
-		foreach (string key in keysToRemove) {
-			cache.Remove(key);
+		foreach (KeyValuePair<string, byte> kv in _keys) {
+			if (kv.Key.Contains(partialKey, StringComparison.Ordinal)) {
+				_cache.Remove(kv.Key);
+				_keys.TryRemove(kv.Key, out _);
+			}
+		}
+	}
+	
+	public void DeleteAllExcept(string partialKey, string keepSubstring) {
+		foreach (KeyValuePair<string, byte> kv in _keys) {
+			string key = kv.Key;
+
+			if (!key.Contains(partialKey, StringComparison.Ordinal))
+				continue;
+
+			if (_cache.TryGetValue(key, out string? value)) {
+				if (value != null && value.Contains(keepSubstring, StringComparison.Ordinal))
+					continue;
+			}
+
+			_cache.Remove(key);
 			_keys.TryRemove(key, out _);
 		}
 	}

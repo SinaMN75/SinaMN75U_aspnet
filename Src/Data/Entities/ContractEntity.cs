@@ -5,8 +5,8 @@ public class ContractEntity : BaseEntity<TagContract, ContractJson> {
 	public required DateTime StartDate { get; set; }
 	public required DateTime EndDate { get; set; }
 
-	public required double Price1 { get; set; }
-	public required double Price2 { get; set; }
+	public required double Deposit { get; set; }
+	public required double Rent { get; set; }
 
 	public UserEntity User { get; set; } = null!;
 	public required Guid UserId { get; set; }

@@ -7,8 +7,8 @@ public sealed class ContractCreateParams : BaseCreateParams<TagContract> {
 	[UValidationRequired("EndDateRequired")]
 	public required DateTime EndDate { get; set; }
 
-	public double? Price1 { get; set; }
-	public double? Price2 { get; set; }
+	public double? Deposit { get; set; }
+	public double? Rent { get; set; }
 
 	public required Guid UserId { get; set; }
 	public required Guid ProductId { get; set; }
@@ -20,8 +20,8 @@ public sealed class ContractCreateParams : BaseCreateParams<TagContract> {
 public sealed class ContractUpdateParams : BaseUpdateParams<TagContract> {
 	public DateTime? StartDate { get; set; }
 	public DateTime? EndDate { get; set; }
-	public double? Price1 { get; set; }
-	public double? Price2 { get; set; }
+	public double? Deposit { get; set; }
+	public double? Rent { get; set; }
 }
 
 public class ContractReadParams : BaseReadParams<TagContract> {

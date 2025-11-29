@@ -57,7 +57,7 @@ public static class AspNetConfig {
 		
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
 		builder.Services.AddSingleton<IHttpClientService, HttpClientService>();
-		builder.Services.AddSingleton<ILocalStorageService, StaticCacheService>();
+		builder.Services.AddSingleton<ILocalStorageService, UMemoryCacheService>();
 		builder.Services.AddScoped<ITokenService, TokenService>();
 		builder.Services.AddScoped<IUserService, UserService>();
 		builder.Services.AddScoped<IAuthService, AuthService>();

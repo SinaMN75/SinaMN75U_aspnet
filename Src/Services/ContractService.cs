@@ -28,8 +28,8 @@ public class ContractService(
 			Id = contractId,
 			StartDate = p.StartDate,
 			EndDate = p.EndDate,
-			Price1 = p.Price1 ?? product.Price1 ?? 0,
-			Price2 = p.Price2 ?? product.Price2 ?? 0,
+			Deposit = p.Deposit ?? product.Deposit ?? 0,
+			Rent = p.Rent ?? product.Rent ?? 0,
 			UserId = user.Id,
 			CreatorId = userData.Id,
 			ProductId = product.Id,
@@ -40,7 +40,7 @@ public class ContractService(
 
 		await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 			Tags = [TagInvoice.NotPaid, TagInvoice.Deposit],
-			DebtAmount = p.Price1 ?? product.Price1 ?? 0,
+			DebtAmount = p.Deposit ?? product.Deposit ?? 0,
 			CreditorAmount = 0,
 			PaidAmount = 0,
 			PenaltyAmount = 0,
@@ -53,7 +53,7 @@ public class ContractService(
 		PersianDateTime startDate = e.StartDate.ToPersian();
 		PersianDateTime endDate = e.EndDate.ToPersian();
 
-		double monthlyPrice = p.Price2 ?? product.Price2 ?? 0;
+		double rent = p.Rent ?? product.Rent ?? 0;
 
 		int totalMonths = (endDate.Year - startDate.Year) * 12 + (endDate.Month - startDate.Month);
 		if (endDate.Day < startDate.Day) {
@@ -62,7 +62,7 @@ public class ContractService(
 
 		await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 			Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
-			DebtAmount = monthlyPrice,
+			DebtAmount = rent,
 			CreditorAmount = 0,
 			PaidAmount = 0,
 			PenaltyAmount = 0,
@@ -75,10 +75,8 @@ public class ContractService(
 		if (totalMonths >= 1) {
 			int remainingDaysInFirstMonth = PersianDateTime.DaysInMonth(startDate.Year, startDate.Month) - startDate.Day + 1;
 			int totalDaysInFirstMonth = PersianDateTime.DaysInMonth(startDate.Year, startDate.Month);
-			double proportionalPrice = (remainingDaysInFirstMonth / (double)totalDaysInFirstMonth) * monthlyPrice;
-
-			PersianDateTime firstOfNextMonth = startDate.AddMonths(1).StartOfMonth;
-
+			double proportionalPrice = (remainingDaysInFirstMonth / (double)totalDaysInFirstMonth) * rent;
+			
 			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 				Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
 				DebtAmount = Math.Round(proportionalPrice, 2),
@@ -87,7 +85,7 @@ public class ContractService(
 				PenaltyAmount = 0,
 				UserId = user.Id,
 				ContractId = contractId,
-				DueDate = firstOfNextMonth.ToDateTime(),
+				DueDate = startDate.AddMonths(1).ToDateTime(),
 				JsonData = new InvoiceJson { Description = $"قسط دوم - قیمت متناسب ({remainingDaysInFirstMonth} روز از {totalDaysInFirstMonth} روز)" },
 			}, ct);
 		}
@@ -97,7 +95,7 @@ public class ContractService(
 
 			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 				Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
-				DebtAmount = monthlyPrice,
+				DebtAmount = rent,
 				CreditorAmount = 0,
 				PaidAmount = 0,
 				PenaltyAmount = 0,
@@ -136,8 +134,8 @@ public class ContractService(
 
 		ContractEntity e = (await db.Set<ContractEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
 		e.UpdatedAt = DateTime.UtcNow;
-		if (p.Price1.HasValue) e.Price1 = p.Price1.Value;
-		if (p.Price2.HasValue) e.Price2 = p.Price2.Value;
+		if (p.Deposit.HasValue) e.Deposit = p.Deposit.Value;
+		if (p.Rent.HasValue) e.Rent = p.Rent.Value;
 		if (p.StartDate.HasValue) e.StartDate = p.StartDate.Value;
 		if (p.EndDate.HasValue) e.EndDate = p.EndDate.Value;
 

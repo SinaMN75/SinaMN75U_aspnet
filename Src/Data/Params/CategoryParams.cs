@@ -42,9 +42,9 @@ public sealed class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
 	public ICollection<Guid>? RemoveRelatedProducts { get; set; }
 	public ICollection<Guid> Media { get; set; } = [];
 
-	public double? ProductPrice1 { get; set; }
-	public double? ProductPrice2 { get; set; }
-	public bool UpdateInvoicesPrices { get; set; } = false;
+	public double? ProductDeposit { get; set; }
+	public double? ProductRent { get; set; }
+	public bool UpdateInvoicesRent { get; set; } = false;
 }
 
 public sealed class CategoryReadParams : BaseReadParams<TagCategory> {

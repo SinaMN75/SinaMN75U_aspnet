@@ -18,8 +18,8 @@ public sealed class ProductCreateParams : BaseCreateParams<TagProduct> {
 	public int? Stock { get; set; }
 	public int? Point { get; set; }
 	public int? Order { get; set; }
-	public double? Price1 { get; set; }
-	public double? Price2 { get; set; }
+	public double? Deposit { get; set; }
+	public double? Rent { get; set; }
 
 	public string? Details { get; set; }
 	public string? PhoneNumber { get; set; }
@@ -48,8 +48,8 @@ public sealed class ProductUpdateParams : BaseUpdateParams<TagProduct> {
 	public int? Stock { get; set; }
 	public int? Point { get; set; }
 	public int? Order { get; set; }
-	public double? Price1 { get; set; }
-	public double? Price2 { get; set; }
+	public double? Deposit { get; set; }
+	public double? Rent { get; set; }
 	public Guid? ParentId { get; set; }
 	public Guid? UserId { get; set; }
 	public string? ActionType { get; set; }
@@ -70,11 +70,6 @@ public sealed class ProductUpdateParams : BaseUpdateParams<TagProduct> {
 	public bool UpdateInvoicesPrices { get; set; } = false;
 }
 
-public sealed class ProductUpdateRangeParams {
-	public required ProductReadParams ReadParams { get; set; }
-	public required ProductUpdateParams UpdateParams { get; set; }
-}
-
 public sealed class ProductReadParams : BaseReadParams<TagProduct> {
 	public string? Query { get; set; }
 	public string? Title { get; set; }
@@ -84,8 +79,8 @@ public sealed class ProductReadParams : BaseReadParams<TagProduct> {
 	public Guid? UserId { get; set; }
 	public int? MinStock { get; set; }
 	public int? MaxStock { get; set; }
-	public double? MinPrice1 { get; set; }
-	public double? MaxPrice1 { get; set; }
+	public double? MinDeposit { get; set; }
+	public double? MaxRent { get; set; }
 	public bool ShowCategories { get; set; }
 	public bool ShowCategoriesMedia { get; set; }
 	public bool ShowMedia { get; set; }

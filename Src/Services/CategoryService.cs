@@ -36,7 +36,7 @@ public class CategoryService(
 
 		await db.SaveChangesAsync(ct);
 		await AddMedia(e.Id, p.Media, ct);
-		
+
 		cache.DeleteAllByPartialKey(RouteTags.Category);
 		return new UResponse<CategoryEntity?>(e);
 	}
@@ -137,43 +137,51 @@ public class CategoryService(
 		if (p.AddRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.AddRangeIfNotExist(p.AddRelatedProducts);
 		if (p.RemoveRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.RemoveRangeIfExist(p.RemoveRelatedProducts);
 
-		if (p.ProductPrice1.IsNotNull()) {
+		if (p.ProductDeposit.IsNotNull()) {
 			await db.Set<ProductEntity>()
 				.Where(x => x.Categories.Any(c => c.Id == e.Id))
-				.ExecuteUpdateAsync(set => set.SetProperty(x => x.Price1, p.ProductPrice1.Value), cancellationToken: ct);
+				.ExecuteUpdateAsync(set => set.SetProperty(x => x.Deposit, p.ProductDeposit.Value), cancellationToken: ct);
+		}
 
-			if (p.UpdateInvoicesPrices) {
-				await db.Set<InvoiceEntity>()
-					.Where(inv => inv.Tags.Contains(TagInvoice.NotPaid)
-					              && inv.Contract.Product.Categories.Any(c => c.Id == e.Id))
-					.ExecuteUpdateAsync(set => set.SetProperty(i => i.DebtAmount, p.ProductPrice1.Value), cancellationToken: ct);
+		if (p.ProductRent.IsNotNull()) {
+			await db.Set<ProductEntity>()
+				.Where(x => x.Categories.Any(c => c.Id == e.Id))
+				.ExecuteUpdateAsync(set => set.SetProperty(x => x.Rent, p.ProductRent.Value), cancellationToken: ct);
+
+			if (p.UpdateInvoicesRent) {
+				PersianDateTime today = PersianDateTime.Today;
+				int totalDays = PersianDateTime.DaysInMonth(today.Year, today.Month);
+				int pastDays = today.Day;
+				int remainingDays = totalDays - today.Day;
+				double newPrice = p.ProductRent.Value;
+
+				List<InvoiceEntity> invoices = await db.Set<InvoiceEntity>()
+					.Where(inv => inv.Tags.Contains(TagInvoice.NotPaid) && inv.Contract.Product.Categories.Any(c => c.Id == e.Id))
+					.AsNoTracking()
+					.ToListAsync(ct);
+
+				foreach (InvoiceEntity inv in invoices) {
+					double oldPrice = inv.DebtAmount;
+					double newDebt = oldPrice / totalDays * pastDays + newPrice / totalDays * remainingDays;
+					inv.DebtAmount = Math.Round(newDebt, 2);
+					db.Update(inv);
+				}
+
+				await db.SaveChangesAsync(ct);
 			}
-			
+
 			cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		}
 
-		if (p.ProductPrice2.IsNotNull()) {
-			await db.Set<ProductEntity>()
-				.Where(x => x.Categories.Any(c => c.Id == e.Id))
-				.ExecuteUpdateAsync(set => set.SetProperty(x => x.Price2, p.ProductPrice2.Value), cancellationToken: ct);
-
-			if (p.UpdateInvoicesPrices) {
-				await db.Set<InvoiceEntity>()
-					.Where(inv => inv.Tags.Contains(TagInvoice.NotPaid)
-					              && inv.Contract.Product.Categories.Any(c => c.Id == e.Id))
-					.ExecuteUpdateAsync(set => set.SetProperty(i => i.DebtAmount, p.ProductPrice2.Value), cancellationToken: ct);
-			}
-			cache.DeleteAllByPartialKey(RouteTags.Invoice);
-		}
 
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
 		await AddMedia(e.Id, p.Media, ct);
-		
+
 		cache.DeleteAllByPartialKey(RouteTags.Category);
 		cache.DeleteAllByPartialKey(RouteTags.Product);
 		cache.DeleteAllByPartialKey(RouteTags.User);
-		
+
 		return new UResponse<CategoryEntity?>(e);
 	}
 
@@ -194,7 +202,7 @@ public class CategoryService(
 
 		db.Set<CategoryEntity>().Remove(category);
 		await db.SaveChangesAsync(ct);
-		
+
 		cache.DeleteAllByPartialKey(RouteTags.Category);
 		cache.DeleteAllByPartialKey(RouteTags.Product);
 		cache.DeleteAllByPartialKey(RouteTags.User);
@@ -207,7 +215,7 @@ public class CategoryService(
 			return new UResponse<CategoryEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<CategoryEntity>().WhereIn(u => u.Id, p.Ids).ExecuteDeleteAsync(ct);
-		
+
 		cache.DeleteAllByPartialKey(RouteTags.Category);
 		cache.DeleteAllByPartialKey(RouteTags.Product);
 		cache.DeleteAllByPartialKey(RouteTags.User);

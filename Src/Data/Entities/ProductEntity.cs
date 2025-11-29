@@ -25,8 +25,8 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 
 	public double? Latitude { get; set; }
 	public double? Longitude { get; set; }
-	public double? Price1 { get; set; }
-	public double? Price2 { get; set; }
+	public double? Deposit { get; set; }
+	public double? Rent { get; set; }
 
 	public int Stock { get; set; }
 	public int Point { get; set; }
