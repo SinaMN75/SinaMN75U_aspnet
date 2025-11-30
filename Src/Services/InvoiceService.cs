@@ -42,10 +42,12 @@ public class InvoiceService(
 	public async Task<UResponse<IEnumerable<InvoiceEntity>>> Read(InvoiceReadParams p, CancellationToken ct) {
 		IQueryable<InvoiceEntity> q = db.Set<InvoiceEntity>().AsTracking();
 
-		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(u => u.Tags.Any(tag => p.Tags.Contains(tag)));
-		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(u => u.UserId == p.UserId);
-		if (p.FromCreatedAt.HasValue) q = q.Where(u => u.CreatedAt >= p.FromCreatedAt);
-		if (p.ToCreatedAt.HasValue) q = q.Where(u => u.CreatedAt <= p.ToCreatedAt);
+		if (p.ShowContract) q = q.Include(x => x.Contract);
+		if (p.ShowUser) q = q.Include(x => x.User);
+		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags.Contains(tag)));
+		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(x => x.UserId == p.UserId);
+		if (p.FromCreatedAt.HasValue) q = q.Where(x => x.CreatedAt >= p.FromCreatedAt);
+		if (p.ToCreatedAt.HasValue) q = q.Where(x => x.CreatedAt <= p.ToCreatedAt);
 
 		UResponse<IEnumerable<InvoiceEntity>> response = (await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct))!;
 

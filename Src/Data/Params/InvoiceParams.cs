@@ -36,4 +36,6 @@ public sealed class InvoiceUpdateParams : BaseUpdateParams<TagInvoice> {
 
 public sealed class InvoiceReadParams : BaseReadParams<TagInvoice> {
 	public Guid? UserId { get; set; }
+	public bool ShowUser { get; set; }
+	public bool ShowContract { get; set; }
 }
