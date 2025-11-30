@@ -7,9 +7,6 @@ public sealed class ContractCreateParams : BaseCreateParams<TagContract> {
 	[UValidationRequired("EndDateRequired")]
 	public required DateTime EndDate { get; set; }
 
-	public double? Deposit { get; set; }
-	public double? Rent { get; set; }
-
 	public required Guid UserId { get; set; }
 	public required Guid ProductId { get; set; }
 	

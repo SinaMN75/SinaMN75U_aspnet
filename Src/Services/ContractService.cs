@@ -18,7 +18,7 @@ public class ContractService(
 		if (userData == null) return new UResponse<ContractEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		ProductEntity? product = await db.Set<ProductEntity>().FirstOrDefaultAsync(x => x.Id == p.ProductId, ct);
-		if (product == null) return new UResponse<ContractEntity?>(null, Usc.NotFound, ls.Get("ProductNotFound"));
+		if (product?.Deposit == null || product.Rent == null) return new UResponse<ContractEntity?>(null, Usc.NotFound, ls.Get("ProductNotFound"));
 
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
 		if (user == null) return new UResponse<ContractEntity?>(null, Usc.NotFound, ls.Get("UserNotFound"));
@@ -28,8 +28,8 @@ public class ContractService(
 			Id = contractId,
 			StartDate = p.StartDate,
 			EndDate = p.EndDate,
-			Deposit = p.Deposit ?? product.Deposit ?? 0,
-			Rent = p.Rent ?? product.Rent ?? 0,
+			Deposit = product.Deposit ?? 0,
+			Rent = product.Rent ?? 0,
 			UserId = user.Id,
 			CreatorId = userData.Id,
 			ProductId = product.Id,
@@ -40,7 +40,7 @@ public class ContractService(
 
 		await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 			Tags = [TagInvoice.NotPaid, TagInvoice.Deposit],
-			DebtAmount = p.Deposit ?? product.Deposit ?? 0,
+			DebtAmount = product.Deposit ?? 0,
 			CreditorAmount = 0,
 			PaidAmount = 0,
 			PenaltyAmount = 0,
@@ -53,7 +53,7 @@ public class ContractService(
 		PersianDateTime startDate = e.StartDate.ToPersian();
 		PersianDateTime endDate = e.EndDate.ToPersian();
 
-		double rent = p.Rent ?? product.Rent ?? 0;
+		double rent = product.Rent ?? 0;
 
 		int totalMonths = (endDate.Year - startDate.Year) * 12 + (endDate.Month - startDate.Month);
 		if (endDate.Day < startDate.Day) {
