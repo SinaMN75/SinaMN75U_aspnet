@@ -35,7 +35,7 @@ public class ProductService(
 			: [];
 
 		ProductEntity e = FillData(p, userData.Id, p.ParentId, categories);
-		await db.Set<ProductEntity>().AddAsync(e, ct);
+		EntityEntry<ProductEntity> created = await db.Set<ProductEntity>().AddAsync(e, ct);
 
 		await db.SaveChangesAsync(ct);
 
@@ -44,7 +44,7 @@ public class ProductService(
 		await AddMedia(e.Id, p.Media, ct);
 
 		cache.DeleteAllByPartialKey(RouteTags.Product);
-		return new UResponse<ProductEntity?>(e);
+		return new UResponse<ProductEntity?>(created.Entity);
 	}
 
 	public async Task<UResponse<IEnumerable<ProductEntity>?>> Read(ProductReadParams p, CancellationToken ct) {
