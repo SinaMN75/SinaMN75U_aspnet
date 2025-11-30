@@ -14,6 +14,7 @@ public class ProductService(
 	DbContext db,
 	ITokenService ts,
 	ILocalizationService ls,
+	ILocalStorageService cache,
 	ICategoryService categoryService,
 	ICommentService commentService,
 	IFollowService followService,
@@ -42,6 +43,7 @@ public class ProductService(
 
 		await AddMedia(e.Id, p.Media, ct);
 
+		cache.DeleteAllByPartialKey(RouteTags.Product);
 		return new UResponse<ProductEntity?>(e);
 	}
 
@@ -232,6 +234,9 @@ public class ProductService(
 		await db.SaveChangesAsync(ct);
 		await AddMedia(p.Id, p.Media, ct);
 
+		cache.DeleteAllByPartialKey(RouteTags.Product);
+		cache.DeleteAllByPartialKey(RouteTags.Contract);
+		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse<ProductEntity?>(e);
 	}
 
@@ -240,6 +245,8 @@ public class ProductService(
 		if (userData == null) return new UResponse<ProductEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		int count = await db.Set<ProductEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
+		
+		cache.DeleteAllByPartialKey(RouteTags.Product);
 		return count > 0 ? new UResponse(Usc.Deleted, ls.Get("ProductDeleted")) : new UResponse(Usc.NotFound, ls.Get("ProductNotFound"));
 	}
 
@@ -248,6 +255,8 @@ public class ProductService(
 		if (userData == null) return new UResponse<ProductEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		int count = await db.Set<ProductEntity>().WhereIn(u => u.Id, p.Ids).ExecuteDeleteAsync(ct);
+		
+		cache.DeleteAllByPartialKey(RouteTags.Product);
 		return count > 0 ? new UResponse(Usc.Deleted, ls.Get("ProductDeleted")) : new UResponse(Usc.NotFound, ls.Get("ProductNotFound"));
 	}
 
