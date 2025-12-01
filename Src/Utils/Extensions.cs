@@ -3,8 +3,8 @@ namespace SinaMN75U.Utils;
 public static partial class StringExtensions {
 	public static string ToBase64(this string plainText) => Convert.ToBase64String(Encoding.UTF8.GetBytes(plainText));
 	public static string FromBase64(this string base64EncodedData) => Encoding.UTF8.GetString(Convert.FromBase64String(base64EncodedData));
-	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this string? s) => s is { Length: > 0 };
-	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this Guid? s) => s != null;
+	public static bool HasValue([NotNullWhen(true)] this string? s) => s is { Length: > 0 };
+	public static bool HasValue([NotNullWhen(true)] this Guid? s) => s != null;
 	public static bool IsNotNull([NotNullWhen(true)] this string? s) => s != null;
 	public static bool IsNullOrEmpty([NotNullWhen(false)] this string? s) => string.IsNullOrEmpty(s);
 	public static bool IsNull([NotNullWhen(false)] this string? s) => s == null;
@@ -21,7 +21,7 @@ public static partial class StringExtensions {
 		return input.Length <= range ? input : input[..range];
 	}
 
-	public static string Truncate(this string value, int maxLength, string truncationSuffix = "...") => value.IsNotNullOrEmpty() && value.Length > maxLength
+	public static string Truncate(this string value, int maxLength, string truncationSuffix = "...") => value.HasValue() && value.Length > maxLength
 		? value[..(maxLength - truncationSuffix.Length)] + truncationSuffix
 		: value;
 

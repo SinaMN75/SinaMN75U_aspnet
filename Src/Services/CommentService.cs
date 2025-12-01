@@ -38,9 +38,9 @@ public class CommentService(
 
 	public async Task<UResponse<IEnumerable<CommentEntity>?>> Read(CommentReadParams p, CancellationToken ct) {
 		IQueryable<CommentEntity> q = db.Set<CommentEntity>();
-		if (p.ProductId.IsNotNullOrEmpty()) q = q.Where(x => x.ProductId == p.ProductId);
-		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(x => x.UserId == p.UserId);
-		if (p.TargetUserId.IsNotNullOrEmpty()) q = q.Where(x => x.TargetUserId == p.TargetUserId);
+		if (p.ProductId.HasValue()) q = q.Where(x => x.ProductId == p.ProductId);
+		if (p.UserId.HasValue()) q = q.Where(x => x.UserId == p.UserId);
+		if (p.TargetUserId.HasValue()) q = q.Where(x => x.TargetUserId == p.TargetUserId);
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
 
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
@@ -55,7 +55,7 @@ public class CommentService(
 		CommentEntity? e = await db.Set<CommentEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse<CommentEntity?>(null, Usc.NotFound, ls.Get("CommentNotFound"));
 		if (p.Score.IsNotNull()) e.Score = p.Score.Value;
-		if (p.Description.IsNotNullOrEmpty()) e.Description = p.Description;
+		if (p.Description.HasValue()) e.Description = p.Description;
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
 		db.Set<CommentEntity>().Update(e);

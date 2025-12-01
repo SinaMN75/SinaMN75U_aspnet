@@ -46,13 +46,13 @@ public class ContentService(
 
 		ContentEntity e = (await db.Set<ContentEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
 		e.UpdatedAt = DateTime.UtcNow;
-		if (p.Title.IsNotNullOrEmpty()) e.JsonData.Title = p.Title;
-		if (p.SubTitle.IsNotNullOrEmpty()) e.JsonData.SubTitle = p.SubTitle;
-		if (p.Description.IsNotNullOrEmpty()) e.JsonData.Description = p.Description;
-		if (p.Instagram.IsNotNullOrEmpty()) e.JsonData.Instagram = p.Instagram;
-		if (p.Phone.IsNotNullOrEmpty()) e.JsonData.Phone = p.Phone;
-		if (p.Telegram.IsNotNullOrEmpty()) e.JsonData.Telegram = p.Telegram;
-		if (p.Whatsapp.IsNotNullOrEmpty()) e.JsonData.Whatsapp = p.Whatsapp;
+		if (p.Title.HasValue()) e.JsonData.Title = p.Title;
+		if (p.SubTitle.HasValue()) e.JsonData.SubTitle = p.SubTitle;
+		if (p.Description.HasValue()) e.JsonData.Description = p.Description;
+		if (p.Instagram.HasValue()) e.JsonData.Instagram = p.Instagram;
+		if (p.Phone.HasValue()) e.JsonData.Phone = p.Phone;
+		if (p.Telegram.HasValue()) e.JsonData.Telegram = p.Telegram;
+		if (p.Whatsapp.HasValue()) e.JsonData.Whatsapp = p.Whatsapp;
 
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));

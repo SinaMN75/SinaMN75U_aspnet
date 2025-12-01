@@ -23,8 +23,12 @@ public sealed class ContractUpdateParams : BaseUpdateParams<TagContract> {
 
 public class ContractReadParams : BaseReadParams<TagContract> {
 	public Guid? UserId { get; set; }
+	public string? UserName { get; set; }
 	public Guid? CreatorId { get; set; }
 	public Guid? ProductId { get; set; }
 	public DateTime? StartDate { get; set; }
 	public DateTime? EndDate { get; set; }
+	public bool ShowInvoices { get; set; }
+	public bool ShowUser { get; set; }
+	public bool ShowProduct { get; set; }
 }

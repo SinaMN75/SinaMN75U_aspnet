@@ -52,12 +52,12 @@ public class ProductService(
 
 		IQueryable<ProductEntity> q = db.Set<ProductEntity>().Where(x => x.ParentId == null);
 
-		if (p.Query.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Query!) || (x.Description ?? "").Contains(p.Query!) || (x.Subtitle ?? "").Contains(p.Query!));
-		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
-		if (p.Code.IsNotNullOrEmpty()) q = q.Where(x => (x.Code ?? "").Contains(p.Code!));
-		if (p.Slug.IsNotNullOrEmpty()) q = q.Where(x => (x.Slug ?? "") == p.Code!);
-		if (p.ParentId.IsNotNullOrEmpty()) q = q.Where(x => x.ParentId == p.ParentId);
-		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(x => x.UserId == p.UserId);
+		if (p.Query.HasValue()) q = q.Where(x => x.Title.Contains(p.Query!) || (x.Description ?? "").Contains(p.Query!) || (x.Subtitle ?? "").Contains(p.Query!));
+		if (p.Title.HasValue()) q = q.Where(x => x.Title.Contains(p.Title!));
+		if (p.Code.HasValue()) q = q.Where(x => (x.Code ?? "").Contains(p.Code!));
+		if (p.Slug.HasValue()) q = q.Where(x => (x.Slug ?? "") == p.Code!);
+		if (p.ParentId.HasValue()) q = q.Where(x => x.ParentId == p.ParentId);
+		if (p.UserId.HasValue()) q = q.Where(x => x.UserId == p.UserId);
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => p.Tags.All(tag => x.Tags.Contains(tag)));
 		if (p.MinStock.IsNotNull()) q = q.Where(x => x.Stock >= p.MinStock);
@@ -179,7 +179,7 @@ public class ProductService(
 		if (p.Deposit.IsNotNull()) e.Deposit = p.Deposit.Value;
 		if (p.Point.IsNotNull()) e.Point = p.Point.Value;
 		if (p.Order.IsNotNull()) e.Order = p.Order.Value;
-		if (p.ParentId.IsNotNullOrEmpty()) e.ParentId = p.ParentId;
+		if (p.ParentId.HasValue()) e.ParentId = p.ParentId;
 		if (p.UserId.IsNotNull()) e.UserId = p.UserId.Value;
 		if (p.ActionType.IsNotNull()) e.JsonData.ActionType = p.ActionType;
 		if (p.ActionTitle.IsNotNull()) e.JsonData.ActionTitle = p.ActionTitle;

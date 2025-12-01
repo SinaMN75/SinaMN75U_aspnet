@@ -45,7 +45,7 @@ public class InvoiceService(
 		if (p.ShowContract) q = q.Include(x => x.Contract);
 		if (p.ShowUser) q = q.Include(x => x.User);
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags.Contains(tag)));
-		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(x => x.UserId == p.UserId);
+		if (p.UserId.HasValue()) q = q.Where(x => x.UserId == p.UserId);
 		if (p.FromCreatedAt.HasValue) q = q.Where(x => x.CreatedAt >= p.FromCreatedAt);
 		if (p.ToCreatedAt.HasValue) q = q.Where(x => x.CreatedAt <= p.ToCreatedAt);
 
@@ -80,8 +80,8 @@ public class InvoiceService(
 		if (p.PaidAmount.IsNotNull()) e.PaidAmount = p.PaidAmount.Value;
 		if (p.PaidDate.HasValue) e.PaidDate = p.PaidDate.Value;
 		if (p.DueDate.HasValue) e.DueDate = p.DueDate.Value;
-		if (p.UserId.IsNotNullOrEmpty()) e.UserId = p.UserId.Value;
-		if (p.ContractId.IsNotNullOrEmpty()) e.ContractId = p.ContractId.Value;
+		if (p.UserId.HasValue()) e.UserId = p.UserId.Value;
+		if (p.ContractId.HasValue()) e.ContractId = p.ContractId.Value;
 
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));

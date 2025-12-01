@@ -118,7 +118,7 @@ public class CategoryService(
 
 		e.UpdatedAt = DateTime.UtcNow;
 		if (p.Title.IsNotNull()) e.Title = p.Title;
-		if (p.ParentId.IsNotNullOrEmpty()) e.ParentId = p.ParentId;
+		if (p.ParentId.HasValue()) e.ParentId = p.ParentId;
 		if (p.Order.IsNotNull()) e.Order = p.Order;
 		if (p.Code.IsNotNull()) e.Code = p.Code;
 
