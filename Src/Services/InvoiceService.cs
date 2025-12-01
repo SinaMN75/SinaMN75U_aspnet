@@ -74,10 +74,14 @@ public class InvoiceService(
 
 		InvoiceEntity e = (await db.Set<InvoiceEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
 		e.UpdatedAt = DateTime.UtcNow;
-		if (p.CreditorAmount.HasValue) e.CreditorAmount = p.CreditorAmount.Value;
-		if (p.DebtAmount.HasValue) e.DebtAmount = p.DebtAmount.Value;
-		if (p.PenaltyAmount.HasValue) e.PenaltyAmount = p.PenaltyAmount.Value;
-		if (p.PaidAmount.HasValue) e.PaidAmount = p.PaidAmount.Value;
+		if (p.CreditorAmount.IsNotNull()) e.CreditorAmount = p.CreditorAmount.Value;
+		if (p.DebtAmount.IsNotNull()) e.DebtAmount = p.DebtAmount.Value;
+		if (p.PenaltyAmount.IsNotNull()) e.PenaltyAmount = p.PenaltyAmount.Value;
+		if (p.PaidAmount.IsNotNull()) e.PaidAmount = p.PaidAmount.Value;
+		if (p.PaidDate.HasValue) e.PaidDate = p.PaidDate.Value;
+		if (p.DueDate.HasValue) e.DueDate = p.DueDate.Value;
+		if (p.UserId.IsNotNullOrEmpty()) e.UserId = p.UserId.Value;
+		if (p.ContractId.IsNotNullOrEmpty()) e.ContractId = p.ContractId.Value;
 
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));

@@ -10,6 +10,7 @@ public class InvoiceEntity: BaseEntity<TagInvoice, InvoiceJson> {
 	public DateTime? PaidDate { get; set; }
 	public required DateTime DueDate { get; set; }
 
+	[MaxLength(20)]
 	public string? TrackingNumber { get; set; }
 
 	public UserEntity User { get; set; } = null!;
