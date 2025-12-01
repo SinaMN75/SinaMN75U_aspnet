@@ -82,6 +82,7 @@ public class InvoiceService(
 		if (p.DueDate.HasValue) e.DueDate = p.DueDate.Value;
 		if (p.UserId.HasValue()) e.UserId = p.UserId.Value;
 		if (p.ContractId.HasValue()) e.ContractId = p.ContractId.Value;
+		if (p.Description.HasValue()) e.JsonData.Description = p.Description;
 
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
