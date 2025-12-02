@@ -1,10 +1,12 @@
+using Microsoft.EntityFrameworkCore.Query;
+
 namespace SinaMN75U.Services;
 
 public interface ICategoryService {
 	Task<UResponse> BulkCreate(IEnumerable<CategoryCreateParams> p, CancellationToken ct);
 	Task<UResponse<CategoryEntity?>> Create(CategoryCreateParams p, CancellationToken ct);
-	Task<UResponse<IEnumerable<CategoryEntity>?>> Read(CategoryReadParams p, CancellationToken ct);
-	Task<UResponse<IEnumerable<CategoryEntity>?>> ReadDept(CategoryReadParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<CategoryResponse>?>> ReadDept(CategoryReadParams p, CancellationToken ct);
 	Task<UResponse<CategoryEntity?>> ReadById(IdParams p, CancellationToken ct);
 	Task<UResponse<CategoryEntity?>> Update(CategoryUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
@@ -41,52 +43,149 @@ public class CategoryService(
 		return new UResponse<CategoryEntity?>(e);
 	}
 
-	public async Task<UResponse<IEnumerable<CategoryEntity>?>> Read(CategoryReadParams p, CancellationToken ct) {
+	// public async Task<UResponse<IEnumerable<CategoryEntity>?>> Read(CategoryReadParams p, CancellationToken ct) {
+	// 	IQueryable<CategoryEntity> q = db.Set<CategoryEntity>()
+	// 		.Where(x => x.ParentId == null)
+	// 		.OrderBy(x => x.Id);
+	//
+	// 	if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => p.Tags.All(tag => x.Tags.Contains(tag)));
+	// 	if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
+	//
+	// 	if (p.ShowMedia) q = q.Include(x => x.Media);
+	//
+	// 	if (p.ShowChildren) {
+	// 		if (p.ShowChildrenMedia) q = q.Include(x => x.Children).ThenInclude(x => x.Media);
+	// 		else q = q.Include(x => x.Children);
+	// 	}
+	//
+	// 	if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
+	// 	if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
+	//
+	// 	return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	// }
+
+	public async Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct) {
 		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>()
 			.Where(x => x.ParentId == null)
 			.OrderBy(x => x.Id);
 
-		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => p.Tags.All(tag => x.Tags.Contains(tag)));
-		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
+		if (p.Tags.IsNotNullOrEmpty())
+			q = q.Where(x => p.Tags.All(tag => x.Tags.Contains(tag)));
 
-		if (p.ShowMedia) q = q.Include(x => x.Media);
+		if (p.Ids.IsNotNullOrEmpty())
+			q = q.Where(x => p.Ids.Contains(x.Id));
+
+		if (p.ShowMedia)
+			q = q.Include(x => x.Media);
 
 		if (p.ShowChildren) {
-			if (p.ShowChildrenMedia) q = q.Include(x => x.Children).ThenInclude(x => x.Media);
-			else q = q.Include(x => x.Children);
+			if (p.ShowChildrenMedia)
+				q = q.Include(x => x.Children).ThenInclude(x => x.Media);
+			else
+				q = q.Include(x => x.Children);
 		}
 
 		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
 		if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
 
-		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		IQueryable<CategoryResponse> projected = q.Select(x => new CategoryResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			UpdatedAt = x.UpdatedAt,
+			DeletedAt = x.DeletedAt,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+
+			Title = x.Title,
+			Order = x.Order,
+			Code = x.Code,
+			ParentId = x.ParentId,
+
+			Media = p.ShowMedia
+				? x.Media.Select(m => new MediaResponse {
+					Tags = m.Tags,
+					JsonData = m.JsonData,
+					Path = m.Path
+				}).ToList()
+				: new List<MediaResponse>(),
+
+			Children = p.ShowChildren
+				? x.Children.Select(c => new CategoryResponse {
+					Id = c.Id,
+					CreatedAt = c.CreatedAt,
+					UpdatedAt = c.UpdatedAt,
+					DeletedAt = c.DeletedAt,
+					Tags = c.Tags,
+					JsonData = c.JsonData,
+					Title = c.Title,
+					Order = c.Order,
+					Code = c.Code,
+					ParentId = c.ParentId,
+					Media = p.ShowChildrenMedia
+						? c.Media.Select(m => new MediaResponse {
+							Tags = m.Tags,
+							JsonData = m.JsonData,
+							Path = m.Path
+						}).ToList()
+						: new List<MediaResponse>(),
+
+					Children = new List<CategoryResponse>()
+				}).ToList()
+				: new List<CategoryResponse>()
+		});
+
+		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
-	public async Task<UResponse<IEnumerable<CategoryEntity>?>> ReadDept(CategoryReadParams p, CancellationToken ct) {
-		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>()
-			.Where(x => x.ParentId == null)
-			.OrderBy(x => x.Id);
+	// public async Task<UResponse<IEnumerable<CategoryEntity>?>> ReadDept(CategoryReadParams p, CancellationToken ct) {
+	// 	IQueryable<CategoryEntity> q = db.Set<CategoryEntity>()
+	// 		.Where(x => x.ParentId == null)
+	// 		.OrderBy(x => x.Id);
+	//
+	// 	if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
+	// 	if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
+	//
+	// 	if (p.ShowMedia) q = q.Include(x => x.Media);
+	//
+	// 	if (p.ShowChildren)
+	// 		q = q.Include(x => x.Children)
+	// 			.ThenInclude(x => x.Children)
+	// 			.ThenInclude(x => x.Children)
+	// 			.ThenInclude(x => x.Children)
+	// 			.ThenInclude(x => x.Children)
+	// 			.ThenInclude(x => x.Children)
+	// 			.ThenInclude(x => x.Children)
+	// 			.ThenInclude(x => x.Children)
+	// 			.ThenInclude(x => x.Children);
+	//
+	// 	if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
+	// 	if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
+	//
+	// 	return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	// }
+
+	public async Task<UResponse<IEnumerable<CategoryResponse>?>> ReadDept(CategoryReadParams p, CancellationToken ct) {
+		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>().Where(x => x.ParentId == null).OrderBy(x => x.Id);
 
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
-
-		if (p.ShowMedia) q = q.Include(x => x.Media);
-
-		if (p.ShowChildren)
-			q = q.Include(x => x.Children)
-				.ThenInclude(x => x.Children)
-				.ThenInclude(x => x.Children)
-				.ThenInclude(x => x.Children)
-				.ThenInclude(x => x.Children)
-				.ThenInclude(x => x.Children)
-				.ThenInclude(x => x.Children)
-				.ThenInclude(x => x.Children)
-				.ThenInclude(x => x.Children);
+		
+		q = q
+			.Include(x => x.Children).ThenInclude(c => c.Media)
+			.Include(x => x.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Media)
+			.Include(x => x.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Media)
+			.Include(x => x.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Media)
+			.Include(x => x.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Media)
+			.Include(x => x.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Media)
+			.Include(x => x.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Media)
+			.Include(x => x.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Media);
 
 		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
 		if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
 
-		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		IQueryable<CategoryResponse> projected = q.Select(x => ToDtoDeep(x, p.ShowChildren, p.ShowMedia, p.ShowChildrenMedia));
+
+		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse<CategoryEntity?>> ReadById(IdParams p, CancellationToken ct) {
@@ -264,5 +363,40 @@ public class CategoryService(
 		foreach (MediaEntity i in media)
 			await db.Set<MediaEntity>().Where(x => x.Id == i.Id)
 				.ExecuteUpdateAsync(u => u.SetProperty(y => y.CategoryId, id), ct);
+	}
+
+	private static CategoryResponse ToDtoDeep(
+		CategoryEntity e,
+		bool loadChildren,
+		bool loadMedia,
+		bool loadChildrenMedia) {
+		return new CategoryResponse {
+			Id = e.Id,
+			CreatedAt = e.CreatedAt,
+			UpdatedAt = e.UpdatedAt,
+			DeletedAt = e.DeletedAt,
+			Tags = e.Tags,
+			JsonData = e.JsonData,
+			Title = e.Title,
+			Order = e.Order,
+			Code = e.Code,
+			ParentId = e.ParentId,
+			Media = loadMedia
+				? e.Media.Select(m => new MediaResponse {
+					Tags = m.Tags,
+					JsonData = m.JsonData,
+					Path = m.Path
+				}).ToList()
+				: [],
+
+			Children = loadChildren
+				? e.Children.Select(c => ToDtoDeep(
+					c,
+					loadChildren,
+					loadChildrenMedia,
+					loadChildrenMedia
+				)).ToList()
+				: []
+		};
 	}
 }

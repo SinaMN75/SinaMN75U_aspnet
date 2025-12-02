@@ -47,7 +47,7 @@ public static class AspNetConfig {
 			opts.Providers.Add<GzipCompressionProvider>();
 		});
 
-		builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
+		// builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 		builder.Services.AddSingleton<IFileProvider>(new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")));
 		builder.Services.Configure<FormOptions>(x => {
 			x.ValueLengthLimit = int.MaxValue;
