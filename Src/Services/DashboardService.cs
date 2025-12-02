@@ -118,7 +118,7 @@ public class DashboardService(
 
 	public async Task<DashboardResponse> ReadDashboardData(CancellationToken ct) {
 		UResponse<IEnumerable<UserEntity>?> newUsers = await userService.Read(new UserReadParams { PageSize = 5 }, ct);
-		UResponse<IEnumerable<CategoryEntity>?> newCategories = await categoryService.Read(new CategoryReadParams { PageSize = 5 }, ct);
+		UResponse<IEnumerable<CategoryResponse>?> newCategories = await categoryService.Read(new CategoryReadParams { PageSize = 5 }, ct);
 		UResponse<IEnumerable<CommentEntity>?> newComments = await commentService.Read(new CommentReadParams { PageSize = 5 }, ct);
 		UResponse<IEnumerable<ContentEntity>?> newContents = await contentService.Read(new ContentReadParams { PageSize = 5 }, ct);
 		UResponse<IEnumerable<ExamEntity>?> newExams = await examService.Read(new ExamReadParams { PageSize = 5 }, ct);

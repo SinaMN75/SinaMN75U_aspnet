@@ -20,7 +20,7 @@ public sealed class DashboardResponse {
 	public required int Products { get; set; }
 	public required int Users { get; set; }
 	public required IEnumerable<UserEntity> NewUsers { get; set; }
-	public required IEnumerable<CategoryEntity> NewCategories { get; set; }
+	public required IEnumerable<CategoryResponse> NewCategories { get; set; }
 	public required IEnumerable<CommentEntity> NewComments { get; set; }
 	public required IEnumerable<ContentEntity> NewContents { get; set; }
 	public required IEnumerable<ExamEntity> NewExams { get; set; }

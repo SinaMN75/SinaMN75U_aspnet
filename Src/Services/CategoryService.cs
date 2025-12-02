@@ -183,7 +183,7 @@ public class CategoryService(
 		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
 		if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
 
-		IQueryable<CategoryResponse> projected = q.Select(x => ToDtoDeep(x, p.ShowChildren, p.ShowMedia, p.ShowChildrenMedia));
+		IQueryable<CategoryResponse> projected = q.Select(x => ToDtoDeep(x));
 
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
@@ -365,11 +365,7 @@ public class CategoryService(
 				.ExecuteUpdateAsync(u => u.SetProperty(y => y.CategoryId, id), ct);
 	}
 
-	private static CategoryResponse ToDtoDeep(
-		CategoryEntity e,
-		bool loadChildren,
-		bool loadMedia,
-		bool loadChildrenMedia) {
+	private static CategoryResponse ToDtoDeep(CategoryEntity e) {
 		return new CategoryResponse {
 			Id = e.Id,
 			CreatedAt = e.CreatedAt,
@@ -381,22 +377,12 @@ public class CategoryService(
 			Order = e.Order,
 			Code = e.Code,
 			ParentId = e.ParentId,
-			Media = loadMedia
-				? e.Media.Select(m => new MediaResponse {
+			Media = e.Media.Select(m => new MediaResponse {
 					Tags = m.Tags,
 					JsonData = m.JsonData,
 					Path = m.Path
-				}).ToList()
-				: [],
-
-			Children = loadChildren
-				? e.Children.Select(c => ToDtoDeep(
-					c,
-					loadChildren,
-					loadChildrenMedia,
-					loadChildrenMedia
-				)).ToList()
-				: []
+				}).ToList(),
+			Children = e.Children.Select(ToDtoDeep).ToList()
 		};
 	}
 }
