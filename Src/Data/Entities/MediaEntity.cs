@@ -42,6 +42,13 @@ public class MediaEntity : BaseEntity<TagMedia, MediaJson> {
 	
 	[NotMapped]
 	public string Url => $"{Server.BaseUrl}/Media/{Path}";
+	
+	public MediaResponse MapToResponse() => new() {
+		Path = Path,
+		JsonData = JsonData,
+		Tags = Tags
+	};
+
 }
 
 public class MediaJson {

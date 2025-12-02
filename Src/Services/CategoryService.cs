@@ -2,11 +2,11 @@ namespace SinaMN75U.Services;
 
 public interface ICategoryService {
 	Task<UResponse> BulkCreate(IEnumerable<CategoryCreateParams> p, CancellationToken ct);
-	Task<UResponse<CategoryEntity?>> Create(CategoryCreateParams p, CancellationToken ct);
+	Task<UResponse<CategoryResponse?>> Create(CategoryCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<CategoryResponse>?>> ReadDept(CategoryReadParams p, CancellationToken ct);
 	Task<UResponse<CategoryResponse?>> ReadById(IdParams p, CancellationToken ct);
-	Task<UResponse<CategoryEntity?>> Update(CategoryUpdateParams p, CancellationToken ct);
+	Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct);
 
@@ -25,11 +25,11 @@ public class CategoryService(
 		return new UResponse();
 	}
 
-	public async Task<UResponse<CategoryEntity?>> Create(CategoryCreateParams p, CancellationToken ct) {
+	public async Task<UResponse<CategoryResponse?>> Create(CategoryCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<CategoryEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<CategoryResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		CategoryEntity e = FillData(p);
+		CategoryEntity e = p.MapToEntity();
 		await db.Set<CategoryEntity>().AddAsync(e, ct);
 
 		if (p.Children.IsNotNullOrEmpty()) await AddChildrenRecursively(p.Children, e.Id, ct);
@@ -38,7 +38,7 @@ public class CategoryService(
 		await AddMedia(e.Id, p.Media, ct);
 
 		cache.DeleteAllByPartialKey(RouteTags.Category);
-		return new UResponse<CategoryEntity?>(e);
+		return new UResponse<CategoryResponse?>(e.MapToResponse());
 	}
 	
 	public async Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct) {
@@ -52,47 +52,49 @@ public class CategoryService(
 		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
 		if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
 
-		IQueryable<CategoryResponse> projected = q.Select(x => new CategoryResponse {
-			Id = x.Id,
-			CreatedAt = x.CreatedAt,
-			UpdatedAt = x.UpdatedAt,
-			DeletedAt = x.DeletedAt,
-			Tags = x.Tags,
-			JsonData = x.JsonData,
-			Title = x.Title,
-			Order = x.Order,
-			Code = x.Code,
-			ParentId = x.ParentId,
-			Media = p.ShowMedia
-				? x.Media.Select(m => new MediaResponse {
-					Tags = m.Tags,
-					JsonData = m.JsonData,
-					Path = m.Path
-				}).ToList()
-				: new List<MediaResponse>(),
-			Children = p.ShowChildren
-				? x.Children.Select(c => new CategoryResponse {
-					Id = c.Id,
-					CreatedAt = c.CreatedAt,
-					UpdatedAt = c.UpdatedAt,
-					DeletedAt = c.DeletedAt,
-					Tags = c.Tags,
-					JsonData = c.JsonData,
-					Title = c.Title,
-					Order = c.Order,
-					Code = c.Code,
-					ParentId = c.ParentId,
-					Media = p.ShowChildrenMedia
-						? c.Media.Select(m => new MediaResponse {
-							Tags = m.Tags,
-							JsonData = m.JsonData,
-							Path = m.Path
-						}).ToList()
-						: new List<MediaResponse>(),
-					Children = new List<CategoryResponse>()
-				}).ToList()
-				: new List<CategoryResponse>()
-		});
+		// IQueryable<CategoryResponse> projected = q.Select(x => new CategoryResponse {
+		// 	Id = x.Id,
+		// 	CreatedAt = x.CreatedAt,
+		// 	UpdatedAt = x.UpdatedAt,
+		// 	DeletedAt = x.DeletedAt,
+		// 	Tags = x.Tags,
+		// 	JsonData = x.JsonData,
+		// 	Title = x.Title,
+		// 	Order = x.Order,
+		// 	Code = x.Code,
+		// 	ParentId = x.ParentId,
+		// 	Media = p.ShowMedia
+		// 		? x.Media.Select(m => new MediaResponse {
+		// 			Tags = m.Tags,
+		// 			JsonData = m.JsonData,
+		// 			Path = m.Path
+		// 		}).ToList()
+		// 		: new List<MediaResponse>(),
+		// 	Children = p.ShowChildren
+		// 		? x.Children.Select(c => new CategoryResponse {
+		// 			Id = c.Id,
+		// 			CreatedAt = c.CreatedAt,
+		// 			UpdatedAt = c.UpdatedAt,
+		// 			DeletedAt = c.DeletedAt,
+		// 			Tags = c.Tags,
+		// 			JsonData = c.JsonData,
+		// 			Title = c.Title,
+		// 			Order = c.Order,
+		// 			Code = c.Code,
+		// 			ParentId = c.ParentId,
+		// 			Media = p.ShowChildrenMedia
+		// 				? c.Media.Select(m => new MediaResponse {
+		// 					Tags = m.Tags,
+		// 					JsonData = m.JsonData,
+		// 					Path = m.Path
+		// 				}).ToList()
+		// 				: new List<MediaResponse>(),
+		// 			Children = new List<CategoryResponse>()
+		// 		}).ToList()
+		// 		: new List<CategoryResponse>()
+		// });
+		
+		IQueryable<CategoryResponse> projected = q.Select(CategoryProjections.CategorySelector(p));
 
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
@@ -140,34 +142,16 @@ public class CategoryService(
 		return e == null ? new UResponse<CategoryResponse?>(null, Usc.NotFound, ls.Get("CategoryNotFound")) : new UResponse<CategoryResponse?>(e);
 	}
 
-	public async Task<UResponse<CategoryEntity?>> Update(CategoryUpdateParams p, CancellationToken ct) {
+	public async Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<CategoryEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<CategoryResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		CategoryEntity? e = await db.Set<CategoryEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse<CategoryEntity?>(null, Usc.NotFound, ls.Get("CategoryNotFound"));
+		if (e == null) return new UResponse<CategoryResponse?>(null, Usc.NotFound, ls.Get("CategoryNotFound"));
 
 		e.UpdatedAt = DateTime.UtcNow;
-		if (p.Title.IsNotNull()) e.Title = p.Title;
-		if (p.ParentId.HasValue()) e.ParentId = p.ParentId;
-		if (p.Order.IsNotNull()) e.Order = p.Order;
-		if (p.Code.IsNotNull()) e.Code = p.Code;
-
-		if (p.Subtitle.IsNotNull()) e.JsonData.Subtitle = p.Subtitle;
-		if (p.Link.IsNotNull()) e.JsonData.Link = p.Link;
-		if (p.Location.IsNotNull()) e.JsonData.Location = p.Location;
-		if (p.Type.IsNotNull()) e.JsonData.Type = p.Type;
-		if (p.Address.IsNotNull()) e.JsonData.Address = p.Address;
-		if (p.PhoneNumber.IsNotNull()) e.JsonData.PhoneNumber = p.PhoneNumber;
-
-		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
-		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
-		if (p.Tags.IsNotNullOrEmpty()) e.Tags = p.Tags;
-
-		if (p.RelatedProducts.IsNotNull()) e.JsonData.RelatedProducts = p.RelatedProducts;
-		if (p.AddRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.AddRangeIfNotExist(p.AddRelatedProducts);
-		if (p.RemoveRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.RemoveRangeIfExist(p.RemoveRelatedProducts);
-
+		e = p.MapToEntity(e);
+		
 		if (p.ProductDeposit.IsNotNull()) {
 			await db.Set<ProductEntity>()
 				.Where(x => x.Categories.Any(c => c.Id == e.Id))
@@ -203,8 +187,7 @@ public class CategoryService(
 
 			cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		}
-
-
+		
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
 		await AddMedia(e.Id, p.Media, ct);
@@ -213,7 +196,7 @@ public class CategoryService(
 		cache.DeleteAllByPartialKey(RouteTags.Product);
 		cache.DeleteAllByPartialKey(RouteTags.User);
 
-		return new UResponse<CategoryEntity?>(e);
+		return new UResponse<CategoryResponse?>(e.MapToResponse());
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {

@@ -25,6 +25,22 @@ public sealed class InvoiceCreateParams : BaseCreateParams<TagInvoice> {
 	public DateTime DueDate { get; set; }
 
 	public required string Description { get; set; }
+	
+	public InvoiceEntity MapToEntity() => new() {
+		DebtAmount = DebtAmount,
+		CreditorAmount = CreditorAmount,
+		PaidAmount = PaidAmount,
+		PenaltyAmount = PenaltyAmount,
+		UserId = UserId,
+		ContractId = ContractId,
+		PaidDate = PaidDate,
+		DueDate = DueDate,
+		JsonData = new InvoiceJson {
+			Description = Description
+		},
+		Tags = Tags
+	};
+
 }
 
 public sealed class InvoiceUpdateParams : BaseUpdateParams<TagInvoice> {
@@ -37,6 +53,21 @@ public sealed class InvoiceUpdateParams : BaseUpdateParams<TagInvoice> {
 	public string? Description { get; set; }
 	public Guid? UserId { get; set; }
 	public Guid? ContractId { get; set; }
+	
+	public void MapToEntity(InvoiceEntity e) {
+		if (DebtAmount.HasValue) e.DebtAmount = DebtAmount.Value;
+		if (CreditorAmount.HasValue) e.CreditorAmount = CreditorAmount.Value;
+		if (PaidAmount.HasValue) e.PaidAmount = PaidAmount.Value;
+		if (PenaltyAmount.HasValue) e.PenaltyAmount = PenaltyAmount.Value;
+		if (PaidDate.HasValue) e.PaidDate = PaidDate;
+		if (DueDate.HasValue) e.DueDate = DueDate.Value;
+		if (Description != null) e.JsonData.Description = Description;
+		if (UserId.HasValue) e.UserId = UserId.Value;
+		if (ContractId.HasValue) e.ContractId = ContractId.Value;
+		if (Tags != null) e.Tags = Tags;
+	}
+
+
 }
 
 public sealed class InvoiceReadParams : BaseReadParams<TagInvoice> {

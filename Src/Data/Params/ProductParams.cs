@@ -33,6 +33,36 @@ public sealed class ProductCreateParams : BaseCreateParams<TagProduct> {
 	public Guid? UserId { get; set; }
 
 	public ICollection<Guid> Media { get; set; } = [];
+	
+	public ProductEntity MapToEntity() => new() {
+		Title = Title,
+		Code = Code,
+		Subtitle = Subtitle,
+		Description = Description,
+		Slug = Slug,
+		Type = Type,
+		Content = Content,
+		Latitude = Latitude,
+		Longitude = Longitude,
+		Stock = Stock ?? 0,
+		Point = Point ?? 0,
+		Order = Order ?? 0,
+		Deposit = Deposit,
+		Rent = Rent,
+		ParentId = ParentId,
+		UserId = UserId ?? Guid.Empty,
+		JsonData = new ProductJson {
+			ActionType = ActionType,
+			ActionTitle = ActionTitle,
+			ActionUri = ActionUri,
+			Details = Details,
+			PhoneNumber = PhoneNumber,
+			Address = Address,
+			RelatedProducts = RelatedProducts?.ToList() ?? []
+		},
+		Tags = Tags
+	};
+
 }
 
 public sealed class ProductUpdateParams : BaseUpdateParams<TagProduct> {
@@ -68,6 +98,40 @@ public sealed class ProductUpdateParams : BaseUpdateParams<TagProduct> {
 	public ICollection<Guid> Media { get; set; } = [];
 
 	public bool UpdateInvoicesPrices { get; set; } = false;
+	
+	public void MapToEntity(ProductEntity e) {
+		if (Title != null) e.Title = Title;
+		if (Code != null) e.Code = Code;
+		if (Subtitle != null) e.Subtitle = Subtitle;
+		if (Description != null) e.Description = Description;
+		if (Slug != null) e.Slug = Slug;
+		if (Type != null) e.Type = Type;
+		if (Content != null) e.Content = Content;
+		if (Latitude.HasValue) e.Latitude = Latitude;
+		if (Longitude.HasValue) e.Longitude = Longitude;
+		if (Stock.HasValue) e.Stock = Stock.Value;
+		if (Point.HasValue) e.Point = Point.Value;
+		if (Order.HasValue) e.Order = Order.Value;
+		if (Deposit.HasValue) e.Deposit = Deposit.Value;
+		if (Rent.HasValue) e.Rent = Rent.Value;
+		if (ParentId.HasValue) e.ParentId = ParentId;
+		if (UserId.HasValue) e.UserId = UserId.Value;
+
+		if (ActionType != null) e.JsonData.ActionType = ActionType;
+		if (ActionTitle != null) e.JsonData.ActionTitle = ActionTitle;
+		if (ActionUri != null) e.JsonData.ActionUri = ActionUri;
+		if (Details != null) e.JsonData.Details = Details;
+		if (PhoneNumber != null) e.JsonData.PhoneNumber = PhoneNumber;
+		if (Address != null) e.JsonData.Address = Address;
+
+		if (Categories != null) e.Categories = [];
+
+		if (RelatedProducts != null) e.JsonData.RelatedProducts = RelatedProducts.ToList();
+		if (AddRelatedProducts != null) e.JsonData.RelatedProducts.AddRangeIfNotExist(AddRelatedProducts);
+		if (RemoveRelatedProducts != null) e.JsonData.RelatedProducts?.RemoveRangeIfExist(RemoveRelatedProducts);
+
+		if (Tags != null) e.Tags = Tags;
+	}
 }
 
 public sealed class ProductReadParams : BaseReadParams<TagProduct> {

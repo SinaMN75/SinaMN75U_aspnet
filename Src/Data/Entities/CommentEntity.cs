@@ -12,9 +12,7 @@ public class CommentEntity : BaseEntity<TagComment, CommentJson> {
 	public Guid? ParentId { get; set; }
 	public CommentEntity? Parent { get; set; }
 
-	public UserEntity? User { get; set; }
-
-	[Required]
+	public UserEntity User { get; set; } = null!;
 	public required Guid UserId { get; set; }
 
 	public UserEntity? TargetUser { get; set; }
@@ -27,6 +25,29 @@ public class CommentEntity : BaseEntity<TagComment, CommentJson> {
 	public ICollection<CommentEntity> Children { get; set; } = [];
 
 	public ICollection<MediaEntity> Media { get; set; } = [];
+	
+	public CommentResponse MapToResponse() => new() {
+		Id = Id,
+		CreatedAt = CreatedAt,
+		UpdatedAt = UpdatedAt,
+		DeletedAt = DeletedAt,
+		JsonData = JsonData,
+		Tags = Tags,
+
+		Score = Score,
+		Description = Description,
+		ParentId = ParentId,
+		UserId = UserId,
+		TargetUserId = TargetUserId,
+		ProductId = ProductId,
+
+		Parent = null,
+		User = null,
+		TargetUser = null,
+		Product = null,
+		Children = [],
+		Media = []
+	};
 }
 
 public class CommentJson {

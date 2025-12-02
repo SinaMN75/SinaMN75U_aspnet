@@ -18,6 +18,30 @@ public class ContractEntity : BaseEntity<TagContract, ContractJson> {
 	public required Guid ProductId { get; set; }
 
 	public ICollection<InvoiceEntity> Invoices { get; set; } = [];
+	
+	public ContractResponse MapToResponse() => new() {
+		Id = Id,
+		CreatedAt = CreatedAt,
+		UpdatedAt = UpdatedAt,
+		DeletedAt = DeletedAt,
+		JsonData = JsonData,
+		Tags = Tags,
+
+		StartDate = StartDate,
+		EndDate = EndDate,
+		Deposit = Deposit,
+		Rent = Rent,
+		UserId = UserId,
+		CreatorId = CreatorId,
+		ProductId = ProductId,
+
+		User = null,
+		Creator = null,
+		Product = null,
+		Invoices = []
+	};
+
+
 }
 
 public class ContractJson {

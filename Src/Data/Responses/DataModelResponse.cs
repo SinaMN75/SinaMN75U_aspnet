@@ -1,13 +1,13 @@
 namespace SinaMN75U.Data.Responses;
 
 public sealed class DataModelResponse {
-	public required CategoryEntity Category { get; set; }
-	public required CommentEntity Comment { get; set; }
-	public required ContentEntity Content { get; set; }
+	public required CategoryResponse Category { get; set; }
+	public required CommentResponse Comment { get; set; }
+	public required ContentResponse Content { get; set; }
 	public required ExamEntity Exam { get; set; }
-	public required MediaEntity Media { get; set; }
-	public required ProductEntity Product { get; set; }
-	public required UserEntity User { get; set; }
+	public required MediaResponse Media { get; set; }
+	public required ProductResponse Product { get; set; }
+	public required UserResponse User { get; set; }
 }
 
 public sealed class ParamsResponse {

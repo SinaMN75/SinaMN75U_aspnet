@@ -45,7 +45,7 @@ public class AuthService(
 			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
 			Expires = config["Jwt:Expires"] ?? "60",
-			User = user
+			User = user.MapToResponse()
 		});
 	}
 
@@ -61,7 +61,7 @@ public class AuthService(
 			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
 			Expires = config["Jwt:Expires"] ?? "60",
-			User = user
+			User = user.MapToResponse()
 		});
 	}
 
@@ -77,7 +77,7 @@ public class AuthService(
 			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
 			Expires = config["Jwt:Expires"] ?? "60",
-			User = user
+			User = user.MapToResponse()
 		});
 	}
 
@@ -96,7 +96,7 @@ public class AuthService(
 			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
 			Expires = config["Jwt:Expires"] ?? "60",
-			User = user
+			User = user.MapToResponse()
 		});
 	}
 
@@ -154,7 +154,7 @@ public class AuthService(
 			? new UResponse<LoginResponse?>(new LoginResponse {
 				Token = CreateToken(user),
 				RefreshToken = user.RefreshToken,
-				User = user,
+				User = user.MapToResponse(),
 				Expires = config["Jwt:Expires"] ?? "60"
 			})
 			: new UResponse<LoginResponse?>(null, Usc.WrongVerificationCode);
@@ -171,7 +171,7 @@ public class AuthService(
 			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
 			Expires = config["Jwt:Expires"] ?? "60",
-			User = user
+			User = user.MapToResponse()
 		});
 	}
 

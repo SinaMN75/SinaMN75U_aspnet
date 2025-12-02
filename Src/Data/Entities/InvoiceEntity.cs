@@ -18,6 +18,27 @@ public class InvoiceEntity: BaseEntity<TagInvoice, InvoiceJson> {
 
 	public ContractEntity Contract { get; set; } = null!;
 	public required Guid ContractId { get; set; }
+	
+	public InvoiceResponse MapToResponse() => new() {
+		Id = Id,
+		CreatedAt = CreatedAt,
+		UpdatedAt = UpdatedAt,
+		DeletedAt = DeletedAt,
+		JsonData = JsonData,
+		Tags = Tags,
+
+		DebtAmount = DebtAmount,
+		CreditorAmount = CreditorAmount,
+		PaidAmount = PaidAmount,
+		PenaltyAmount = PenaltyAmount,
+		DueDate = DueDate,
+		PaidDate = PaidDate,
+		TrackingNumber = TrackingNumber,
+
+		User = null,
+		Contract = null
+	};
+
 }
 
 public class InvoiceJson {
