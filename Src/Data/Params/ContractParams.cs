@@ -30,5 +30,6 @@ public class ContractReadParams : BaseReadParams<TagContract> {
 	public DateTime? EndDate { get; set; }
 	public bool ShowInvoices { get; set; }
 	public bool ShowUser { get; set; }
+	public bool ShowCreator { get; set; }
 	public bool ShowProduct { get; set; }
 }

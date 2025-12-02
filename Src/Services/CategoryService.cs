@@ -1,5 +1,3 @@
-using Microsoft.EntityFrameworkCore.Query;
-
 namespace SinaMN75U.Services;
 
 public interface ICategoryService {
@@ -7,7 +5,7 @@ public interface ICategoryService {
 	Task<UResponse<CategoryEntity?>> Create(CategoryCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<CategoryResponse>?>> ReadDept(CategoryReadParams p, CancellationToken ct);
-	Task<UResponse<CategoryEntity?>> ReadById(IdParams p, CancellationToken ct);
+	Task<UResponse<CategoryResponse?>> ReadById(IdParams p, CancellationToken ct);
 	Task<UResponse<CategoryEntity?>> Update(CategoryUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct);
@@ -42,48 +40,14 @@ public class CategoryService(
 		cache.DeleteAllByPartialKey(RouteTags.Category);
 		return new UResponse<CategoryEntity?>(e);
 	}
-
-	// public async Task<UResponse<IEnumerable<CategoryEntity>?>> Read(CategoryReadParams p, CancellationToken ct) {
-	// 	IQueryable<CategoryEntity> q = db.Set<CategoryEntity>()
-	// 		.Where(x => x.ParentId == null)
-	// 		.OrderBy(x => x.Id);
-	//
-	// 	if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => p.Tags.All(tag => x.Tags.Contains(tag)));
-	// 	if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
-	//
-	// 	if (p.ShowMedia) q = q.Include(x => x.Media);
-	//
-	// 	if (p.ShowChildren) {
-	// 		if (p.ShowChildrenMedia) q = q.Include(x => x.Children).ThenInclude(x => x.Media);
-	// 		else q = q.Include(x => x.Children);
-	// 	}
-	//
-	// 	if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
-	// 	if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
-	//
-	// 	return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
-	// }
-
+	
 	public async Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct) {
 		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>()
 			.Where(x => x.ParentId == null)
 			.OrderBy(x => x.Id);
 
-		if (p.Tags.IsNotNullOrEmpty())
-			q = q.Where(x => p.Tags.All(tag => x.Tags.Contains(tag)));
-
-		if (p.Ids.IsNotNullOrEmpty())
-			q = q.Where(x => p.Ids.Contains(x.Id));
-
-		if (p.ShowMedia)
-			q = q.Include(x => x.Media);
-
-		if (p.ShowChildren) {
-			if (p.ShowChildrenMedia)
-				q = q.Include(x => x.Children).ThenInclude(x => x.Media);
-			else
-				q = q.Include(x => x.Children);
-		}
+		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => p.Tags.All(tag => x.Tags.Contains(tag)));
+		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
 
 		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
 		if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
@@ -95,12 +59,10 @@ public class CategoryService(
 			DeletedAt = x.DeletedAt,
 			Tags = x.Tags,
 			JsonData = x.JsonData,
-
 			Title = x.Title,
 			Order = x.Order,
 			Code = x.Code,
 			ParentId = x.ParentId,
-
 			Media = p.ShowMedia
 				? x.Media.Select(m => new MediaResponse {
 					Tags = m.Tags,
@@ -108,7 +70,6 @@ public class CategoryService(
 					Path = m.Path
 				}).ToList()
 				: new List<MediaResponse>(),
-
 			Children = p.ShowChildren
 				? x.Children.Select(c => new CategoryResponse {
 					Id = c.Id,
@@ -128,7 +89,6 @@ public class CategoryService(
 							Path = m.Path
 						}).ToList()
 						: new List<MediaResponse>(),
-
 					Children = new List<CategoryResponse>()
 				}).ToList()
 				: new List<CategoryResponse>()
@@ -136,33 +96,6 @@ public class CategoryService(
 
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
-
-	// public async Task<UResponse<IEnumerable<CategoryEntity>?>> ReadDept(CategoryReadParams p, CancellationToken ct) {
-	// 	IQueryable<CategoryEntity> q = db.Set<CategoryEntity>()
-	// 		.Where(x => x.ParentId == null)
-	// 		.OrderBy(x => x.Id);
-	//
-	// 	if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
-	// 	if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
-	//
-	// 	if (p.ShowMedia) q = q.Include(x => x.Media);
-	//
-	// 	if (p.ShowChildren)
-	// 		q = q.Include(x => x.Children)
-	// 			.ThenInclude(x => x.Children)
-	// 			.ThenInclude(x => x.Children)
-	// 			.ThenInclude(x => x.Children)
-	// 			.ThenInclude(x => x.Children)
-	// 			.ThenInclude(x => x.Children)
-	// 			.ThenInclude(x => x.Children)
-	// 			.ThenInclude(x => x.Children)
-	// 			.ThenInclude(x => x.Children);
-	//
-	// 	if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
-	// 	if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
-	//
-	// 	return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
-	// }
 
 	public async Task<UResponse<IEnumerable<CategoryResponse>?>> ReadDept(CategoryReadParams p, CancellationToken ct) {
 		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>().Where(x => x.ParentId == null).OrderBy(x => x.Id);
@@ -188,14 +121,13 @@ public class CategoryService(
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
-	public async Task<UResponse<CategoryEntity?>> ReadById(IdParams p, CancellationToken ct) {
-		CategoryEntity? e = await db.Set<CategoryEntity>().Select(x => new CategoryEntity {
+	public async Task<UResponse<CategoryResponse?>> ReadById(IdParams p, CancellationToken ct) {
+		CategoryResponse? e = await db.Set<CategoryEntity>().Select(x => new CategoryResponse {
 			Title = x.Title,
 			Order = x.Order,
 			ParentId = x.ParentId,
-			Media = x.Media.Select(y => new MediaEntity {
+			Media = x.Media.Select(y => new MediaResponse {
 				Path = y.Path,
-				Id = y.Id,
 				Tags = y.Tags,
 				JsonData = y.JsonData
 			}).ToList(),
@@ -205,7 +137,7 @@ public class CategoryService(
 			Tags = x.Tags,
 			JsonData = x.JsonData
 		}).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		return e == null ? new UResponse<CategoryEntity?>(null, Usc.NotFound, ls.Get("CategoryNotFound")) : new UResponse<CategoryEntity?>(e);
+		return e == null ? new UResponse<CategoryResponse?>(null, Usc.NotFound, ls.Get("CategoryNotFound")) : new UResponse<CategoryResponse?>(e);
 	}
 
 	public async Task<UResponse<CategoryEntity?>> Update(CategoryUpdateParams p, CancellationToken ct) {

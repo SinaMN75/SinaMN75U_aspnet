@@ -2,7 +2,7 @@
 
 public interface IContractService {
 	Task<UResponse<ContractEntity?>> Create(ContractCreateParams p, CancellationToken ct);
-	Task<UResponse<IEnumerable<ContractEntity>?>> Read(ContractReadParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<ContractResponse>?>> Read(ContractReadParams p, CancellationToken ct);
 	Task<UResponse<ContractEntity?>> Update(ContractUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 }
@@ -76,7 +76,7 @@ public class ContractService(
 			int remainingDaysInFirstMonth = PersianDateTime.DaysInMonth(startDate.Year, startDate.Month) - startDate.Day + 1;
 			int totalDaysInFirstMonth = PersianDateTime.DaysInMonth(startDate.Year, startDate.Month);
 			double proportionalPrice = (remainingDaysInFirstMonth / (double)totalDaysInFirstMonth) * rent;
-			
+
 			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 				Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
 				DebtAmount = Math.Round(proportionalPrice, 2),
@@ -107,13 +107,13 @@ public class ContractService(
 		}
 
 		await db.SaveChangesAsync(ct);
-		
+
 		cache.DeleteAllByPartialKey(RouteTags.Contract);
 		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse<ContractEntity?>(e);
 	}
 
-	public async Task<UResponse<IEnumerable<ContractEntity>?>> Read(ContractReadParams p, CancellationToken ct) {
+	public async Task<UResponse<IEnumerable<ContractResponse>?>> Read(ContractReadParams p, CancellationToken ct) {
 		IQueryable<ContractEntity> q = db.Set<ContractEntity>();
 
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(u => u.Tags.Any(tag => p.Tags.Contains(tag)));
@@ -124,14 +124,73 @@ public class ContractService(
 		if (p.EndDate.HasValue) q = q.Where(u => u.EndDate == p.EndDate);
 		if (p.FromCreatedAt.HasValue) q = q.Where(u => u.CreatedAt >= p.FromCreatedAt);
 		if (p.ToCreatedAt.HasValue) q = q.Where(u => u.CreatedAt <= p.ToCreatedAt);
-		
+		if (p.UserName.HasValue()) q = q.Include(x => x.User).Where(x => x.User.UserName.Contains(p.UserName));
+
 		if (p.ShowInvoices) q = q.Include(x => x.Invoices);
 		if (p.ShowProduct) q = q.Include(x => x.Product);
 		if (p.ShowUser) q = q.Include(x => x.User);
 
-		if (p.UserName.HasValue()) q = q.Include(x => x.User).Where(x => x.User.UserName.Contains(p.UserName));
+		IQueryable<ContractResponse> list = q.Select(x => new ContractResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			UpdatedAt = x.UpdatedAt,
+			DeletedAt = x.DeletedAt,
+			StartDate = x.StartDate,
+			EndDate = x.EndDate,
+			Deposit = x.Deposit,
+			Rent = x.Rent,
+			CreatorId = x.CreatorId,
+			UserId = x.UserId,
+			ProductId = x.ProductId,
+			JsonData = x.JsonData,
+			Tags = x.Tags,
+			User = p.ShowUser
+				? new UserResponse {
+					Id = x.User.Id,
+					JsonData = x.User.JsonData,
+					Tags = x.User.Tags,
+					UserName = x.User.UserName,
+					PhoneNumber = x.User.PhoneNumber,
+					Email = x.User.Email,
+					FirstName = x.User.FirstName,
+					LastName = x.User.LastName
+				}
+				: null,
+			Creator = p.ShowCreator
+				? new UserResponse {
+					Id = x.User.Id,
+					JsonData = x.User.JsonData,
+					Tags = x.User.Tags,
+					UserName = x.User.UserName,
+					PhoneNumber = x.User.PhoneNumber,
+					Email = x.User.Email,
+					FirstName = x.User.FirstName,
+					LastName = x.User.LastName
+				}
+				: null,
+			Product = p.ShowProduct ? new ProductResponse {
+					Id = x.User.Id,
+					Title = x.Product.Title,
+					Code = x.Product.Code,
+					Deposit = x.Product.Deposit,
+					Rent = x.Product.Rent,
+					JsonData = x.Product.JsonData,
+					Tags = x.Product.Tags,
+				}
+				: null,
+			Invoices = p.ShowInvoices ? x.Invoices.Select(
+				y => new InvoiceResponse {
+					DebtAmount = y.DebtAmount,
+					CreditorAmount = y.CreditorAmount,
+					PaidAmount = y.PaidAmount,
+					PenaltyAmount = y.PenaltyAmount,
+					DueDate = y.DueDate,
+					JsonData = y.JsonData,
+					Tags = y.Tags
+				}).ToList() : null
+		});
 
-		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		return await list.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse<ContractEntity?>> Update(ContractUpdateParams p, CancellationToken ct) {
@@ -151,7 +210,7 @@ public class ContractService(
 
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
-		
+
 		cache.DeleteAllByPartialKey(RouteTags.Contract);
 		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse<ContractEntity?>(e);
@@ -162,7 +221,7 @@ public class ContractService(
 		if (userData == null) return new UResponse<ContractEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<ContractEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
-		
+
 		cache.DeleteAllByPartialKey(RouteTags.Contract);
 		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse();
