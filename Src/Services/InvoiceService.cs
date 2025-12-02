@@ -2,7 +2,7 @@
 
 public interface IInvoiceService {
 	Task<UResponse<InvoiceEntity?>> Create(InvoiceCreateParams p, CancellationToken ct);
-	Task<UResponse<IEnumerable<InvoiceEntity>>> Read(InvoiceReadParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<InvoiceResponse>?>> Read(InvoiceReadParams p, CancellationToken ct);
 	Task<UResponse<InvoiceEntity?>> Update(InvoiceUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 
@@ -34,34 +34,79 @@ public class InvoiceService(
 			}
 		}, ct);
 		await db.SaveChangesAsync(ct);
-		
+
 		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse<InvoiceEntity?>(e.Entity);
 	}
 
-	public async Task<UResponse<IEnumerable<InvoiceEntity>>> Read(InvoiceReadParams p, CancellationToken ct) {
-		IQueryable<InvoiceEntity> q = db.Set<InvoiceEntity>().AsTracking();
+	public async Task<UResponse<IEnumerable<InvoiceResponse>?>> Read(InvoiceReadParams p, CancellationToken ct) {
+		IQueryable<InvoiceEntity> q = db.Set<InvoiceEntity>();
 
-		if (p.ShowContract) q = q.Include(x => x.Contract);
-		if (p.ShowUser) q = q.Include(x => x.User);
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags.Contains(tag)));
 		if (p.UserId.HasValue()) q = q.Where(x => x.UserId == p.UserId);
 		if (p.FromCreatedAt.HasValue) q = q.Where(x => x.CreatedAt >= p.FromCreatedAt);
 		if (p.ToCreatedAt.HasValue) q = q.Where(x => x.CreatedAt <= p.ToCreatedAt);
+		
+		IQueryable<InvoiceResponse> projected = q.Select(i => new InvoiceResponse {
+			Id = i.Id,
+			CreatedAt = i.CreatedAt,
+			UpdatedAt = i.UpdatedAt,
+			DeletedAt = i.DeletedAt,
+			JsonData = i.JsonData,
+			Tags = i.Tags,
+			DebtAmount = i.DebtAmount,
+			CreditorAmount = i.CreditorAmount,
+			PaidAmount = i.PaidAmount,
+			PenaltyAmount = i.PenaltyAmount,
+			PaidDate = i.PaidDate,
+			DueDate = i.DueDate,
+			TrackingNumber = i.TrackingNumber,
+			User = p.ShowUser
+				? new UserResponse {
+					Id = i.User.Id,
+					UserName = i.User.UserName,
+					PhoneNumber = i.User.PhoneNumber,
+					FirstName = i.User.FirstName,
+					LastName = i.User.LastName,
+					JsonData = i.User.JsonData,
+					Tags = i.User.Tags,
+				}
+				: null,
+			Contract = p.ShowContract
+				? new ContractResponse {
+					Id = i.Contract.Id,
+					StartDate = i.Contract.StartDate,
+					EndDate = i.Contract.EndDate,
+					Deposit = i.Contract.Deposit,
+					Rent = i.Contract.Rent,
+					UserId = i.Contract.UserId,
+					CreatorId = i.Contract.CreatorId,
+					ProductId = i.Contract.ProductId,
+					JsonData = i.Contract.JsonData,
+					Tags = i.Contract.Tags
+				}
+				: null
+		});
 
-		UResponse<IEnumerable<InvoiceEntity>> response = (await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct))!;
+		UResponse<IEnumerable<InvoiceResponse>?> response = await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 
-		foreach (InvoiceEntity i in response.Result!) {
-			int daysLate = Math.Max(0, (DateTime.UtcNow - i.DueDate).Days);
-			double expectedPenalty = i.DebtAmount * 0.01 * daysLate;
-			bool needsPenaltyUpdate = i.PaidAmount < i.DebtAmount + i.PenaltyAmount &&
-			                          i.DueDate <= DateTime.UtcNow &&
-			                          i.PenaltyAmount < expectedPenalty;
+		foreach (InvoiceResponse dto in response.Result!) {
+			InvoiceEntity? entity = await db.Set<InvoiceEntity>().FindAsync([dto.Id], ct);
+			if (entity == null) continue;
+
+			int daysLate = Math.Max(0, (DateTime.UtcNow - entity.DueDate).Days);
+			double expectedPenalty = entity.DebtAmount * 0.01 * daysLate;
+
+			bool needsPenaltyUpdate =
+				entity.PaidAmount < entity.DebtAmount + entity.PenaltyAmount &&
+				entity.DueDate <= DateTime.UtcNow &&
+				entity.PenaltyAmount < expectedPenalty;
 
 			if (needsPenaltyUpdate) {
-				i.PenaltyAmount = i.DebtAmount * (0.01 * daysLate);
-				db.Update(i);
+				entity.PenaltyAmount = expectedPenalty;
+				db.Update(entity);
 				await db.SaveChangesAsync(ct);
+				dto.PenaltyAmount = expectedPenalty;
 			}
 		}
 
@@ -90,7 +135,7 @@ public class InvoiceService(
 
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
-		
+
 		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse<InvoiceEntity?>(e);
 	}
@@ -100,7 +145,7 @@ public class InvoiceService(
 		if (userData == null) return new UResponse<InvoiceEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<InvoiceEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
-		
+
 		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse();
 	}
@@ -119,7 +164,7 @@ public class InvoiceService(
 		db.Update(e);
 
 		await db.SaveChangesAsync(ct);
-		
+
 		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse();
 	}
