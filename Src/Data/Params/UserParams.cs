@@ -36,9 +36,9 @@ public sealed class UserCreateParams : BaseParams {
 
 	public IEnumerable<Guid>? Categories { get; set; }
 	
-	public UserEntity MapToEntity(string hashedPassword) => new() {
+	public UserEntity MapToEntity() => new() {
 		UserName = UserName,
-		Password = hashedPassword,
+		Password = PasswordHasher.Hash(Password),
 		RefreshToken = "",
 		PhoneNumber = PhoneNumber,
 		Email = Email,
