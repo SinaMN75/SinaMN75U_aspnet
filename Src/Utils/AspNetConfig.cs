@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace SinaMN75U.Utils;
 
-public static class AspNetConfig {
+public static partial class AspNetConfig {
 	public static void AddUServices<T>(
 		this WebApplicationBuilder builder,
 		SqlDatabaseType sqlDatabaseType,
@@ -32,6 +34,24 @@ public static class AspNetConfig {
 						o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
 						o.EnableRetryOnFailure(5, TimeSpan.FromSeconds(30), null);
 					});
+					if (builder.Environment.IsDevelopment()) {
+						b.LogTo(message => {
+								if (message.Contains("Executed DbCommand")) {
+									Match timeMatch = MyRegex3().Match(message);
+									Match queryMatch = MyRegex4().Match(message);
+
+									if (timeMatch.Success && queryMatch.Success) {
+										string cleanSql = CleanAndFormatSql(queryMatch.Value);
+										Console.WriteLine($"{timeMatch.Groups[1].Value}ms:");
+										Console.WriteLine(cleanSql);
+										Console.WriteLine();
+									}
+								}
+							},
+							[DbLoggerCategory.Database.Command.Name],
+							LogLevel.Information);
+					}
+
 					break;
 				case SqlDatabaseType.SqlServer:
 					b.UseSqlServer(builder.Configuration.GetConnectionString(sqlDatabaseConnectionStrings));
@@ -47,14 +67,13 @@ public static class AspNetConfig {
 			opts.Providers.Add<GzipCompressionProvider>();
 		});
 
-		// builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 		builder.Services.AddSingleton<IFileProvider>(new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")));
 		builder.Services.Configure<FormOptions>(x => {
 			x.ValueLengthLimit = int.MaxValue;
 			x.MultipartBodyLengthLimit = int.MaxValue;
 			x.MultipartHeadersLengthLimit = int.MaxValue;
 		});
-		
+
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
 		builder.Services.AddSingleton<IHttpClientService, HttpClientService>();
 		builder.Services.AddSingleton<ILocalStorageService, UMemoryCacheService>();
@@ -83,7 +102,7 @@ public static class AspNetConfig {
 		app.UseUSwagger();
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
-		app.UseMiddleware<UMiddleware>();
+		// app.UseMiddleware<UMiddleware>();
 
 		app.MapAuthRoutes(RouteTags.Auth);
 		app.MapUserRoutes(RouteTags.User);
@@ -98,4 +117,36 @@ public static class AspNetConfig {
 		app.MapContractRoutes(RouteTags.Contract);
 		app.MapInvoiceRoutes(RouteTags.Invoice);
 	}
+
+	private static string CleanAndFormatSql(string sql) {
+		sql = MyRegex().Replace(sql, "");
+		sql = MyRegex1().Replace(sql, " ").Trim();
+		string formatted = sql
+			.Replace("SELECT ", "SELECT\n    ")
+			.Replace(" FROM ", "\nFROM ")
+			.Replace(" WHERE ", "\nWHERE ")
+			.Replace(" ORDER BY ", "\nORDER BY ")
+			.Replace(" LIMIT ", "\nLIMIT ")
+			.Replace(" OFFSET ", "\nOFFSET ")
+			.Replace(" INNER JOIN ", "\nINNER JOIN ")
+			.Replace(" LEFT JOIN ", "\nLEFT JOIN ")
+			.Replace(" ON ", "\n    ON ")
+			.Replace(" AS ", " AS ")
+			.Replace("),", "),\n    ")
+			.Replace(") AS ", ")\n    AS ");
+		formatted = MyRegex2().Replace(formatted, " ");
+
+		return formatted;
+	}
+
+    [GeneratedRegex(@"\[Parameters=.*?\]")]
+    private static partial Regex MyRegex();
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex MyRegex1();
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex MyRegex2();
+    [GeneratedRegex(@"\((\d+)ms\)")]
+    private static partial Regex MyRegex3();
+    [GeneratedRegex(@"SELECT.*", RegexOptions.Singleline)]
+    private static partial Regex MyRegex4();
 }
