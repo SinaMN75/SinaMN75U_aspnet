@@ -25,7 +25,7 @@ public class BaseReadParams<T> : BaseParams {
 	public int PageNumber { get; set; } = 1;
 	public DateTime? FromCreatedAt { get; set; }
 	public DateTime? ToCreatedAt { get; set; }
-	public bool OrderByCreatedAt { get; set; }
+	public bool OrderByCreatedAt { get; set; } = true;
 	public bool OrderByCreatedAtDesc { get; set; }
 	public bool OrderByUpdatedAt { get; set; }
 	public bool OrderByUpdatedAtDesc { get; set; }

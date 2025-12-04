@@ -101,6 +101,8 @@ public class UserService(
 
 		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
 		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
+		if (p.OrderByUpdatedAt) q = q.OrderBy(x => x.UpdatedAt);
+		if (p.OrderByUpdatedAtDesc) q = q.OrderByDescending(x => x.UpdatedAt);
 		if (p.OrderByLastName) q = q.OrderBy(x => x.LastName);
 		if (p.OrderByLastNameDesc) q = q.OrderByDescending(x => x.LastName);
 
