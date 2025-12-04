@@ -49,7 +49,7 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 
 	public ICollection<MediaEntity> Media { get; set; } = [];
 	
-	public UserResponse MapToResponse() => new() {
+	public new UserResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt,

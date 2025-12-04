@@ -4,7 +4,7 @@ namespace SinaMN75U.Data.Entities;
 public class ContentEntity : BaseEntity<TagContent, ContentJson> {
 	public ICollection<MediaEntity> Media { get; set; } = [];
 	
-	public ContentResponse MapToResponse() => new() {
+	public new ContentResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt,

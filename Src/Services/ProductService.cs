@@ -41,7 +41,7 @@ public class ProductService(
 
 		if (p.Children.IsNotNullOrEmpty()) await AddChildrenRecursively(p.Children, userData.Id, e.Id, categories, ct);
 
-		await AddMedia(e.Id, p.Media, ct);
+		await AddMedia(e.Id, p.Media ?? [], ct);
 
 		cache.DeleteAllByPartialKey(RouteTags.Product);
 		return new UResponse<ProductEntity?>(created.Entity);
@@ -232,7 +232,7 @@ public class ProductService(
 		
 		db.Set<ProductEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
-		await AddMedia(p.Id, p.Media, ct);
+		await AddMedia(p.Id, p.Media ?? [], ct);
 
 		cache.DeleteAllByPartialKey(RouteTags.Product);
 		cache.DeleteAllByPartialKey(RouteTags.Contract);
@@ -276,10 +276,10 @@ public class ProductService(
 		await db.SaveChangesAsync(ct);
 
 		foreach ((ProductEntity childEntity, ProductCreateParams childParams) in childEntities.Zip(children, (e, p) => (e, p))) {
-			await AddMedia(childEntity.Id, childParams.Media, ct);
+			await AddMedia(childEntity.Id, childParams.Media ?? [], ct);
 
 			if (childParams.Children.IsNotNullOrEmpty()) {
-				await AddChildrenRecursively(childParams.Children, userId, childEntity.Id, categories, ct);
+				await AddChildrenRecursively(childParams.Children ?? [], userId, childEntity.Id, categories, ct);
 			}
 		}
 	}

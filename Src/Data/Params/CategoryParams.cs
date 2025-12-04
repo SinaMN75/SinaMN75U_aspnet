@@ -23,7 +23,7 @@ public sealed class CategoryCreateParams : BaseParams {
 	public List<Guid>? RelatedProducts { get; set; }
 
 	public IEnumerable<CategoryCreateParams> Children { get; set; } = [];
-	public ICollection<Guid> Media { get; set; } = [];
+	public ICollection<Guid>? Media { get; set; }
 	
 	public CategoryEntity MapToEntity() => new() {
 		Id = Id ?? Guid.CreateVersion7(),
@@ -57,9 +57,9 @@ public sealed class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
 	public int? Order { get; set; }
 	public Guid? ParentId { get; set; }
 	public ICollection<Guid>? RelatedProducts { get; set; }
-	public ICollection<Guid>? AddRelatedProducts { get; set; }
-	public ICollection<Guid>? RemoveRelatedProducts { get; set; }
-	public ICollection<Guid> Media { get; set; } = [];
+	public IEnumerable<Guid>? AddRelatedProducts { get; set; }
+	public IEnumerable<Guid>? RemoveRelatedProducts { get; set; }
+	public ICollection<Guid>? Media { get; set; }
 
 	public double? ProductDeposit { get; set; }
 	public double? ProductRent { get; set; }

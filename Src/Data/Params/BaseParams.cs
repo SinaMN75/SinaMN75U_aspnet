@@ -29,16 +29,16 @@ public class BaseReadParams<T> : BaseParams {
 	public bool OrderByCreatedAtDesc { get; set; }
 	public bool OrderByUpdatedAt { get; set; }
 	public bool OrderByUpdatedAtDesc { get; set; }
-	public ICollection<T>? Tags { get; set; }
-	public ICollection<Guid> Ids { get; set; } = [];
+	public IEnumerable<T>? Tags { get; set; }
+	public IEnumerable<Guid> Ids { get; set; } = [];
 }
 
 public class BaseUpdateParams<T> : BaseParams {
 	[UValidationRequired("IdRequired")]
 	public required Guid Id { get; set; }
 
-	public ICollection<T>? AddTags { get; set; }
-	public ICollection<T>? RemoveTags { get; set; }
+	public IEnumerable<T>? AddTags { get; set; }
+	public IEnumerable<T>? RemoveTags { get; set; }
 	public ICollection<T>? Tags { get; set; }
 }
 

@@ -6,7 +6,7 @@ public class BaseResponse<T, TJ> where T : Enum where TJ : class {
 	public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 	public DateTime? DeletedAt { get; set; }
 	public required TJ JsonData { get; set; }
-	public required ICollection<T> Tags { get; set; }
+	public required IEnumerable<T> Tags { get; set; }
 }
 
 public class UResponse<T> : UResponse {

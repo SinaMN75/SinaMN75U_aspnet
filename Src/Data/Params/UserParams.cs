@@ -92,7 +92,7 @@ public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {
 	public List<string>? Sickness { get; set; }
 	public List<string>? Health1 { get; set; }
 	public List<string>? Health2 { get; set; }
-	public ICollection<Guid>? Categories { get; set; }
+	public IEnumerable<Guid>? Categories { get; set; }
 	
 	public void MapToEntity(UserEntity e, string? hashedPassword = null) {
 		if (hashedPassword != null) e.Password = hashedPassword;

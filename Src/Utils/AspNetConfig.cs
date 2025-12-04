@@ -1,16 +1,7 @@
-using LinqKit;
-using Microsoft.AspNetCore.ResponseCompression;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-
 namespace SinaMN75U.Utils;
 
 public static partial class AspNetConfig {
-	public static void AddUServices<T>(
-		this WebApplicationBuilder builder,
-		SqlDatabaseType sqlDatabaseType,
-		string sqlDatabaseConnectionStrings
-	) where T : DbContext {
+	public static void AddUServices<T>(this WebApplicationBuilder builder, string sqlDatabaseConnectionStrings) where T : DbContext {
 		Server.Configure(builder.Configuration);
 		builder.Services.Configure<KestrelServerOptions>(o => o.AllowSynchronousIO = false);
 		builder.Services.Configure<IISServerOptions>(o => o.AllowSynchronousIO = false);
@@ -28,37 +19,27 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<DbContext, T>();
 		builder.Services.AddDbContextPool<T>(b => {
 			b.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
-			switch (sqlDatabaseType) {
-				case SqlDatabaseType.Postgres:
-					b.UseNpgsql(builder.Configuration.GetConnectionString(sqlDatabaseConnectionStrings), o => {
-						AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-						o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-						o.EnableRetryOnFailure(5, TimeSpan.FromSeconds(30), null);
-					}).WithExpressionExpanding();
-					if (builder.Environment.IsDevelopment()) {
-						b.LogTo(message => {
-								if (message.Contains("Executed DbCommand")) {
-									Match timeMatch = MyRegex3().Match(message);
-									Match queryMatch = MyRegex4().Match(message);
+			b.UseNpgsql(builder.Configuration.GetConnectionString(sqlDatabaseConnectionStrings), o => {
+				AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+				o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+				o.EnableRetryOnFailure(5, TimeSpan.FromSeconds(30), null);
+			});
+			if (builder.Environment.IsDevelopment()) {
+				b.LogTo(message => {
+						if (message.Contains("Executed DbCommand")) {
+							Match timeMatch = MyRegex3().Match(message);
+							Match queryMatch = MyRegex4().Match(message);
 
-									if (timeMatch.Success && queryMatch.Success) {
-										string cleanSql = CleanAndFormatSql(queryMatch.Value);
-										Console.WriteLine($"{timeMatch.Groups[1].Value}ms:");
-										Console.WriteLine(cleanSql);
-										Console.WriteLine();
-									}
-								}
-							},
-							[DbLoggerCategory.Database.Command.Name],
-							LogLevel.Information);
-					}
-
-					break;
-				case SqlDatabaseType.SqlServer:
-					b.UseSqlServer(builder.Configuration.GetConnectionString(sqlDatabaseConnectionStrings));
-					break;
-				default:
-					throw new ArgumentOutOfRangeException(nameof(sqlDatabaseType), sqlDatabaseType, null);
+							if (timeMatch.Success && queryMatch.Success) {
+								string cleanSql = CleanAndFormatSql(queryMatch.Value);
+								Console.WriteLine($"{timeMatch.Groups[1].Value}ms:");
+								Console.WriteLine(cleanSql);
+								Console.WriteLine();
+							}
+						}
+					},
+					[DbLoggerCategory.Database.Command.Name],
+					LogLevel.Information);
 			}
 		});
 
@@ -140,14 +121,18 @@ public static partial class AspNetConfig {
 		return formatted;
 	}
 
-    [GeneratedRegex(@"\[Parameters=.*?\]")]
-    private static partial Regex MyRegex();
-    [GeneratedRegex(@"\s+")]
-    private static partial Regex MyRegex1();
-    [GeneratedRegex(@"\s+")]
-    private static partial Regex MyRegex2();
-    [GeneratedRegex(@"\((\d+)ms\)")]
-    private static partial Regex MyRegex3();
-    [GeneratedRegex(@"SELECT.*", RegexOptions.Singleline)]
-    private static partial Regex MyRegex4();
+	[GeneratedRegex(@"\[Parameters=.*?\]")]
+	private static partial Regex MyRegex();
+
+	[GeneratedRegex(@"\s+")]
+	private static partial Regex MyRegex1();
+
+	[GeneratedRegex(@"\s+")]
+	private static partial Regex MyRegex2();
+
+	[GeneratedRegex(@"\((\d+)ms\)")]
+	private static partial Regex MyRegex3();
+
+	[GeneratedRegex(@"SELECT.*", RegexOptions.Singleline)]
+	private static partial Regex MyRegex4();
 }

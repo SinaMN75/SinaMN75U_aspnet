@@ -15,5 +15,5 @@ public class ContractResponse : BaseResponse<TagContract, ContractJson> {
 	public ProductResponse? Product { get; set; }
 	public required Guid ProductId { get; set; }
 
-	public ICollection<InvoiceResponse>? Invoices { get; set; } = [];
+	public IEnumerable<InvoiceResponse>? Invoices { get; set; } = [];
 }

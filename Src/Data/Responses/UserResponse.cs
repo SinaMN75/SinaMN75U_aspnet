@@ -12,8 +12,8 @@ public class UserResponse : BaseResponse<TagUser, UserJson> {
 	public string? City { get; set; }
 	public DateTime? Birthdate { get; set; }
 	
-	public ICollection<CategoryResponse>? Categories { get; set; }
-	public ICollection<MediaResponse>? Media { get; set; }
+	public IEnumerable<CategoryResponse>? Categories { get; set; }
+	public IEnumerable<MediaResponse>? Media { get; set; }
 }
 
 public sealed class LoginResponse {

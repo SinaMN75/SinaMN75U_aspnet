@@ -57,7 +57,7 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	[NotMapped]
 	public int? ChildrenCount { get; set; }
 	
-	public ProductResponse MapToResponse() => new() {
+	public new ProductResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt,

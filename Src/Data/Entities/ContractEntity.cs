@@ -19,7 +19,7 @@ public class ContractEntity : BaseEntity<TagContract, ContractJson> {
 
 	public ICollection<InvoiceEntity> Invoices { get; set; } = [];
 	
-	public ContractResponse MapToResponse() => new() {
+	public new ContractResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt,

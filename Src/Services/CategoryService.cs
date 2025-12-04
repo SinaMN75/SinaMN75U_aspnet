@@ -37,7 +37,7 @@ public class CategoryService(
 		if (p.Children.IsNotNullOrEmpty()) await AddChildrenRecursively(p.Children, e.Id, ct);
 
 		await db.SaveChangesAsync(ct);
-		await AddMedia(e.Id, p.Media, ct);
+		await AddMedia(e.Id, p.Media ?? [], ct);
 
 		cache.DeleteAllByPartialKey(RouteTags.Category);
 		return new UResponse<CategoryResponse?>(e.MapToResponse());
@@ -150,7 +150,7 @@ public class CategoryService(
 
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
-		await AddMedia(e.Id, p.Media, ct);
+		await AddMedia(e.Id, p.Media ?? [], ct);
 
 		cache.DeleteAllByPartialKey(RouteTags.Category);
 		cache.DeleteAllByPartialKey(RouteTags.Product);

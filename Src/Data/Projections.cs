@@ -1,7 +1,5 @@
 namespace SinaMN75U.Data;
 
-using System.Linq.Expressions;
-
 public static class Projections {
 	public static Expression<Func<MediaEntity, MediaResponse>> MediaSelector() =>
 		x => new MediaResponse {
@@ -29,7 +27,7 @@ public static class Projections {
 		Birthdate = x.Birthdate
 	};
 
-	public static Expression<Func<UserEntity, UserResponse>> UserSelector( bool categories = false, bool media = false) => x => new UserResponse {
+	public static Expression<Func<UserEntity, UserResponse>> UserSelector(bool categories = false, bool media = false) => x => new UserResponse {
 		Id = x.Id,
 		CreatedAt = x.CreatedAt,
 		UpdatedAt = x.UpdatedAt,
@@ -75,7 +73,7 @@ public static class Projections {
 		UserId = x.UserId
 	};
 
-	public static Expression<Func<ProductEntity, ProductResponse>> ProductSelector( bool user = false, bool categories = false, bool children = false) => x => new ProductResponse {
+	public static Expression<Func<ProductEntity, ProductResponse>> ProductSelector(bool user = false, bool categories = false, bool children = false) => x => new ProductResponse {
 		Id = x.Id,
 		CreatedAt = x.CreatedAt,
 		UpdatedAt = x.UpdatedAt,
@@ -116,7 +114,7 @@ public static class Projections {
 		ParentId = x.ParentId
 	};
 
-	public static Expression<Func<CategoryEntity, CategoryResponse>> CategorySelector( bool media = false, bool parent = false, bool children = false) => x => new CategoryResponse {
+	public static Expression<Func<CategoryEntity, CategoryResponse>> CategorySelector(bool media = false, bool parent = false, bool children = false) => x => new CategoryResponse {
 		Id = x.Id,
 		CreatedAt = x.CreatedAt,
 		UpdatedAt = x.UpdatedAt,

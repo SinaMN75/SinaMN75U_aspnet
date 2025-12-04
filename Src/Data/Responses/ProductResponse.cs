@@ -22,9 +22,9 @@ public class ProductResponse : BaseResponse<TagProduct, ProductJson> {
 	public UserResponse? User { get; set; } = null!;
 	public Guid? UserId { get; set; }
 	
-	public ICollection<CategoryResponse>? Categories { get; set; }
-	public ICollection<ProductResponse>? Children { get; set; }
-	public ICollection<MediaResponse>? Media { get; set; }
+	public IEnumerable<CategoryResponse>? Categories { get; set; }
+	public IEnumerable<ProductResponse>? Children { get; set; }
+	public IEnumerable<MediaResponse>? Media { get; set; }
 
 	public int? CommentCount { get; set; }
 	public bool? IsFollowing { get; set; }
