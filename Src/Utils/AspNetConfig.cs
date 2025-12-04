@@ -1,3 +1,4 @@
+using LinqKit;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -33,7 +34,7 @@ public static partial class AspNetConfig {
 						AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 						o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
 						o.EnableRetryOnFailure(5, TimeSpan.FromSeconds(30), null);
-					});
+					}).WithExpressionExpanding();
 					if (builder.Environment.IsDevelopment()) {
 						b.LogTo(message => {
 								if (message.Contains("Executed DbCommand")) {
