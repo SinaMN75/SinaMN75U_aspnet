@@ -28,7 +28,7 @@ public static class Projections {
 		State = x.State,
 		City = x.City,
 		Birthdate = x.Birthdate,
-		Categories = categories ? x.Categories.AsQueryable().Select(CategorySelector()).ToList() : null,
+		Categories = categories ? x.Categories.AsQueryable().Select(CategoryMinSelector()).ToList() : null,
 		Media = media ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null
 	};
 
@@ -74,6 +74,24 @@ public static class Projections {
 		CreatedAt = x.CreatedAt,
 		UpdatedAt = x.UpdatedAt,
 		DeletedAt = x.DeletedAt,
+		Tags = x.Tags,
+		JsonData = x.JsonData,
+		Title = x.Title,
+		Order = x.Order,
+		Code = x.Code,
+		ParentId = x.ParentId,
+		Media = media ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null,
+		Parent = parent ? x.Parent!.MapToResponse() : null,
+		Children = children ? x.Children.AsQueryable().Select(CategorySelector(media: childrenMedia)).ToList() : null
+	};
+	
+	public static Expression<Func<CategoryEntity, CategoryResponse>> CategoryMinSelector(
+		bool media = false,
+		bool parent = false,
+		bool children = false,
+		bool childrenMedia = false
+	) => x => new CategoryResponse {
+		Id = x.Id,
 		Tags = x.Tags,
 		JsonData = x.JsonData,
 		Title = x.Title,
