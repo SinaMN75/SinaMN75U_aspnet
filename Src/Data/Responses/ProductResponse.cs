@@ -19,8 +19,11 @@ public class ProductResponse : BaseResponse<TagProduct, ProductJson> {
 	public ProductResponse? Parent { get; set; }
 	public Guid? ParentId { get; set; }
 
-	public UserResponse User { get; set; } = null!;
-	public Guid UserId { get; set; }
+	public UserResponse? User { get; set; } = null!;
+	public Guid? UserId { get; set; }
+	
+	public ICollection<CategoryResponse>? Categories { get; set; }
+	public ICollection<ProductResponse>? Children { get; set; }
 
 	public int? CommentCount { get; set; }
 	public bool? IsFollowing { get; set; }

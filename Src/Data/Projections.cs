@@ -5,7 +5,7 @@ public static class Projections {
 		m => new MediaResponse {
 			Tags = m.Tags,
 			JsonData = m.JsonData,
-			Path = m.Path,
+			Path = m.Path
 		};
 
 	public static readonly Expression<Func<UserEntity, UserResponse>> UserSelector =
@@ -26,6 +26,8 @@ public static class Projections {
 			State = x.State,
 			City = x.City,
 			Birthdate = x.Birthdate,
+			Categories = null,
+			Media = null,
 		};
 
 	public static readonly Expression<Func<ProductEntity, ProductResponse>> ProductSelector =
@@ -51,7 +53,10 @@ public static class Projections {
 			Point = x.Point,
 			Order = x.Order,
 			ParentId = x.ParentId,
-			UserId = x.UserId
+			UserId = x.UserId,
+			User = null,
+			Categories = null,
+			Children = null
 		};
 
 	public static Expression<Func<CategoryEntity, CategoryResponse>> CategorySelector =
@@ -66,23 +71,9 @@ public static class Projections {
 			Order = x.Order,
 			Code = x.Code,
 			ParentId = x.ParentId,
-			Media = x.Media.AsQueryable().Select(MediaSelector).ToList(),
-			Children = x.Children.AsQueryable()
-				.Select(c => new CategoryResponse {
-					Id = c.Id,
-					CreatedAt = c.CreatedAt,
-					UpdatedAt = c.UpdatedAt,
-					DeletedAt = c.DeletedAt,
-					Tags = c.Tags,
-					JsonData = c.JsonData,
-					Title = c.Title,
-					Order = c.Order,
-					Code = c.Code,
-					ParentId = c.ParentId,
-					Media = c.Media.AsQueryable().Select(MediaSelector).ToList(),
-					Children = new List<CategoryResponse>()
-				})
-				.ToList(),
+			Media = null,
+			Children = null,
+			Parent = null
 		};
 
 	public static Expression<Func<ContentEntity, ContentResponse>> ContentSelector =
@@ -93,12 +84,11 @@ public static class Projections {
 			DeletedAt = x.DeletedAt,
 			Tags = x.Tags,
 			JsonData = x.JsonData,
-			Media = x.Media.AsQueryable().Select(MediaSelector).ToList(),
+			Media = null,
 		};
 
 
-	public static Expression<Func<CommentEntity, CommentResponse>> CommentSelector(
-		CommentReadParams p) {
+	public static Expression<Func<CommentEntity, CommentResponse>> CommentSelector() {
 		return x => new CommentResponse {
 			Id = x.Id,
 			CreatedAt = x.CreatedAt,
@@ -112,23 +102,12 @@ public static class Projections {
 			ParentId = x.ParentId,
 			Score = x.Score,
 			Description = x.Description,
-			User = p.ShowUser
-				? UserSelector.Invoke(x.User)
-				: null,
-			TargetUser = p.ShowTargetUser && x.TargetUserId != null
-				? UserSelector.Invoke(x.TargetUser!)
-				: null,
-			Product = p.ShowProduct && x.ProductId != null
-				? ProductSelector.Invoke(x.Product!)
-				: null,
-			Media = p.ShowMedia
-				? x.Media.AsQueryable().Select(MediaSelector).ToList()
-				: null,
-			Children = p.ShowChildren
-				? x.Children.AsQueryable()
-					.Select(CommentSelector(p))
-					.ToList()
-				: null
+			User = null,
+			TargetUser = null,
+			Product = null,
+			Media = null,
+			Children = null,
+			Parent = null
 		};
 	}
 	
@@ -147,13 +126,10 @@ public static class Projections {
 			UserId = x.UserId,
 			CreatorId = x.CreatorId,
 			ProductId = x.ProductId,
-			User = UserSelector.Invoke(x.User),
-			Creator = UserSelector.Invoke(x.Creator),
-			Product = ProductSelector.Invoke(x.Product),
-			Invoices = x.Invoices.AsQueryable()
-				.Select(InvoiceSelector)
-				.ToList(),
-
+			User = null,
+			Creator = null,
+			Product = null,
+			Invoices = null,
 		};
 	
 	public static readonly Expression<Func<InvoiceEntity, InvoiceResponse>> InvoiceSelector =

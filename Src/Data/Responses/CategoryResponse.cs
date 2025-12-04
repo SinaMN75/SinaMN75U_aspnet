@@ -8,6 +8,6 @@ public sealed class CategoryResponse : BaseResponse<TagCategory, CategoryJson> {
 	public Guid? ParentId { get; set; }
 	public CategoryResponse? Parent { get; set; }
 
-	public ICollection<CategoryResponse> Children { get; set; } = [];
-	public ICollection<MediaResponse> Media { get; set; } = [];
+	public ICollection<CategoryResponse>? Children { get; set; }
+	public ICollection<MediaResponse>? Media { get; set; }
 }

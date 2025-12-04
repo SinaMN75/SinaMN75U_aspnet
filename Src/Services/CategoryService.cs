@@ -51,48 +51,6 @@ public class CategoryService(
 
 		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
 		if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
-
-		// IQueryable<CategoryResponse> projected = q.Select(x => new CategoryResponse {
-		// 	Id = x.Id,
-		// 	CreatedAt = x.CreatedAt,
-		// 	UpdatedAt = x.UpdatedAt,
-		// 	DeletedAt = x.DeletedAt,
-		// 	Tags = x.Tags,
-		// 	JsonData = x.JsonData,
-		// 	Title = x.Title,
-		// 	Order = x.Order,
-		// 	Code = x.Code,
-		// 	ParentId = x.ParentId,
-		// 	Media = p.ShowMedia
-		// 		? x.Media.Select(m => new MediaResponse {
-		// 			Tags = m.Tags,
-		// 			JsonData = m.JsonData,
-		// 			Path = m.Path
-		// 		}).ToList()
-		// 		: new List<MediaResponse>(),
-		// 	Children = p.ShowChildren
-		// 		? x.Children.Select(c => new CategoryResponse {
-		// 			Id = c.Id,
-		// 			CreatedAt = c.CreatedAt,
-		// 			UpdatedAt = c.UpdatedAt,
-		// 			DeletedAt = c.DeletedAt,
-		// 			Tags = c.Tags,
-		// 			JsonData = c.JsonData,
-		// 			Title = c.Title,
-		// 			Order = c.Order,
-		// 			Code = c.Code,
-		// 			ParentId = c.ParentId,
-		// 			Media = p.ShowChildrenMedia
-		// 				? c.Media.Select(m => new MediaResponse {
-		// 					Tags = m.Tags,
-		// 					JsonData = m.JsonData,
-		// 					Path = m.Path
-		// 				}).ToList()
-		// 				: new List<MediaResponse>(),
-		// 			Children = new List<CategoryResponse>()
-		// 		}).ToList()
-		// 		: new List<CategoryResponse>()
-		// });
 		
 		IQueryable<CategoryResponse> projected = q.Select(CategoryProjections.CategorySelector(p));
 
