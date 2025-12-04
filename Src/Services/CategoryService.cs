@@ -1,3 +1,5 @@
+using SinaMN75U.Data;
+
 namespace SinaMN75U.Services;
 
 public interface ICategoryService {
@@ -40,7 +42,7 @@ public class CategoryService(
 		cache.DeleteAllByPartialKey(RouteTags.Category);
 		return new UResponse<CategoryResponse?>(e.MapToResponse());
 	}
-	
+
 	public async Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct) {
 		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>()
 			.Where(x => x.ParentId == null)
@@ -51,8 +53,8 @@ public class CategoryService(
 
 		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
 		if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
-		
-		IQueryable<CategoryResponse> projected = q.Select(CategoryProjections.CategorySelector(p));
+
+		IQueryable<CategoryResponse> projected = q.Select(Projections.CategorySelector(media: p.ShowMedia, children: p.ShowChildren));
 
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
@@ -62,7 +64,7 @@ public class CategoryService(
 
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
-		
+
 		q = q
 			.Include(x => x.Children).ThenInclude(c => c.Media)
 			.Include(x => x.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Media)
@@ -109,7 +111,7 @@ public class CategoryService(
 
 		e.UpdatedAt = DateTime.UtcNow;
 		e = p.MapToEntity(e);
-		
+
 		if (p.ProductDeposit.IsNotNull()) {
 			await db.Set<ProductEntity>()
 				.Where(x => x.Categories.Any(c => c.Id == e.Id))
@@ -145,7 +147,7 @@ public class CategoryService(
 
 			cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		}
-		
+
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
 		await AddMedia(e.Id, p.Media, ct);
@@ -251,10 +253,10 @@ public class CategoryService(
 			Code = e.Code,
 			ParentId = e.ParentId,
 			Media = e.Media.Select(m => new MediaResponse {
-					Tags = m.Tags,
-					JsonData = m.JsonData,
-					Path = m.Path
-				}).ToList(),
+				Tags = m.Tags,
+				JsonData = m.JsonData,
+				Path = m.Path
+			}).ToList(),
 			Children = e.Children.Select(ToDtoDeep).ToList()
 		};
 	}

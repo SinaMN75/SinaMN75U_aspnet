@@ -1,4 +1,6 @@
-﻿namespace SinaMN75U.Services;
+﻿using SinaMN75U.Data;
+
+namespace SinaMN75U.Services;
 
 public interface IInvoiceService {
 	Task<UResponse<InvoiceEntity?>> Create(InvoiceCreateParams p, CancellationToken ct);
@@ -46,48 +48,49 @@ public class InvoiceService(
 		if (p.UserId.HasValue()) q = q.Where(x => x.UserId == p.UserId);
 		if (p.FromCreatedAt.HasValue) q = q.Where(x => x.CreatedAt >= p.FromCreatedAt);
 		if (p.ToCreatedAt.HasValue) q = q.Where(x => x.CreatedAt <= p.ToCreatedAt);
-		
-		IQueryable<InvoiceResponse> projected = q.Select(i => new InvoiceResponse {
-			Id = i.Id,
-			CreatedAt = i.CreatedAt,
-			UpdatedAt = i.UpdatedAt,
-			DeletedAt = i.DeletedAt,
-			JsonData = i.JsonData,
-			Tags = i.Tags,
-			DebtAmount = i.DebtAmount,
-			CreditorAmount = i.CreditorAmount,
-			PaidAmount = i.PaidAmount,
-			PenaltyAmount = i.PenaltyAmount,
-			PaidDate = i.PaidDate,
-			DueDate = i.DueDate,
-			TrackingNumber = i.TrackingNumber,
-			User = p.ShowUser
-				? new UserResponse {
-					Id = i.User.Id,
-					UserName = i.User.UserName,
-					PhoneNumber = i.User.PhoneNumber,
-					FirstName = i.User.FirstName,
-					LastName = i.User.LastName,
-					JsonData = i.User.JsonData,
-					Tags = i.User.Tags,
-				}
-				: null,
-			Contract = p.ShowContract
-				? new ContractResponse {
-					Id = i.Contract.Id,
-					StartDate = i.Contract.StartDate,
-					EndDate = i.Contract.EndDate,
-					Deposit = i.Contract.Deposit,
-					Rent = i.Contract.Rent,
-					UserId = i.Contract.UserId,
-					CreatorId = i.Contract.CreatorId,
-					ProductId = i.Contract.ProductId,
-					JsonData = i.Contract.JsonData,
-					Tags = i.Contract.Tags
-				}
-				: null
-		});
 
+		// IQueryable<InvoiceResponse> projected = q.Select(i => new InvoiceResponse {
+		// 	Id = i.Id,
+		// 	CreatedAt = i.CreatedAt,
+		// 	UpdatedAt = i.UpdatedAt,
+		// 	DeletedAt = i.DeletedAt,
+		// 	JsonData = i.JsonData,
+		// 	Tags = i.Tags,
+		// 	DebtAmount = i.DebtAmount,
+		// 	CreditorAmount = i.CreditorAmount,
+		// 	PaidAmount = i.PaidAmount,
+		// 	PenaltyAmount = i.PenaltyAmount,
+		// 	PaidDate = i.PaidDate,
+		// 	DueDate = i.DueDate,
+		// 	TrackingNumber = i.TrackingNumber,
+		// 	User = p.ShowUser
+		// 		? new UserResponse {
+		// 			Id = i.User.Id,
+		// 			UserName = i.User.UserName,
+		// 			PhoneNumber = i.User.PhoneNumber,
+		// 			FirstName = i.User.FirstName,
+		// 			LastName = i.User.LastName,
+		// 			JsonData = i.User.JsonData,
+		// 			Tags = i.User.Tags,
+		// 		}
+		// 		: null,
+		// 	Contract = p.ShowContract
+		// 		? new ContractResponse {
+		// 			Id = i.Contract.Id,
+		// 			StartDate = i.Contract.StartDate,
+		// 			EndDate = i.Contract.EndDate,
+		// 			Deposit = i.Contract.Deposit,
+		// 			Rent = i.Contract.Rent,
+		// 			UserId = i.Contract.UserId,
+		// 			CreatorId = i.Contract.CreatorId,
+		// 			ProductId = i.Contract.ProductId,
+		// 			JsonData = i.Contract.JsonData,
+		// 			Tags = i.Contract.Tags
+		// 		}
+		// 		: null
+		// });
+
+		IQueryable<InvoiceResponse> projected = q.Select(Projections.InvoiceSelector(user: p.ShowUser, contracts: p.ShowContract));
 		UResponse<IEnumerable<InvoiceResponse>?> response = await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 
 		foreach (InvoiceResponse dto in response.Result!) {
