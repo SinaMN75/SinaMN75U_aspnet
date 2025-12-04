@@ -84,7 +84,7 @@ public static partial class AspNetConfig {
 		app.UseUSwagger();
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
-		// app.UseMiddleware<UMiddleware>();
+		app.UseMiddleware<UMiddleware>();
 
 		app.MapAuthRoutes(RouteTags.Auth);
 		app.MapUserRoutes(RouteTags.User);
