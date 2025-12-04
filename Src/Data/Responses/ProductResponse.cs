@@ -24,6 +24,7 @@ public class ProductResponse : BaseResponse<TagProduct, ProductJson> {
 	
 	public ICollection<CategoryResponse>? Categories { get; set; }
 	public ICollection<ProductResponse>? Children { get; set; }
+	public ICollection<MediaResponse>? Media { get; set; }
 
 	public int? CommentCount { get; set; }
 	public bool? IsFollowing { get; set; }
