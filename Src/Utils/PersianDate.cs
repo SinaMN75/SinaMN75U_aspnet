@@ -538,7 +538,7 @@ public static class PersianDateTimeExtensions {
 }
 
 public static class PersianDate {
-	private static readonly PersianCalendar Pc = new PersianCalendar();
+	private static readonly PersianCalendar Pc = new();
 
 	public static string ToJalaliString(DateTime dt) {
 		return $"{Pc.GetYear(dt):0000}/{Pc.GetMonth(dt):00}/{Pc.GetDayOfMonth(dt):00}";

@@ -54,7 +54,7 @@ public class CategoryService(
 		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
 		if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
 
-		IQueryable<CategoryResponse> projected = q.Select(Projections.CategorySelector(media: p.ShowMedia, children: p.ShowChildren));
+		IQueryable<CategoryResponse> projected = q.Select(Projections.CategorySelector(media: p.ShowMedia, children: p.ShowChildren, parent: false));
 
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}

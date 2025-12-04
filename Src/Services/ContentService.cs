@@ -1,9 +1,11 @@
-﻿namespace SinaMN75U.Services;
+﻿using SinaMN75U.Data;
+
+namespace SinaMN75U.Services;
 
 public interface IContentService {
-	Task<UResponse<ContentEntity?>> Create(ContentCreateParams p, CancellationToken ct);
-	Task<UResponse<IEnumerable<ContentEntity>?>> Read(ContentReadParams p, CancellationToken ct);
-	Task<UResponse<ContentEntity?>> Update(ContentUpdateParams p, CancellationToken ct);
+	Task<UResponse<ContentResponse?>> Create(ContentCreateParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<ContentResponse>?>> Read(ContentReadParams p, CancellationToken ct);
+	Task<UResponse<ContentResponse?>> Update(ContentUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 }
 
@@ -13,36 +15,25 @@ public class ContentService(
 	ITokenService ts,
 	ILocalStorageService cache
 	) : IContentService {
-	public async Task<UResponse<ContentEntity?>> Create(ContentCreateParams p, CancellationToken ct) {
+	public async Task<UResponse<ContentResponse?>> Create(ContentCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ContentEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse<ContentResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
-		EntityEntry<ContentEntity> e = await db.AddAsync(new ContentEntity {
-			Tags = p.Tags,
-			JsonData = new ContentJson {
-				Description = p.Description,
-				Title = p.Title,
-				SubTitle = p.SubTitle,
-				Instagram = p.Instagram,
-				Phone = p.Phone,
-				Telegram = p.Telegram,
-				Whatsapp = p.Whatsapp
-			}
-		}, ct);
+		EntityEntry<ContentEntity> e = await db.AddAsync(p.MapToEntity(), ct);
 		
 		cache.DeleteAllByPartialKey(RouteTags.Content);
 		await db.SaveChangesAsync(ct);
-		return new UResponse<ContentEntity?>(e.Entity);
+		return new UResponse<ContentResponse?>(e.Entity.MapToResponse());
 	}
 
-	public async Task<UResponse<IEnumerable<ContentEntity>?>> Read(ContentReadParams p, CancellationToken ct) {
-		IQueryable<ContentEntity> q = db.Set<ContentEntity>().Include(x => x.Media);
+	public async Task<UResponse<IEnumerable<ContentResponse>?>> Read(ContentReadParams p, CancellationToken ct) {
+		IQueryable<ContentResponse> q = db.Set<ContentEntity>().Select(Projections.ContentSelector(media:p.ShowMedia));
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
-	public async Task<UResponse<ContentEntity?>> Update(ContentUpdateParams p, CancellationToken ct) {
+	public async Task<UResponse<ContentResponse?>> Update(ContentUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ContentEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse<ContentResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
 		ContentEntity e = (await db.Set<ContentEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
 		e.UpdatedAt = DateTime.UtcNow;
@@ -61,7 +52,7 @@ public class ContentService(
 		await db.SaveChangesAsync(ct);
 		
 		cache.DeleteAllByPartialKey(RouteTags.Content);
-		return new UResponse<ContentEntity?>(e);
+		return new UResponse<ContentResponse?>(e.MapToResponse());
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {

@@ -25,7 +25,7 @@ public sealed class UMemoryCacheService : ILocalStorageService {
 
 		_keys = new ConcurrentDictionary<string, byte>();
 
-		DefaultObjectPoolProvider provider = new DefaultObjectPoolProvider();
+		DefaultObjectPoolProvider provider = new();
 		_optionsPool = provider.Create<MemoryCacheEntryOptions>();
 	}
 
