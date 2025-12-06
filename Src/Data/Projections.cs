@@ -20,6 +20,7 @@ public sealed class ProductSelectorArgs {
 	public bool ShowMedia { get; set; }
 	public bool ShowUser { get; set; }
 	public bool ShowChildren { get; set; }
+	public bool ShowCommentsCount { get; set; }
 }
 
 public static class Projections {
@@ -77,7 +78,8 @@ public static class Projections {
 		User = args.ShowUser ? x.User.MapToResponse() : null,
 		Categories = args.ShowCategories ? x.Categories.AsQueryable().Select(CategorySelector()).ToList() : null,
 		Children = args.ShowChildren ? x.Children.AsQueryable().Select(ProductSelector(args.ChildrenSelectorArgs ?? new ProductSelectorArgs())).ToList() : null,
-		Media = args.ShowMedia ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null
+		Media = args.ShowMedia ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null,
+		CommentCount = args.ShowCommentsCount ? x.Comments.Count : null,
 	};
 
 	public static Expression<Func<CategoryEntity, CategoryResponse>> CategorySelector(

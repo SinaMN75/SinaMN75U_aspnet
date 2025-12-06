@@ -119,13 +119,13 @@ public class ProductService(
 			foreach (VisitCount visit in i.JsonData.VisitCounts) i.VisitCount += visit.Count;
 		}
 
-		if (p.ShowCommentCount)
-			foreach (ProductResponse i in list.Result ?? []) {
-				UResponse<int> commentCount = await commentService.ReadProductCommentCount(new IdParams {
-					Id = i.Id
-				}, ct);
-				i.CommentCount = commentCount.Result;
-			}
+		// if (p.ShowCommentCount)
+		// 	foreach (ProductResponse i in list.Result ?? []) {
+		// 		UResponse<int> commentCount = await commentService.ReadProductCommentCount(new IdParams {
+		// 			Id = i.Id
+		// 		}, ct);
+		// 		i.CommentCount = commentCount.Result;
+		// 	}
 
 		if (p.ShowChildrenCount)
 			foreach (ProductResponse i in list.Result ?? []) {

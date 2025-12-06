@@ -44,6 +44,7 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 
 	public ICollection<MediaEntity> Media { get; set; } = [];
 	public ICollection<CategoryEntity> Categories { get; set; } = [];
+	public ICollection<CommentEntity> Comments { get; set; } = [];
 
 	[NotMapped]
 	public int? CommentCount { get; set; }
