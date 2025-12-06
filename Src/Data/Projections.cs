@@ -32,7 +32,6 @@ public sealed class ProductSelectorArgs {
 }
 
 public sealed class ContractSelectorArgs {
-	public InvoiceSelectorArgs InvoiceSelectorArgs { get; set; } = new();
 	public bool ShowInvoices { get; set; }
 	public bool ShowProduct { get; set; }
 	public bool ShowUser { get; set; }
@@ -40,7 +39,9 @@ public sealed class ContractSelectorArgs {
 }
 
 public sealed class InvoiceSelectorArgs {
+	public UserSelectorArgs UserSelectorArgs { get; set; } = new();
 	public bool ShowUser { get; set; }
+	public bool ShowCreator { get; set; }
 	public bool ShowContract { get; set; }
 }
 
@@ -63,9 +64,6 @@ public static class Projections {
 
 	public static Expression<Func<UserEntity, UserResponse>> UserSelector(UserSelectorArgs args) => x => new UserResponse {
 		Id = x.Id,
-		CreatedAt = x.CreatedAt,
-		UpdatedAt = x.UpdatedAt,
-		DeletedAt = x.DeletedAt,
 		Tags = x.Tags,
 		JsonData = x.JsonData,
 		UserName = x.UserName,
@@ -84,9 +82,6 @@ public static class Projections {
 
 	public static Expression<Func<ProductEntity, ProductResponse>> ProductSelector(ProductSelectorArgs args) => x => new ProductResponse {
 		Id = x.Id,
-		CreatedAt = x.CreatedAt,
-		UpdatedAt = x.UpdatedAt,
-		DeletedAt = x.DeletedAt,
 		Tags = x.Tags,
 		JsonData = x.JsonData,
 		Title = x.Title,
@@ -105,20 +100,30 @@ public static class Projections {
 		Order = x.Order,
 		ParentId = x.ParentId,
 		UserId = x.UserId,
-		User = args.ShowUser ? x.User.MapToResponse() : null,
 		Categories = args.ShowCategories ? x.Categories.AsQueryable().Select(CategorySelector(args.CategorySelectorArgs)).ToList() : null,
 		Children = args.ShowChildren ? x.Children.AsQueryable().Select(ProductSelector(args.ChildrenSelectorArgs ?? new ProductSelectorArgs())).ToList() : null,
 		Media = args.ShowMedia ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null,
 		CommentCount = args.ShowCommentsCount ? x.Comments.Count : null,
 		ChildrenCount = args.ShowChildrenCount ? x.Children.Count : null,
 		IsFollowing = args.ShowIsFollowing && args.UserData != null ? x.Followers.Any(f => f.UserId == args.UserData.Id) : null,
+		User = args.ShowUser
+			? new UserResponse {
+				Id = x.User.Id,
+				JsonData = x.User.JsonData,
+				Tags = x.User.Tags,
+				UserName = x.User.UserName,
+				PhoneNumber = x.User.PhoneNumber,
+				Email = x.User.Email,
+				FirstName = x.User.FirstName,
+				LastName = x.User.LastName,
+				Categories = args.UserSelectorArgs.ShowCategories ? x.User.Categories.AsQueryable().Select(CategoryMinSelector(args.UserSelectorArgs.CategorySelectorArgs)).ToList() : null,
+				Media = args.UserSelectorArgs.ShowMedia ? x.User.Media.AsQueryable().Select(MediaSelector()).ToList() : null
+			}
+			: null
 	};
 
 	public static Expression<Func<CategoryEntity, CategoryResponse>> CategorySelector(CategorySelectorArgs arg) => x => new CategoryResponse {
 		Id = x.Id,
-		CreatedAt = x.CreatedAt,
-		UpdatedAt = x.UpdatedAt,
-		DeletedAt = x.DeletedAt,
 		Tags = x.Tags,
 		JsonData = x.JsonData,
 		Title = x.Title,
@@ -141,9 +146,6 @@ public static class Projections {
 
 	public static Expression<Func<ContentEntity, ContentResponse>> ContentSelector(ContentSelectorArgs args) => x => new ContentResponse {
 		Id = x.Id,
-		CreatedAt = x.CreatedAt,
-		UpdatedAt = x.UpdatedAt,
-		DeletedAt = x.DeletedAt,
 		Tags = x.Tags,
 		JsonData = x.JsonData,
 		Media = args.ShowMedia ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null
@@ -151,9 +153,6 @@ public static class Projections {
 
 	public static Expression<Func<CommentEntity, CommentResponse>> CommentSelector(CommentSelectorArgs args) => x => new CommentResponse {
 		Id = x.Id,
-		CreatedAt = x.CreatedAt,
-		UpdatedAt = x.UpdatedAt,
-		DeletedAt = x.DeletedAt,
 		Tags = x.Tags,
 		JsonData = x.JsonData,
 		UserId = x.UserId,
@@ -171,9 +170,6 @@ public static class Projections {
 
 	public static Expression<Func<ContractEntity, ContractResponse>> ContractSelector(ContractSelectorArgs args) => x => new ContractResponse {
 		Id = x.Id,
-		CreatedAt = x.CreatedAt,
-		UpdatedAt = x.UpdatedAt,
-		DeletedAt = x.DeletedAt,
 		Tags = x.Tags,
 		JsonData = x.JsonData,
 		StartDate = x.StartDate,
@@ -186,14 +182,11 @@ public static class Projections {
 		User = args.ShowUser ? x.User.MapToResponse() : null,
 		Creator = args.ShowCreator ? x.Creator.MapToResponse() : null,
 		Product = args.ShowProduct ? x.Product.MapToResponse() : null,
-		Invoices = args.ShowInvoices ? x.Invoices.AsQueryable().Select(InvoiceSelector(args.InvoiceSelectorArgs)).ToList() : null
+		Invoices = args.ShowInvoices ? x.Invoices.AsQueryable().Select(InvoiceSelector(new InvoiceSelectorArgs())).ToList() : null
 	};
 
 	public static Expression<Func<InvoiceEntity, InvoiceResponse>> InvoiceSelector(InvoiceSelectorArgs args) => x => new InvoiceResponse {
 		Id = x.Id,
-		CreatedAt = x.CreatedAt,
-		UpdatedAt = x.UpdatedAt,
-		DeletedAt = x.DeletedAt,
 		Tags = x.Tags,
 		JsonData = x.JsonData,
 		DebtAmount = x.DebtAmount,
@@ -203,7 +196,33 @@ public static class Projections {
 		DueDate = x.DueDate,
 		PaidDate = x.PaidDate,
 		TrackingNumber = x.TrackingNumber,
-		User = args.ShowUser ? x.User.MapToResponse() : null,
-		Contract = args.ShowContract ? x.Contract.MapToResponse() : null
+		User = args.ShowUser
+			? new UserResponse {
+				Id = x.User.Id,
+				JsonData = x.User.JsonData,
+				Tags = x.User.Tags,
+				UserName = x.User.UserName,
+				PhoneNumber = x.User.PhoneNumber,
+				Email = x.User.Email,
+				FirstName = x.User.FirstName,
+				LastName = x.User.LastName,
+				Categories = args.UserSelectorArgs.ShowCategories ? x.User.Categories.AsQueryable().Select(CategoryMinSelector(args.UserSelectorArgs.CategorySelectorArgs)).ToList() : null,
+				Media = args.UserSelectorArgs.ShowMedia ? x.User.Media.AsQueryable().Select(MediaSelector()).ToList() : null
+			}
+			: null,
+		Contract = args.ShowContract
+			? new ContractResponse {
+				Id = x.Contract.Id,
+				JsonData = x.Contract.JsonData,
+				Tags = x.Contract.Tags,
+				StartDate = x.Contract.StartDate,
+				EndDate = x.Contract.EndDate,
+				Deposit = x.Contract.Deposit,
+				Rent = x.Contract.Rent,
+				UserId = x.Contract.UserId,
+				CreatorId = x.Contract.CreatorId,
+				ProductId = x.Contract.ProductId,
+			}
+			: null
 	};
 }
