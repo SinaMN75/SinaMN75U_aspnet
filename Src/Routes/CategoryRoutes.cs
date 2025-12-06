@@ -14,11 +14,11 @@ public static class CategoryRoutes {
 			return (await s.BulkCreate(p, c)).ToResult();
 		}).Produces<UResponse<CategoryEntity>>();
 
-		r.MapPost("Read", async (CategoryReadParams p, ICategoryService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Cache(1).Produces<UResponse<IEnumerable<CategoryEntity>>>();
+		r.MapPost("Read", async (CategoryReadParams p, ICategoryService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Cache(10).Produces<UResponse<IEnumerable<CategoryEntity>>>();
 
-		r.MapPost("ReadDept", async (CategoryReadParams p, ICategoryService s, CancellationToken c) => (await s.ReadDept(p, c)).ToResult()).Cache(1).Produces<UResponse<IEnumerable<CategoryEntity>>>();
+		r.MapPost("ReadDept", async (CategoryReadParams p, ICategoryService s, CancellationToken c) => (await s.ReadDept(p, c)).ToResult()).Cache(10).Produces<UResponse<IEnumerable<CategoryEntity>>>();
 		
-		r.MapPost("ReadById", async (IdParams p, ICategoryService s, CancellationToken c) => (await s.ReadById(p, c)).ToResult()).Cache(1).Produces<UResponse<CategoryEntity>>();
+		r.MapPost("ReadById", async (IdParams p, ICategoryService s, CancellationToken c) => (await s.ReadById(p, c)).ToResult()).Cache(10).Produces<UResponse<CategoryEntity>>();
 
 		r.MapPost("Update", async (CategoryUpdateParams p, ICategoryService s, ILocalStorageService ls, CancellationToken c) => {
 			ls.DeleteAllByPartialKey(tag);

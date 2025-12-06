@@ -45,7 +45,6 @@ public class ProductService(
 		return new UResponse<ProductEntity?>(e);
 	}
 
-
 	public async Task<UResponse<IEnumerable<ProductEntity>?>> Read(ProductReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 
@@ -169,7 +168,6 @@ public class ProductService(
 		if (p.Code.IsNotNull()) e.Code = p.Code;
 		if (p.Subtitle.IsNotNull()) e.Subtitle = p.Subtitle;
 		if (p.Description.IsNotNull()) e.Description = p.Description;
-		if (p.Slug.IsNotNull()) e.Slug = p.Slug;
 		if (p.Type.IsNotNull()) e.Type = p.Type;
 		if (p.Content.IsNotNull()) e.Content = p.Content;
 		if (p.Latitude.IsNotNull()) e.Latitude = p.Latitude;
@@ -203,6 +201,21 @@ public class ProductService(
 		if (p.Categories.IsNotNull()) {
 			if (p.Categories.Count == 0) e.Categories = [];
 			else e.Categories = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct) ?? [];
+		}
+		
+		if (p.Slug.IsNotNullOrEmpty() && p.Slug != e.Slug) {
+			IQueryable<CategoryEntity> categories = db.Set<CategoryEntity>().Where(x => x.JsonData.RelatedProducts.Contains(e.Slug ?? "")).AsTracking();
+			foreach (CategoryEntity categoryEntity in categories) {
+				categoryEntity.JsonData.RelatedProducts = [p.Slug];
+				db.Set<CategoryEntity>().Update(categoryEntity);
+			}
+			IQueryable<ProductEntity> products = db.Set<ProductEntity>().Where(x => x.JsonData.ActionUri == e.Slug).AsTracking();
+			foreach (ProductEntity productEntity in products) {
+				productEntity.JsonData.ActionUri = p.Slug;
+				db.Set<ProductEntity>().Update(productEntity);
+			}
+
+			e.Slug = p.Slug;
 		}
 
 		db.Set<ProductEntity>().Update(e);

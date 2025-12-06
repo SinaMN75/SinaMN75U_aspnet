@@ -14,7 +14,7 @@ public sealed class CacheResponseFilter(ILocalStorageService cache, int minutes)
 		object? result = await next(context);
 
 		if (result is IResult originalResult && httpContext.Response.StatusCode == StatusCodes.Status200OK)
-			return new ModifiedResult(originalResult, cacheKey, cache, TimeSpan.FromMinutes(minutes));
+			return new ModifiedResult(originalResult, cacheKey, cache, TimeSpan.FromSeconds(minutes));
 
 		return result;
 	}

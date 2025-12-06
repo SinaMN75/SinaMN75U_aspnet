@@ -32,5 +32,5 @@ public class CategoryJson {
 	public string? Type { get; set; }
 	public string? Address { get; set; }
 	public string? PhoneNumber { get; set; }
-	public ICollection<Guid> RelatedProducts { get; set; } = [];
+	public ICollection<string> RelatedProducts { get; set; } = [];
 }

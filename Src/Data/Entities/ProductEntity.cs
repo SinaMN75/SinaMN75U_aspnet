@@ -68,7 +68,7 @@ public class ProductJson {
 	public string? Address { get; set; }
 	public ICollection<VisitCount> VisitCounts { get; set; } = [];
 	public ICollection<PointCount> PointCounts { get; set; } = [];
-	public ICollection<Guid> RelatedProducts { get; set; } = [];
+	public ICollection<string> RelatedProducts { get; set; } = [];
 }
 
 public class PointCount {
