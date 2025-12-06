@@ -27,7 +27,7 @@ public class ContentService(
 	}
 
 	public async Task<UResponse<IEnumerable<ContentResponse>?>> Read(ContentReadParams p, CancellationToken ct) {
-		IQueryable<ContentResponse> q = db.Set<ContentEntity>().Select(Projections.ContentSelector(media:p.ShowMedia));
+		IQueryable<ContentResponse> q = db.Set<ContentEntity>().Select(Projections.ContentSelector(new ContentSelectorArgs {ShowMedia = true}));
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 

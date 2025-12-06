@@ -37,11 +37,13 @@ public class CommentService(
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
 
 		IQueryable<CommentResponse> list = q.Select(Projections.CommentSelector(
-				user: p.ShowUser,
-				targetUser: p.ShowTargetUser,
-				product: p.ShowProduct,
-				media: p.ShowMedia,
-				children: p.ShowChildren
+				new CommentSelectorArgs {
+					ShowMedia = p.ShowMedia,
+					ShowUser = p.ShowUser,
+					ShowTargetUser = p.ShowTargetUser,
+					ShowProduct = p.ShowProduct,
+					ShowChildren = p.ShowChildren
+				}
 			)
 		);
 
@@ -51,7 +53,15 @@ public class CommentService(
 
 	public async Task<UResponse<CommentResponse?>> ReadById(IdParams p, CancellationToken ct) {
 		CommentResponse? e = await db.Set<CommentEntity>()
-			.Select(Projections.CommentSelector( user: true, targetUser: true, product: true, media: true, children: true))
+			.Select(Projections.CommentSelector(new CommentSelectorArgs {
+						ShowMedia = true,
+						ShowUser = true,
+						ShowTargetUser = true,
+						ShowProduct = true,
+						ShowChildren = true
+					}
+				)
+			)
 			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<CommentResponse?>(null, Usc.NotFound, ls.Get("CommentNotFound")) : new UResponse<CommentResponse?>(e);
 	}

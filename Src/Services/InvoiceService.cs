@@ -48,13 +48,16 @@ public class InvoiceService(
 		if (p.UserId.HasValue()) q = q.Where(x => x.UserId == p.UserId);
 		if (p.FromCreatedAt.HasValue) q = q.Where(x => x.CreatedAt >= p.FromCreatedAt);
 		if (p.ToCreatedAt.HasValue) q = q.Where(x => x.CreatedAt <= p.ToCreatedAt);
-		
+
 		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
 		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
 		if (p.OrderByUpdatedAt) q = q.OrderBy(x => x.UpdatedAt);
 		if (p.OrderByUpdatedAtDesc) q = q.OrderByDescending(x => x.UpdatedAt);
 
-		IQueryable<InvoiceResponse> projected = q.Select(Projections.InvoiceSelector(user: p.ShowUser, contracts: p.ShowContract));
+		IQueryable<InvoiceResponse> projected = q.Select(Projections.InvoiceSelector(new InvoiceSelectorArgs {
+			ShowUser = p.ShowUser,
+			ShowContract = p.ShowContract
+		}));
 		UResponse<IEnumerable<InvoiceResponse>?> response = await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 
 		foreach (InvoiceResponse dto in response.Result!) {
