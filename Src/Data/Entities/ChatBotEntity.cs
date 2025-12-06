@@ -12,7 +12,7 @@ public class ChatBotEntity: BaseEntity<TagChatBot, ChatBotJsonData> {
 		DeletedAt = DeletedAt,
 		JsonData = JsonData,
 		Tags = Tags,
-		User = User.MapToResponse(),
+		// User = User.MapToResponse(),
 		UserId = UserId
 	};
 }
