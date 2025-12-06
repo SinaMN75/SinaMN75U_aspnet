@@ -1,17 +1,14 @@
-﻿using SinaMN75U.Data;
-
-namespace SinaMN75U.Services;
+﻿namespace SinaMN75U.Services;
 
 public interface IChatBotService {
 	Task<UResponse<ChatBotResponse?>> Create(ChatBotCreateParams p, CancellationToken ct);
-	Task<UResponse<IEnumerable<ChatBotResponse>?>> Read(ChatBotReadParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<ChatBotEntity>?>> Read(ChatBotReadParams p, CancellationToken ct);
 }
 
 public class ChatBotService(
 	DbContext db,
 	ILocalizationService ls,
 	ITokenService ts,
-	ILocalStorageService cache,
 	IHttpClientService http
 ) : IChatBotService {
 	public async Task<UResponse<ChatBotResponse?>> Create(ChatBotCreateParams p, CancellationToken ct) {
@@ -62,8 +59,8 @@ public class ChatBotService(
 		}
 	}
 
-	public async Task<UResponse<IEnumerable<ChatBotResponse>?>> Read(ChatBotReadParams p, CancellationToken ct) {
-		IQueryable<ChatBotResponse> q = db.Set<ChatBotResponse>().Where(x => x.UserId == p.UserId);
+	public async Task<UResponse<IEnumerable<ChatBotEntity>?>> Read(ChatBotReadParams p, CancellationToken ct) {
+		IQueryable<ChatBotEntity> q = db.Set<ChatBotEntity>().Where(x => x.UserId == p.UserId);
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 }
