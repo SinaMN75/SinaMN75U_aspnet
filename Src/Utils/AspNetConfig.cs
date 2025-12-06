@@ -98,6 +98,7 @@ public static partial class AspNetConfig {
 		app.MapDashboardRoutes(RouteTags.Dashboard);
 		app.MapContractRoutes(RouteTags.Contract);
 		app.MapInvoiceRoutes(RouteTags.Invoice);
+		app.MapChatBotRoutes(RouteTags.ChatBot);
 	}
 
 	private static string CleanAndFormatSql(string sql) {
