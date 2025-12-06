@@ -51,7 +51,6 @@ public class ProductService(
 
 	public async Task<UResponse<IEnumerable<ProductResponse>?>> Read(ProductReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-
 		IQueryable<ProductEntity> q = db.Set<ProductEntity>().Where(x => x.ParentId == null);
 
 		if (p.Query.HasValue()) q = q.Where(x => x.Title.Contains(p.Query!) || (x.Description ?? "").Contains(p.Query!) || (x.Subtitle ?? "").Contains(p.Query!));
@@ -66,13 +65,10 @@ public class ProductService(
 		if (p.MaxStock.IsNotNull()) q = q.Where(x => x.Stock <= p.MaxStock);
 		if (p.MaxRent.IsNotNull()) q = q.Where(x => x.Deposit >= p.MaxRent);
 		if (p.MinDeposit.IsNotNull()) q = q.Where(x => x.Deposit <= p.MinDeposit);
-
 		if (p.Categories.IsNotNullOrEmpty()) q = q.Where(x => x.Categories.Any(y => p.Categories.Contains(y.Id)));
 
-		
 		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
 		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
-
 		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
 		if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
 
@@ -134,7 +130,7 @@ public class ProductService(
 		if (p.ShowChildrenCount)
 			foreach (ProductResponse i in list.Result ?? []) {
 				if (p.ShowChildren)
-					i.ChildrenCount = i.Children!.Count();
+					i.ChildrenCount = i.Children?.Count();
 				else
 					i.ChildrenCount = await db.Set<ProductEntity>().Where(x => x.ParentId == i.Id).CountAsync(ct);
 			}

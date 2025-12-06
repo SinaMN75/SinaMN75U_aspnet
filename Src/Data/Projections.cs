@@ -1,25 +1,25 @@
 namespace SinaMN75U.Data;
 
-public class CategorySelectorArgs {
-	public required bool ShowMedia { get; set; }
-	public required bool ShowChildren { get; set; }
-	public required bool ShowChildrenMedia { get; set; }
+public sealed class CategorySelectorArgs {
+	public bool ShowMedia { get; set; }
+	public bool ShowChildren { get; set; }
+	public bool ShowChildrenMedia { get; set; }
 }
 
-public class UserSelectorArgs {
-	public required CategorySelectorArgs CategorySelectorArgs { get; set; }
-	public required bool ShowCategories { get; set; }
-	public required bool ShowMedia { get; set; }
+public sealed class UserSelectorArgs {
+	public CategorySelectorArgs CategorySelectorArgs { get; set; } = new();
+	public bool ShowCategories { get; set; }
+	public bool ShowMedia { get; set; }
 }
 
-public class ProductSelectorArgs {
+public sealed class ProductSelectorArgs {
 	public ProductSelectorArgs? ChildrenSelectorArgs { get; set; }
-	public required CategorySelectorArgs CategorySelectorArgs { get; set; }
-	public required UserSelectorArgs UserSelectorArgs { get; set; }
-	public required bool ShowCategories { get; set; }
-	public required bool ShowMedia { get; set; }
-	public required bool ShowUser { get; set; }
-	public required bool ShowChildren { get; set; }
+	public CategorySelectorArgs CategorySelectorArgs { get; set; } = new();
+	public UserSelectorArgs UserSelectorArgs { get; set; } = new();
+	public bool ShowCategories { get; set; }
+	public bool ShowMedia { get; set; }
+	public bool ShowUser { get; set; }
+	public bool ShowChildren { get; set; }
 }
 
 public static class Projections {
@@ -76,7 +76,7 @@ public static class Projections {
 		UserId = x.UserId,
 		User = args.ShowUser ? x.User.MapToResponse() : null,
 		Categories = args.ShowCategories ? x.Categories.AsQueryable().Select(CategorySelector()).ToList() : null,
-		Children = args.ShowChildren ? x.Children.AsQueryable().Select(ProductSelector(args.ChildrenSelectorArgs)).ToList() : null,
+		Children = args.ShowChildren ? x.Children.AsQueryable().Select(ProductSelector(args.ChildrenSelectorArgs ?? new ProductSelectorArgs())).ToList() : null,
 		Media = args.ShowMedia ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null
 	};
 
