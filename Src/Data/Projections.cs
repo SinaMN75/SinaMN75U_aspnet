@@ -1,9 +1,14 @@
 namespace SinaMN75U.Data;
 
 public sealed class CategorySelectorArgs {
+	public CategorySelectorArgs? ChildrenSelectorArgs { get; set; }
 	public bool ShowMedia { get; set; }
 	public bool ShowChildren { get; set; }
 	public bool ShowChildrenMedia { get; set; }
+}
+
+public sealed class ContentSelectorArgs {
+	public bool ShowMedia { get; set; }
 }
 
 public sealed class UserSelectorArgs {
@@ -24,6 +29,28 @@ public sealed class ProductSelectorArgs {
 	public bool ShowChildrenCount { get; set; }
 	public bool ShowCommentsCount { get; set; }
 	public bool ShowIsFollowing { get; set; }
+}
+
+public sealed class ContractSelectorArgs {
+	public InvoiceSelectorArgs InvoiceSelectorArgs { get; set; } = new();
+	public bool ShowInvoices { get; set; }
+	public bool ShowProduct { get; set; }
+	public bool ShowUser { get; set; }
+	public bool ShowCreator { get; set; }
+}
+
+public sealed class InvoiceSelectorArgs {
+	public bool ShowUser { get; set; }
+	public bool ShowContract { get; set; }
+}
+
+public sealed class CommentSelectorArgs {
+	public CommentSelectorArgs? ChildrenSelectorArgs { get; set; }
+	public bool ShowMedia { get; set; }
+	public bool ShowUser { get; set; }
+	public bool ShowTargetUser { get; set; }
+	public bool ShowProduct { get; set; }
+	public bool ShowChildren { get; set; }
 }
 
 public static class Projections {
@@ -79,7 +106,7 @@ public static class Projections {
 		ParentId = x.ParentId,
 		UserId = x.UserId,
 		User = args.ShowUser ? x.User.MapToResponse() : null,
-		Categories = args.ShowCategories ? x.Categories.AsQueryable().Select(CategorySelector()).ToList() : null,
+		Categories = args.ShowCategories ? x.Categories.AsQueryable().Select(CategorySelector(args.CategorySelectorArgs)).ToList() : null,
 		Children = args.ShowChildren ? x.Children.AsQueryable().Select(ProductSelector(args.ChildrenSelectorArgs ?? new ProductSelectorArgs())).ToList() : null,
 		Media = args.ShowMedia ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null,
 		CommentCount = args.ShowCommentsCount ? x.Comments.Count : null,
@@ -87,12 +114,7 @@ public static class Projections {
 		IsFollowing = args.ShowIsFollowing && args.UserData != null ? x.Followers.Any(f => f.UserId == args.UserData.Id) : null,
 	};
 
-	public static Expression<Func<CategoryEntity, CategoryResponse>> CategorySelector(
-		bool media = false,
-		bool parent = false,
-		bool children = false,
-		bool childrenMedia = false
-	) => x => new CategoryResponse {
+	public static Expression<Func<CategoryEntity, CategoryResponse>> CategorySelector(CategorySelectorArgs arg) => x => new CategoryResponse {
 		Id = x.Id,
 		CreatedAt = x.CreatedAt,
 		UpdatedAt = x.UpdatedAt,
@@ -103,9 +125,8 @@ public static class Projections {
 		Order = x.Order,
 		Code = x.Code,
 		ParentId = x.ParentId,
-		Media = media ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null,
-		Parent = parent ? x.Parent!.MapToResponse() : null,
-		Children = children ? x.Children.AsQueryable().Select(CategorySelector(media: childrenMedia)).ToList() : null
+		Media = arg.ShowMedia ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null,
+		Children = arg.ShowChildren ? x.Children.AsQueryable().Select(CategorySelector(arg.ChildrenSelectorArgs ?? new CategorySelectorArgs())).ToList() : null
 	};
 
 	public static Expression<Func<CategoryEntity, CategoryResponse>> CategoryMinSelector(CategorySelectorArgs args) => x => new CategoryResponse {
@@ -115,28 +136,20 @@ public static class Projections {
 		Title = x.Title,
 		ParentId = x.ParentId,
 		Media = args.ShowMedia ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null,
-		Children = args.ShowChildren ? x.Children.AsQueryable().Select(CategorySelector(media: args.ShowChildrenMedia)).ToList() : null
+		Children = args.ShowChildren ? x.Children.AsQueryable().Select(CategorySelector(args.ChildrenSelectorArgs ?? new CategorySelectorArgs())).ToList() : null
 	};
 
-	public static Expression<Func<ContentEntity, ContentResponse>> ContentSelector(
-		bool media = false
-	) => x => new ContentResponse {
+	public static Expression<Func<ContentEntity, ContentResponse>> ContentSelector(ContentSelectorArgs args) => x => new ContentResponse {
 		Id = x.Id,
 		CreatedAt = x.CreatedAt,
 		UpdatedAt = x.UpdatedAt,
 		DeletedAt = x.DeletedAt,
 		Tags = x.Tags,
 		JsonData = x.JsonData,
-		Media = media ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null
+		Media = args.ShowMedia ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null
 	};
 
-	public static Expression<Func<CommentEntity, CommentResponse>> CommentSelector(
-		bool user = false,
-		bool targetUser = false,
-		bool product = false,
-		bool media = false,
-		bool children = false
-	) => x => new CommentResponse {
+	public static Expression<Func<CommentEntity, CommentResponse>> CommentSelector(CommentSelectorArgs args) => x => new CommentResponse {
 		Id = x.Id,
 		CreatedAt = x.CreatedAt,
 		UpdatedAt = x.UpdatedAt,
@@ -149,19 +162,14 @@ public static class Projections {
 		ParentId = x.ParentId,
 		Score = x.Score,
 		Description = x.Description,
-		User = user ? x.User.MapToResponse() : null,
-		TargetUser = targetUser ? x.TargetUser!.MapToResponse() : null,
-		Product = product ? x.Product!.MapToResponse() : null,
-		Media = media ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null,
-		Children = children ? x.Children.AsQueryable().Select(CommentSelector()).ToList() : null
+		User = args.ShowUser ? x.User.MapToResponse() : null,
+		TargetUser = args.ShowTargetUser ? x.TargetUser!.MapToResponse() : null,
+		Product = args.ShowProduct ? x.Product!.MapToResponse() : null,
+		Media = args.ShowMedia ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null,
+		Children = args.ShowChildren ? x.Children.AsQueryable().Select(CommentSelector(args.ChildrenSelectorArgs ?? new CommentSelectorArgs())).ToList() : null
 	};
 
-	public static Expression<Func<ContractEntity, ContractResponse>> ContractSelector(
-		bool user = false,
-		bool creator = false,
-		bool product = false,
-		bool invoices = false
-	) => x => new ContractResponse {
+	public static Expression<Func<ContractEntity, ContractResponse>> ContractSelector(ContractSelectorArgs args) => x => new ContractResponse {
 		Id = x.Id,
 		CreatedAt = x.CreatedAt,
 		UpdatedAt = x.UpdatedAt,
@@ -175,16 +183,13 @@ public static class Projections {
 		UserId = x.UserId,
 		CreatorId = x.CreatorId,
 		ProductId = x.ProductId,
-		User = user ? x.User.MapToResponse() : null,
-		Creator = creator ? x.Creator.MapToResponse() : null,
-		Product = product ? x.Product.MapToResponse() : null,
-		Invoices = invoices ? x.Invoices.AsQueryable().Select(InvoiceSelector()).ToList() : null
+		User = args.ShowUser ? x.User.MapToResponse() : null,
+		Creator = args.ShowCreator ? x.Creator.MapToResponse() : null,
+		Product = args.ShowProduct ? x.Product.MapToResponse() : null,
+		Invoices = args.ShowInvoices ? x.Invoices.AsQueryable().Select(InvoiceSelector(args.InvoiceSelectorArgs)).ToList() : null
 	};
 
-	public static Expression<Func<InvoiceEntity, InvoiceResponse>> InvoiceSelector(
-		bool user = false,
-		bool contracts = false
-	) => x => new InvoiceResponse {
+	public static Expression<Func<InvoiceEntity, InvoiceResponse>> InvoiceSelector(InvoiceSelectorArgs args) => x => new InvoiceResponse {
 		Id = x.Id,
 		CreatedAt = x.CreatedAt,
 		UpdatedAt = x.UpdatedAt,
@@ -198,7 +203,7 @@ public static class Projections {
 		DueDate = x.DueDate,
 		PaidDate = x.PaidDate,
 		TrackingNumber = x.TrackingNumber,
-		User = user ? x.User.MapToResponse() : null,
-		Contract = contracts ? x.Contract.MapToResponse() : null
+		User = args.ShowUser ? x.User.MapToResponse() : null,
+		Contract = args.ShowContract ? x.Contract.MapToResponse() : null
 	};
 }
