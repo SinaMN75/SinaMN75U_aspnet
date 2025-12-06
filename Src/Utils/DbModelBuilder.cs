@@ -31,5 +31,9 @@ public static class DbModelBuilder {
 			b.OwnsMany(i => i.Questions).OwnsMany(i => i.Options);
 			b.OwnsMany(i => i.ScoreDetails);
 		});
+		builder.Entity<ChatBotEntity>().OwnsOne(e => e.JsonData, b => {
+			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
+			b.OwnsMany(i => i.History);
+		});
 	}
 }

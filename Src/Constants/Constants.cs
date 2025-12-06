@@ -13,4 +13,5 @@ public static class RouteTags {
 	public const string Dashboard = "api/dashboard/";
 	public const string Contract = "api/contract/";
 	public const string Invoice = "api/invoice/";
+	public const string ChatBot = "api/chatBot/";
 }

@@ -62,7 +62,7 @@ public static partial class StringExtensions {
 
 public static class GuidExtensions {
 	public static bool IsNotNull([NotNullWhen(true)] this Guid? s) => s != null;
-	public static bool IsNotOrEmpty([NotNullWhen(true)] this Guid? s) => s != null && s == Guid.Empty;
+	public static bool HasValue([NotNullWhen(true)] this Guid? s) => s != null && s == Guid.Empty;
 }
 
 public static class NumberExtensions {

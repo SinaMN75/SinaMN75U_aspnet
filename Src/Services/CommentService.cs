@@ -31,9 +31,9 @@ public class CommentService(
 
 	public async Task<UResponse<IEnumerable<CommentResponse>?>> Read(CommentReadParams p, CancellationToken ct) {
 		IQueryable<CommentEntity> q = db.Set<CommentEntity>();
-		if (p.ProductId.HasValue()) q = q.Where(x => x.ProductId == p.ProductId);
-		if (p.UserId.HasValue()) q = q.Where(x => x.UserId == p.UserId);
-		if (p.TargetUserId.HasValue()) q = q.Where(x => x.TargetUserId == p.TargetUserId);
+		if (StringExtensions.HasValue(p.ProductId)) q = q.Where(x => x.ProductId == p.ProductId);
+		if (StringExtensions.HasValue(p.UserId)) q = q.Where(x => x.UserId == p.UserId);
+		if (StringExtensions.HasValue(p.TargetUserId)) q = q.Where(x => x.TargetUserId == p.TargetUserId);
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
 
 		IQueryable<CommentResponse> list = q.Select(Projections.CommentSelector(

@@ -117,9 +117,9 @@ public class ContractService(
 		IQueryable<ContractEntity> q = db.Set<ContractEntity>();
 
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(u => u.Tags.Any(tag => p.Tags.Contains(tag)));
-		if (p.CreatorId.HasValue()) q = q.Where(u => u.CreatorId == p.CreatorId);
-		if (p.UserId.HasValue()) q = q.Where(u => u.UserId == p.UserId);
-		if (p.ProductId.HasValue()) q = q.Where(u => u.ProductId == p.ProductId);
+		if (StringExtensions.HasValue(p.CreatorId)) q = q.Where(u => u.CreatorId == p.CreatorId);
+		if (StringExtensions.HasValue(p.UserId)) q = q.Where(u => u.UserId == p.UserId);
+		if (StringExtensions.HasValue(p.ProductId)) q = q.Where(u => u.ProductId == p.ProductId);
 		if (p.StartDate.HasValue) q = q.Where(u => u.StartDate == p.StartDate);
 		if (p.EndDate.HasValue) q = q.Where(u => u.EndDate == p.EndDate);
 		if (p.FromCreatedAt.HasValue) q = q.Where(u => u.CreatedAt >= p.FromCreatedAt);

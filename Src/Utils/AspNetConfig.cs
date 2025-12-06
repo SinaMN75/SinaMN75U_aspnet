@@ -73,7 +73,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IDashboardService, DashboardService>();
 		builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 		builder.Services.AddScoped<IContractService, ContractService>();
-		builder.Services.AddScoped<ContractService>();
+		builder.Services.AddScoped<IChatBotService, ChatBotService>();
 	}
 
 	public static void UseUServices(this WebApplication app) {

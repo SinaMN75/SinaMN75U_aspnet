@@ -57,8 +57,8 @@ public class ProductService(
 		if (p.Title.HasValue()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.Code.HasValue()) q = q.Where(x => (x.Code ?? "").Contains(p.Code!));
 		if (p.Slug.HasValue()) q = q.Where(x => (x.Slug ?? "") == p.Code!);
-		if (p.ParentId.HasValue()) q = q.Where(x => x.ParentId == p.ParentId);
-		if (p.UserId.HasValue()) q = q.Where(x => x.UserId == p.UserId);
+		if (StringExtensions.HasValue(p.ParentId)) q = q.Where(x => x.ParentId == p.ParentId);
+		if (StringExtensions.HasValue(p.UserId)) q = q.Where(x => x.UserId == p.UserId);
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => p.Tags.All(tag => x.Tags.Contains(tag)));
 		if (p.MinStock.IsNotNull()) q = q.Where(x => x.Stock >= p.MinStock);
@@ -164,7 +164,7 @@ public class ProductService(
 		if (p.Deposit.IsNotNull()) e.Deposit = p.Deposit.Value;
 		if (p.Point.IsNotNull()) e.Point = p.Point.Value;
 		if (p.Order.IsNotNull()) e.Order = p.Order.Value;
-		if (p.ParentId.HasValue()) e.ParentId = p.ParentId;
+		if (StringExtensions.HasValue(p.ParentId)) e.ParentId = p.ParentId;
 		if (p.UserId.IsNotNull()) e.UserId = p.UserId.Value;
 		if (p.ActionType.IsNotNull()) e.JsonData.ActionType = p.ActionType;
 		if (p.ActionTitle.IsNotNull()) e.JsonData.ActionTitle = p.ActionTitle;

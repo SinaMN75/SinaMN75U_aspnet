@@ -1,10 +1,5 @@
 namespace SinaMN75U.Constants;
 
-public enum SqlDatabaseType {
-	Postgres = 100,
-	SqlServer = 101
-}
-
 public enum Usc {
 	Success = 200,
 	Created = 201,
@@ -117,5 +112,10 @@ public enum TagInvoice {
 	NotPaid = 203,
 	NotPaidDue = 204,
 	
+	Test = 999
+}
+
+public enum TagChatBot {
+	DrHana = 101,
 	Test = 999
 }
