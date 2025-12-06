@@ -147,6 +147,7 @@ public sealed class ProductReadParams : BaseReadParams<TagProduct> {
 	public double? MaxRent { get; set; }
 	public bool ShowCategories { get; set; }
 	public bool ShowCategoriesMedia { get; set; }
+	public bool ShowCategoriesChildren { get; set; }
 	public bool ShowMedia { get; set; }
 	public bool ShowUser { get; set; }
 	public bool ShowUserMedia { get; set; }

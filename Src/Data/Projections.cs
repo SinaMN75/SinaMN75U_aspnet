@@ -1,16 +1,25 @@
 namespace SinaMN75U.Data;
 
 public class CategorySelectorArgs {
-	public required bool Media { get; set; }
-	public required bool Parent { get; set; }
-	public required bool Children { get; set; }
-	public required bool ChildrenMedia { get; set; }
+	public required bool ShowMedia { get; set; }
+	public required bool ShowChildren { get; set; }
+	public required bool ShowChildrenMedia { get; set; }
 }
 
 public class UserSelectorArgs {
 	public required CategorySelectorArgs CategorySelectorArgs { get; set; }
-	public required bool Categories { get; set; }
-	public required bool Media { get; set; }
+	public required bool ShowCategories { get; set; }
+	public required bool ShowMedia { get; set; }
+}
+
+public class ProductSelectorArgs {
+	public ProductSelectorArgs? ChildrenSelectorArgs { get; set; }
+	public required CategorySelectorArgs CategorySelectorArgs { get; set; }
+	public required UserSelectorArgs UserSelectorArgs { get; set; }
+	public required bool ShowCategories { get; set; }
+	public required bool ShowMedia { get; set; }
+	public required bool ShowUser { get; set; }
+	public required bool ShowChildren { get; set; }
 }
 
 public static class Projections {
@@ -38,15 +47,11 @@ public static class Projections {
 		State = x.State,
 		City = x.City,
 		Birthdate = x.Birthdate,
-		Categories = args.Categories ? x.Categories.AsQueryable().Select(CategoryMinSelector(args.CategorySelectorArgs)).ToList() : null,
-		Media = args.Media ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null
+		Categories = args.ShowCategories ? x.Categories.AsQueryable().Select(CategoryMinSelector(args.CategorySelectorArgs)).ToList() : null,
+		Media = args.ShowMedia ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null
 	};
 
-	public static Expression<Func<ProductEntity, ProductResponse>> ProductSelector(
-		bool user = false,
-		bool categories = false,
-		bool children = false
-	) => x => new ProductResponse {
+	public static Expression<Func<ProductEntity, ProductResponse>> ProductSelector(ProductSelectorArgs args) => x => new ProductResponse {
 		Id = x.Id,
 		CreatedAt = x.CreatedAt,
 		UpdatedAt = x.UpdatedAt,
@@ -69,9 +74,10 @@ public static class Projections {
 		Order = x.Order,
 		ParentId = x.ParentId,
 		UserId = x.UserId,
-		User = user ? x.User.MapToResponse() : null,
-		Categories = categories ? x.Categories.AsQueryable().Select(CategorySelector()).ToList() : null,
-		Children = children ? x.Children.AsQueryable().Select(ProductSelector()).ToList() : null
+		User = args.ShowUser ? x.User.MapToResponse() : null,
+		Categories = args.ShowCategories ? x.Categories.AsQueryable().Select(CategorySelector()).ToList() : null,
+		Children = args.ShowChildren ? x.Children.AsQueryable().Select(ProductSelector(args.ChildrenSelectorArgs)).ToList() : null,
+		Media = args.ShowMedia ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null
 	};
 
 	public static Expression<Func<CategoryEntity, CategoryResponse>> CategorySelector(
@@ -101,9 +107,8 @@ public static class Projections {
 		JsonData = x.JsonData,
 		Title = x.Title,
 		ParentId = x.ParentId,
-		Media = args.Media ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null,
-		Parent = args.Parent ? x.Parent!.MapToResponse() : null,
-		Children = args.Children ? x.Children.AsQueryable().Select(CategorySelector(media: args.ChildrenMedia)).ToList() : null
+		Media = args.ShowMedia ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null,
+		Children = args.ShowChildren ? x.Children.AsQueryable().Select(CategorySelector(media: args.ShowChildrenMedia)).ToList() : null
 	};
 
 	public static Expression<Func<ContentEntity, ContentResponse>> ContentSelector(

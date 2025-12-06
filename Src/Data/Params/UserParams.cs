@@ -138,7 +138,6 @@ public sealed class UserReadParams : BaseReadParams<TagUser> {
 	public DateTime? EndBirthDate { get; set; }
 	public IEnumerable<Guid>? Categories { get; set; }
 	public bool ShowCategories { get; set; }
-	public bool ShowCategoriesParent { get; set; }
 	public bool ShowCategoriesMedia { get; set; }
 	public bool ShowCategoriesChildren { get; set; }
 	public bool ShowCategoriesChildrenMedia { get; set; }

@@ -1,9 +1,11 @@
+using SinaMN75U.Data;
+
 namespace SinaMN75U.Services;
 
 public interface IProductService {
 	public Task<UResponse> BulkCreate(List<ProductCreateParams> p, CancellationToken ct);
 	public Task<UResponse<ProductEntity?>> Create(ProductCreateParams p, CancellationToken ct);
-	public Task<UResponse<IEnumerable<ProductEntity>?>> Read(ProductReadParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<ProductResponse>?>> Read(ProductReadParams p, CancellationToken ct);
 	public Task<UResponse<ProductEntity?>> ReadById(IdParams p, CancellationToken ct);
 	public Task<UResponse<ProductEntity?>> Update(ProductUpdateParams p, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
@@ -47,7 +49,7 @@ public class ProductService(
 		return new UResponse<ProductEntity?>(created.Entity);
 	}
 
-	public async Task<UResponse<IEnumerable<ProductEntity>?>> Read(ProductReadParams p, CancellationToken ct) {
+	public async Task<UResponse<IEnumerable<ProductResponse>?>> Read(ProductReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 
 		IQueryable<ProductEntity> q = db.Set<ProductEntity>().Where(x => x.ParentId == null);
@@ -66,53 +68,63 @@ public class ProductService(
 		if (p.MinDeposit.IsNotNull()) q = q.Where(x => x.Deposit <= p.MinDeposit);
 
 		if (p.Categories.IsNotNullOrEmpty()) q = q.Where(x => x.Categories.Any(y => p.Categories.Contains(y.Id)));
-		IncludeOptions include = new();
 
-		if (p.ShowMedia) include.Add("Media");
-
-		if (p.ShowUser) {
-			include.Add("User");
-			if (p.ShowUserMedia) include.AddRecursive("User.Media");
-			if (p.ShowUserCategory) include.AddRecursive("User.Categories");
-			if (p.ShowCategoriesMedia) include.AddRecursive("User.Categories.Media");
-		}
-
-		if (p.ShowCategories) {
-			include.Add("Categories");
-			if (p.ShowCategoriesMedia) include.AddRecursive("Categories.Media");
-		}
-
-		if (p.ShowChildren) {
-			include.MaxChildrenDepth = 5;
-			include.IncludeChildren = true;
-			include.Add("Children");
-			if (p.ShowMedia) include.Add("Children.Media");
-			include.AddRecursive("Children");
-			if (p.ShowMedia) include.AddRecursive("Children.Media");
-			if (p.ShowUser) include.AddRecursive("Children.User");
-			if (p.ShowUserMedia) include.AddRecursive("Children.User.Media");
-			if (p.ShowCategories) include.AddRecursive("Children.Categories");
-			if (p.ShowUserCategory) include.AddRecursive("Children.User.Categories");
-			if (p.ShowCategoriesMedia) include.AddRecursive("Children.Categories.Media");
-			if (p.ShowCategoriesMedia) include.AddRecursive("Children.User.Categories.Media");
-		}
-
-		q = q.ApplyIncludeOptions(include);
-
+		
 		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
 		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
 
 		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
 		if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
 
-		UResponse<IEnumerable<ProductEntity>?> list = await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		UResponse<IEnumerable<ProductResponse>?> list = await q.Select(Projections.ProductSelector(new ProductSelectorArgs {
+					ChildrenSelectorArgs = new ProductSelectorArgs {
+						CategorySelectorArgs = new CategorySelectorArgs {
+							ShowMedia = p.ShowCategoriesMedia,
+							ShowChildren = p.ShowCategoriesChildren,
+							ShowChildrenMedia = p.ShowCategoriesMedia
+						},
+						UserSelectorArgs = new UserSelectorArgs {
+							CategorySelectorArgs = new CategorySelectorArgs {
+								ShowMedia = p.ShowCategoriesMedia,
+								ShowChildren = p.ShowCategoriesChildren,
+								ShowChildrenMedia = p.ShowCategoriesMedia
+							},
+							ShowCategories = p.ShowUserCategory,
+							ShowMedia = p.ShowUserMedia
+						},
+						ShowCategories = p.ShowCategories,
+						ShowMedia = p.ShowMedia,
+						ShowUser = p.ShowUser,
+						ShowChildren = p.ShowChildren
+					},
+					CategorySelectorArgs = new CategorySelectorArgs {
+						ShowMedia = p.ShowCategoriesMedia,
+						ShowChildren = p.ShowCategoriesChildren,
+						ShowChildrenMedia = p.ShowCategoriesMedia
+					},
+					UserSelectorArgs = new UserSelectorArgs {
+						CategorySelectorArgs = new CategorySelectorArgs {
+							ShowMedia = p.ShowCategoriesMedia,
+							ShowChildren = p.ShowCategoriesChildren,
+							ShowChildrenMedia = p.ShowCategoriesMedia
+						},
+						ShowCategories = p.ShowUserCategory,
+						ShowMedia = p.ShowUserMedia
+					},
+					ShowCategories = p.ShowCategories,
+					ShowMedia = p.ShowMedia,
+					ShowUser = p.ShowUser,
+					ShowChildren = p.ShowChildren
+				}
+			)
+		).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 
-		foreach (ProductEntity i in list.Result ?? []) {
+		foreach (ProductResponse i in list.Result ?? []) {
 			foreach (VisitCount visit in i.JsonData.VisitCounts) i.VisitCount += visit.Count;
 		}
 
 		if (p.ShowCommentCount)
-			foreach (ProductEntity i in list.Result ?? []) {
+			foreach (ProductResponse i in list.Result ?? []) {
 				UResponse<int> commentCount = await commentService.ReadProductCommentCount(new IdParams {
 					Id = i.Id
 				}, ct);
@@ -120,15 +132,15 @@ public class ProductService(
 			}
 
 		if (p.ShowChildrenCount)
-			foreach (ProductEntity i in list.Result ?? []) {
+			foreach (ProductResponse i in list.Result ?? []) {
 				if (p.ShowChildren)
-					i.ChildrenCount = i.Children.Count;
+					i.ChildrenCount = i.Children!.Count();
 				else
 					i.ChildrenCount = await db.Set<ProductEntity>().Where(x => x.ParentId == i.Id).CountAsync(ct);
 			}
 
 		if (p.ShowIsFollowing && userData?.Id != null)
-			foreach (ProductEntity i in list.Result ?? []) {
+			foreach (ProductResponse i in list.Result ?? []) {
 				UResponse<bool?> isFollowing = await followService.IsFollowingProduct(new FollowParams { UserId = userData?.Id, TargetProductId = i.Id, Token = p.Token }, ct);
 				i.IsFollowing = isFollowing.Result ?? null;
 			}
@@ -229,7 +241,7 @@ public class ProductService(
 				}
 			}
 		}
-		
+
 		db.Set<ProductEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
 		await AddMedia(p.Id, p.Media ?? [], ct);
@@ -245,7 +257,7 @@ public class ProductService(
 		if (userData == null) return new UResponse<ProductEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		int count = await db.Set<ProductEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
-		
+
 		cache.DeleteAllByPartialKey(RouteTags.Product);
 		return count > 0 ? new UResponse(Usc.Deleted, ls.Get("ProductDeleted")) : new UResponse(Usc.NotFound, ls.Get("ProductNotFound"));
 	}
@@ -255,7 +267,7 @@ public class ProductService(
 		if (userData == null) return new UResponse<ProductEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		int count = await db.Set<ProductEntity>().WhereIn(u => u.Id, p.Ids).ExecuteDeleteAsync(ct);
-		
+
 		cache.DeleteAllByPartialKey(RouteTags.Product);
 		return count > 0 ? new UResponse(Usc.Deleted, ls.Get("ProductDeleted")) : new UResponse(Usc.NotFound, ls.Get("ProductNotFound"));
 	}

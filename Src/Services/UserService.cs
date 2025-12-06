@@ -109,13 +109,12 @@ public class UserService(
 		IQueryable<UserResponse> projected = q.Select(Projections.UserSelector(
 				new UserSelectorArgs {
 					CategorySelectorArgs = new CategorySelectorArgs {
-						Media = p.ShowCategoriesMedia,
-						Parent = p.ShowCategoriesParent,
-						Children = p.ShowCategoriesChildren,
-						ChildrenMedia = p.ShowCategoriesChildrenMedia
+						ShowMedia = p.ShowCategoriesMedia,
+						ShowChildren = p.ShowCategoriesChildren,
+						ShowChildrenMedia = p.ShowCategoriesChildrenMedia
 					},
-					Categories = p.ShowCategories,
-					Media = p.ShowMedia,
+					ShowCategories = p.ShowCategories,
+					ShowMedia = p.ShowMedia,
 				}
 			)
 		);
