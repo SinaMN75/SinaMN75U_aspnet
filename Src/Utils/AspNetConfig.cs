@@ -84,7 +84,7 @@ public static partial class AspNetConfig {
 		app.UseUSwagger();
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
-		app.UseMiddleware<UMiddleware>();
+		// app.UseMiddleware<UMiddleware>();
 
 		app.MapAuthRoutes(RouteTags.Auth);
 		app.MapUserRoutes(RouteTags.User);
@@ -98,6 +98,7 @@ public static partial class AspNetConfig {
 		app.MapDashboardRoutes(RouteTags.Dashboard);
 		app.MapContractRoutes(RouteTags.Contract);
 		app.MapInvoiceRoutes(RouteTags.Invoice);
+		app.MapChatBotRoutes(RouteTags.ChatBot);
 	}
 
 	private static string CleanAndFormatSql(string sql) {
