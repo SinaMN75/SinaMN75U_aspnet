@@ -54,10 +54,7 @@ public class InvoiceService(
 		if (p.OrderByUpdatedAt) q = q.OrderBy(x => x.UpdatedAt);
 		if (p.OrderByUpdatedAtDesc) q = q.OrderByDescending(x => x.UpdatedAt);
 
-		IQueryable<InvoiceResponse> projected = q.Select(Projections.InvoiceSelector(new InvoiceSelectorArgs {
-			ShowUser = p.ShowUser,
-			ShowContract = p.ShowContract
-		}));
+		IQueryable<InvoiceResponse> projected = q.Select(Projections.InvoiceSelector(p.SelectorArgs));
 		UResponse<IEnumerable<InvoiceResponse>?> response = await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 
 		foreach (InvoiceResponse dto in response.Result!) {

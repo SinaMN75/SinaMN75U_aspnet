@@ -1,4 +1,6 @@
-﻿namespace SinaMN75U.Services;
+﻿using SinaMN75U.Data;
+
+namespace SinaMN75U.Services;
 
 public interface IContractService {
 	Task<UResponse<ContractEntity?>> Create(ContractCreateParams p, CancellationToken ct);
@@ -125,70 +127,8 @@ public class ContractService(
 		if (p.FromCreatedAt.HasValue) q = q.Where(u => u.CreatedAt >= p.FromCreatedAt);
 		if (p.ToCreatedAt.HasValue) q = q.Where(u => u.CreatedAt <= p.ToCreatedAt);
 		if (p.UserName.HasValue()) q = q.Include(x => x.User).Where(x => x.User.UserName.Contains(p.UserName));
-
-		if (p.ShowInvoices) q = q.Include(x => x.Invoices);
-		if (p.ShowProduct) q = q.Include(x => x.Product);
-		if (p.ShowUser) q = q.Include(x => x.User);
-
-		IQueryable<ContractResponse> list = q.Select(x => new ContractResponse {
-			Id = x.Id,
-			CreatedAt = x.CreatedAt,
-			UpdatedAt = x.UpdatedAt,
-			DeletedAt = x.DeletedAt,
-			StartDate = x.StartDate,
-			EndDate = x.EndDate,
-			Deposit = x.Deposit,
-			Rent = x.Rent,
-			CreatorId = x.CreatorId,
-			UserId = x.UserId,
-			ProductId = x.ProductId,
-			JsonData = x.JsonData,
-			Tags = x.Tags,
-			User = p.ShowUser
-				? new UserResponse {
-					Id = x.User.Id,
-					JsonData = x.User.JsonData,
-					Tags = x.User.Tags,
-					UserName = x.User.UserName,
-					PhoneNumber = x.User.PhoneNumber,
-					Email = x.User.Email,
-					FirstName = x.User.FirstName,
-					LastName = x.User.LastName
-				}
-				: null,
-			Creator = p.ShowCreator
-				? new UserResponse {
-					Id = x.User.Id,
-					JsonData = x.User.JsonData,
-					Tags = x.User.Tags,
-					UserName = x.User.UserName,
-					PhoneNumber = x.User.PhoneNumber,
-					Email = x.User.Email,
-					FirstName = x.User.FirstName,
-					LastName = x.User.LastName
-				}
-				: null,
-			Product = p.ShowProduct ? new ProductResponse {
-					Id = x.User.Id,
-					Title = x.Product.Title,
-					Code = x.Product.Code,
-					Deposit = x.Product.Deposit,
-					Rent = x.Product.Rent,
-					JsonData = x.Product.JsonData,
-					Tags = x.Product.Tags,
-				}
-				: null,
-			Invoices = p.ShowInvoices ? x.Invoices.Select(
-				y => new InvoiceResponse {
-					DebtAmount = y.DebtAmount,
-					CreditorAmount = y.CreditorAmount,
-					PaidAmount = y.PaidAmount,
-					PenaltyAmount = y.PenaltyAmount,
-					DueDate = y.DueDate,
-					JsonData = y.JsonData,
-					Tags = y.Tags
-				}).ToList() : null
-		});
+		
+		IQueryable<ContractResponse> list = q.Select(Projections.ContractSelector(p.SelectorArgs));
 
 		return await list.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}

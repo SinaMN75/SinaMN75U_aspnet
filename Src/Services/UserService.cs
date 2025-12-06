@@ -106,18 +106,7 @@ public class UserService(
 		if (p.OrderByLastName) q = q.OrderBy(x => x.LastName);
 		if (p.OrderByLastNameDesc) q = q.OrderByDescending(x => x.LastName);
 
-		IQueryable<UserResponse> projected = q.Select(Projections.UserSelector(
-				new UserSelectorArgs {
-					CategorySelectorArgs = new CategorySelectorArgs {
-						ShowMedia = p.ShowCategoriesMedia,
-						ShowChildren = p.ShowCategoriesChildren,
-						ShowChildrenMedia = p.ShowCategoriesChildrenMedia
-					},
-					ShowCategories = p.ShowCategories,
-					ShowMedia = p.ShowMedia,
-				}
-			)
-		);
+		IQueryable<UserResponse> projected = q.Select(Projections.UserSelector(p.SelectorArgs));
 
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}

@@ -145,18 +145,8 @@ public sealed class ProductReadParams : BaseReadParams<TagProduct> {
 	public int? MaxStock { get; set; }
 	public double? MinDeposit { get; set; }
 	public double? MaxRent { get; set; }
-	public bool ShowCategories { get; set; }
-	public bool ShowCategoriesMedia { get; set; }
-	public bool ShowCategoriesChildren { get; set; }
-	public bool ShowMedia { get; set; }
-	public bool ShowUser { get; set; }
-	public bool ShowUserMedia { get; set; }
-	public bool ShowUserCategory { get; set; }
-	public bool ShowChildren { get; set; }
-	public bool ShowCommentCount { get; set; }
-	public bool ShowIsFollowing { get; set; }
-	public bool ShowChildrenCount { get; set; }
 	public bool OrderByOrder { get; set; }
 	public bool OrderByOrderDesc { get; set; }
 	public IEnumerable<Guid>? Categories { get; set; }
+	public ProductSelectorArgs SelectorArgs { get; set; } = new();
 }

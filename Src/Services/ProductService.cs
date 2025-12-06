@@ -18,8 +18,6 @@ public class ProductService(
 	ILocalizationService ls,
 	ILocalStorageService cache,
 	ICategoryService categoryService,
-	ICommentService commentService,
-	IFollowService followService,
 	IMediaService mediaService
 ) : IProductService {
 	public async Task<UResponse> BulkCreate(List<ProductCreateParams> p, CancellationToken ct) {
@@ -51,6 +49,7 @@ public class ProductService(
 
 	public async Task<UResponse<IEnumerable<ProductResponse>?>> Read(ProductReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		p.SelectorArgs.UserId = userData?.Id;
 		IQueryable<ProductEntity> q = db.Set<ProductEntity>().Where(x => x.ParentId == null);
 
 		if (p.Query.HasValue()) q = q.Where(x => x.Title.Contains(p.Query!) || (x.Description ?? "").Contains(p.Query!) || (x.Subtitle ?? "").Contains(p.Query!));
@@ -72,52 +71,7 @@ public class ProductService(
 		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
 		if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
 
-		UResponse<IEnumerable<ProductResponse>?> list = await q.Select(Projections.ProductSelector(new ProductSelectorArgs {
-					ChildrenSelectorArgs = new ProductSelectorArgs {
-						CategorySelectorArgs = new CategorySelectorArgs {
-							ShowMedia = p.ShowCategoriesMedia,
-							ShowChildren = p.ShowCategoriesChildren,
-							ShowChildrenMedia = p.ShowCategoriesMedia
-						},
-						UserSelectorArgs = new UserSelectorArgs {
-							CategorySelectorArgs = new CategorySelectorArgs {
-								ShowMedia = p.ShowCategoriesMedia,
-								ShowChildren = p.ShowCategoriesChildren,
-								ShowChildrenMedia = p.ShowCategoriesMedia
-							},
-							ShowCategories = p.ShowUserCategory,
-							ShowMedia = p.ShowUserMedia
-						},
-						ShowCategories = p.ShowCategories,
-						ShowMedia = p.ShowMedia,
-						ShowUser = p.ShowUser,
-						ShowChildren = p.ShowChildren
-					},
-					CategorySelectorArgs = new CategorySelectorArgs {
-						ShowMedia = p.ShowCategoriesMedia,
-						ShowChildren = p.ShowCategoriesChildren,
-						ShowChildrenMedia = p.ShowCategoriesMedia
-					},
-					UserSelectorArgs = new UserSelectorArgs {
-						CategorySelectorArgs = new CategorySelectorArgs {
-							ShowMedia = p.ShowCategoriesMedia,
-							ShowChildren = p.ShowCategoriesChildren,
-							ShowChildrenMedia = p.ShowCategoriesMedia
-						},
-						ShowCategories = p.ShowUserCategory,
-						ShowMedia = p.ShowUserMedia
-					},
-					ShowCategories = p.ShowCategories,
-					ShowMedia = p.ShowMedia,
-					ShowUser = p.ShowUser,
-					ShowChildren = p.ShowChildren,
-					ShowChildrenCount = p.ShowChildrenCount,
-					ShowCommentsCount = p.ShowCommentCount,
-					ShowIsFollowing = p.ShowIsFollowing,
-					UserData = userData
-				}
-			)
-		).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		UResponse<IEnumerable<ProductResponse>?> list = await q.Select(Projections.ProductSelector(p.SelectorArgs)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 		return list;
 	}
 

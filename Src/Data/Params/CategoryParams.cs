@@ -83,9 +83,7 @@ public sealed class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
 }
 
 public sealed class CategoryReadParams : BaseReadParams<TagCategory> {
-	public bool ShowMedia { get; set; }
-	public bool ShowChildren { get; set; }
-	public bool ShowChildrenMedia { get; set; }
 	public bool OrderByOrder { get; set; }
 	public bool OrderByOrderDesc { get; set; }
+	public CategorySelectorArgs SelectorArgs { get; set; } = new();
 }

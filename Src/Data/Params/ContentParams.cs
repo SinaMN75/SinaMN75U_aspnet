@@ -56,5 +56,5 @@ public sealed class ContentUpdateParams : BaseUpdateParams<TagContent> {
 }
 
 public sealed class ContentReadParams : BaseReadParams<int> {
-	public bool ShowMedia { get; set; }
+	public ContentSelectorArgs SelectorArgs { get; set; } = new();
 }

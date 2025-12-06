@@ -47,9 +47,5 @@ public sealed class CommentReadParams : BaseReadParams<TagComment> {
 	public Guid? UserId { get; set; }
 	public Guid? ProductId { get; set; }
 	public Guid? TargetUserId { get; set; }
-	public bool ShowMedia { get; set; }
-	public bool ShowUser { get; set; }
-	public bool ShowTargetUser { get; set; }
-	public bool ShowProduct { get; set; }
-	public bool ShowChildren { get; set; }
+	public CommentSelectorArgs SelectorArgs { get; set; } = new();
 }

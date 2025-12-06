@@ -36,17 +36,7 @@ public class CommentService(
 		if (StringExtensions.HasValue(p.TargetUserId)) q = q.Where(x => x.TargetUserId == p.TargetUserId);
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
 
-		IQueryable<CommentResponse> list = q.Select(Projections.CommentSelector(
-				new CommentSelectorArgs {
-					ShowMedia = p.ShowMedia,
-					ShowUser = p.ShowUser,
-					ShowTargetUser = p.ShowTargetUser,
-					ShowProduct = p.ShowProduct,
-					ShowChildren = p.ShowChildren
-				}
-			)
-		);
-
+		IQueryable<CommentResponse> list = q.Select(Projections.CommentSelector(p.SelectorArgs));
 
 		return await list.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
