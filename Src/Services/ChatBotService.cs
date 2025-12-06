@@ -15,10 +15,10 @@ public class ChatBotService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ChatBotResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		ChatBotEntity? e = await db.Set<ChatBotEntity>().FirstOrDefaultAsync(x => x.Id == p.ChatId, ct);
+		ChatBotEntity? e = await db.Set<ChatBotEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.ChatId, ct);
 		if (e != null) {
 			string response = await http.Post("https://ai.ittalie.ir/sheldon/api/chat", new {
-					user_input = "یه هفته",
+					user_input = p.Message,
 					chat_history = e.JsonData.History.Select(x => new {
 							user = x.User,
 							assistant = x.Bot
@@ -37,7 +37,7 @@ public class ChatBotService(
 		}
 		else {
 			string response = await http.Post("https://ai.ittalie.ir/sheldon/api/chat", new {
-					user_input = "یه هفته",
+					user_input = p.Message,
 					chat_history = new List<string>()
 				}
 			);
