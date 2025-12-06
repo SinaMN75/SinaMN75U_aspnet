@@ -31,12 +31,13 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	public int Stock { get; set; }
 	public int Point { get; set; }
 	public int Order { get; set; }
-	
+
 	public ProductEntity? Parent { get; set; }
 	public Guid? ParentId { get; set; }
 
 	[Required]
 	public Guid UserId { get; set; }
+
 	public UserEntity User { get; set; } = null!;
 
 	[InverseProperty("Parent")]
@@ -45,6 +46,7 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	public ICollection<MediaEntity> Media { get; set; } = [];
 	public ICollection<CategoryEntity> Categories { get; set; } = [];
 	public ICollection<CommentEntity> Comments { get; set; } = [];
+	public ICollection<FollowEntity> Followers { get; set; } = [];
 
 	[NotMapped]
 	public int? CommentCount { get; set; }
@@ -57,7 +59,7 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 
 	[NotMapped]
 	public int? ChildrenCount { get; set; }
-	
+
 	public new ProductResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
@@ -88,10 +90,8 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 		User = null,
 		CommentCount = CommentCount,
 		IsFollowing = IsFollowing,
-		VisitCount = VisitCount,
 		ChildrenCount = ChildrenCount
 	};
-
 }
 
 public class ProductJson {

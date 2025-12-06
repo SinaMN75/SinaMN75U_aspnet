@@ -15,19 +15,18 @@ public class ProductResponse : BaseResponse<TagProduct, ProductJson> {
 	public int Stock { get; set; }
 	public int Point { get; set; }
 	public int Order { get; set; }
-	
+
 	public ProductResponse? Parent { get; set; }
 	public Guid? ParentId { get; set; }
 
 	public UserResponse? User { get; set; } = null!;
 	public Guid? UserId { get; set; }
-	
+
 	public IEnumerable<CategoryResponse>? Categories { get; set; }
 	public IEnumerable<ProductResponse>? Children { get; set; }
 	public IEnumerable<MediaResponse>? Media { get; set; }
 
 	public int? CommentCount { get; set; }
 	public bool? IsFollowing { get; set; }
-	public int? VisitCount { get; set; }
 	public int? ChildrenCount { get; set; }
 }

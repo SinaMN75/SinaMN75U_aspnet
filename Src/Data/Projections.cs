@@ -13,6 +13,7 @@ public sealed class UserSelectorArgs {
 }
 
 public sealed class ProductSelectorArgs {
+	public JwtClaimData? UserData { get; set; }
 	public ProductSelectorArgs? ChildrenSelectorArgs { get; set; }
 	public CategorySelectorArgs CategorySelectorArgs { get; set; } = new();
 	public UserSelectorArgs UserSelectorArgs { get; set; } = new();
@@ -20,7 +21,9 @@ public sealed class ProductSelectorArgs {
 	public bool ShowMedia { get; set; }
 	public bool ShowUser { get; set; }
 	public bool ShowChildren { get; set; }
+	public bool ShowChildrenCount { get; set; }
 	public bool ShowCommentsCount { get; set; }
+	public bool ShowIsFollowing { get; set; }
 }
 
 public static class Projections {
@@ -80,6 +83,8 @@ public static class Projections {
 		Children = args.ShowChildren ? x.Children.AsQueryable().Select(ProductSelector(args.ChildrenSelectorArgs ?? new ProductSelectorArgs())).ToList() : null,
 		Media = args.ShowMedia ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null,
 		CommentCount = args.ShowCommentsCount ? x.Comments.Count : null,
+		ChildrenCount = args.ShowChildrenCount ? x.Children.Count : null,
+		IsFollowing = args.ShowIsFollowing && args.UserData != null ? x.Followers.Any(f => f.UserId == args.UserData.Id) : null,
 	};
 
 	public static Expression<Func<CategoryEntity, CategoryResponse>> CategorySelector(

@@ -110,37 +110,14 @@ public class ProductService(
 					ShowCategories = p.ShowCategories,
 					ShowMedia = p.ShowMedia,
 					ShowUser = p.ShowUser,
-					ShowChildren = p.ShowChildren
+					ShowChildren = p.ShowChildren,
+					ShowChildrenCount = p.ShowChildrenCount,
+					ShowCommentsCount = p.ShowCommentCount,
+					ShowIsFollowing = p.ShowIsFollowing,
+					UserData = userData
 				}
 			)
 		).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
-
-		foreach (ProductResponse i in list.Result ?? []) {
-			foreach (VisitCount visit in i.JsonData.VisitCounts) i.VisitCount += visit.Count;
-		}
-
-		// if (p.ShowCommentCount)
-		// 	foreach (ProductResponse i in list.Result ?? []) {
-		// 		UResponse<int> commentCount = await commentService.ReadProductCommentCount(new IdParams {
-		// 			Id = i.Id
-		// 		}, ct);
-		// 		i.CommentCount = commentCount.Result;
-		// 	}
-
-		if (p.ShowChildrenCount)
-			foreach (ProductResponse i in list.Result ?? []) {
-				if (p.ShowChildren)
-					i.ChildrenCount = i.Children?.Count();
-				else
-					i.ChildrenCount = await db.Set<ProductEntity>().Where(x => x.ParentId == i.Id).CountAsync(ct);
-			}
-
-		if (p.ShowIsFollowing && userData?.Id != null)
-			foreach (ProductResponse i in list.Result ?? []) {
-				UResponse<bool?> isFollowing = await followService.IsFollowingProduct(new FollowParams { UserId = userData?.Id, TargetProductId = i.Id, Token = p.Token }, ct);
-				i.IsFollowing = isFollowing.Result ?? null;
-			}
-
 		return list;
 	}
 
