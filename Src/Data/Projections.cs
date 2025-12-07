@@ -1,11 +1,10 @@
 namespace SinaMN75U.Data;
 
 public sealed class CategorySelectorArgs {
-	public CategorySelectorArgs? ChildrenSelectorArgs { get; set; }
 	public bool Media { get; set; }
 	public bool Children { get; set; }
 	public bool ChildrenMedia { get; set; }
-	public int ChildrenDebt { get; set; } = 0;
+	public int ChildrenDebt { get; set; }
 }
 
 public sealed class ContentSelectorArgs {
@@ -123,25 +122,16 @@ public static class Projections {
 			: null
 	};
 
-	// public static Expression<Func<CategoryEntity, CategoryResponse>> CategorySelector(CategorySelectorArgs arg) => x => new CategoryResponse {
-	// 	Id = x.Id,
-	// 	Tags = x.Tags,
-	// 	JsonData = x.JsonData,
-	// 	Title = x.Title,
-	// 	Order = x.Order,
-	// 	Code = x.Code,
-	// 	ParentId = x.ParentId,
-	// 	Media = arg.Media ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null,
-	// 	Children = arg.Children ? x.Children.AsQueryable().Select(CategorySelector(arg.ChildrenSelectorArgs ?? new CategorySelectorArgs())).ToList() : null
-	// };
-	
-	public static Expression<Func<CategoryEntity, CategoryResponse>> CategorySelector(CategorySelectorArgs arg)
-	{
-		CategorySelectorArgs childArgs = arg.ChildrenSelectorArgs ?? new CategorySelectorArgs();
-		Expression<Func<CategoryEntity, CategoryResponse>> childSelector = CategorySelector(childArgs);
-
-		return x => new CategoryResponse
-		{
+	public static Expression<Func<CategoryEntity, CategoryResponse>> CategorySelector(CategorySelectorArgs arg) {
+		CategorySelectorArgs next = new() {
+			Media = arg.ChildrenMedia,
+			Children = arg.Children,
+			ChildrenMedia = arg.ChildrenMedia,
+			ChildrenDebt = arg.ChildrenDebt - 1,
+		};
+		Expression<Func<CategoryEntity, CategoryResponse>>? childSelector = null;
+		if (arg is { Children: true, ChildrenDebt: > 0 and < 10 }) childSelector = CategorySelector(next);
+		return x => new CategoryResponse {
 			Id = x.Id,
 			Tags = x.Tags,
 			JsonData = x.JsonData,
@@ -149,21 +139,10 @@ public static class Projections {
 			Order = x.Order,
 			Code = x.Code,
 			ParentId = x.ParentId,
-
-			Media = arg.Media
-				? x.Media.AsQueryable()
-					.Select(MediaSelector())
-					.ToList()
-				: null,
-
-			Children = arg.Children
-				? x.Children.AsQueryable()
-					.Select(childSelector)   // recursion works
-					.ToList()
-				: null
+			Media = arg.Media ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null,
+			Children = arg.Children && arg.ChildrenDebt > 0 ? x.Children.AsQueryable().Select(childSelector!).ToList() : null
 		};
 	}
-
 
 	public static Expression<Func<ContentEntity, ContentResponse>> ContentSelector(ContentSelectorArgs args) => x => new ContentResponse {
 		Id = x.Id,
