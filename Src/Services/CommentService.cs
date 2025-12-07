@@ -44,11 +44,11 @@ public class CommentService(
 	public async Task<UResponse<CommentResponse?>> ReadById(IdParams p, CancellationToken ct) {
 		CommentResponse? e = await db.Set<CommentEntity>()
 			.Select(Projections.CommentSelector(new CommentSelectorArgs {
-						ShowMedia = true,
-						ShowUser = true,
-						ShowTargetUser = true,
-						ShowProduct = true,
-						ShowChildren = true
+						Media = true,
+						User = true,
+						TargetUser = true,
+						Product = true,
+						Children = true
 					}
 				)
 			)
