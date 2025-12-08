@@ -6,7 +6,7 @@ public interface IUserService {
 	public Task<UResponse<UserEntity?>> Create(UserCreateParams p, bool auth, CancellationToken ct);
 	public Task<UResponse> BulkCreate(UserBulkCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<UserResponse>?>> Read(UserReadParams p, CancellationToken ct);
-	public Task<UResponse<UserEntity?>> ReadById(IdParams p, CancellationToken ct);
+	public Task<UResponse<UserResponse?>> ReadById(IdParams p, CancellationToken ct);
 	public Task<UResponse<UserEntity?>> Update(UserUpdateParams p, bool auth, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
 }
@@ -142,14 +142,14 @@ public class UserService(
 		return new UResponse<UserEntity?>(e);
 	}
 
-	public async Task<UResponse<UserEntity?>> ReadById(IdParams p, CancellationToken ct) {
+	public async Task<UResponse<UserResponse?>> ReadById(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 
-		UserEntity? e = await db.Set<UserEntity>()
-			.Include(x => x.Media)
-			.Include(x => x.Categories).ThenInclude(x => x.Media)
+		UserResponse? e = await db.Set<UserEntity>().Select(Projections.UserSelector(new UserSelectorArgs {
+				Media = new MediaSelectorArgs()
+			}))
 			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse<UserEntity?>(null, Usc.NotFound, ls.Get("UserNotFound"));
+		if (e == null) return new UResponse<UserResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
 
 		try {
 			VisitCount? visitCount = e.JsonData.VisitCounts.FirstOrDefault(v => v.UserId == (userData?.Id ?? Guid.Empty));
@@ -160,7 +160,7 @@ public class UserService(
 			// ignored
 		}
 
-		return new UResponse<UserEntity?>(e);
+		return new UResponse<UserResponse?>(e);
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
