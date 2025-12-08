@@ -310,6 +310,28 @@ public static class Projections {
 						Categories = args.Contract.User.Category == null ? null : x.Contract.User.Categories.AsQueryable().Select(CategorySelector(args.Contract.User.Category)).ToList(),
 						Media = args.Contract.User.Media == null ? null : x.Contract.User.Media.AsQueryable().Select(MediaSelector(args.Contract.User.Media)).ToList()
 					},
+				Product = args.Contract.Product == null ? null : new ProductResponse {
+					Id = x.Contract.Product.Id,
+					JsonData = x.Contract.Product.JsonData,
+					Tags = x.Contract.Product.Tags,
+					Title = x.Contract.Product.Title,
+					Code = x.Contract.Product.Code,
+					Subtitle = x.Contract.Product.Subtitle,
+					Description = x.Contract.Product.Description,
+					Slug = x.Contract.Product.Slug,
+					Type = x.Contract.Product.Type,
+					Content = x.Contract.Product.Content,
+					Latitude = x.Contract.Product.Latitude,
+					Longitude = x.Contract.Product.Longitude,
+					Deposit = x.Contract.Product.Deposit,
+					Rent = x.Contract.Product.Rent,
+					Stock = x.Contract.Product.Stock,
+					Point = x.Contract.Product.Point,
+					Order = x.Contract.Product.Order,
+					UserId = x.Contract.Product.UserId,
+					Categories = args.Contract.Product.Category == null ? null : x.Contract.Product.Categories.AsQueryable().Select(CategorySelector(args.Contract.Product.Category)).ToList(),
+					Media = args.Contract.Product.Media == null ? null : x.Contract.Product.Media.AsQueryable().Select(MediaSelector(args.Contract.Product.Media)).ToList(),
+				},
 			}
 	};
 }

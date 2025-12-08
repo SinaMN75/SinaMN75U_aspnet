@@ -64,7 +64,17 @@ public enum TagProduct {
 	InQueue = 303,
 	Deleted = 304,
 	NotAccepted = 305,
-	AwaitingPayment = 306
+	AwaitingPayment = 306,
+	Room1 = 401,
+	Room2 = 402,
+	Room3 = 403,
+	Room4 = 404,
+	Room5 = 405,
+	Room6 = 406,
+	Room7 = 407,
+	Room8 = 408,
+	Room9 = 409,
+	Room10 = 410,
 }
 
 public enum TagComment {

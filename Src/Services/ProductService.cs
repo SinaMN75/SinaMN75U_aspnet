@@ -66,7 +66,7 @@ public class ProductService(
 		if (p.MinDeposit.IsNotNull()) q = q.Where(x => x.Deposit <= p.MinDeposit);
 		if (p.Categories.IsNotNullOrEmpty()) q = q.Where(x => x.Categories.Any(y => p.Categories.Contains(y.Id)));
 		
-		if (p.HasActiveContract) q = q.Include(x => x.Contracts).Where(x => x.Contracts.Any(y => y.EndDate <= DateTime.UtcNow));
+		if (p.HasActiveContract) q = q.Include(x => x.Contracts).Where(x => x.Contracts.Any(y => y.EndDate >= DateTime.UtcNow));
 		
 		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
 		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
