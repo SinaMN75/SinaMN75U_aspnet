@@ -96,7 +96,7 @@ public static class Projections {
 		ParentId = x.ParentId,
 		UserId = x.UserId,
 		Categories = args.CategorySelectorArgs == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.CategorySelectorArgs)).ToList(),
-		Children = args.ChildrenSelectorArgs == null ? null : x.Children.AsQueryable().Select(ProductSelector(args.ChildrenSelectorArgs ?? new ProductSelectorArgs())).ToList(),
+		Children = args.ChildrenSelectorArgs == null ? null : x.Children.AsQueryable().Select(ProductSelector(args.ChildrenSelectorArgs)).ToList(),
 		Media = args.Media ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null,
 		CommentCount = args.CommentsCount ? x.Comments.Count : null,
 		ChildrenCount = args.ChildrenCount ? x.Children.Count : null,
@@ -160,7 +160,7 @@ public static class Projections {
 		TargetUser = args.TargetUserSelectorArgs == null ? null : x.TargetUser!.MapToResponse(),
 		Product = args.ProductSelectorArgs == null ? null : x.Product!.MapToResponse(),
 		Media = args.Media ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null,
-		Children = args.ChildrenSelectorArgs == null ? null : x.Children.AsQueryable().Select(CommentSelector(args.ChildrenSelectorArgs ?? new CommentSelectorArgs())).ToList()
+		Children = args.ChildrenSelectorArgs == null ? null : x.Children.AsQueryable().Select(CommentSelector(args.ChildrenSelectorArgs)).ToList()
 	};
 
 	public static Expression<Func<ContractEntity, ContractResponse>> ContractSelector(ContractSelectorArgs args) => x => new ContractResponse {
