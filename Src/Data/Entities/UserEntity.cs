@@ -48,11 +48,15 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 	public ICollection<CategoryEntity> Categories { get; set; } = [];
 
 	public ICollection<MediaEntity> Media { get; set; } = [];
-	
+
+	[InverseProperty(nameof(ContractEntity.User))]
 	public ICollection<ContractEntity> Contracts { get; set; } = [];
-	
+
+	[InverseProperty(nameof(ContractEntity.Creator))]
+	public ICollection<ContractEntity> CreatedContracts { get; set; } = [];
+
 	public ICollection<InvoiceEntity> Invoices { get; set; } = [];
-	
+
 	public new UserResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
@@ -71,7 +75,6 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 		City = City,
 		Birthdate = Birthdate
 	};
-
 }
 
 public class UserJson {
