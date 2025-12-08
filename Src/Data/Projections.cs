@@ -34,6 +34,8 @@ public sealed class ProductSelectorArgs {
 }
 
 public sealed class ContractSelectorArgs {
+	public UserSelectorArgs UserSelectorArgs { get; set; } = new();
+	public UserSelectorArgs CreatorSelectorArgs { get; set; } = new();
 	public bool Invoices { get; set; }
 	public bool Product { get; set; }
 	public bool User { get; set; }
@@ -41,6 +43,7 @@ public sealed class ContractSelectorArgs {
 }
 
 public sealed class InvoiceSelectorArgs {
+	public ContractSelectorArgs ContractSelectorArgs { get; set; } = new();
 	public UserSelectorArgs UserSelectorArgs { get; set; } = new();
 	public bool User { get; set; }
 	public bool Creator { get; set; }
@@ -225,6 +228,30 @@ public static class Projections {
 				UserId = x.Contract.UserId,
 				CreatorId = x.Contract.CreatorId,
 				ProductId = x.Contract.ProductId,
+				Creator =  args.ContractSelectorArgs.Creator ? new UserResponse {
+					Id = x.Contract.Creator.Id,
+					JsonData = x.Contract.Creator.JsonData,
+					Tags = x.Contract.Creator.Tags,
+					UserName = x.Contract.Creator.UserName,
+					PhoneNumber = x.Contract.Creator.PhoneNumber,
+					Email = x.Contract.Creator.Email,
+					FirstName = x.Contract.Creator.FirstName,
+					LastName = x.Contract.Creator.LastName,
+					Categories = args.ContractSelectorArgs.CreatorSelectorArgs.Categories ? x.Contract.Creator.Categories.AsQueryable().Select(CategorySelector(args.ContractSelectorArgs.CreatorSelectorArgs.CategorySelectorArgs)).ToList() : null,
+					Media = args.ContractSelectorArgs.CreatorSelectorArgs.Media ? x.Contract.Creator.Media.AsQueryable().Select(MediaSelector()).ToList() : null
+				} : null,
+				User =  args.ContractSelectorArgs.User ? new UserResponse {
+					Id = x.Contract.User.Id,
+					JsonData = x.Contract.User.JsonData,
+					Tags = x.Contract.User.Tags,
+					UserName = x.Contract.User.UserName,
+					PhoneNumber = x.Contract.User.PhoneNumber,
+					Email = x.Contract.User.Email,
+					FirstName = x.Contract.User.FirstName,
+					LastName = x.Contract.User.LastName,
+					Categories = args.ContractSelectorArgs.UserSelectorArgs.Categories ? x.Contract.User.Categories.AsQueryable().Select(CategorySelector(args.ContractSelectorArgs.UserSelectorArgs.CategorySelectorArgs)).ToList() : null,
+					Media = args.ContractSelectorArgs.UserSelectorArgs.Media ? x.Contract.User.Media.AsQueryable().Select(MediaSelector()).ToList() : null
+				} : null,
 			}
 			: null
 	};
