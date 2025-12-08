@@ -43,14 +43,7 @@ public class CommentService(
 
 	public async Task<UResponse<CommentResponse?>> ReadById(IdParams p, CancellationToken ct) {
 		CommentResponse? e = await db.Set<CommentEntity>()
-			.Select(Projections.CommentSelector(new CommentSelectorArgs {
-						Media = true,
-						User = true,
-						TargetUser = true,
-						Product = true,
-						Children = true
-					}
-				)
+			.Select(Projections.CommentSelector(new CommentSelectorArgs())
 			)
 			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<CommentResponse?>(null, Usc.NotFound, ls.Get("CommentNotFound")) : new UResponse<CommentResponse?>(e);
