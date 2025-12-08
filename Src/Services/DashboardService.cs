@@ -122,7 +122,7 @@ public class DashboardService(
 		UResponse<IEnumerable<CommentResponse>?> newComments = await commentService.Read(new CommentReadParams { PageSize = 5 }, ct);
 		UResponse<IEnumerable<ContentResponse>?> newContents = await contentService.Read(new ContentReadParams { PageSize = 5 }, ct);
 		UResponse<IEnumerable<ExamEntity>?> newExams = await examService.Read(new ExamReadParams { PageSize = 5 }, ct);
-		UResponse<IEnumerable<MediaEntity>?> newMedia = await mediaService.Read(new BaseReadParams<TagMedia> { PageSize = 5 }, ct);
+		UResponse<IEnumerable<MediaResponse>?> newMedia = await mediaService.Read(new BaseReadParams<TagMedia> { PageSize = 5 }, ct);
 		UResponse<IEnumerable<ProductResponse>?> newProducts = await productService.Read(new ProductReadParams { PageSize = 5 }, ct);
 
 		return new DashboardResponse {

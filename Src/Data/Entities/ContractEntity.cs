@@ -26,19 +26,13 @@ public class ContractEntity : BaseEntity<TagContract, ContractJson> {
 		DeletedAt = DeletedAt,
 		JsonData = JsonData,
 		Tags = Tags,
-
 		StartDate = StartDate,
 		EndDate = EndDate,
 		Deposit = Deposit,
 		Rent = Rent,
 		UserId = UserId,
 		CreatorId = CreatorId,
-		ProductId = ProductId,
-
-		User = null,
-		Creator = null,
-		Product = null,
-		Invoices = []
+		ProductId = ProductId
 	};
 
 

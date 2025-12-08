@@ -1,9 +1,11 @@
+using SinaMN75U.Data;
+
 namespace SinaMN75U.Services;
 
 public interface IMediaService {
-	Task<UResponse<MediaEntity?>> Create(MediaCreateParams p, CancellationToken ct);
-	Task<UResponse<IEnumerable<MediaEntity>?>> Read(BaseReadParams<TagMedia> p, CancellationToken ct);
-	Task<UResponse<MediaEntity?>> Update(MediaUpdateParams p, CancellationToken ct);
+	Task<UResponse<MediaResponse?>> Create(MediaCreateParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<MediaResponse>?>> Read(BaseReadParams<TagMedia> p, CancellationToken ct);
+	Task<UResponse<MediaResponse?>> Update(MediaUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	Task<UResponse> DeleteRange(IEnumerable<Guid> ids, CancellationToken ct);
 
@@ -15,10 +17,10 @@ public class MediaService(
 	DbContext db,
 	ILocalStorageService cache
 ) : IMediaService {
-	public async Task<UResponse<MediaEntity?>> Create(MediaCreateParams p, CancellationToken ct) {
+	public async Task<UResponse<MediaResponse?>> Create(MediaCreateParams p, CancellationToken ct) {
 		IEnumerable<string> allowedExtensions = [".png", ".gif", ".jpg", ".jpeg", ".svg", ".webp", ".mp4", ".mov", ".mp3", ".pdf", ".aac", ".apk", ".zip", ".rar", ".mkv"];
 		if (!allowedExtensions.Contains(Path.GetExtension(p.File.FileName.ToLower())))
-			return new UResponse<MediaEntity?>(null, Usc.MediaTypeNotSupported);
+			return new UResponse<MediaResponse?>(null, Usc.MediaTypeNotSupported);
 
 		string folderName;
 		if (p.UserId != null) {
@@ -60,27 +62,20 @@ public class MediaService(
 		await SaveMedia(p.File, name);
 		await db.Set<MediaEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
-		return new UResponse<MediaEntity?>(e, message: Path.Combine(env.WebRootPath, "Media"));
+		return new UResponse<MediaResponse?>(e.MapToResponse(), message: Path.Combine(env.WebRootPath, "Media"));
 	}
 
-	public async Task<UResponse<IEnumerable<MediaEntity>?>> Read(BaseReadParams<TagMedia> p, CancellationToken ct) {
+	public async Task<UResponse<IEnumerable<MediaResponse>?>> Read(BaseReadParams<TagMedia> p, CancellationToken ct) {
 		IQueryable<MediaEntity> q = db.Set<MediaEntity>().OrderByDescending(x => x.Id);
 
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
 
-		return await q.Select(x => new MediaEntity {
-			Id = x.Id,
-			JsonData = x.JsonData,
-			Tags = x.Tags,
-			Path = x.Path,
-			CreatedAt = x.CreatedAt,
-			UpdatedAt = x.UpdatedAt
-		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		return await q.Select(Projections.MediaSelector(new MediaSelectorArgs())).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
-	public async Task<UResponse<MediaEntity?>> Update(MediaUpdateParams p, CancellationToken ct) {
+	public async Task<UResponse<MediaResponse?>> Update(MediaUpdateParams p, CancellationToken ct) {
 		MediaEntity? e = await db.Set<MediaEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse<MediaEntity?>(null, Usc.BadRequest);
+		if (e == null) return new UResponse<MediaResponse?>(null, Usc.BadRequest);
 		if (p.Title != null) e.JsonData.Title = p.Title;
 		if (p.Description != null) e.JsonData.Description = p.Description;
 		if (p.CategoryId != null) e.CategoryId = p.CategoryId;
@@ -93,7 +88,7 @@ public class MediaService(
 
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
-		return new UResponse<MediaEntity?>(e);
+		return new UResponse<MediaResponse?>(e.MapToResponse());
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {

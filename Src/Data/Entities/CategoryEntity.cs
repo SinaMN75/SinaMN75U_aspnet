@@ -2,26 +2,22 @@ namespace SinaMN75U.Data.Entities;
 
 [Table("Categories")]
 public class CategoryEntity : BaseEntity<TagCategory, CategoryJson> {
-	[Required]
 	[MaxLength(100)]
 	public required string Title { get; set; }
 
+	public int? Order { get; set; }
+	
+	[MaxLength(100)]
+	public string? Code { get; set; }
+	
 	public Guid? ParentId { get; set; }
 	public CategoryEntity? Parent { get; set; }
-
-	public int? Order { get; set; }
-
-	public string? Code { get; set; }
 
 	[InverseProperty("Parent")]
 	public ICollection<CategoryEntity> Children { get; set; } = [];
 
-	[JsonIgnore]
 	public ICollection<ProductEntity> Products { get; set; } = [];
-
-	[JsonIgnore]
 	public ICollection<UserEntity> Users { get; set; } = [];
-
 	public ICollection<MediaEntity> Media { get; set; } = [];
 
 	public new CategoryResponse MapToResponse() => new() {
@@ -34,7 +30,7 @@ public class CategoryEntity : BaseEntity<TagCategory, CategoryJson> {
 		Title = Title,
 		Order = Order,
 		Code = Code,
-		ParentId = ParentId
+		ParentId = ParentId,
 	};
 }
 

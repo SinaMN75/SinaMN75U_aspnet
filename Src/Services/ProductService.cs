@@ -4,10 +4,10 @@ namespace SinaMN75U.Services;
 
 public interface IProductService {
 	public Task<UResponse> BulkCreate(List<ProductCreateParams> p, CancellationToken ct);
-	public Task<UResponse<ProductEntity?>> Create(ProductCreateParams p, CancellationToken ct);
+	public Task<UResponse<ProductResponse?>> Create(ProductCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<ProductResponse>?>> Read(ProductReadParams p, CancellationToken ct);
-	public Task<UResponse<ProductEntity?>> ReadById(IdParams p, CancellationToken ct);
-	public Task<UResponse<ProductEntity?>> Update(ProductUpdateParams p, CancellationToken ct);
+	public Task<UResponse<ProductResponse?>> ReadById(IdParams p, CancellationToken ct);
+	public Task<UResponse<ProductResponse?>> Update(ProductUpdateParams p, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	public Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct);
 }
@@ -25,10 +25,10 @@ public class ProductService(
 		return new UResponse();
 	}
 
-	public async Task<UResponse<ProductEntity?>> Create(ProductCreateParams p, CancellationToken ct) {
+	public async Task<UResponse<ProductResponse?>> Create(ProductCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null)
-			return new UResponse<ProductEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+			return new UResponse<ProductResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		List<CategoryEntity> categories = p.Categories.IsNotNullOrEmpty()
 			? await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct) ?? []
@@ -44,7 +44,7 @@ public class ProductService(
 		await AddMedia(e.Id, p.Media ?? [], ct);
 
 		cache.DeleteAllByPartialKey(RouteTags.Product);
-		return new UResponse<ProductEntity?>(created.Entity);
+		return new UResponse<ProductResponse?>(created.Entity.MapToResponse());
 	}
 
 	public async Task<UResponse<IEnumerable<ProductResponse>?>> Read(ProductReadParams p, CancellationToken ct) {
@@ -78,7 +78,7 @@ public class ProductService(
 		return list;
 	}
 
-	public async Task<UResponse<ProductEntity?>> ReadById(IdParams p, CancellationToken ct) {
+	public async Task<UResponse<ProductResponse?>> ReadById(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 
 		ProductEntity? e = await db.Set<ProductEntity>().AsTracking()
@@ -87,7 +87,7 @@ public class ProductService(
 			.Include(x => x.User)
 			.Include(x => x.Children)
 			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse<ProductEntity?>(null, Usc.NotFound, ls.Get("ProductNotFound"));
+		if (e == null) return new UResponse<ProductResponse?>(null, Usc.NotFound, ls.Get("ProductNotFound"));
 
 		VisitCount? visitCount = e.JsonData.VisitCounts.FirstOrDefault(v => v.UserId == (userData?.Id ?? Guid.Empty));
 
@@ -97,15 +97,15 @@ public class ProductService(
 		db.Set<ProductEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
 
-		return new UResponse<ProductEntity?>(e);
+		return new UResponse<ProductResponse?>(e.MapToResponse());
 	}
 
-	public async Task<UResponse<ProductEntity?>> Update(ProductUpdateParams p, CancellationToken ct) {
+	public async Task<UResponse<ProductResponse?>> Update(ProductUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ProductEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<ProductResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		ProductEntity? e = await db.Set<ProductEntity>().Include(x => x.Categories).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse<ProductEntity?>(null, Usc.NotFound, ls.Get("ProductNotFound"));
+		if (e == null) return new UResponse<ProductResponse?>(null, Usc.NotFound, ls.Get("ProductNotFound"));
 
 		e.UpdatedAt = DateTime.UtcNow;
 		if (p.Title.IsNotNull()) e.Title = p.Title;
@@ -179,7 +179,7 @@ public class ProductService(
 		cache.DeleteAllByPartialKey(RouteTags.Product);
 		cache.DeleteAllByPartialKey(RouteTags.Contract);
 		cache.DeleteAllByPartialKey(RouteTags.Invoice);
-		return new UResponse<ProductEntity?>(e);
+		return new UResponse<ProductResponse?>(e.MapToResponse());
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {

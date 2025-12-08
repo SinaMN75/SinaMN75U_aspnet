@@ -10,9 +10,7 @@ public class ContentEntity : BaseEntity<TagContent, ContentJson> {
 		UpdatedAt = UpdatedAt,
 		DeletedAt = DeletedAt,
 		JsonData = JsonData,
-		Tags = Tags,
-
-		Media = []
+		Tags = Tags
 	};
 
 }

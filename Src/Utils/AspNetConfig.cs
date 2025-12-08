@@ -12,7 +12,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddURateLimiter();
 		builder.Services.ConfigureHttpJsonOptions(o => {
 			o.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-			o.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+			// o.SerializerOptions.ReferenceHandler = ReferenceHandler.;
 			o.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 			o.SerializerOptions.WriteIndented = false;
 		});

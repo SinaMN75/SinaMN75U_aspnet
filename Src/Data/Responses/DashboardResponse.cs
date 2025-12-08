@@ -24,6 +24,6 @@ public sealed class DashboardResponse {
 	public required IEnumerable<CommentResponse> NewComments { get; set; }
 	public required IEnumerable<ContentResponse> NewContents { get; set; }
 	public required IEnumerable<ExamEntity> NewExams { get; set; }
-	public required IEnumerable<MediaEntity> NewMedia { get; set; }
+	public required IEnumerable<MediaResponse> NewMedia { get; set; }
 	public required IEnumerable<ProductResponse> NewProducts { get; set; }
 }

@@ -3,9 +3,9 @@
 namespace SinaMN75U.Services;
 
 public interface IInvoiceService {
-	Task<UResponse<InvoiceEntity?>> Create(InvoiceCreateParams p, CancellationToken ct);
+	Task<UResponse<InvoiceResponse?>> Create(InvoiceCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<InvoiceResponse>?>> Read(InvoiceReadParams p, CancellationToken ct);
-	Task<UResponse<InvoiceEntity?>> Update(InvoiceUpdateParams p, CancellationToken ct);
+	Task<UResponse<InvoiceResponse?>> Update(InvoiceUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 
 	Task<UResponse> Pay(IdParams p, CancellationToken ct);
@@ -17,9 +17,9 @@ public class InvoiceService(
 	ITokenService ts,
 	ILocalStorageService cache
 ) : IInvoiceService {
-	public async Task<UResponse<InvoiceEntity?>> Create(InvoiceCreateParams p, CancellationToken ct) {
+	public async Task<UResponse<InvoiceResponse?>> Create(InvoiceCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<InvoiceEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<InvoiceResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		EntityEntry<InvoiceEntity> e = await db.AddAsync(new InvoiceEntity {
 			Tags = p.Tags,
@@ -38,7 +38,7 @@ public class InvoiceService(
 		await db.SaveChangesAsync(ct);
 
 		cache.DeleteAllByPartialKey(RouteTags.Invoice);
-		return new UResponse<InvoiceEntity?>(e.Entity);
+		return new UResponse<InvoiceResponse?>(e.Entity.MapToResponse());
 	}
 
 	public async Task<UResponse<IEnumerable<InvoiceResponse>?>> Read(InvoiceReadParams p, CancellationToken ct) {
@@ -80,9 +80,9 @@ public class InvoiceService(
 		return response;
 	}
 
-	public async Task<UResponse<InvoiceEntity?>> Update(InvoiceUpdateParams p, CancellationToken ct) {
+	public async Task<UResponse<InvoiceResponse?>> Update(InvoiceUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<InvoiceEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<InvoiceResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		InvoiceEntity e = (await db.Set<InvoiceEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
 		e.UpdatedAt = DateTime.UtcNow;
@@ -92,8 +92,8 @@ public class InvoiceService(
 		if (p.PaidAmount.IsNotNull()) e.PaidAmount = p.PaidAmount.Value;
 		if (p.PaidDate.HasValue) e.PaidDate = p.PaidDate.Value;
 		if (p.DueDate.HasValue) e.DueDate = p.DueDate.Value;
-		if (StringExtensions.HasValue(p.UserId)) e.UserId = p.UserId.Value;
-		if (StringExtensions.HasValue(p.ContractId)) e.ContractId = p.ContractId.Value;
+		if (p.UserId.HasValue) e.UserId = p.UserId.Value;
+		if (p.ContractId.HasValue) e.ContractId = p.ContractId.Value;
 		if (p.Description.HasValue()) e.JsonData.Description = p.Description;
 
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
@@ -104,7 +104,7 @@ public class InvoiceService(
 		await db.SaveChangesAsync(ct);
 
 		cache.DeleteAllByPartialKey(RouteTags.Invoice);
-		return new UResponse<InvoiceEntity?>(e);
+		return new UResponse<InvoiceResponse?>(e.MapToResponse());
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {

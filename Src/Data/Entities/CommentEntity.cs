@@ -9,17 +9,17 @@ public class CommentEntity : BaseEntity<TagComment, CommentJson> {
 	[MaxLength(2000)]
 	public required string Description { get; set; }
 
+	public required Guid UserId { get; set; }
+	public UserEntity User { get; set; } = null!;
+
+	public Guid? TargetUserId { get; set; }
+	public UserEntity? TargetUser { get; set; }
+
+	public Guid? ProductId { get; set; }
+	public ProductEntity? Product { get; set; }
+	
 	public Guid? ParentId { get; set; }
 	public CommentEntity? Parent { get; set; }
-
-	public UserEntity User { get; set; } = null!;
-	public required Guid UserId { get; set; }
-
-	public UserEntity? TargetUser { get; set; }
-	public Guid? TargetUserId { get; set; }
-
-	public ProductEntity? Product { get; set; }
-	public Guid? ProductId { get; set; }
 
 	[InverseProperty("Parent")]
 	public ICollection<CommentEntity> Children { get; set; } = [];
@@ -33,20 +33,12 @@ public class CommentEntity : BaseEntity<TagComment, CommentJson> {
 		DeletedAt = DeletedAt,
 		JsonData = JsonData,
 		Tags = Tags,
-
 		Score = Score,
 		Description = Description,
 		ParentId = ParentId,
 		UserId = UserId,
 		TargetUserId = TargetUserId,
-		ProductId = ProductId,
-
-		Parent = null,
-		User = null,
-		TargetUser = null,
-		Product = null,
-		Children = [],
-		Media = []
+		ProductId = ProductId
 	};
 }
 

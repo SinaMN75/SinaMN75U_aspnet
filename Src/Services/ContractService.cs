@@ -3,9 +3,9 @@
 namespace SinaMN75U.Services;
 
 public interface IContractService {
-	Task<UResponse<ContractEntity?>> Create(ContractCreateParams p, CancellationToken ct);
+	Task<UResponse<ContractResponse?>> Create(ContractCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<ContractResponse>?>> Read(ContractReadParams p, CancellationToken ct);
-	Task<UResponse<ContractEntity?>> Update(ContractUpdateParams p, CancellationToken ct);
+	Task<UResponse<ContractResponse?>> Update(ContractUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 }
 
@@ -15,15 +15,15 @@ public class ContractService(
 	ITokenService ts,
 	ILocalStorageService cache
 ) : IContractService {
-	public async Task<UResponse<ContractEntity?>> Create(ContractCreateParams p, CancellationToken ct) {
+	public async Task<UResponse<ContractResponse?>> Create(ContractCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ContractEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<ContractResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		ProductEntity? product = await db.Set<ProductEntity>().FirstOrDefaultAsync(x => x.Id == p.ProductId, ct);
-		if (product?.Deposit == null || product.Rent == null) return new UResponse<ContractEntity?>(null, Usc.NotFound, ls.Get("ProductNotFound"));
+		if (product?.Deposit == null || product.Rent == null) return new UResponse<ContractResponse?>(null, Usc.NotFound, ls.Get("ProductNotFound"));
 
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
-		if (user == null) return new UResponse<ContractEntity?>(null, Usc.NotFound, ls.Get("UserNotFound"));
+		if (user == null) return new UResponse<ContractResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
 
 		Guid contractId = Guid.CreateVersion7();
 		ContractEntity e = new() {
@@ -112,7 +112,7 @@ public class ContractService(
 
 		cache.DeleteAllByPartialKey(RouteTags.Contract);
 		cache.DeleteAllByPartialKey(RouteTags.Invoice);
-		return new UResponse<ContractEntity?>(e);
+		return new UResponse<ContractResponse?>(e.MapToResponse());
 	}
 
 	public async Task<UResponse<IEnumerable<ContractResponse>?>> Read(ContractReadParams p, CancellationToken ct) {
@@ -133,9 +133,9 @@ public class ContractService(
 		return await list.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
-	public async Task<UResponse<ContractEntity?>> Update(ContractUpdateParams p, CancellationToken ct) {
+	public async Task<UResponse<ContractResponse?>> Update(ContractUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ContractEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<ContractResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		ContractEntity e = (await db.Set<ContractEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
 		e.UpdatedAt = DateTime.UtcNow;
@@ -153,7 +153,7 @@ public class ContractService(
 
 		cache.DeleteAllByPartialKey(RouteTags.Contract);
 		cache.DeleteAllByPartialKey(RouteTags.Invoice);
-		return new UResponse<ContractEntity?>(e);
+		return new UResponse<ContractResponse?>(e.MapToResponse());
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {

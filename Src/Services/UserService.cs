@@ -3,11 +3,11 @@ using SinaMN75U.Data;
 namespace SinaMN75U.Services;
 
 public interface IUserService {
-	public Task<UResponse<UserEntity?>> Create(UserCreateParams p, bool auth, CancellationToken ct);
+	public Task<UResponse<UserResponse?>> Create(UserCreateParams p, bool auth, CancellationToken ct);
 	public Task<UResponse> BulkCreate(UserBulkCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<UserResponse>?>> Read(UserReadParams p, CancellationToken ct);
 	public Task<UResponse<UserResponse?>> ReadById(IdParams p, CancellationToken ct);
-	public Task<UResponse<UserEntity?>> Update(UserUpdateParams p, bool auth, CancellationToken ct);
+	public Task<UResponse<UserResponse?>> Update(UserUpdateParams p, bool auth, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
 }
 
@@ -17,9 +17,9 @@ public class UserService(
 	ITokenService ts,
 	ICategoryService categoryService
 ) : IUserService {
-	public async Task<UResponse<UserEntity?>> Create(UserCreateParams p, bool auth, CancellationToken ct) {
+	public async Task<UResponse<UserResponse?>> Create(UserCreateParams p, bool auth, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null && auth) return new UResponse<UserEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null && auth) return new UResponse<UserResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		UserEntity e = p.MapToEntity();
 
 		if (p.Categories.IsNotNullOrEmpty()) {
@@ -35,7 +35,7 @@ public class UserService(
 		await db.Set<UserEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
 
-		return new UResponse<UserEntity?>(e, Usc.Created);
+		return new UResponse<UserResponse?>(e.MapToResponse(), Usc.Created);
 	}
 
 	public async Task<UResponse> BulkCreate(UserBulkCreateParams p, CancellationToken ct) {
@@ -113,12 +113,12 @@ public class UserService(
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
-	public async Task<UResponse<UserEntity?>> Update(UserUpdateParams p, bool auth, CancellationToken ct) {
+	public async Task<UResponse<UserResponse?>> Update(UserUpdateParams p, bool auth, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null && auth) return new UResponse<UserEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null && auth) return new UResponse<UserResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse<UserEntity?>(null, Usc.NotFound);
+		if (e == null) return new UResponse<UserResponse?>(null, Usc.NotFound);
 
 		e.UpdatedAt = DateTime.UtcNow;
 
@@ -139,7 +139,7 @@ public class UserService(
 		db.Set<UserEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
 
-		return new UResponse<UserEntity?>(e);
+		return new UResponse<UserResponse?>(e.MapToResponse());
 	}
 
 	public async Task<UResponse<UserResponse?>> ReadById(IdParams p, CancellationToken ct) {
