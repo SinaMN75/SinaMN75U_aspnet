@@ -13,9 +13,6 @@ public sealed class InvoiceCreateParams : BaseCreateParams<TagInvoice> {
 	[UValidationRequired("PriceRequired")]
 	public required double PenaltyAmount { get; set; }
 
-	[UValidationRequired("UserIdRequired")]
-	public required Guid UserId { get; set; }
-
 	[UValidationRequired("ContractIdRequired")]
 	public required Guid ContractId { get; set; }
 
@@ -31,7 +28,6 @@ public sealed class InvoiceCreateParams : BaseCreateParams<TagInvoice> {
 		CreditorAmount = CreditorAmount,
 		PaidAmount = PaidAmount,
 		PenaltyAmount = PenaltyAmount,
-		UserId = UserId,
 		ContractId = ContractId,
 		PaidDate = PaidDate,
 		DueDate = DueDate,
@@ -51,7 +47,6 @@ public sealed class InvoiceUpdateParams : BaseUpdateParams<TagInvoice> {
 	public DateTime? PaidDate { get; set; }
 	public DateTime? DueDate { get; set; }
 	public string? Description { get; set; }
-	public Guid? UserId { get; set; }
 	public Guid? ContractId { get; set; }
 	
 	public void MapToEntity(InvoiceEntity e) {
@@ -62,7 +57,6 @@ public sealed class InvoiceUpdateParams : BaseUpdateParams<TagInvoice> {
 		if (PaidDate.HasValue) e.PaidDate = PaidDate;
 		if (DueDate.HasValue) e.DueDate = DueDate.Value;
 		if (Description != null) e.JsonData.Description = Description;
-		if (UserId.HasValue) e.UserId = UserId.Value;
 		if (ContractId.HasValue) e.ContractId = ContractId.Value;
 		if (Tags != null) e.Tags = Tags;
 	}

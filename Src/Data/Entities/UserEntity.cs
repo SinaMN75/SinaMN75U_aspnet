@@ -49,6 +49,8 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 
 	public ICollection<MediaEntity> Media { get; set; } = [];
 	
+	public ICollection<ContractEntity> Contracts { get; set; } = [];
+	
 	public new UserResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,

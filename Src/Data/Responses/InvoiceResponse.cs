@@ -9,6 +9,5 @@ public class InvoiceResponse : BaseResponse<TagInvoice, InvoiceJson> {
 	public DateTime? PaidDate { get; set; }
 	public string? TrackingNumber { get; set; }
 
-	public UserResponse? User { get; set; }
 	public ContractResponse? Contract { get; set; }
 }

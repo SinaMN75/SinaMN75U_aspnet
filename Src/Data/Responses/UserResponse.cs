@@ -14,6 +14,7 @@ public class UserResponse : BaseResponse<TagUser, UserJson> {
 	
 	public IEnumerable<CategoryResponse>? Categories { get; set; }
 	public IEnumerable<MediaResponse>? Media { get; set; }
+	public IEnumerable<ContractResponse>? Contracts { get; set; }
 }
 
 public sealed class LoginResponse {

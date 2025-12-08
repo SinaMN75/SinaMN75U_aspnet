@@ -12,10 +12,7 @@ public class InvoiceEntity: BaseEntity<TagInvoice, InvoiceJson> {
 
 	[MaxLength(20)]
 	public string? TrackingNumber { get; set; }
-
-	public UserEntity User { get; set; } = null!;
-	public required Guid UserId { get; set; }
-
+	
 	public ContractEntity Contract { get; set; } = null!;
 	public required Guid ContractId { get; set; }
 	
@@ -26,7 +23,6 @@ public class InvoiceEntity: BaseEntity<TagInvoice, InvoiceJson> {
 		DeletedAt = DeletedAt,
 		JsonData = JsonData,
 		Tags = Tags,
-
 		DebtAmount = DebtAmount,
 		CreditorAmount = CreditorAmount,
 		PaidAmount = PaidAmount,
@@ -34,8 +30,6 @@ public class InvoiceEntity: BaseEntity<TagInvoice, InvoiceJson> {
 		DueDate = DueDate,
 		PaidDate = PaidDate,
 		TrackingNumber = TrackingNumber,
-
-		User = null,
 		Contract = null
 	};
 

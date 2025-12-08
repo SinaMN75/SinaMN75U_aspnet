@@ -27,7 +27,6 @@ public class InvoiceService(
 			CreditorAmount = p.CreditorAmount,
 			PaidAmount = p.PaidAmount,
 			PenaltyAmount = p.PenaltyAmount,
-			UserId = p.UserId,
 			ContractId = p.ContractId,
 			DueDate = p.DueDate,
 			PaidDate = p.PaidDate,
@@ -45,7 +44,6 @@ public class InvoiceService(
 		IQueryable<InvoiceEntity> q = db.Set<InvoiceEntity>();
 
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags.Contains(tag)));
-		if (StringExtensions.HasValue(p.UserId)) q = q.Where(x => x.UserId == p.UserId);
 		if (p.FromCreatedAt.HasValue) q = q.Where(x => x.CreatedAt >= p.FromCreatedAt);
 		if (p.ToCreatedAt.HasValue) q = q.Where(x => x.CreatedAt <= p.ToCreatedAt);
 
@@ -92,8 +90,7 @@ public class InvoiceService(
 		if (p.PaidAmount.IsNotNull()) e.PaidAmount = p.PaidAmount.Value;
 		if (p.PaidDate.HasValue) e.PaidDate = p.PaidDate.Value;
 		if (p.DueDate.HasValue) e.DueDate = p.DueDate.Value;
-		if (StringExtensions.HasValue(p.UserId)) e.UserId = p.UserId.Value;
-		if (StringExtensions.HasValue(p.ContractId)) e.ContractId = p.ContractId.Value;
+		if (p.ContractId.HasValue) e.ContractId = p.ContractId.Value;
 		if (p.Description.HasValue()) e.JsonData.Description = p.Description;
 
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);

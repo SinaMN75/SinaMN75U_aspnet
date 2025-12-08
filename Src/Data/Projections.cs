@@ -13,8 +13,10 @@ public sealed class ContentSelectorArgs {
 
 public sealed class UserSelectorArgs {
 	public CategorySelectorArgs CategorySelectorArgs { get; set; } = new();
+	public ContractSelectorArgs ContractSelectorArgs { get; set; } = new();
 	public bool Categories { get; set; }
 	public bool Media { get; set; }
+	public bool Contracts { get; set; }
 }
 
 public sealed class ProductSelectorArgs {
@@ -40,7 +42,6 @@ public sealed class ContractSelectorArgs {
 
 public sealed class InvoiceSelectorArgs {
 	public UserSelectorArgs UserSelectorArgs { get; set; } = new();
-	public bool User { get; set; }
 	public bool Creator { get; set; }
 	public bool Contract { get; set; }
 }
@@ -77,7 +78,8 @@ public static class Projections {
 		City = x.City,
 		Birthdate = x.Birthdate,
 		Categories = args.Categories ? x.Categories.AsQueryable().Select(CategorySelector(args.CategorySelectorArgs)).ToList() : null,
-		Media = args.Media ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null
+		Media = args.Media ? x.Media.AsQueryable().Select(MediaSelector()).ToList() : null,
+		Contracts = args.Contracts ? x.Contracts.AsQueryable().Select(ContractSelector(args.ContractSelectorArgs)).ToList() : null,
 	};
 
 	public static Expression<Func<ProductEntity, ProductResponse>> ProductSelector(ProductSelectorArgs args) => x => new ProductResponse {
@@ -196,20 +198,6 @@ public static class Projections {
 		DueDate = x.DueDate,
 		PaidDate = x.PaidDate,
 		TrackingNumber = x.TrackingNumber,
-		User = args.User
-			? new UserResponse {
-				Id = x.User.Id,
-				JsonData = x.User.JsonData,
-				Tags = x.User.Tags,
-				UserName = x.User.UserName,
-				PhoneNumber = x.User.PhoneNumber,
-				Email = x.User.Email,
-				FirstName = x.User.FirstName,
-				LastName = x.User.LastName,
-				Categories = args.UserSelectorArgs.Categories ? x.User.Categories.AsQueryable().Select(CategorySelector(args.UserSelectorArgs.CategorySelectorArgs)).ToList() : null,
-				Media = args.UserSelectorArgs.Media ? x.User.Media.AsQueryable().Select(MediaSelector()).ToList() : null
-			}
-			: null,
 		Contract = args.Contract
 			? new ContractResponse {
 				Id = x.Contract.Id,
