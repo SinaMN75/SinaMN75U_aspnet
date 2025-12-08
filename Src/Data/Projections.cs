@@ -33,6 +33,7 @@ public sealed class ProductSelectorArgs {
 	public bool ChildrenCount { get; set; }
 	public bool CommentsCount { get; set; }
 	public bool IsFollowing { get; set; }
+	public int ChildrenDebt { get; set; }
 }
 
 public sealed class ContractSelectorArgs {
@@ -82,54 +83,69 @@ public static class Projections {
 		Contracts = args.Contract == null ? null : x.Contracts.AsQueryable().Select(ContractSelector(args.Contract)).ToList(),
 	};
 
-	public static Expression<Func<ProductEntity, ProductResponse>> ProductSelector(ProductSelectorArgs args) => x => new ProductResponse {
-		Id = x.Id,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		Title = x.Title,
-		Code = x.Code,
-		Subtitle = x.Subtitle,
-		Description = x.Description,
-		Slug = x.Slug,
-		Type = x.Type,
-		Content = x.Content,
-		Latitude = x.Latitude,
-		Longitude = x.Longitude,
-		Deposit = x.Deposit,
-		Rent = x.Rent,
-		Stock = x.Stock,
-		Point = x.Point,
-		Order = x.Order,
-		ParentId = x.ParentId,
-		UserId = x.UserId,
-		Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(args.Media)).ToList(),
-		Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
-		Children = args.Children == null ? null : x.Children.AsQueryable().Select(ProductSelector(args.Children)).ToList(),
-		CommentCount = args.CommentsCount ? x.Comments.Count : null,
-		ChildrenCount = args.ChildrenCount ? x.Children.Count : null,
-		IsFollowing = args.IsFollowing && args.UserId != null ? x.Followers.Any(f => f.UserId == args.UserId) : null,
-		User = args.User == null
-			? null
-			: new UserResponse {
-				Id = x.User.Id,
-				JsonData = x.User.JsonData,
-				Tags = x.User.Tags,
-				UserName = x.User.UserName,
-				PhoneNumber = x.User.PhoneNumber,
-				Email = x.User.Email,
-				FirstName = x.User.FirstName,
-				LastName = x.User.LastName,
-				Media = args.User.Media == null ? null : x.User.Media.AsQueryable().Select(MediaSelector(args.User.Media)).ToList(),
-				Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList(),
-			}
-	};
+	public static Expression<Func<ProductEntity, ProductResponse>> ProductSelector(ProductSelectorArgs args) {
+		Expression<Func<ProductEntity, ProductResponse>>? childSelector = null;
+		if (args is { Children: not null, ChildrenDebt: > 0 and < 10 }) childSelector = ProductSelector(new ProductSelectorArgs {
+			UserId = args.UserId,
+			Media = args.Media,
+			Comment = args.Comment,
+			ChildrenCount = args.ChildrenCount,
+			CommentsCount = args.CommentsCount,
+			IsFollowing = args.IsFollowing,
+			Children = args.Children,
+			Category = args.Category,
+			User = args.User,
+			ChildrenDebt = args.ChildrenDebt - 1,
+		});
+		return x => new ProductResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			Title = x.Title,
+			Code = x.Code,
+			Subtitle = x.Subtitle,
+			Description = x.Description,
+			Slug = x.Slug,
+			Type = x.Type,
+			Content = x.Content,
+			Latitude = x.Latitude,
+			Longitude = x.Longitude,
+			Deposit = x.Deposit,
+			Rent = x.Rent,
+			Stock = x.Stock,
+			Point = x.Point,
+			Order = x.Order,
+			ParentId = x.ParentId,
+			UserId = x.UserId,
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(args.Media)).ToList(),
+			Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
+			Children = args.Children != null && args.ChildrenDebt > 0 ? x.Children.AsQueryable().Select(childSelector!).ToList() : null,
+			CommentCount = args.CommentsCount ? x.Comments.Count : null,
+			ChildrenCount = args.ChildrenCount ? x.Children.Count : null,
+			IsFollowing = args.IsFollowing && args.UserId != null ? x.Followers.Any(f => f.UserId == args.UserId) : null,
+			User = args.User == null
+				? null
+				: new UserResponse {
+					Id = x.User.Id,
+					JsonData = x.User.JsonData,
+					Tags = x.User.Tags,
+					UserName = x.User.UserName,
+					PhoneNumber = x.User.PhoneNumber,
+					Email = x.User.Email,
+					FirstName = x.User.FirstName,
+					LastName = x.User.LastName,
+					Media = args.User.Media == null ? null : x.User.Media.AsQueryable().Select(MediaSelector(args.User.Media)).ToList(),
+					Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList(),
+				}
+		};
+	}
 
-	public static Expression<Func<CategoryEntity, CategoryResponse>> CategorySelector(CategorySelectorArgs arg) {
+	public static Expression<Func<CategoryEntity, CategoryResponse>> CategorySelector(CategorySelectorArgs args) {
 		Expression<Func<CategoryEntity, CategoryResponse>>? childSelector = null;
-		if (arg is { Children: not null, ChildrenDebt: > 0 and < 10 }) childSelector = CategorySelector(new CategorySelectorArgs{
-			Media = arg.Media,
-			Children = arg.Children,
-			ChildrenDebt = arg.ChildrenDebt - 1,
+		if (args is { Children: not null, ChildrenDebt: > 0 and < 10 }) childSelector = CategorySelector(new CategorySelectorArgs{
+			Media = args.Media,
+			Children = args.Children,
+			ChildrenDebt = args.ChildrenDebt - 1,
 		});
 		return x => new CategoryResponse {
 			Id = x.Id,
@@ -139,8 +155,8 @@ public static class Projections {
 			Order = x.Order,
 			Code = x.Code,
 			ParentId = x.ParentId,
-			Media = arg.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(arg.Media)).ToList(),
-			Children = arg.Children != null && arg.ChildrenDebt > 0 ? x.Children.AsQueryable().Select(childSelector!).ToList() : null
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(args.Media)).ToList(),
+			Children = args.Children != null && args.ChildrenDebt > 0 ? x.Children.AsQueryable().Select(childSelector!).ToList() : null
 		};
 	}
 
