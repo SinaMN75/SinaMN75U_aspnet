@@ -91,8 +91,8 @@ public class UserService(
 		IQueryable<UserEntity> q = db.Set<UserEntity>();
 
 		if (p.UserName.IsNotNull()) q = q.Where(u => u.UserName.Contains(p.UserName!));
-		if (p.FirstName.IsNotNull()) q = q.Where(u => (u.FirstName ?? "").Contains(p.FirstName));
-		if (p.LastName.IsNotNull()) q = q.Where(u => (u.LastName ?? "").Contains(p.LastName));
+		if (p.FirstName.IsNotNull()) q = q.Where(u => (u.FirstName ?? "").Contains(p.FirstName!));
+		if (p.LastName.IsNotNull()) q = q.Where(u => (u.LastName ?? "").Contains(p.UserName!));
 		if (p.PhoneNumber.IsNotNull()) q = q.Where(u => u.PhoneNumber == p.PhoneNumber);
 		if (p.Email.IsNotNull()) q = q.Where(u => u.Email == p.Email);
 		if (p.Bio.IsNotNull()) q = q.Where(u => u.Bio == p.Bio);

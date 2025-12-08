@@ -13,6 +13,9 @@ public class InvoiceEntity: BaseEntity<TagInvoice, InvoiceJson> {
 	[MaxLength(20)]
 	public string? TrackingNumber { get; set; }
 	
+	public UserEntity User { get; set; } = null!;
+	public required Guid UserId { get; set; }
+	
 	public ContractEntity Contract { get; set; } = null!;
 	public required Guid ContractId { get; set; }
 	
