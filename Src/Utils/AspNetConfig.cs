@@ -12,7 +12,6 @@ public static partial class AspNetConfig {
 		builder.Services.AddURateLimiter();
 		builder.Services.ConfigureHttpJsonOptions(o => {
 			o.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-			// o.SerializerOptions.ReferenceHandler = ReferenceHandler.;
 			o.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 			o.SerializerOptions.WriteIndented = false;
 		});
@@ -99,6 +98,7 @@ public static partial class AspNetConfig {
 		app.MapContractRoutes(RouteTags.Contract);
 		app.MapInvoiceRoutes(RouteTags.Invoice);
 		app.MapChatBotRoutes(RouteTags.ChatBot);
+		app.MapTicketRoutes(RouteTags.Ticket);
 	}
 
 	private static string CleanAndFormatSql(string sql) {

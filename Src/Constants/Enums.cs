@@ -129,3 +129,9 @@ public enum TagChatBot {
 	DrHana = 101,
 	Test = 999
 }
+
+public enum TagTicket {
+	SuperAdmin = 101,
+	Admin = 102,
+	Test = 999
+}
