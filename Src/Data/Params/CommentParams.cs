@@ -4,7 +4,7 @@ public sealed class CommentCreateParams : BaseParams {
 	[UValidationRequired("CommentRequired")]
 	public required string Description { get; set; }
 
-	public double Score { get; set; } = 0;
+	public decimal Score { get; set; } = 0;
 	public TagReaction? Reaction { get; set; }
 
 	public Guid? ParentId { get; set; }
@@ -31,7 +31,7 @@ public sealed class CommentCreateParams : BaseParams {
 
 public sealed class CommentUpdateParams : BaseUpdateParams<TagComment> {
 	public string? Description { get; set; }
-	public double? Score { get; set; }
+	public decimal? Score { get; set; }
 	
 	public CommentEntity MapToEntity(CommentEntity e) {
 		if (Description != null) e.Description = Description;

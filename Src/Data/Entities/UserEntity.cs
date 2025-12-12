@@ -56,6 +56,8 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 	public ICollection<ContractEntity> CreatedContracts { get; set; } = [];
 
 	public ICollection<InvoiceEntity> Invoices { get; set; } = [];
+	
+	public ICollection<TxnEntity> Txns { get; set; } = [];
 
 	public new UserResponse MapToResponse() => new() {
 		Id = Id,
@@ -81,8 +83,8 @@ public class UserJson {
 	public string? FcmToken { get; set; }
 	public string? Address { get; set; }
 	public string? FatherName { get; set; }
-	public double? Weight { get; set; }
-	public double? Height { get; set; }
+	public decimal? Weight { get; set; }
+	public decimal? Height { get; set; }
 	public ICollection<string> Health1 { get; set; } = [];
 	public ICollection<string> Health2 { get; set; } = [];
 	public ICollection<string> FoodAllergies { get; set; } = [];

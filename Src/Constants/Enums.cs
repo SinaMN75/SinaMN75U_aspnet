@@ -36,7 +36,7 @@ public enum TagCategory {
 	Speciality = 104,
 	Dorm = 105,
 	Room = 106,
-	Bed = 107, 
+	Bed = 107,
 	Enabled = 201,
 	Disabled = 202,
 	Hidden = 203
@@ -110,18 +110,23 @@ public enum TagBadge {
 }
 
 public enum TagContract {
+	Daily = 101,
+	Weekly = 102,
+	Monthly = 103,
+	Yearly = 104,
+	SingleInvoice = 201,
 	Test = 999
 }
 
 public enum TagInvoice {
 	Deposit = 101,
 	Rent = 102,
-	
+
 	PaidOnline = 201,
 	PaidManual = 202,
 	NotPaid = 203,
 	NotPaidDue = 204,
-	
+
 	Test = 999
 }
 
@@ -133,5 +138,29 @@ public enum TagChatBot {
 public enum TagTicket {
 	SuperAdmin = 101,
 	Admin = 102,
+	Test = 999
+}
+
+public enum TagReservation {
+	Pending = 101,
+	Confirmed = 102,
+	Cancelled = 103,
+	CheckedIn = 104,
+	CheckedOut = 105,
+	Test = 999
+}
+
+public enum TagTxn {
+	CreditCard = 101,
+	Cash = 102,
+	Pending = 201,
+	Paid = 202,
+	Failed = 203,
+	Refunded = 204,
+	Test = 999
+}
+
+public enum TagReservationGuest {
+	Primary = 101,
 	Test = 999
 }

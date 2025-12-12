@@ -30,7 +30,7 @@ public class CategoryEntity : BaseEntity<TagCategory, CategoryJson> {
 		Title = Title,
 		Order = Order,
 		Code = Code,
-		ParentId = ParentId,
+		ParentId = ParentId
 	};
 }
 

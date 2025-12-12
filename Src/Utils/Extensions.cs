@@ -60,11 +60,6 @@ public static partial class StringExtensions {
     private static partial Regex MyRegex();
 }
 
-public static class GuidExtensions {
-	public static bool IsNotNull([NotNullWhen(true)] this Guid? s) => s != null;
-	public static bool HasValue([NotNullWhen(true)] this Guid? s) => s != null && s == Guid.Empty;
-}
-
 public static class NumberExtensions {
 	public static bool IsNotNull([NotNullWhen(true)] this double? s) => s != null;
 	public static bool IsNotNull([NotNullWhen(true)] this int? s) => s != null;

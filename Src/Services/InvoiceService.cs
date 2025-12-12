@@ -27,12 +27,11 @@ public class InvoiceService(
 			CreditorAmount = p.CreditorAmount,
 			PaidAmount = p.PaidAmount,
 			PenaltyAmount = p.PenaltyAmount,
-			UserId = p.UserId,
 			ContractId = p.ContractId,
 			DueDate = p.DueDate,
-			PaidDate = p.PaidDate,
 			JsonData = new InvoiceJson {
 				Description = p.Description,
+				PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate,
 			}
 		}, ct);
 		await db.SaveChangesAsync(ct);
@@ -45,24 +44,24 @@ public class InvoiceService(
 		IQueryable<InvoiceEntity> q = db.Set<InvoiceEntity>();
 
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags.Contains(tag)));
-		if (StringExtensions.HasValue(p.UserId)) q = q.Where(x => x.UserId == p.UserId);
 		if (p.FromCreatedAt.HasValue) q = q.Where(x => x.CreatedAt >= p.FromCreatedAt);
 		if (p.ToCreatedAt.HasValue) q = q.Where(x => x.CreatedAt <= p.ToCreatedAt);
-
 		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
 		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
 		if (p.OrderByUpdatedAt) q = q.OrderBy(x => x.UpdatedAt);
 		if (p.OrderByUpdatedAtDesc) q = q.OrderByDescending(x => x.UpdatedAt);
 
-		IQueryable<InvoiceResponse> projected = q.Select(Projections.InvoiceSelector(p.SelectorArgs));
-		UResponse<IEnumerable<InvoiceResponse>?> response = await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		UResponse<IEnumerable<InvoiceResponse>?> response = await q.Select(Projections.InvoiceSelector(p.SelectorArgs)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		List<Guid> ids = response.Result!.Select(x => x.Id).ToList();
+		List<InvoiceEntity> entities = await db.Set<InvoiceEntity>().Where(x => ids.Contains(x.Id)).ToListAsync(ct);
+
+		bool anyChanges = false;
 
 		foreach (InvoiceResponse dto in response.Result!) {
-			InvoiceEntity? entity = await db.Set<InvoiceEntity>().FindAsync([dto.Id], ct);
-			if (entity == null) continue;
-
+			InvoiceEntity? entity = entities.FirstOrDefault(x => x.Id == dto.Id);
+			if (entity == null || entity.JsonData.PenaltyPrecentEveryDate <= 0) continue;
 			int daysLate = Math.Max(0, (DateTime.UtcNow - entity.DueDate).Days);
-			double expectedPenalty = entity.DebtAmount * 0.01 * daysLate;
+			decimal expectedPenalty = entity.DebtAmount * (entity.JsonData.PenaltyPrecentEveryDate / 100m) * daysLate;
 
 			bool needsPenaltyUpdate =
 				entity.PaidAmount < entity.DebtAmount + entity.PenaltyAmount &&
@@ -71,11 +70,12 @@ public class InvoiceService(
 
 			if (needsPenaltyUpdate) {
 				entity.PenaltyAmount = expectedPenalty;
-				db.Update(entity);
-				await db.SaveChangesAsync(ct);
 				dto.PenaltyAmount = expectedPenalty;
+				anyChanges = true;
 			}
 		}
+
+		if (anyChanges) await db.SaveChangesAsync(ct);
 
 		return response;
 	}
@@ -90,11 +90,10 @@ public class InvoiceService(
 		if (p.DebtAmount.IsNotNull()) e.DebtAmount = p.DebtAmount.Value;
 		if (p.PenaltyAmount.IsNotNull()) e.PenaltyAmount = p.PenaltyAmount.Value;
 		if (p.PaidAmount.IsNotNull()) e.PaidAmount = p.PaidAmount.Value;
-		if (p.PaidDate.HasValue) e.PaidDate = p.PaidDate.Value;
 		if (p.DueDate.HasValue) e.DueDate = p.DueDate.Value;
-		if (p.UserId.HasValue) e.UserId = p.UserId.Value;
 		if (p.ContractId.HasValue) e.ContractId = p.ContractId.Value;
 		if (p.Description.HasValue()) e.JsonData.Description = p.Description;
+		if (p.PenaltyPrecentEveryDate.IsNotNull()) e.JsonData.PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate.Value;
 
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
@@ -126,8 +125,6 @@ public class InvoiceService(
 
 		e.PaidAmount = e.DebtAmount - e.CreditorAmount;
 		e.Tags = [TagInvoice.PaidOnline];
-		e.PaidDate = DateTime.UtcNow;
-		e.TrackingNumber = "123456789";
 		db.Update(e);
 
 		await db.SaveChangesAsync(ct);

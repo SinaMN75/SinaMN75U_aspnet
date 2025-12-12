@@ -42,7 +42,7 @@ public static class UResponseExtensions {
 
 		return new UResponse<IEnumerable<T>?>(items) {
 			TotalCount = totalCount,
-			PageCount = (int)Math.Ceiling(totalCount / (double)pageSize),
+			PageCount = (int)Math.Ceiling(totalCount / (decimal)pageSize),
 			PageSize = pageSize
 		};
 	}

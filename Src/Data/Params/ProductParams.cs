@@ -13,13 +13,13 @@ public sealed class ProductCreateParams : BaseCreateParams<TagProduct> {
 	public string? Slug { get; set; }
 	public string? Type { get; set; }
 	public string? Content { get; set; }
-	public double? Latitude { get; set; }
-	public double? Longitude { get; set; }
+	public decimal? Latitude { get; set; }
+	public decimal? Longitude { get; set; }
 	public int? Stock { get; set; }
 	public int? Point { get; set; }
 	public int? Order { get; set; }
-	public double? Deposit { get; set; }
-	public double? Rent { get; set; }
+	public decimal? Deposit { get; set; }
+	public decimal? Rent { get; set; }
 
 	public string? Details { get; set; }
 	public string? PhoneNumber { get; set; }
@@ -73,13 +73,13 @@ public sealed class ProductUpdateParams : BaseUpdateParams<TagProduct> {
 	public string? Slug { get; set; }
 	public string? Type { get; set; }
 	public string? Content { get; set; }
-	public double? Latitude { get; set; }
-	public double? Longitude { get; set; }
+	public decimal? Latitude { get; set; }
+	public decimal? Longitude { get; set; }
 	public int? Stock { get; set; }
 	public int? Point { get; set; }
 	public int? Order { get; set; }
-	public double? Deposit { get; set; }
-	public double? Rent { get; set; }
+	public decimal? Deposit { get; set; }
+	public decimal? Rent { get; set; }
 	public Guid? ParentId { get; set; }
 	public Guid? UserId { get; set; }
 	public string? ActionType { get; set; }
@@ -143,8 +143,8 @@ public sealed class ProductReadParams : BaseReadParams<TagProduct> {
 	public Guid? UserId { get; set; }
 	public int? MinStock { get; set; }
 	public int? MaxStock { get; set; }
-	public double? MinDeposit { get; set; }
-	public double? MaxRent { get; set; }
+	public decimal? MinDeposit { get; set; }
+	public decimal? MaxRent { get; set; }
 	public bool OrderByOrder { get; set; }
 	public bool OrderByOrderDesc { get; set; }
 	public bool? HasActiveContract { get; set; }

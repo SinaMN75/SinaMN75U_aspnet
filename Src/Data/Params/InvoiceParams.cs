@@ -2,24 +2,24 @@ namespace SinaMN75U.Data.Params;
 
 public sealed class InvoiceCreateParams : BaseCreateParams<TagInvoice> {
 	[UValidationRequired("PriceRequired")]
-	public required double DebtAmount { get; set; }
+	public required decimal DebtAmount { get; set; }
 
 	[UValidationRequired("PriceRequired")]
-	public required double CreditorAmount { get; set; }
+	public required decimal CreditorAmount { get; set; }
 
 	[UValidationRequired("PriceRequired")]
-	public required double PaidAmount { get; set; }
+	public required decimal PaidAmount { get; set; }
 
 	[UValidationRequired("PriceRequired")]
-	public required double PenaltyAmount { get; set; }
+	public required decimal PenaltyAmount { get; set; }
+
+	public int PenaltyPrecentEveryDate { get; set; } = 0;
 
 	[UValidationRequired("UserIdRequired")]
 	public required Guid UserId { get; set; }
 
 	[UValidationRequired("ContractIdRequired")]
 	public required Guid ContractId { get; set; }
-
-	public DateTime? PaidDate { get; set; }
 
 	[UValidationRequired("DateRequired")]
 	public DateTime DueDate { get; set; }
@@ -31,12 +31,11 @@ public sealed class InvoiceCreateParams : BaseCreateParams<TagInvoice> {
 		CreditorAmount = CreditorAmount,
 		PaidAmount = PaidAmount,
 		PenaltyAmount = PenaltyAmount,
-		UserId = UserId,
 		ContractId = ContractId,
-		PaidDate = PaidDate,
 		DueDate = DueDate,
 		JsonData = new InvoiceJson {
-			Description = Description
+			Description = Description,
+			PenaltyPrecentEveryDate =  PenaltyPrecentEveryDate,
 		},
 		Tags = Tags
 	};
@@ -44,11 +43,11 @@ public sealed class InvoiceCreateParams : BaseCreateParams<TagInvoice> {
 }
 
 public sealed class InvoiceUpdateParams : BaseUpdateParams<TagInvoice> {
-	public double? DebtAmount { get; set; }
-	public double? CreditorAmount { get; set; }
-	public double? PaidAmount { get; set; }
-	public double? PenaltyAmount { get; set; }
-	public DateTime? PaidDate { get; set; }
+	public decimal? DebtAmount { get; set; }
+	public decimal? CreditorAmount { get; set; }
+	public decimal? PaidAmount { get; set; }
+	public decimal? PenaltyAmount { get; set; }
+	public int? PenaltyPrecentEveryDate { get; set; }
 	public DateTime? DueDate { get; set; }
 	public string? Description { get; set; }
 	public Guid? UserId { get; set; }
@@ -59,18 +58,14 @@ public sealed class InvoiceUpdateParams : BaseUpdateParams<TagInvoice> {
 		if (CreditorAmount.HasValue) e.CreditorAmount = CreditorAmount.Value;
 		if (PaidAmount.HasValue) e.PaidAmount = PaidAmount.Value;
 		if (PenaltyAmount.HasValue) e.PenaltyAmount = PenaltyAmount.Value;
-		if (PaidDate.HasValue) e.PaidDate = PaidDate;
 		if (DueDate.HasValue) e.DueDate = DueDate.Value;
 		if (Description != null) e.JsonData.Description = Description;
-		if (UserId.HasValue) e.UserId = UserId.Value;
 		if (ContractId.HasValue) e.ContractId = ContractId.Value;
+		if (PenaltyPrecentEveryDate.HasValue) e.JsonData.PenaltyPrecentEveryDate = PenaltyPrecentEveryDate.Value;
 		if (Tags != null) e.Tags = Tags;
 	}
-
-
 }
 
 public sealed class InvoiceReadParams : BaseReadParams<TagInvoice> {
-	public Guid? UserId { get; set; }
 	public InvoiceSelectorArgs SelectorArgs { get; set; } = new();
 }

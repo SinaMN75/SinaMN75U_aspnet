@@ -1,15 +1,16 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class UserCreateParams : BaseParams {
-	[UValidationRequired("UserNameRequired")]
-	[UValidationStringLength(2, 100, "UserNameMinLenght")]
+	[UValidationRequired("UserNameRequired"), UValidationStringLength(2, 100, "UserNameMinLenght")]
 	public required string UserName { get; set; }
 
-	[UValidationRequired("PasswordRequired")]
-	[UValidationStringLength(4, 100, "PasswordMinLength")]
+	[UValidationRequired("PasswordRequired"), UValidationStringLength(4, 100, "PasswordMinLength")]
 	public required string Password { get; set; }
 
+	[UValidationRequired("PasswordRequired"), UValidationStringLength(4, 100, "PasswordMinLength")]
 	public required string PhoneNumber { get; set; }
+
+	[UValidationRequired("PasswordRequired"), UValidationStringLength(4, 100, "PasswordMinLength")]
 	public required string Email { get; set; }
 
 	public string? FirstName { get; set; }
@@ -18,13 +19,12 @@ public sealed class UserCreateParams : BaseParams {
 	public string? Country { get; set; }
 	public string? State { get; set; }
 	public string? City { get; set; }
-	public DateTime? Birthdate { get; set; }
-
-	public double? Weight { get; set; }
-	public double? Height { get; set; }
 	public string? Address { get; set; }
 	public string? FatherName { get; set; }
 	public string? FcmToken { get; set; }
+	public decimal? Weight { get; set; }
+	public decimal? Height { get; set; }
+	public DateTime? Birthdate { get; set; }
 	public List<string>? Health1 { get; set; }
 	public List<string>? Health2 { get; set; }
 	public List<string>? FoodAllergies { get; set; }
@@ -35,7 +35,7 @@ public sealed class UserCreateParams : BaseParams {
 	public required List<TagUser> Tags { get; set; }
 
 	public IEnumerable<Guid>? Categories { get; set; }
-	
+
 	public UserEntity MapToEntity() => new() {
 		UserName = UserName,
 		Password = PasswordHasher.Hash(Password),
@@ -63,7 +63,6 @@ public sealed class UserCreateParams : BaseParams {
 		},
 		Tags = Tags
 	};
-
 }
 
 public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {
@@ -81,8 +80,8 @@ public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {
 	public string? FcmToken { get; set; }
 	public string? Address { get; set; }
 	public string? FatherName { get; set; }
-	public double? Weight { get; set; }
-	public double? Height { get; set; }
+	public decimal? Weight { get; set; }
+	public decimal? Height { get; set; }
 	public List<string>? AddHealth1 { get; set; }
 	public List<string>? RemoveHealth1 { get; set; }
 	public List<string>? AddHealth2 { get; set; }
@@ -93,7 +92,7 @@ public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {
 	public List<string>? Health1 { get; set; }
 	public List<string>? Health2 { get; set; }
 	public IEnumerable<Guid>? Categories { get; set; }
-	
+
 	public void MapToEntity(UserEntity e, string? hashedPassword = null) {
 		if (hashedPassword != null) e.Password = hashedPassword;
 		if (UserName != null) e.UserName = UserName;
@@ -114,12 +113,20 @@ public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {
 		if (Height.HasValue) e.JsonData.Height = Height;
 
 		if (Health1 != null) e.JsonData.Health1 = Health1;
-		if (AddHealth1 != null) foreach (string item in AddHealth1) e.JsonData.Health1?.Add(item);
-		if (RemoveHealth1 != null) foreach (string item in RemoveHealth1) e.JsonData.Health1?.Remove(item);
+		if (AddHealth1 != null)
+			foreach (string item in AddHealth1)
+				e.JsonData.Health1?.Add(item);
+		if (RemoveHealth1 != null)
+			foreach (string item in RemoveHealth1)
+				e.JsonData.Health1?.Remove(item);
 
 		if (Health2 != null) e.JsonData.Health2 = Health2;
-		if (AddHealth2 != null) foreach (string item in AddHealth2) e.JsonData.Health2?.Add(item);
-		if (RemoveHealth2 != null) foreach (string item in RemoveHealth2) e.JsonData.Health2?.Remove(item);
+		if (AddHealth2 != null)
+			foreach (string item in AddHealth2)
+				e.JsonData.Health2?.Add(item);
+		if (RemoveHealth2 != null)
+			foreach (string item in RemoveHealth2)
+				e.JsonData.Health2?.Remove(item);
 
 		if (FoodAllergies != null) e.JsonData.FoodAllergies = FoodAllergies;
 		if (DrugAllergies != null) e.JsonData.DrugAllergies = DrugAllergies;

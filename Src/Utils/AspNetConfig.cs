@@ -73,6 +73,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 		builder.Services.AddScoped<IContractService, ContractService>();
 		builder.Services.AddScoped<IChatBotService, ChatBotService>();
+		builder.Services.AddScoped<ITxnService, TxnService>();
 	}
 
 	public static void UseUServices(this WebApplication app) {
@@ -99,6 +100,7 @@ public static partial class AspNetConfig {
 		app.MapInvoiceRoutes(RouteTags.Invoice);
 		app.MapChatBotRoutes(RouteTags.ChatBot);
 		app.MapTicketRoutes(RouteTags.Ticket);
+		app.MapTicketRoutes(RouteTags.Txn);
 	}
 
 	private static string CleanAndFormatSql(string sql) {

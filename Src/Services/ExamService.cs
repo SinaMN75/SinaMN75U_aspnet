@@ -105,7 +105,7 @@ public class ExamService(
 		ExamEntity? exam = await db.Set<ExamEntity>().FirstOrDefaultAsync(x => x.Id == p.ExamId, ct);
 		if (exam == null) return new UResponse(Usc.NotFound, ls.Get("ExamNotFound"));
 
-		double score = p.Answers.Sum(x => x.Answer.Score);
+		decimal score = p.Answers.Sum(x => x.Answer.Score);
 
 		ExamScoreDetail scoreDetail = exam.JsonData.ScoreDetails.FirstOrDefault(c => score >= c.MinScore && score <= c.MaxScore)
 		                              ?? new ExamScoreDetail {

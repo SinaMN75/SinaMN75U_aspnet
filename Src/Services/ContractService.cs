@@ -25,13 +25,16 @@ public class ContractService(
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
 		if (user == null) return new UResponse<ContractResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
 
+		cache.DeleteAllByPartialKey(RouteTags.Contract);
+		cache.DeleteAllByPartialKey(RouteTags.Invoice);
+
 		Guid contractId = Guid.CreateVersion7();
 		ContractEntity e = new() {
 			Id = contractId,
 			StartDate = p.StartDate,
 			EndDate = p.EndDate,
-			Deposit = product.Deposit ?? 0,
-			Rent = product.Rent ?? 0,
+			Deposit = p.Deposit ?? product.Deposit ?? 0,
+			Rent = p.Rent ?? product.Rent ?? 0,
 			UserId = user.Id,
 			CreatorId = userData.Id,
 			ProductId = product.Id,
@@ -40,27 +43,47 @@ public class ContractService(
 		};
 		await db.Set<ContractEntity>().AddAsync(e, ct);
 
-		await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
-			Tags = [TagInvoice.NotPaid, TagInvoice.Deposit],
-			DebtAmount = product.Deposit ?? 0,
-			CreditorAmount = 0,
-			PaidAmount = 0,
-			PenaltyAmount = 0,
-			UserId = user.Id,
-			ContractId = contractId,
-			DueDate = p.StartDate,
-			JsonData = new InvoiceJson { Description = "ودیعه" }
-		}, ct);
+		if (p.Tags.Contains(TagContract.SingleInvoice)) {
+			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
+				Tags = [TagInvoice.NotPaid],
+				DebtAmount = product.Deposit ?? 0,
+				CreditorAmount = 0,
+				PaidAmount = 0,
+				PenaltyAmount = 0,
+				ContractId = contractId,
+				DueDate = p.StartDate,
+				JsonData = new InvoiceJson {
+					Description = "",
+					PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate,
+				}
+			}, ct);
+
+			await db.SaveChangesAsync(ct);
+			return new UResponse<ContractResponse?>(e.MapToResponse());
+		}
+
+		if (e.Deposit >= 1)
+			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
+				Tags = [TagInvoice.NotPaid, TagInvoice.Deposit],
+				DebtAmount = product.Deposit ?? 0,
+				CreditorAmount = 0,
+				PaidAmount = 0,
+				PenaltyAmount = 0,
+				ContractId = contractId,
+				DueDate = p.StartDate,
+				JsonData = new InvoiceJson {
+					Description = "ودیعه",
+					PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate,
+				}
+			}, ct);
 
 		PersianDateTime startDate = e.StartDate.ToPersian();
 		PersianDateTime endDate = e.EndDate.ToPersian();
 
-		double rent = product.Rent ?? 0;
+		decimal rent = product.Rent ?? 0;
 
 		int totalMonths = (endDate.Year - startDate.Year) * 12 + (endDate.Month - startDate.Month);
-		if (endDate.Day < startDate.Day) {
-			totalMonths--;
-		}
+		if (endDate.Day < startDate.Day) totalMonths--;
 
 		await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 			Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
@@ -68,16 +91,18 @@ public class ContractService(
 			CreditorAmount = 0,
 			PaidAmount = 0,
 			PenaltyAmount = 0,
-			UserId = user.Id,
 			ContractId = contractId,
 			DueDate = startDate.ToDateTime(),
-			JsonData = new InvoiceJson { Description = "قسط اول - قیمت کامل" },
+			JsonData = new InvoiceJson {
+				Description = "قسط اول - قیمت کامل",
+				PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
+			},
 		}, ct);
 
 		if (totalMonths >= 1) {
 			int remainingDaysInFirstMonth = PersianDateTime.DaysInMonth(startDate.Year, startDate.Month) - startDate.Day + 1;
 			int totalDaysInFirstMonth = PersianDateTime.DaysInMonth(startDate.Year, startDate.Month);
-			double proportionalPrice = (remainingDaysInFirstMonth / (double)totalDaysInFirstMonth) * rent;
+			decimal proportionalPrice = (remainingDaysInFirstMonth / (decimal)totalDaysInFirstMonth) * rent;
 
 			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 				Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
@@ -85,10 +110,12 @@ public class ContractService(
 				CreditorAmount = 0,
 				PaidAmount = 0,
 				PenaltyAmount = 0,
-				UserId = user.Id,
 				ContractId = contractId,
 				DueDate = startDate.AddMonths(1).ToDateTime(),
-				JsonData = new InvoiceJson { Description = $"قسط دوم - قیمت متناسب ({remainingDaysInFirstMonth} روز از {totalDaysInFirstMonth} روز)" },
+				JsonData = new InvoiceJson {
+					Description = $"قسط دوم - قیمت متناسب ({remainingDaysInFirstMonth} روز از {totalDaysInFirstMonth} روز)",
+					PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
+				},
 			}, ct);
 		}
 
@@ -101,17 +128,16 @@ public class ContractService(
 				CreditorAmount = 0,
 				PaidAmount = 0,
 				PenaltyAmount = 0,
-				UserId = user.Id,
 				ContractId = contractId,
 				DueDate = firstOfMonth.ToDateTime(),
-				JsonData = new InvoiceJson { Description = $"قسط {i + 1} - قیمت کامل" },
+				JsonData = new InvoiceJson {
+					Description = $"قسط {i + 1} - قیمت کامل",
+					PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
+				},
 			}, ct);
 		}
 
 		await db.SaveChangesAsync(ct);
-
-		cache.DeleteAllByPartialKey(RouteTags.Contract);
-		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse<ContractResponse?>(e.MapToResponse());
 	}
 
@@ -119,15 +145,15 @@ public class ContractService(
 		IQueryable<ContractEntity> q = db.Set<ContractEntity>();
 
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(u => u.Tags.Any(tag => p.Tags.Contains(tag)));
-		if (StringExtensions.HasValue(p.CreatorId)) q = q.Where(u => u.CreatorId == p.CreatorId);
-		if (StringExtensions.HasValue(p.UserId)) q = q.Where(u => u.UserId == p.UserId);
-		if (StringExtensions.HasValue(p.ProductId)) q = q.Where(u => u.ProductId == p.ProductId);
+		if (p.CreatorId.HasValue()) q = q.Where(u => u.CreatorId == p.CreatorId);
+		if (p.UserId.HasValue()) q = q.Where(u => u.UserId == p.UserId);
+		if (p.ProductId.HasValue()) q = q.Where(u => u.ProductId == p.ProductId);
 		if (p.StartDate.HasValue) q = q.Where(u => u.StartDate == p.StartDate);
 		if (p.EndDate.HasValue) q = q.Where(u => u.EndDate == p.EndDate);
 		if (p.FromCreatedAt.HasValue) q = q.Where(u => u.CreatedAt >= p.FromCreatedAt);
 		if (p.ToCreatedAt.HasValue) q = q.Where(u => u.CreatedAt <= p.ToCreatedAt);
 		if (p.UserName.HasValue()) q = q.Include(x => x.User).Where(x => x.User.UserName.Contains(p.UserName));
-		
+
 		IQueryable<ContractResponse> list = q.Select(Projections.ContractSelector(p.SelectorArgs));
 
 		return await list.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);

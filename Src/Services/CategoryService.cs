@@ -128,7 +128,6 @@ public class CategoryService(
 				int totalDays = PersianDateTime.DaysInMonth(today.Year, today.Month);
 				int pastDays = today.Day;
 				int remainingDays = totalDays - today.Day;
-				double newPrice = p.ProductRent.Value;
 
 				List<InvoiceEntity> invoices = await db.Set<InvoiceEntity>()
 					.Where(inv => inv.Tags.Contains(TagInvoice.NotPaid) && inv.Contract.Product.Categories.Any(c => c.Id == e.Id))
@@ -136,8 +135,8 @@ public class CategoryService(
 					.ToListAsync(ct);
 
 				foreach (InvoiceEntity inv in invoices) {
-					double oldPrice = inv.DebtAmount;
-					double newDebt = oldPrice / totalDays * pastDays + newPrice / totalDays * remainingDays;
+					decimal oldPrice = inv.DebtAmount;
+					decimal newDebt = oldPrice / totalDays * pastDays + p.ProductRent.Value / totalDays * remainingDays;
 					inv.DebtAmount = Math.Round(newDebt, 2);
 					db.Update(inv);
 				}

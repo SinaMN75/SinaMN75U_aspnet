@@ -15,8 +15,8 @@ public class ExamJson {
 }
 
 public class ExamScoreDetail {
-	public required double MinScore { get; set; }
-	public required double MaxScore { get; set; }
+	public required decimal MinScore { get; set; }
+	public required decimal MaxScore { get; set; }
 	public required string Label { get; set; }
 	public required string Description { get; set; }
 }
@@ -31,12 +31,12 @@ public class QuestionJson {
 public class QuestionOptionJson {
 	public required string Title { get; set; }
 	public required string Hint { get; set; }
-	public required double Score { get; set; }
+	public required decimal Score { get; set; }
 }
 
 public class UserAnswerJson {
 	public required DateTime Date { get; set; }
-	public required double TotalScore { get; set; }
+	public required decimal TotalScore { get; set; }
 	public required ICollection<UserAnswerResultJson> Results { get; set; }
 	public required string Label { get; set; }
 	public required string Description { get; set; }

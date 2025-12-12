@@ -10,4 +10,6 @@ public sealed class CategoryResponse : BaseResponse<TagCategory, CategoryJson> {
 
 	public IEnumerable<CategoryResponse>? Children { get; set; }
 	public IEnumerable<MediaResponse>? Media { get; set; }
+	public IEnumerable<UserResponse>? Users { get; set; }
+	public IEnumerable<ProductResponse>? Products { get; set; }
 }

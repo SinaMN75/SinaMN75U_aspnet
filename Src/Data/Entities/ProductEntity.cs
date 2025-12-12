@@ -1,9 +1,11 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Products")]
+[Index(nameof(Slug), IsUnique = true)]
+[Index(nameof(Code), IsUnique = true)]
+[Index(nameof(UserId))]
 public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
-	[Required]
-	[MaxLength(100)]
+	[Required, MaxLength(100)]
 	public required string Title { get; set; }
 
 	[MaxLength(100)]
@@ -23,10 +25,10 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 
 	public string? Content { get; set; }
 
-	public double? Latitude { get; set; }
-	public double? Longitude { get; set; }
-	public double? Deposit { get; set; }
-	public double? Rent { get; set; }
+	public decimal? Latitude { get; set; }
+	public decimal? Longitude { get; set; }
+	public decimal? Deposit { get; set; }
+	public decimal? Rent { get; set; }
 
 	public int Stock { get; set; }
 	public int Point { get; set; }
@@ -48,18 +50,6 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	public ICollection<CommentEntity> Comments { get; set; } = [];
 	public ICollection<FollowEntity> Followers { get; set; } = [];
 	public ICollection<ContractEntity> Contracts { get; set; } = [];
-
-	[NotMapped]
-	public int? CommentCount { get; set; }
-
-	[NotMapped]
-	public bool? IsFollowing { get; set; }
-
-	[NotMapped]
-	public int? VisitCount { get; set; }
-
-	[NotMapped]
-	public int? ChildrenCount { get; set; }
 
 	public new ProductResponse MapToResponse() => new() {
 		Id = Id,
@@ -86,12 +76,6 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 
 		ParentId = ParentId,
 		UserId = UserId,
-
-		Parent = null,
-		User = null,
-		CommentCount = CommentCount,
-		IsFollowing = IsFollowing,
-		ChildrenCount = ChildrenCount
 	};
 }
 

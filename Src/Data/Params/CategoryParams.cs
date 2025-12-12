@@ -61,8 +61,8 @@ public sealed class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
 	public IEnumerable<Guid>? RemoveRelatedProducts { get; set; }
 	public ICollection<Guid>? Media { get; set; }
 
-	public double? ProductDeposit { get; set; }
-	public double? ProductRent { get; set; }
+	public decimal? ProductDeposit { get; set; }
+	public decimal? ProductRent { get; set; }
 	public bool UpdateInvoicesRent { get; set; } = false;
 	
 	public CategoryEntity MapToEntity(CategoryEntity e) {

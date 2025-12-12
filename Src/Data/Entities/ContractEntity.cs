@@ -5,8 +5,11 @@ public class ContractEntity : BaseEntity<TagContract, ContractJson> {
 	public required DateTime StartDate { get; set; }
 	public required DateTime EndDate { get; set; }
 
-	public required double Deposit { get; set; }
-	public required double Rent { get; set; }
+	[Required, Column(TypeName = "decimal(24,2)")]
+	public required decimal Deposit { get; set; }
+
+	[Required, Column(TypeName = "decimal(24,2)")]
+	public required decimal Rent { get; set; }
 
 	public UserEntity User { get; set; } = null!;
 	public required Guid UserId { get; set; }

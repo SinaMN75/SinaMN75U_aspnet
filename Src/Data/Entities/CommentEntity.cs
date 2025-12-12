@@ -2,10 +2,9 @@
 
 [Table("Comment")]
 public class CommentEntity : BaseEntity<TagComment, CommentJson> {
-	[Required]
-	public required double Score { get; set; }
+	[Required, Column(TypeName = "decimal(4,2)")]
+	public required decimal Score { get; set; }
 
-	[Required]
 	[MaxLength(2000)]
 	public required string Description { get; set; }
 

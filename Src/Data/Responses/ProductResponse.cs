@@ -8,10 +8,10 @@ public class ProductResponse : BaseResponse<TagProduct, ProductJson> {
 	public string? Slug { get; set; }
 	public string? Type { get; set; }
 	public string? Content { get; set; }
-	public double? Latitude { get; set; }
-	public double? Longitude { get; set; }
-	public double? Deposit { get; set; }
-	public double? Rent { get; set; }
+	public decimal? Latitude { get; set; }
+	public decimal? Longitude { get; set; }
+	public decimal? Deposit { get; set; }
+	public decimal? Rent { get; set; }
 	public int Stock { get; set; }
 	public int Point { get; set; }
 	public int Order { get; set; }

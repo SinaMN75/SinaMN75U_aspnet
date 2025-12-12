@@ -121,8 +121,8 @@ public class ProductService(
 		if (p.Deposit.IsNotNull()) e.Deposit = p.Deposit.Value;
 		if (p.Point.IsNotNull()) e.Point = p.Point.Value;
 		if (p.Order.IsNotNull()) e.Order = p.Order.Value;
-		if (StringExtensions.HasValue(p.ParentId)) e.ParentId = p.ParentId;
-		if (p.UserId.IsNotNull()) e.UserId = p.UserId.Value;
+		if (p.ParentId.HasValue()) e.ParentId = p.ParentId;
+		if (p.UserId.HasValue()) e.UserId = p.UserId.Value;
 		if (p.ActionType.IsNotNull()) e.JsonData.ActionType = p.ActionType;
 		if (p.ActionTitle.IsNotNull()) e.JsonData.ActionTitle = p.ActionTitle;
 		if (p.ActionUri.IsNotNull()) e.JsonData.ActionUri = p.ActionUri;
@@ -162,9 +162,9 @@ public class ProductService(
 			foreach (ContractEntity contract in contracts) {
 				foreach (InvoiceEntity invoice in contract.Invoices) {
 					if (invoice.Tags.Contains(TagInvoice.NotPaid)) {
-						double oldPrice = invoice.DebtAmount;
-						double newPrice = p.Rent.Value;
-						double newDebt = oldPrice / totalDays * currentDay + newPrice / totalDays * remainingDays;
+						decimal oldPrice = invoice.DebtAmount;
+						decimal newPrice = p.Rent.Value;
+						decimal newDebt = oldPrice / totalDays * currentDay + newPrice / totalDays * remainingDays;
 						invoice.DebtAmount = Math.Round(newDebt, 2);
 						db.Update(invoice);
 					}

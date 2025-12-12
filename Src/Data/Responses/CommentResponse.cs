@@ -1,7 +1,7 @@
 ﻿namespace SinaMN75U.Data.Responses;
 
 public sealed class CommentResponse : BaseResponse<TagComment, CommentJson> {
-	public required double Score { get; set; }
+	public required decimal Score { get; set; }
 	public required string Description { get; set; }
 
 	public Guid? ParentId { get; set; }
