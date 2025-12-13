@@ -25,11 +25,7 @@ public static class SwaggerSetup {
 		app.UseSwagger();
 		app.UseSwaggerUI(c => {
 			c.DocExpansion(DocExpansion.None);
-			c.DefaultModelsExpandDepth(128);
-			c.EnableDeepLinking();
 			c.DocumentTitle = "SinaMN75";
-			c.DefaultModelExpandDepth(128);
-			c.JsonSerializerOptions = UJsonOptions.Default;
 		});
 	}
 }
