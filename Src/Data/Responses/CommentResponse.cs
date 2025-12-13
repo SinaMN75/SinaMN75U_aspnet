@@ -16,6 +16,9 @@ public sealed class CommentResponse : BaseResponse<TagComment, CommentJson> {
 	public ProductResponse? Product { get; set; }
 	public Guid? ProductId { get; set; }
 	
+	public CategoryResponse? Category { get; set; }
+	public Guid? CategoryId { get; set; }
+	
 	public IEnumerable<CommentResponse>? Children { get; set; }
 
 	public IEnumerable<MediaResponse>? Media { get; set; }

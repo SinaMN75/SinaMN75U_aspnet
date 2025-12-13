@@ -90,6 +90,6 @@ public class ProductJson {
 }
 
 public class PointCount {
-	public required string UserId { get; set; }
+	public required Guid UserId { get; set; }
 	public required int Point { get; set; }
 }
