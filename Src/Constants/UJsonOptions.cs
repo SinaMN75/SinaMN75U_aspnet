@@ -6,6 +6,7 @@ public static class UJsonOptions {
 		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
 		ReferenceHandler = ReferenceHandler.IgnoreCycles,
 		DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-		Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+		Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+		MaxDepth = 128
 	};
 }

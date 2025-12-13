@@ -11,9 +11,12 @@ public static partial class AspNetConfig {
 		builder.Services.AddHttpClient();
 		builder.Services.AddURateLimiter();
 		builder.Services.ConfigureHttpJsonOptions(o => {
-			o.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-			o.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 			o.SerializerOptions.WriteIndented = false;
+			o.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+			o.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+			o.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+			o.SerializerOptions.Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
+			o.SerializerOptions.MaxDepth = 128;
 		});
 		builder.Services.AddScoped<DbContext, T>();
 		builder.Services.AddDbContextPool<T>(b => {
@@ -74,6 +77,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IContractService, ContractService>();
 		builder.Services.AddScoped<IChatBotService, ChatBotService>();
 		builder.Services.AddScoped<ITxnService, TxnService>();
+		builder.Services.AddScoped<ITicketService, TicketService>();
 	}
 
 	public static void UseUServices(this WebApplication app) {

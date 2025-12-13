@@ -1,4 +1,6 @@
+using Microsoft.OpenApi;
 using Scalar.AspNetCore;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace SinaMN75U.Utils;
 
@@ -14,11 +16,25 @@ public static class SwaggerSetup {
 
 	public static void UseUSwagger(this WebApplication app) {
 		app.MapOpenApi();
-		app.MapScalarApiReference();
+		app.MapScalarApiReference(x => {
+			x.WithTitle("SinaMN75");
+			x.ForceDarkMode();
+			
+			x.AddPreferredSecuritySchemes("BasicAuth")
+				.AddHttpAuthentication("BasicAuth", a => {
+					a.Username = "sina";
+					a.Password = "sina";
+				});
+		});
 		app.UseSwagger();
 		app.UseSwaggerUI(c => {
 			c.DocExpansion(DocExpansion.None);
-			c.DefaultModelsExpandDepth(2);
+			c.DefaultModelsExpandDepth(128);
+			c.EnableDeepLinking();
+			c.DocumentTitle = "SinaMN75U";
+			c.DefaultModelExpandDepth(128);
+			c.JsonSerializerOptions = UJsonOptions.Default;
+			c.DefaultModelRendering(ModelRendering.Model);
 		});
 	}
 }
