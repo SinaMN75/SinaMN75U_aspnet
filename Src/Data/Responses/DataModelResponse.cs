@@ -8,6 +8,7 @@ public sealed class DataModelResponse {
 	public required MediaResponse Media { get; set; }
 	public required ProductResponse Product { get; set; }
 	public required UserResponse User { get; set; }
+	public required ContractResponse Contract { get; set; }
 }
 
 public sealed class ParamsResponse {
