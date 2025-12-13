@@ -3,13 +3,9 @@ namespace SinaMN75U.Data.Params;
 public sealed class ContentCreateParams : BaseParams {
 	[UValidationRequired("TitleRequired")]
 	public required string Title { get; set; }
-
-	[UValidationRequired("DescriptionRequired")]
-	public required string Description { get; set; }
-
-	[UValidationRequired("SubtitleRequired")]
-	public required string SubTitle { get; set; }
-
+	
+	public string? Description { get; set; }
+	public string? SubTitle { get; set; }
 	public string? Instagram { get; set; }
 	public string? Telegram { get; set; }
 	public string? Whatsapp { get; set; }
@@ -19,6 +15,7 @@ public sealed class ContentCreateParams : BaseParams {
 	public required List<TagContent> Tags { get; set; }
 	
 	public ContentEntity MapToEntity() => new() {
+		Tags = Tags,
 		JsonData = new ContentJson {
 			Title = Title,
 			Description = Description,
@@ -28,7 +25,6 @@ public sealed class ContentCreateParams : BaseParams {
 			Whatsapp = Whatsapp,
 			Phone = Phone
 		},
-		Tags = Tags
 	};
 
 }
@@ -42,7 +38,8 @@ public sealed class ContentUpdateParams : BaseUpdateParams<TagContent> {
 	public string? Whatsapp { get; set; }
 	public string? Phone { get; set; }
 	
-	public void MapToEntity(ContentEntity e) {
+	public ContentEntity MapToEntity(ContentEntity e) {
+		e.UpdatedAt = DateTime.UtcNow;
 		if (Title != null) e.JsonData.Title = Title;
 		if (SubTitle != null) e.JsonData.SubTitle = SubTitle;
 		if (Description != null) e.JsonData.Description = Description;
@@ -51,8 +48,10 @@ public sealed class ContentUpdateParams : BaseUpdateParams<TagContent> {
 		if (Whatsapp != null) e.JsonData.Whatsapp = Whatsapp;
 		if (Phone != null) e.JsonData.Phone = Phone;
 		if (Tags != null) e.Tags = Tags;
+		if (AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(AddTags);
+		if (RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(tag => RemoveTags.Contains(tag));
+		return e;
 	}
-
 }
 
 public sealed class ContentReadParams : BaseReadParams<int> {

@@ -6,6 +6,7 @@
     "PhoneNumberRequired": "Phone number is required.",
     "CommentRequired": "Comment is required.",
     "CommentNotFound": "Comment Not Found.",
+    "ContentNotFound": "Content Not Found.",
     "ExamNotFound": "Exam Not Found.",
     "EmailRequired": "Email is required.",
     "UserNameRequired": "UserName is required.",

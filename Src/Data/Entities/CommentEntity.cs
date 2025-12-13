@@ -1,6 +1,6 @@
 ﻿namespace SinaMN75U.Data.Entities;
 
-[Table("Comment")]
+[Table("Comments")]
 public class CommentEntity : BaseEntity<TagComment, CommentJson> {
 	[Required, Column(TypeName = "decimal(4,2)")]
 	public required decimal Score { get; set; }
@@ -8,11 +8,11 @@ public class CommentEntity : BaseEntity<TagComment, CommentJson> {
 	[MaxLength(2000)]
 	public required string Description { get; set; }
 
-	public required Guid UserId { get; set; }
-	public UserEntity User { get; set; } = null!;
+	public required Guid CreatorId { get; set; }
+	public UserEntity Creator { get; set; } = null!;
 
-	public Guid? TargetUserId { get; set; }
-	public UserEntity? TargetUser { get; set; }
+	public Guid? UserId { get; set; }
+	public UserEntity? User { get; set; }
 
 	public Guid? ProductId { get; set; }
 	public ProductEntity? Product { get; set; }
@@ -35,8 +35,8 @@ public class CommentEntity : BaseEntity<TagComment, CommentJson> {
 		Score = Score,
 		Description = Description,
 		ParentId = ParentId,
+		CreatorId = CreatorId,
 		UserId = UserId,
-		TargetUserId = TargetUserId,
 		ProductId = ProductId
 	};
 }

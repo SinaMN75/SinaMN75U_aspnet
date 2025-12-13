@@ -15,22 +15,6 @@ public sealed class ContractCreateParams : BaseCreateParams<TagContract> {
 	
 	public string? Description { get; set; }
 	public int PenaltyPrecentEveryDate { get; set; } = 0;
-	
-	public ContractEntity MapToEntity() => new() {
-		StartDate = StartDate,
-		EndDate = EndDate,
-		UserId = UserId,
-		ProductId = ProductId,
-		JsonData = new ContractJson {
-			Description = Description
-		},
-		Tags = Tags,
-		Deposit = 0,
-		Rent = 0,
-		CreatorId = default
-	};
-
-	
 }
 
 public sealed class ContractUpdateParams : BaseUpdateParams<TagContract> {
@@ -39,12 +23,16 @@ public sealed class ContractUpdateParams : BaseUpdateParams<TagContract> {
 	public decimal? Deposit { get; set; }
 	public decimal? Rent { get; set; }
 	
-	public void MapToEntity(ContractEntity e) {
-		if (StartDate.HasValue) e.StartDate = StartDate.Value;
-		if (EndDate.HasValue) e.EndDate = EndDate.Value;
+	public ContractEntity MapToEntity(ContractEntity e) {
+		e.UpdatedAt = DateTime.UtcNow;
 		if (Deposit.HasValue) e.Deposit = Deposit.Value;
 		if (Rent.HasValue) e.Rent = Rent.Value;
-		if (Tags != null) e.Tags = Tags;
+		if (StartDate.HasValue) e.StartDate = StartDate.Value;
+		if (EndDate.HasValue) e.EndDate = EndDate.Value;
+		if (AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(AddTags);
+		if (RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => RemoveTags.Contains(x));
+		if (Tags.IsNotNullOrEmpty()) e.Tags = Tags;
+		return e;
 	}
 
 }

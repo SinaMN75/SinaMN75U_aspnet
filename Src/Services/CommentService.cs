@@ -30,10 +30,11 @@ public class CommentService(
 	}
 
 	public async Task<UResponse<IEnumerable<CommentResponse>?>> Read(CommentReadParams p, CancellationToken ct) {
-		IQueryable<CommentEntity> q = db.Set<CommentEntity>();
-		if (StringExtensions.HasValue(p.ProductId)) q = q.Where(x => x.ProductId == p.ProductId);
-		if (StringExtensions.HasValue(p.UserId)) q = q.Where(x => x.UserId == p.UserId);
-		if (StringExtensions.HasValue(p.TargetUserId)) q = q.Where(x => x.TargetUserId == p.TargetUserId);
+		IQueryable<CommentEntity> q = db.Set<CommentEntity>().SoftDeleteBehavior(p.SelectorArgs.SoftDeleteBehavior);
+		
+		if (p.ProductId.IsNotNull()) q = q.Where(x => x.ProductId == p.ProductId);
+		if (p.CreatorId.IsNotNull()) q = q.Where(x => x.CreatorId == p.CreatorId);
+		if (p.UserId.IsNotNull()) q = q.Where(x => x.UserId == p.UserId);
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
 
 		IQueryable<CommentResponse> list = q.Select(Projections.CommentSelector(p.SelectorArgs));
@@ -43,8 +44,7 @@ public class CommentService(
 
 	public async Task<UResponse<CommentResponse?>> ReadById(IdParams p, CancellationToken ct) {
 		CommentResponse? e = await db.Set<CommentEntity>()
-			.Select(Projections.CommentSelector(new CommentSelectorArgs())
-			)
+			.Select(Projections.CommentSelector(new CommentSelectorArgs()))
 			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<CommentResponse?>(null, Usc.NotFound, ls.Get("CommentNotFound")) : new UResponse<CommentResponse?>(e);
 	}
@@ -53,7 +53,7 @@ public class CommentService(
 		CommentEntity? e = await db.Set<CommentEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse<CommentResponse?>(null, Usc.NotFound, ls.Get("CommentNotFound"));
 		if (p.Score.IsNotNull()) e.Score = p.Score.Value;
-		if (p.Description.HasValue()) e.Description = p.Description;
+		if (p.Description.IsNotNullOrEmpty()) e.Description = p.Description;
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
 		db.Set<CommentEntity>().Update(p.MapToEntity(e));
@@ -76,7 +76,7 @@ public class CommentService(
 	}
 
 	public async Task<UResponse<int>> ReadUserCommentCount(IdParams p, CancellationToken ct) {
-		int count = await db.Set<CommentEntity>().Where(x => x.TargetUserId == p.Id).CountAsync(ct);
+		int count = await db.Set<CommentEntity>().Where(x => x.UserId == p.Id).CountAsync(ct);
 		return new UResponse<int>(count);
 	}
 }

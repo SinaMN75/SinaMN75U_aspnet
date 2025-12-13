@@ -92,7 +92,7 @@ public class InvoiceService(
 		if (p.PaidAmount.IsNotNull()) e.PaidAmount = p.PaidAmount.Value;
 		if (p.DueDate.HasValue) e.DueDate = p.DueDate.Value;
 		if (p.ContractId.HasValue) e.ContractId = p.ContractId.Value;
-		if (p.Description.HasValue()) e.JsonData.Description = p.Description;
+		if (p.Description.IsNotNullOrEmpty()) e.JsonData.Description = p.Description;
 		if (p.PenaltyPrecentEveryDate.IsNotNull()) e.JsonData.PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate.Value;
 
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);

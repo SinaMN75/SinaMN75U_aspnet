@@ -7,11 +7,11 @@ public sealed class CommentResponse : BaseResponse<TagComment, CommentJson> {
 	public Guid? ParentId { get; set; }
 	public CommentResponse? Parent { get; set; }
 
-	public UserResponse? User { get; set; }
-	public required Guid UserId { get; set; }
+	public UserResponse? Creator { get; set; }
+	public required Guid CreatorId { get; set; }
 
-	public UserResponse? TargetUser { get; set; }
-	public Guid? TargetUserId { get; set; }
+	public UserResponse? User { get; set; }
+	public Guid? UserId { get; set; }
 
 	public ProductResponse? Product { get; set; }
 	public Guid? ProductId { get; set; }

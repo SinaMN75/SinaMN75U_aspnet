@@ -6,11 +6,10 @@ public interface ICategoryService {
 	Task<UResponse> BulkCreate(IEnumerable<CategoryCreateParams> p, CancellationToken ct);
 	Task<UResponse<CategoryResponse?>> Create(CategoryCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct);
-	Task<UResponse<IEnumerable<CategoryResponse>?>> ReadDept(CategoryReadParams p, CancellationToken ct);
 	Task<UResponse<CategoryResponse?>> ReadById(IdParams p, CancellationToken ct);
 	Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
-	Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct);
+	Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct);
 
 	Task<List<CategoryEntity>?> ReadEntity(CategoryReadParams p, CancellationToken ct);
 }
@@ -37,14 +36,14 @@ public class CategoryService(
 		if (p.Children.IsNotNullOrEmpty()) await AddChildrenRecursively(p.Children, e.Id, ct);
 
 		await db.SaveChangesAsync(ct);
-		await AddMedia(e.Id, p.Media ?? [], ct);
+		await AddMedia(e.Id, p.Media, ct);
 
 		cache.DeleteAllByPartialKey(RouteTags.Category);
 		return new UResponse<CategoryResponse?>(e.MapToResponse());
 	}
 
 	public async Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct) {
-		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>()
+		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>().SoftDeleteBehavior(p.SelectorArgs.SoftDeleteBehavior)
 			.Where(x => x.ParentId == null)
 			.OrderBy(x => x.Id);
 
@@ -55,30 +54,6 @@ public class CategoryService(
 		if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
 
 		IQueryable<CategoryResponse> projected = q.Select(Projections.CategorySelector(p.SelectorArgs));
-
-		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
-	}
-
-	public async Task<UResponse<IEnumerable<CategoryResponse>?>> ReadDept(CategoryReadParams p, CancellationToken ct) {
-		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>().Where(x => x.ParentId == null).OrderBy(x => x.Id);
-
-		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
-		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
-
-		q = q
-			.Include(x => x.Children).ThenInclude(c => c.Media)
-			.Include(x => x.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Media)
-			.Include(x => x.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Media)
-			.Include(x => x.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Media)
-			.Include(x => x.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Media)
-			.Include(x => x.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Media)
-			.Include(x => x.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Media)
-			.Include(x => x.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Children).ThenInclude(c => c.Media);
-
-		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
-		if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
-
-		IQueryable<CategoryResponse> projected = q.Select(x => ToDtoDeep(x));
 
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
@@ -160,21 +135,9 @@ public class CategoryService(
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null)
-			return new UResponse<CategoryEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<CategoryEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		CategoryEntity? category = await db.Set<CategoryEntity>()
-			.Include(x => x.Media)
-			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-
-		if (category == null)
-			return new UResponse(Usc.NotFound, ls.Get("CategoryNotFound"));
-
-		if (category.Media.IsNotNullOrEmpty())
-			await mediaService.DeleteRange(category.Media.Select(x => x.Id), ct);
-
-		db.Set<CategoryEntity>().Remove(category);
-		await db.SaveChangesAsync(ct);
+		await db.Set<CategoryEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 
 		cache.DeleteAllByPartialKey(RouteTags.Category);
 		cache.DeleteAllByPartialKey(RouteTags.Product);
@@ -182,13 +145,11 @@ public class CategoryService(
 		return new UResponse();
 	}
 
-	public async Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct) {
+	public async Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null)
-			return new UResponse<CategoryEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-
-		await db.Set<CategoryEntity>().WhereIn(u => u.Id, p.Ids).ExecuteDeleteAsync(ct);
-
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		await db.Set<CategoryEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
+		
 		cache.DeleteAllByPartialKey(RouteTags.Category);
 		cache.DeleteAllByPartialKey(RouteTags.Product);
 		cache.DeleteAllByPartialKey(RouteTags.User);
@@ -221,7 +182,7 @@ public class CategoryService(
 				Type = p.Type,
 				Address = p.Address,
 				PhoneNumber = p.PhoneNumber,
-				RelatedProducts = p.RelatedProducts ?? []
+				RelatedProducts = p.RelatedProducts
 			},
 			Tags = p.Tags,
 			Order = p.Order,
@@ -237,26 +198,5 @@ public class CategoryService(
 		foreach (MediaEntity i in media)
 			await db.Set<MediaEntity>().Where(x => x.Id == i.Id)
 				.ExecuteUpdateAsync(u => u.SetProperty(y => y.CategoryId, id), ct);
-	}
-
-	private static CategoryResponse ToDtoDeep(CategoryEntity e) {
-		return new CategoryResponse {
-			Id = e.Id,
-			CreatedAt = e.CreatedAt,
-			UpdatedAt = e.UpdatedAt,
-			DeletedAt = e.DeletedAt,
-			Tags = e.Tags,
-			JsonData = e.JsonData,
-			Title = e.Title,
-			Order = e.Order,
-			Code = e.Code,
-			ParentId = e.ParentId,
-			Media = e.Media.Select(m => new MediaResponse {
-				Tags = m.Tags,
-				JsonData = m.JsonData,
-				Path = m.Path
-			}).ToList(),
-			Children = e.Children.Select(ToDtoDeep).ToList()
-		};
 	}
 }

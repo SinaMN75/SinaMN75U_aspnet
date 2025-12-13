@@ -44,7 +44,7 @@ public class ExamService(
 		IQueryable<ExamEntity> q = db.Set<ExamEntity>();
 
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(u => u.Tags.Any(tag => p.Tags!.Contains(tag)));
-		if (StringExtensions.HasValue(p.CategoryId)) q = q.Where(x => x.CategoryId == p.CategoryId);
+		if (p.CategoryId.IsNotNull()) q = q.Where(x => x.CategoryId == p.CategoryId);
 
 		return await q.Select(x => new ExamEntity {
 			Title = x.Title,

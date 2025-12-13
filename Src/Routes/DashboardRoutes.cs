@@ -7,13 +7,13 @@ public static class DashboardRoutes {
 		r.MapPost("Read", async (IDashboardService s, CancellationToken ct) => await s.ReadDashboardData(ct)).Produces<DashboardResponse>();
 		r.MapGet("Enums", () => {
 			Dictionary<string, IEnumerable<IdTitleParams>> result = new() {
-				[nameof(Usc)] = EnumExtensions.GetValues<Usc>(),
-				[nameof(TagUser)] = EnumExtensions.GetValues<TagUser>(),
-				[nameof(TagCategory)] = EnumExtensions.GetValues<TagCategory>(),
-				[nameof(TagMedia)] = EnumExtensions.GetValues<TagMedia>(),
-				[nameof(TagProduct)] = EnumExtensions.GetValues<TagProduct>(),
-				[nameof(TagComment)] = EnumExtensions.GetValues<TagComment>(),
-				[nameof(TagReaction)] = EnumExtensions.GetValues<TagReaction>()
+				[nameof(Usc)] = UExtensions.GetValues<Usc>(),
+				[nameof(TagUser)] = UExtensions.GetValues<TagUser>(),
+				[nameof(TagCategory)] = UExtensions.GetValues<TagCategory>(),
+				[nameof(TagMedia)] = UExtensions.GetValues<TagMedia>(),
+				[nameof(TagProduct)] = UExtensions.GetValues<TagProduct>(),
+				[nameof(TagComment)] = UExtensions.GetValues<TagComment>(),
+				[nameof(TagReaction)] = UExtensions.GetValues<TagReaction>()
 			};
 
 			return Results.Ok(result);

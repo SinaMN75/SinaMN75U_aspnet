@@ -1,7 +1,10 @@
+using Scalar.AspNetCore;
+
 namespace SinaMN75U.Utils;
 
 public static class SwaggerSetup {
 	public static void AddUSwagger(this IServiceCollection services) {
+		services.AddOpenApi();
 		services.AddEndpointsApiExplorer();
 		services.AddSwaggerGen(c => {
 			c.UseInlineDefinitionsForEnums();
@@ -10,6 +13,8 @@ public static class SwaggerSetup {
 	}
 
 	public static void UseUSwagger(this WebApplication app) {
+		app.MapOpenApi();
+		app.MapScalarApiReference();
 		app.UseSwagger();
 		app.UseSwaggerUI(c => {
 			c.DocExpansion(DocExpansion.None);

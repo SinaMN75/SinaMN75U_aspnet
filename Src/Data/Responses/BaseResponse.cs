@@ -26,7 +26,7 @@ public class UResponse(Usc status = Usc.Success, string message = "") {
 	public int? TotalCount { get; set; }
 	public string Message { get; set; } = message;
 
-	public IResult ToResult() => TypedResults.Json(this, statusCode: Status.Value());
+	public IResult ToResult() => TypedResults.Json(this, statusCode: (short)Status);
 }
 
 public static class UResponseExtensions {

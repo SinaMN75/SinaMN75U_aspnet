@@ -30,48 +30,14 @@ public static class LinqExtensions {
 		return query.Where(lambdaExpression);
 	}
 
-	public static IQueryable<T> ApplyIncludeOptions<T>(
+	public static IQueryable<T> SoftDeleteBehavior<T>(
 		this IQueryable<T> query,
-		IncludeOptions opts,
-		string childrenProperty = "Children")
-		where T : class {
-		// ✅ Include root navigation props
-		query = opts.RootIncludes.Aggregate(query, (current, inc) => current.Include(inc));
-
-		// ✅ Apply recursive includes only when requested
-		if (opts.IncludeChildren && opts.MaxChildrenDepth > 0) {
-			string basePath = childrenProperty;
-
-			for (uint d = 1; d <= opts.MaxChildrenDepth; d++) {
-				// Include: Children
-				query = query.Include(basePath);
-
-				// Include: Children.<EachRecursiveNavigation>
-				query = opts.RecursiveIncludes.Aggregate(query, (current, nav) => current.Include($"{basePath}.{nav}"));
-
-				// Next level: Children.Children
-				basePath += $".{childrenProperty}";
-			}
-		}
-
-		return query;
-	}
-}
-
-public class IncludeOptions {
-	public bool IncludeChildren { get; set; }
-	public uint MaxChildrenDepth { get; set; } = 0;
-
-	public List<string> RootIncludes { get; set; } = [];
-	public List<string> RecursiveIncludes { get; set; } = [];
-
-	public IncludeOptions Add(string include) {
-		RootIncludes.Add(include);
-		return this;
-	}
-
-	public IncludeOptions AddRecursive(string include) {
-		RecursiveIncludes.Add(include);
-		return this;
-	}
+		SoftDeleteBehavior behavior)
+		where T : class, ISoftDeletable =>
+		behavior switch {
+			Constants.SoftDeleteBehavior.ShowDeleted => query,
+			Constants.SoftDeleteBehavior.IgnoreDeleted => query.Where(x => x.DeletedAt == null),
+			Constants.SoftDeleteBehavior.ShowOnlyDeleted => query.Where(x => x.DeletedAt != null),
+			_ => query
+		};
 }

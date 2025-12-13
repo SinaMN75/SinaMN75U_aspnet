@@ -7,30 +7,29 @@ public sealed class CategoryCreateParams : BaseParams {
 	public required string Title { get; set; }
 
 	public string? Subtitle { get; set; }
-
-	[UValidationMinCollectionLength(1, "TagsRequired")]
-	public required List<TagCategory> Tags { get; set; }
-
-	public Guid? ParentId { get; set; }
-
-	public int? Order { get; set; }
 	public string? Location { get; set; }
 	public string? Type { get; set; }
 	public string? Link { get; set; }
 	public string? Address { get; set; }
 	public string? PhoneNumber { get; set; }
 	public string? Code { get; set; }
-	public List<Guid>? RelatedProducts { get; set; }
+	public Guid? ParentId { get; set; }
+	public int? Order { get; set; }
 
+	[UValidationMinCollectionLength(1, "TagsRequired")]
+	public required List<TagCategory> Tags { get; set; }
+
+	public List<Guid> RelatedProducts { get; set; } = [];
 	public IEnumerable<CategoryCreateParams> Children { get; set; } = [];
-	public ICollection<Guid>? Media { get; set; }
-	
+	public ICollection<Guid> Media { get; set; } = [];
+
 	public CategoryEntity MapToEntity() => new() {
 		Id = Id ?? Guid.CreateVersion7(),
 		Title = Title,
 		ParentId = ParentId,
 		Order = Order,
 		Code = Code,
+		Tags = Tags,
 		JsonData = new CategoryJson {
 			Subtitle = Subtitle,
 			Location = Location,
@@ -38,11 +37,9 @@ public sealed class CategoryCreateParams : BaseParams {
 			Link = Link,
 			Address = Address,
 			PhoneNumber = PhoneNumber,
-			RelatedProducts = RelatedProducts ?? []
-		},
-		Tags = Tags
+			RelatedProducts = RelatedProducts
+		}
 	};
-
 }
 
 public sealed class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
@@ -64,7 +61,7 @@ public sealed class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
 	public decimal? ProductDeposit { get; set; }
 	public decimal? ProductRent { get; set; }
 	public bool UpdateInvoicesRent { get; set; } = false;
-	
+
 	public CategoryEntity MapToEntity(CategoryEntity e) {
 		if (Title != null) e.Title = Title;
 		if (Subtitle != null) e.JsonData.Subtitle = Subtitle;

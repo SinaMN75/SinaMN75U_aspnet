@@ -7,6 +7,7 @@ public interface IContractService {
 	Task<UResponse<IEnumerable<ContractResponse>?>> Read(ContractReadParams p, CancellationToken ct);
 	Task<UResponse<ContractResponse?>> Update(ContractUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
+	Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct);
 }
 
 public class ContractService(
@@ -46,7 +47,7 @@ public class ContractService(
 		if (p.Tags.Contains(TagContract.SingleInvoice)) {
 			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 				Tags = [TagInvoice.NotPaid],
-				DebtAmount = product.Deposit ?? 0,
+				DebtAmount = e.Deposit + e.Rent,
 				CreditorAmount = 0,
 				PaidAmount = 0,
 				PenaltyAmount = 0,
@@ -145,14 +146,14 @@ public class ContractService(
 		IQueryable<ContractEntity> q = db.Set<ContractEntity>();
 
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(u => u.Tags.Any(tag => p.Tags.Contains(tag)));
-		if (p.CreatorId.HasValue()) q = q.Where(u => u.CreatorId == p.CreatorId);
-		if (p.UserId.HasValue()) q = q.Where(u => u.UserId == p.UserId);
-		if (p.ProductId.HasValue()) q = q.Where(u => u.ProductId == p.ProductId);
+		if (p.CreatorId.IsNotNull()) q = q.Where(u => u.CreatorId == p.CreatorId);
+		if (p.UserId.IsNotNull()) q = q.Where(u => u.UserId == p.UserId);
+		if (p.ProductId.IsNotNull()) q = q.Where(u => u.ProductId == p.ProductId);
 		if (p.StartDate.HasValue) q = q.Where(u => u.StartDate == p.StartDate);
 		if (p.EndDate.HasValue) q = q.Where(u => u.EndDate == p.EndDate);
 		if (p.FromCreatedAt.HasValue) q = q.Where(u => u.CreatedAt >= p.FromCreatedAt);
 		if (p.ToCreatedAt.HasValue) q = q.Where(u => u.CreatedAt <= p.ToCreatedAt);
-		if (p.UserName.HasValue()) q = q.Include(x => x.User).Where(x => x.User.UserName.Contains(p.UserName));
+		if (p.UserName.IsNotNullOrEmpty()) q = q.Include(x => x.User).Where(x => x.User.UserName.Contains(p.UserName));
 
 		IQueryable<ContractResponse> list = q.Select(Projections.ContractSelector(p.SelectorArgs));
 
@@ -164,16 +165,7 @@ public class ContractService(
 		if (userData == null) return new UResponse<ContractResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		ContractEntity e = (await db.Set<ContractEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
-		e.UpdatedAt = DateTime.UtcNow;
-		if (p.Deposit.HasValue) e.Deposit = p.Deposit.Value;
-		if (p.Rent.HasValue) e.Rent = p.Rent.Value;
-		if (p.StartDate.HasValue) e.StartDate = p.StartDate.Value;
-		if (p.EndDate.HasValue) e.EndDate = p.EndDate.Value;
-
-		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
-		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
-		if (p.Tags.IsNotNullOrEmpty()) e.Tags = p.Tags;
-
+		e = p.MapToEntity(e);
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
 
@@ -188,6 +180,16 @@ public class ContractService(
 
 		await db.Set<ContractEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
+		cache.DeleteAllByPartialKey(RouteTags.Contract);
+		cache.DeleteAllByPartialKey(RouteTags.Invoice);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+
+		await db.Set<ContractEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
 		cache.DeleteAllByPartialKey(RouteTags.Contract);
 		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse();

@@ -9,8 +9,8 @@ public sealed class CommentCreateParams : BaseParams {
 
 	public Guid? ParentId { get; set; }
 	public Guid? ProductId { get; set; }
-	public Guid? TargetUserId { get; set; }
 	public Guid? UserId { get; set; }
+	public Guid? CreatorId { get; set; }
 
 	[UValidationRequired("TagsRequired")]
 	[UValidationMinCollectionLength(1, "TagsRequired")]
@@ -21,8 +21,8 @@ public sealed class CommentCreateParams : BaseParams {
 		Score = Score,
 		ParentId = ParentId,
 		ProductId = ProductId,
-		TargetUserId = TargetUserId,
-		UserId = UserId ?? Guid.Empty,
+		UserId = UserId,
+		CreatorId = CreatorId ?? Guid.Empty,
 		JsonData = new CommentJson(),
 		Tags = Tags
 	};
@@ -44,8 +44,8 @@ public sealed class CommentUpdateParams : BaseUpdateParams<TagComment> {
 }
 
 public sealed class CommentReadParams : BaseReadParams<TagComment> {
-	public Guid? UserId { get; set; }
+	public Guid? CreatorId { get; set; }
 	public Guid? ProductId { get; set; }
-	public Guid? TargetUserId { get; set; }
+	public Guid? UserId { get; set; }
 	public CommentSelectorArgs SelectorArgs { get; set; } = new();
 }

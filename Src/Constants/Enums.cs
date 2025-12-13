@@ -21,6 +21,12 @@ public enum Usc {
 	MediaTypeNotSupported = 802,
 }
 
+public enum SoftDeleteBehavior {
+	IgnoreDeleted = 101,
+	ShowDeleted = 102,
+	ShowOnlyDeleted = 103
+}
+
 public enum TagUser {
 	Male = 100,
 	Female = 101,

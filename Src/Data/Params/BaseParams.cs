@@ -10,6 +10,11 @@ public sealed class IdParams : BaseParams {
 	public required Guid? Id { get; set; }
 }
 
+public sealed class SoftDeleteParams : BaseParams {
+	public required Guid? Id { get; set; }
+	public required DateTime? DateTime { get; set; }
+}
+
 public sealed class IdListParams : BaseParams {
 	[Required]
 	public required IEnumerable<Guid> Ids { get; set; }

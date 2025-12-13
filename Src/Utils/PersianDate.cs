@@ -428,10 +428,9 @@ public readonly partial struct PersianDateTime : IComparable<PersianDateTime>, I
 	#region Enumerators / Ranges
 
 	public static IEnumerable<PersianDateTime> EnumerateDays(PersianDateTime start, PersianDateTime end, int step = 1) {
-		if (step <= 0) throw new ArgumentOutOfRangeException(nameof(step));
-		PersianDateTime current = start.StartOfDay;
-		PersianDateTime target = end.StartOfDay;
-		while (current <= target) {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(step);
+        PersianDateTime current = start.StartOfDay;
+		while (current <= end.StartOfDay) {
 			yield return current;
 			current = current.AddDays(step);
 		}
