@@ -1,7 +1,3 @@
-using Microsoft.OpenApi;
-using Scalar.AspNetCore;
-using Swashbuckle.AspNetCore.SwaggerGen;
-
 namespace SinaMN75U.Utils;
 
 public static class SwaggerSetup {
@@ -31,10 +27,9 @@ public static class SwaggerSetup {
 			c.DocExpansion(DocExpansion.None);
 			c.DefaultModelsExpandDepth(128);
 			c.EnableDeepLinking();
-			c.DocumentTitle = "SinaMN75U";
+			c.DocumentTitle = "SinaMN75";
 			c.DefaultModelExpandDepth(128);
 			c.JsonSerializerOptions = UJsonOptions.Default;
-			c.DefaultModelRendering(ModelRendering.Model);
 		});
 	}
 }
