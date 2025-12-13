@@ -1,3 +1,5 @@
+using SinaMN75U.Data;
+
 namespace SinaMN75U.Utils;
 
 public static partial class AspNetConfig {
@@ -105,6 +107,22 @@ public static partial class AspNetConfig {
 		app.MapChatBotRoutes(RouteTags.ChatBot);
 		app.MapTicketRoutes(RouteTags.Ticket);
 		app.MapTicketRoutes(RouteTags.Txn);
+
+		app.MapPost("/dev/generate-dart", (IWebHostEnvironment env) => {
+			DartModelGenerator generator = new DartModelGenerator(
+				paramsNs: "MyApp.Data.Params",
+				responsesNs: "MyApp.Data.Responses",
+				paramsOut: Path.Combine(env.WebRootPath, "models", "params"),
+				responsesOut: Path.Combine(env.WebRootPath, "models", "responses")
+			);
+
+			int written = generator.Generate(Assembly.GetExecutingAssembly());
+
+			return Results.Ok(new {
+				message = "Dart models generated",
+				filesWritten = written
+			});
+		});
 	}
 
 	private static string CleanAndFormatSql(string sql) {
