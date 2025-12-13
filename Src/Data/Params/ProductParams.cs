@@ -30,7 +30,7 @@ public sealed class ProductCreateParams : BaseCreateParams<TagProduct> {
 	public ICollection<ProductCreateParams>? Children { get; set; }
 
 	public Guid? ParentId { get; set; }
-	public Guid? UserId { get; set; }
+	public Guid? CreatorId { get; set; }
 
 	public ICollection<Guid>? Media { get; set; }
 	
@@ -50,7 +50,7 @@ public sealed class ProductCreateParams : BaseCreateParams<TagProduct> {
 		Deposit = Deposit,
 		Rent = Rent,
 		ParentId = ParentId,
-		UserId = UserId ?? Guid.Empty,
+		CreatorId = CreatorId ?? Guid.Empty,
 		JsonData = new ProductJson {
 			ActionType = ActionType,
 			ActionTitle = ActionTitle,
@@ -81,7 +81,7 @@ public sealed class ProductUpdateParams : BaseUpdateParams<TagProduct> {
 	public decimal? Deposit { get; set; }
 	public decimal? Rent { get; set; }
 	public Guid? ParentId { get; set; }
-	public Guid? UserId { get; set; }
+	public Guid? CreatorId { get; set; }
 	public string? ActionType { get; set; }
 	public string? ActionTitle { get; set; }
 	public string? ActionUri { get; set; }
@@ -115,7 +115,7 @@ public sealed class ProductUpdateParams : BaseUpdateParams<TagProduct> {
 		if (Deposit.HasValue) e.Deposit = Deposit.Value;
 		if (Rent.HasValue) e.Rent = Rent.Value;
 		if (ParentId.HasValue) e.ParentId = ParentId;
-		if (UserId.HasValue) e.UserId = UserId.Value;
+		if (CreatorId.HasValue) e.CreatorId = CreatorId.Value;
 
 		if (ActionType != null) e.JsonData.ActionType = ActionType;
 		if (ActionTitle != null) e.JsonData.ActionTitle = ActionTitle;

@@ -43,7 +43,7 @@ public class ChatBotService(
 			);
 			string responseValue = JsonDocument.Parse(response).RootElement.GetProperty("response").GetString()!;
 			EntityEntry<ChatBotEntity> newE = await db.Set<ChatBotEntity>().AddAsync(new ChatBotEntity {
-				UserId = userData.Id,
+				CreatorId = userData.Id,
 				JsonData = new ChatBotJsonData {
 					History = [
 						new ChatBotHistoryItem {
@@ -60,7 +60,7 @@ public class ChatBotService(
 	}
 
 	public async Task<UResponse<IEnumerable<ChatBotEntity>?>> Read(ChatBotReadParams p, CancellationToken ct) {
-		IQueryable<ChatBotEntity> q = db.Set<ChatBotEntity>().Where(x => x.UserId == p.UserId);
+		IQueryable<ChatBotEntity> q = db.Set<ChatBotEntity>().Where(x => x.CreatorId == p.UserId);
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 }

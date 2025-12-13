@@ -3,7 +3,7 @@ namespace SinaMN75U.Data.Entities;
 [Table("Products")]
 [Index(nameof(Slug), IsUnique = true)]
 [Index(nameof(Code), IsUnique = true)]
-[Index(nameof(UserId))]
+[Index(nameof(CreatorId))]
 public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	[Required, MaxLength(100)]
 	public required string Title { get; set; }
@@ -38,9 +38,9 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	public Guid? ParentId { get; set; }
 
 	[Required]
-	public Guid UserId { get; set; }
+	public Guid CreatorId { get; set; }
 
-	public UserEntity User { get; set; } = null!;
+	public UserEntity Creator { get; set; } = null!;
 
 	[InverseProperty("Parent")]
 	public ICollection<ProductEntity> Children { get; set; } = [];
@@ -58,7 +58,6 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 		DeletedAt = DeletedAt,
 		JsonData = JsonData,
 		Tags = Tags,
-
 		Title = Title,
 		Code = Code,
 		Subtitle = Subtitle,
@@ -73,9 +72,8 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 		Stock = Stock,
 		Point = Point,
 		Order = Order,
-
 		ParentId = ParentId,
-		UserId = UserId,
+		CreatorId = CreatorId,
 	};
 }
 

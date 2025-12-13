@@ -18,7 +18,7 @@ public sealed class TicketCreateParams : BaseParams {
 	public required List<TagTicket> Tags { get; set; }
 	
 	public TicketEntity MapToEntity(Guid userId) => new() {
-		UserId = UserId ?? userId,
+		CreatorId = UserId ?? userId,
 		JsonData = new TicketJson {
 			Title = Title,
 			Description = Description,

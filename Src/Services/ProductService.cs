@@ -57,7 +57,7 @@ public class ProductService(
 		if (p.Code.IsNotNullOrEmpty()) q = q.Where(x => (x.Code ?? "").Contains(p.Code!));
 		if (p.Slug.IsNotNullOrEmpty()) q = q.Where(x => (x.Slug ?? "") == p.Code!);
 		if (p.ParentId.HasValue) q = q.Where(x => x.ParentId == p.ParentId);
-		if (p.UserId.HasValue) q = q.Where(x => x.UserId == p.UserId);
+		if (p.UserId.HasValue) q = q.Where(x => x.CreatorId == p.UserId);
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => p.Tags.All(tag => x.Tags.Contains(tag)));
 		if (p.MinStock.IsNotNull()) q = q.Where(x => x.Stock >= p.MinStock);
@@ -84,7 +84,7 @@ public class ProductService(
 		ProductEntity? e = await db.Set<ProductEntity>().AsTracking()
 			.Include(x => x.Media)
 			.Include(x => x.Categories)
-			.Include(x => x.User)
+			.Include(x => x.Creator)
 			.Include(x => x.Children)
 			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse<ProductResponse?>(null, Usc.NotFound, ls.Get("ProductNotFound"));
@@ -122,7 +122,7 @@ public class ProductService(
 		if (p.Point.IsNotNull()) e.Point = p.Point.Value;
 		if (p.Order.IsNotNull()) e.Order = p.Order.Value;
 		if (p.ParentId.IsNotNull()) e.ParentId = p.ParentId;
-		if (p.UserId.IsNotNull()) e.UserId = p.UserId.Value;
+		if (p.CreatorId.IsNotNull()) e.CreatorId = p.CreatorId.Value;
 		if (p.ActionType.IsNotNull()) e.JsonData.ActionType = p.ActionType;
 		if (p.ActionTitle.IsNotNull()) e.JsonData.ActionTitle = p.ActionTitle;
 		if (p.ActionUri.IsNotNull()) e.JsonData.ActionUri = p.ActionUri;
@@ -243,7 +243,7 @@ public class ProductService(
 			Deposit = p.Deposit,
 			Rent = p.Rent,
 			ParentId = parentId ?? p.ParentId,
-			UserId = p.UserId ?? userId,
+			CreatorId = p.CreatorId ?? userId,
 			Tags = p.Tags,
 			Categories = categories ?? [],
 			Type = p.Type,

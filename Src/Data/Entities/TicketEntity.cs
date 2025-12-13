@@ -3,8 +3,8 @@ namespace SinaMN75U.Data.Entities;
 [Table("Tickets")]
 public class TicketEntity : BaseEntity<TagTicket, TicketJson> {
 
-	public UserEntity User { get; set; } = null!;
-	public required Guid UserId { get; set; }
+	public UserEntity Creator { get; set; } = null!;
+	public required Guid CreatorId { get; set; }
 
 	public ICollection<MediaEntity> Media { get; set; } = [];
 	
@@ -15,7 +15,7 @@ public class TicketEntity : BaseEntity<TagTicket, TicketJson> {
 		DeletedAt = DeletedAt,
 		JsonData = JsonData,
 		Tags = Tags,
-		UserId = UserId
+		CreatorId = CreatorId
 	};
 
 }

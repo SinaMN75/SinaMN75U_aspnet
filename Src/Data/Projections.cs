@@ -131,26 +131,26 @@ public static class Projections {
 			Point = x.Point,
 			Order = x.Order,
 			ParentId = x.ParentId,
-			UserId = x.UserId,
+			CreatorId = x.CreatorId,
 			Media = args.Media == null ? null : x.Media.AsQueryable().SoftDeleteBehavior(args.Media.SoftDeleteBehavior).Select(MediaSelector(args.Media)).ToList(),
 			Categories = args.Category == null ? null : x.Categories.AsQueryable().SoftDeleteBehavior(args.Category.SoftDeleteBehavior).Select(CategorySelector(args.Category)).ToList(),
 			Children = args.Children != null && args.ChildrenDebt > 0 ? x.Children.AsQueryable().SoftDeleteBehavior(args.Children.SoftDeleteBehavior).Select(childSelector!).ToList() : null,
 			CommentCount = args.CommentsCount ? x.Comments.Count : null,
 			ChildrenCount = args.ChildrenCount ? x.Children.Count : null,
 			IsFollowing = args.IsFollowing && args.UserId != null ? x.Followers.Any(f => f.CreatorId == args.UserId) : null,
-			User = args.User == null
+			Creator = args.User == null
 				? null
 				: new UserResponse {
-					Id = x.User.Id,
-					JsonData = x.User.JsonData,
-					Tags = x.User.Tags,
-					UserName = x.User.UserName,
-					PhoneNumber = x.User.PhoneNumber,
-					Email = x.User.Email,
-					FirstName = x.User.FirstName,
-					LastName = x.User.LastName,
-					Media = args.User.Media == null ? null : x.User.Media.AsQueryable().SoftDeleteBehavior(args.User.Media.SoftDeleteBehavior).Select(MediaSelector(args.User.Media)).ToList(),
-					Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().SoftDeleteBehavior(args.User.Category.SoftDeleteBehavior).Select(CategorySelector(args.User.Category)).ToList(),
+					Id = x.Creator.Id,
+					JsonData = x.Creator.JsonData,
+					Tags = x.Creator.Tags,
+					UserName = x.Creator.UserName,
+					PhoneNumber = x.Creator.PhoneNumber,
+					Email = x.Creator.Email,
+					FirstName = x.Creator.FirstName,
+					LastName = x.Creator.LastName,
+					Media = args.User.Media == null ? null : x.Creator.Media.AsQueryable().SoftDeleteBehavior(args.User.Media.SoftDeleteBehavior).Select(MediaSelector(args.User.Media)).ToList(),
+					Categories = args.User.Category == null ? null : x.Creator.Categories.AsQueryable().SoftDeleteBehavior(args.User.Category.SoftDeleteBehavior).Select(CategorySelector(args.User.Category)).ToList(),
 				}
 		};
 	}
@@ -245,21 +245,21 @@ public static class Projections {
 		Id = x.Id,
 		Tags = x.Tags,
 		JsonData = x.JsonData,
-		UserId = x.UserId,
+		CreatorId = x.CreatorId,
 		Media = args.Media == null ? null : x.Media.AsQueryable().SoftDeleteBehavior(args.Media.SoftDeleteBehavior).Select(MediaSelector(args.Media)).ToList(),
-		User = args.User == null
+		Creator = args.User == null
 			? null
 			: new UserResponse {
-				Id = x.User.Id,
-				JsonData = x.User.JsonData,
-				Tags = x.User.Tags,
-				UserName = x.User.UserName,
-				PhoneNumber = x.User.PhoneNumber,
-				Email = x.User.Email,
-				FirstName = x.User.FirstName,
-				LastName = x.User.LastName,
-				Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().SoftDeleteBehavior(args.User.Category.SoftDeleteBehavior).Select(CategorySelector(args.User.Category)).ToList(),
-				Media = args.User.Media == null ? null : x.User.Media.AsQueryable().SoftDeleteBehavior(args.User.Media.SoftDeleteBehavior).Select(MediaSelector(args.User.Media)).ToList()
+				Id = x.Creator.Id,
+				JsonData = x.Creator.JsonData,
+				Tags = x.Creator.Tags,
+				UserName = x.Creator.UserName,
+				PhoneNumber = x.Creator.PhoneNumber,
+				Email = x.Creator.Email,
+				FirstName = x.Creator.FirstName,
+				LastName = x.Creator.LastName,
+				Categories = args.User.Category == null ? null : x.Creator.Categories.AsQueryable().SoftDeleteBehavior(args.User.Category.SoftDeleteBehavior).Select(CategorySelector(args.User.Category)).ToList(),
+				Media = args.User.Media == null ? null : x.Creator.Media.AsQueryable().SoftDeleteBehavior(args.User.Media.SoftDeleteBehavior).Select(MediaSelector(args.User.Media)).ToList()
 			},
 	};
 
@@ -340,7 +340,7 @@ public static class Projections {
 				Stock = x.Product.Stock,
 				Point = x.Product.Point,
 				Order = x.Product.Order,
-				UserId = x.Product.UserId,
+				CreatorId = x.Product.CreatorId,
 				Categories = args.Product.Category == null ? null : x.Product.Categories.AsQueryable().SoftDeleteBehavior(args.Product.Category.SoftDeleteBehavior).Select(CategorySelector(args.Product.Category)).ToList(),
 				Media = args.Product.Media == null ? null : x.Product.Media.AsQueryable().SoftDeleteBehavior(args.Product.Media.SoftDeleteBehavior).Select(MediaSelector(args.Product.Media)).ToList(),
 			},
@@ -406,7 +406,7 @@ public static class Projections {
 						Code = x.Contract.Product.Code,
 						Deposit = x.Contract.Product.Deposit,
 						Rent = x.Contract.Product.Rent,
-						UserId = x.Contract.Product.UserId,
+						CreatorId = x.Contract.Product.CreatorId,
 						Categories = args.Contract.Product.Category == null ? null : x.Contract.Product.Categories.AsQueryable().SoftDeleteBehavior(args.Contract.Product.Category.SoftDeleteBehavior).Select(CategorySelector(args.Contract.Product.Category)).ToList(),
 						Media = args.Contract.Product.Media == null ? null : x.Contract.Product.Media.AsQueryable().SoftDeleteBehavior(args.Contract.Product.Media.SoftDeleteBehavior).Select(MediaSelector(args.Contract.Product.Media)).ToList(),
 					},
