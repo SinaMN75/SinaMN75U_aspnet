@@ -48,4 +48,3 @@ global using SinaMN75U.Services;
 global using SinaMN75U.Utils;
 global using SinaMN75U.Middlewares;
 global using Swashbuckle.AspNetCore.SwaggerUI;
-global using Scalar.AspNetCore;
