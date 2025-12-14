@@ -105,7 +105,7 @@ public static partial class AspNetConfig {
 		app.MapChatBotRoutes(RouteTags.ChatBot);
 		app.MapTicketRoutes(RouteTags.Ticket);
 		app.MapTxnRoutes(RouteTags.Txn);
-		app.MapDataModelRoutes(RouteTags.Txn);
+		app.MapDataModelRoutes(RouteTags.DataModel);
 	}
 
 	private static string CleanAndFormatSql(string sql) {
