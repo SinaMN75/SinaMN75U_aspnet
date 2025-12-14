@@ -29,15 +29,4 @@ public static class LinqExtensions {
 
 		return query.Where(lambdaExpression);
 	}
-
-	public static IQueryable<T> SoftDeleteBehavior<T>(
-		this IQueryable<T> query,
-		SoftDeleteBehavior behavior)
-		where T : class, ISoftDeletable =>
-		behavior switch {
-			Constants.SoftDeleteBehavior.ShowDeleted => query,
-			Constants.SoftDeleteBehavior.IgnoreDeleted => query.Where(x => x.DeletedAt == null),
-			Constants.SoftDeleteBehavior.ShowOnlyDeleted => query.Where(x => x.DeletedAt != null),
-			_ => query
-		};
 }

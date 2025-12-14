@@ -2,7 +2,7 @@ namespace SinaMN75U.Data.Entities;
 
 [Index(nameof(Id), IsUnique = true, Name = "IX_Id")]
 [Index(nameof(Tags), Name = "IX_Tags")]
-public class BaseEntity<T, TJ>: ISoftDeletable where T : Enum where TJ : class {
+public class BaseEntity<T, TJ> where T : Enum where TJ : class {
 	[Key]
 	public Guid Id { get; set; } = Guid.CreateVersion7();
 
@@ -33,8 +33,4 @@ public class BaseEntity<T, TJ>: ISoftDeletable where T : Enum where TJ : class {
 public class VisitCount {
 	public required Guid UserId { get; set; }
 	public required int Count { get; set; } = 1;
-}
-
-public interface ISoftDeletable {
-	DateTime? DeletedAt { get; set; }
 }
