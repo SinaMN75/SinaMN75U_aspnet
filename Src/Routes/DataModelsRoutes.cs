@@ -82,7 +82,6 @@ public static class DataModelRoutes {
 					}
 				]
 			}
-			
 		};
 
 		ContentResponse contentResponse = new() {
@@ -298,39 +297,118 @@ public static class DataModelRoutes {
 		};
 
 
-		categoryResponse.Parent = categoryResponse;
-		categoryResponse.Children = [categoryResponse];
-		categoryResponse.Users = [userResponse];
-		categoryResponse.Products = [productResponse];
+		categoryResponse.Parent = new CategoryResponse {
+			Title = "null",
+			JsonData = new CategoryJson { },
+			Tags = [TagCategory.Bed]
+		};
+		categoryResponse.Children = [
+			new CategoryResponse {
+				Title = "null",
+				JsonData = new CategoryJson { },
+				Tags = [TagCategory.Bed]
+			}
+		];
+		categoryResponse.Users = [
+			new UserResponse {
+				JsonData = new UserJson(),
+				Tags = [TagUser.Female]
+			}
+		];
+		categoryResponse.Products = [
+			new ProductResponse {
+				Title = "",
+				JsonData = new ProductJson(),
+				Tags = [TagProduct.AwaitingPayment]
+			}
+		];
 
-		commentResponse.Parent = commentResponse;
-		commentResponse.Creator = userResponse;
-		commentResponse.Children = [commentResponse];
-		commentResponse.Product = productResponse;
-		commentResponse.User = userResponse;
-		commentResponse.Category = categoryResponse;
+		commentResponse.Parent = new CommentResponse {
+			Score = integer,
+			Description = "",
+			CreatorId = guid,
+			JsonData = new CommentJson(),
+			Tags = [TagComment.InQueue]
+		};
+		commentResponse.Creator = new UserResponse {
+			JsonData = new UserJson(),
+			Tags = [TagUser.Female]
+		};
+		commentResponse.Children = [
+			new CommentResponse {
+				Score = integer,
+				Description = "",
+				CreatorId = guid,
+				JsonData = new CommentJson(),
+				Tags = [TagComment.InQueue]
+			}
+		];
+		commentResponse.Product = new ProductResponse {
+			Title = "",
+			JsonData = new ProductJson(),
+			Tags = [TagProduct.AwaitingPayment]
+		};
+		commentResponse.User = new UserResponse {
+			JsonData = new UserJson(),
+			Tags = [TagUser.Female]
+		};
+		commentResponse.Category = new CategoryResponse {
+			Title = "",
+			JsonData = new CategoryJson(),
+			Tags = [TagCategory.Bed]
+		};
 
-		contractResponse.Creator = userResponse;
-		contractResponse.User = userResponse;
-		contractResponse.Product = productResponse;
-		contractResponse.Invoices = [invoiceResponse];
-		
-		productResponse.Parent = productResponse;
-		productResponse.Children = [productResponse];
+		contractResponse.Creator = new UserResponse {
+			JsonData = new UserJson(),
+			Tags = [TagUser.Female]
+		};
+		contractResponse.User = new UserResponse {
+			JsonData = new UserJson(),
+			Tags = [TagUser.Female]
+		};
+		contractResponse.Product = new ProductResponse {
+			Title = "",
+			JsonData = new ProductJson(),
+			Tags = [TagProduct.AwaitingPayment]
+		};
+		contractResponse.Invoices = [
+			new InvoiceResponse {
+				DebtAmount = integer,
+				CreditorAmount = dec,
+				PaidAmount = dec,
+				PenaltyAmount = dec,
+				DueDate = dateTime,
+				JsonData = new InvoiceJson(),
+				Tags = [TagInvoice.Deposit]
+			}
+		];
+
+		productResponse.Parent = new ProductResponse {
+			Title = "",
+			JsonData = new ProductJson(),
+			Tags = [TagProduct.AwaitingPayment]
+		};
+		productResponse.Children = [
+			new ProductResponse {
+				Title = "",
+				JsonData = new ProductJson(),
+				Tags = [TagProduct.AwaitingPayment]
+			}
+		];
 
 		r.MapPost("Responses", () => new DataModelResponse {
-			Category = categoryResponse,
-			ChatBot = chatBotResponse,
-			Comment = commentResponse,
-			Content = contentResponse,
-			Contract = contractResponse,
-			FollowerFollowingCount = followerFollowingCountResponse,
-			Invoice = invoiceResponse,
-			Media = mediaResponse,
-			Product = productResponse,
-			Ticket = ticketResponse,
-			Txn = txnResponse,
-			User = userResponse
+			UCategoryResponse = categoryResponse,
+			UChatBotResponse = chatBotResponse,
+			UCommentResponse = commentResponse,
+			UContentResponse = contentResponse,
+			UContractResponse = contractResponse,
+			UFollowerFollowingCountResponse = followerFollowingCountResponse,
+			UInvoiceResponse = invoiceResponse,
+			UMediaResponse = mediaResponse,
+			UProductResponse = productResponse,
+			UTicketResponse = ticketResponse,
+			UTxnResponse = txnResponse,
+			UUserResponse = userResponse
 		});
 	}
 }

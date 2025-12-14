@@ -1,18 +1,18 @@
 namespace SinaMN75U.Data.Responses;
 
 public sealed class DataModelResponse {
-	public required CategoryResponse Category { get; set; }
-	public required ChatBotResponse ChatBot { get; set; }
-	public required CommentResponse Comment { get; set; }
-	public required ContentResponse Content { get; set; }
-	public required ContractResponse Contract { get; set; }
-	public required FollowerFollowingCountResponse FollowerFollowingCount { get; set; }
-	public required InvoiceResponse Invoice { get; set; }
-	public required MediaResponse Media { get; set; }
-	public required ProductResponse Product { get; set; }
-	public required TicketResponse Ticket { get; set; }
-	public required TxnResponse Txn { get; set; }
-	public required UserResponse User { get; set; }
+	public required CategoryResponse UCategoryResponse { get; set; }
+	public required ChatBotResponse UChatBotResponse { get; set; }
+	public required CommentResponse UCommentResponse { get; set; }
+	public required ContentResponse UContentResponse { get; set; }
+	public required ContractResponse UContractResponse { get; set; }
+	public required FollowerFollowingCountResponse UFollowerFollowingCountResponse { get; set; }
+	public required InvoiceResponse UInvoiceResponse { get; set; }
+	public required MediaResponse UMediaResponse { get; set; }
+	public required ProductResponse UProductResponse { get; set; }
+	public required TicketResponse UTicketResponse { get; set; }
+	public required TxnResponse UTxnResponse { get; set; }
+	public required UserResponse UUserResponse { get; set; }
 }
 
 public sealed class ParamsResponse {
