@@ -318,21 +318,19 @@ public static class DataModelRoutes {
 		productResponse.Parent = productResponse;
 		productResponse.Children = [productResponse];
 
-		r.MapPost("Responses", () => {
-			Results.Ok(new DataModelResponse {
-				Category = categoryResponse,
-				ChatBot = chatBotResponse,
-				Comment = commentResponse,
-				Content = contentResponse,
-				Contract = contractResponse,
-				FollowerFollowingCount = followerFollowingCountResponse,
-				Invoice = invoiceResponse,
-				Media = mediaResponse,
-				Product = productResponse,
-				Ticket = ticketResponse,
-				Txn = txnResponse,
-				User = userResponse
-			});
+		r.MapPost("Responses", () => new DataModelResponse {
+			Category = categoryResponse,
+			ChatBot = chatBotResponse,
+			Comment = commentResponse,
+			Content = contentResponse,
+			Contract = contractResponse,
+			FollowerFollowingCount = followerFollowingCountResponse,
+			Invoice = invoiceResponse,
+			Media = mediaResponse,
+			Product = productResponse,
+			Ticket = ticketResponse,
+			Txn = txnResponse,
+			User = userResponse
 		});
 	}
 }
