@@ -17,4 +17,5 @@ public static class RouteTags {
 	public const string Ticket = "api/ticket/";
 	public const string Reservation = "api/reservation/";
 	public const string Txn = "api/txn/";
+	public const string DataModel = "api/dataModel/";
 }
