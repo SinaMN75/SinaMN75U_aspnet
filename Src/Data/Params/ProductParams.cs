@@ -33,7 +33,7 @@ public sealed class ProductCreateParams : BaseCreateParams<TagProduct> {
 	public Guid? CreatorId { get; set; }
 
 	public ICollection<Guid>? Media { get; set; }
-	
+
 	public ProductEntity MapToEntity() => new() {
 		Title = Title,
 		Code = Code,
@@ -62,7 +62,6 @@ public sealed class ProductCreateParams : BaseCreateParams<TagProduct> {
 		},
 		Tags = Tags
 	};
-
 }
 
 public sealed class ProductUpdateParams : BaseUpdateParams<TagProduct> {
@@ -94,11 +93,11 @@ public sealed class ProductUpdateParams : BaseUpdateParams<TagProduct> {
 	public IEnumerable<Guid>? AddCategories { get; set; }
 	public IEnumerable<Guid>? RemoveCategories { get; set; }
 	public ICollection<Guid>? Categories { get; set; }
-	
+
 	public ICollection<Guid>? Media { get; set; }
 
 	public bool UpdateInvoicesPrices { get; set; } = false;
-	
+
 	public void MapToEntity(ProductEntity e) {
 		if (Title != null) e.Title = Title;
 		if (Code != null) e.Code = Code;
@@ -128,7 +127,7 @@ public sealed class ProductUpdateParams : BaseUpdateParams<TagProduct> {
 
 		if (RelatedProducts != null) e.JsonData.RelatedProducts = RelatedProducts.ToList();
 		if (AddRelatedProducts != null) e.JsonData.RelatedProducts.AddRangeIfNotExist(AddRelatedProducts);
-		if (RemoveRelatedProducts != null) e.JsonData.RelatedProducts?.RemoveRangeIfExist(RemoveRelatedProducts);
+		if (RemoveRelatedProducts != null) e.JsonData.RelatedProducts.RemoveRangeIfExist(RemoveRelatedProducts);
 
 		if (Tags != null) e.Tags = Tags;
 	}
@@ -140,7 +139,7 @@ public sealed class ProductReadParams : BaseReadParams<TagProduct> {
 	public string? Code { get; set; }
 	public string? Slug { get; set; }
 	public Guid? ParentId { get; set; }
-	public Guid? UserId { get; set; }
+	public Guid? CreatorId { get; set; }
 	public int? MinStock { get; set; }
 	public int? MaxStock { get; set; }
 	public decimal? MinDeposit { get; set; }

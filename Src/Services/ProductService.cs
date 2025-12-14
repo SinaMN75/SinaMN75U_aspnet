@@ -57,7 +57,7 @@ public class ProductService(
 		if (p.Code.IsNotNullOrEmpty()) q = q.Where(x => (x.Code ?? "").Contains(p.Code!));
 		if (p.Slug.IsNotNullOrEmpty()) q = q.Where(x => (x.Slug ?? "") == p.Code!);
 		if (p.ParentId.HasValue) q = q.Where(x => x.ParentId == p.ParentId);
-		if (p.UserId.HasValue) q = q.Where(x => x.CreatorId == p.UserId);
+		if (p.CreatorId.HasValue) q = q.Where(x => x.CreatorId == p.CreatorId);
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => p.Tags.All(tag => x.Tags.Contains(tag)));
 		if (p.MinStock.IsNotNull()) q = q.Where(x => x.Stock >= p.MinStock);
@@ -65,10 +65,10 @@ public class ProductService(
 		if (p.MaxRent.IsNotNull()) q = q.Where(x => x.Deposit >= p.MaxRent);
 		if (p.MinDeposit.IsNotNull()) q = q.Where(x => x.Deposit <= p.MinDeposit);
 		if (p.Categories.IsNotNullOrEmpty()) q = q.Where(x => x.Categories.Any(y => p.Categories.Contains(y.Id)));
-		
+
 		if (p.HasActiveContract == true) q = q.Where(x => x.Contracts.Any(y => y.EndDate >= DateTime.UtcNow));
 		if (p.HasActiveContract == false) q = q.Where(x => x.Contracts.Any(y => y.EndDate <= DateTime.UtcNow));
-		
+
 		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
 		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
 		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
