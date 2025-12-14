@@ -1,7 +1,7 @@
 namespace SinaMN75U.Routes;
 
 public static class DataModelRoutes {
-	public static void MapCategoryRoutes(this IEndpointRouteBuilder app, string tag) {
+	public static void MapDataModelRoutes(this IEndpointRouteBuilder app, string tag) {
 		RouteGroupBuilder r = app.MapGroup(tag).WithTags(tag).AddEndpointFilter<UValidationFilter>();
 
 		Guid guid = Guid.NewGuid();

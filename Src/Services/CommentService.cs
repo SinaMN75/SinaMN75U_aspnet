@@ -30,7 +30,7 @@ public class CommentService(
 	}
 
 	public async Task<UResponse<IEnumerable<CommentResponse>?>> Read(CommentReadParams p, CancellationToken ct) {
-		IQueryable<CommentEntity> q = db.Set<CommentEntity>().SoftDeleteBehavior(p.SelectorArgs.SoftDeleteBehavior);
+		IQueryable<CommentEntity> q = db.Set<CommentEntity>();
 		
 		if (p.ProductId.IsNotNull()) q = q.Where(x => x.ProductId == p.ProductId);
 		if (p.CreatorId.IsNotNull()) q = q.Where(x => x.CreatorId == p.CreatorId);

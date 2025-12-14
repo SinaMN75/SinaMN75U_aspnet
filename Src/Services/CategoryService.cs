@@ -43,7 +43,7 @@ public class CategoryService(
 	}
 
 	public async Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct) {
-		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>().SoftDeleteBehavior(p.SelectorArgs.SoftDeleteBehavior)
+		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>()
 			.Where(x => x.ParentId == null)
 			.OrderBy(x => x.Id);
 

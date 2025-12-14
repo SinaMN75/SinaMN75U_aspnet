@@ -1,5 +1,3 @@
-using SinaMN75U.Data;
-
 namespace SinaMN75U.Utils;
 
 public static partial class AspNetConfig {
@@ -106,7 +104,7 @@ public static partial class AspNetConfig {
 		app.MapInvoiceRoutes(RouteTags.Invoice);
 		app.MapChatBotRoutes(RouteTags.ChatBot);
 		app.MapTicketRoutes(RouteTags.Ticket);
-		app.MapTicketRoutes(RouteTags.Txn);
+		app.MapTxnRoutes(RouteTags.Txn);
 	}
 
 	private static string CleanAndFormatSql(string sql) {

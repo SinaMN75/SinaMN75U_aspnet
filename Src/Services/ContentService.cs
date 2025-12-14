@@ -28,7 +28,7 @@ public class ContentService(
 	}
 
 	public async Task<UResponse<IEnumerable<ContentResponse>?>> Read(ContentReadParams p, CancellationToken ct) {
-		IQueryable<ContentResponse> q = db.Set<ContentEntity>().SoftDeleteBehavior(p.SelectorArgs.SoftDeleteBehavior).Select(Projections.ContentSelector(p.SelectorArgs));
+		IQueryable<ContentResponse> q = db.Set<ContentEntity>().Select(Projections.ContentSelector(p.SelectorArgs));
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
