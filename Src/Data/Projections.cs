@@ -135,7 +135,7 @@ public static class Projections {
 			CreatorId = x.CreatorId,
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(args.Media)).ToList(),
 			Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
-			Contract = args.Contract == null ? null : x.Contracts.AsQueryable().Select(ContractSelector(args.Contract)).ToList(),
+			Contracts = args.Contract == null ? null : x.Contracts.AsQueryable().Select(ContractSelector(args.Contract)).ToList(),
 			Children = args.Children != null && args.ChildrenDebt > 0 ? x.Children.AsQueryable().Select(childSelector!).ToList() : null,
 			CommentCount = args.CommentsCount ? x.Comments.Count : null,
 			ChildrenCount = args.ChildrenCount ? x.Children.Count : null,

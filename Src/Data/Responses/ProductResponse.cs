@@ -25,7 +25,7 @@ public class ProductResponse : BaseResponse<TagProduct, ProductJson> {
 	public IEnumerable<CategoryResponse>? Categories { get; set; }
 	public IEnumerable<ProductResponse>? Children { get; set; }
 	public IEnumerable<MediaResponse>? Media { get; set; }
-	public IEnumerable<ContractResponse>? Contract { get; set; }
+	public IEnumerable<ContractResponse>? Contracts { get; set; }
 
 	public int? CommentCount { get; set; }
 	public bool? IsFollowing { get; set; }
