@@ -111,7 +111,7 @@ public static partial class AspNetConfig {
 		app.MapTxnRoutes(RouteTags.Txn);
 		app.MapDataModelRoutes(RouteTags.DataModel);
 
-		app.MapHub<SignalRHub>("/signalRHub");
+		app.MapHub<CallHub>("/call");
 	}
 
 	private static string CleanAndFormatSql(string sql) {
