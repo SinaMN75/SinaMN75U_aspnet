@@ -1,3 +1,5 @@
+using SinaMN75U.Hubs;
+
 namespace SinaMN75U.Utils;
 
 public static partial class AspNetConfig {
@@ -57,6 +59,8 @@ public static partial class AspNetConfig {
 			x.MultipartBodyLengthLimit = int.MaxValue;
 			x.MultipartHeadersLengthLimit = int.MaxValue;
 		});
+		
+		builder.Services.AddSignalR();
 
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
 		builder.Services.AddSingleton<IHttpClientService, HttpClientService>();
@@ -106,6 +110,8 @@ public static partial class AspNetConfig {
 		app.MapTicketRoutes(RouteTags.Ticket);
 		app.MapTxnRoutes(RouteTags.Txn);
 		app.MapDataModelRoutes(RouteTags.DataModel);
+
+		app.MapHub<SignalRHub>("/signalRHub");
 	}
 
 	private static string CleanAndFormatSql(string sql) {
