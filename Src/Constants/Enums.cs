@@ -128,10 +128,10 @@ public enum TagInvoice {
 	Deposit = 101,
 	Rent = 102,
 
-	PaidOnline = 201,
-	PaidManual = 202,
-	NotPaid = 203,
-	NotPaidDue = 204,
+	Paid = 201,
+	PaidOnline = 202,
+	PaidManual = 203,
+	NotPaid = 204,
 
 	Test = 999
 }
@@ -144,15 +144,6 @@ public enum TagChatBot {
 public enum TagTicket {
 	SuperAdmin = 101,
 	Admin = 102,
-	Test = 999
-}
-
-public enum TagReservation {
-	Pending = 101,
-	Confirmed = 102,
-	Cancelled = 103,
-	CheckedIn = 104,
-	CheckedOut = 105,
 	Test = 999
 }
 
