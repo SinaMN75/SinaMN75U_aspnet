@@ -46,6 +46,10 @@ public class MediaService(
 		else folderName = "generic";
 
 		string name = $"{folderName}/{Guid.CreateVersion7() + Path.GetExtension(p.File.FileName)}";
+		
+		List<TagMedia> tags = [p.Tag1];
+		if (p.Tag2 != null) tags.Add(p.Tag2.Value);
+		if (p.Tag3 != null) tags.Add(p.Tag3.Value);
 		MediaEntity e = new() {
 			Path = name,
 			UserId = p.UserId,
@@ -53,7 +57,7 @@ public class MediaService(
 			ContentId = p.ContentId,
 			CommentId = p.CommentId,
 			ProductId = p.ProductId,
-			Tags = p.Tags,
+			Tags = tags,
 			JsonData = new MediaJson {
 				Title = p.Title,
 				Description = p.Description

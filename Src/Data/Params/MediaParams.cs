@@ -1,7 +1,11 @@
 namespace SinaMN75U.Data.Params;
 
-public sealed class MediaCreateParams : BaseCreateParams<TagMedia> {
+public sealed class MediaCreateParams {
+	public Guid? Id { get; set; }
 	public required IFormFile File { get; set; }
+	public required TagMedia Tag1 { get; set; }
+	public TagMedia? Tag2 { get; set; }
+	public TagMedia? Tag3 { get; set; }
 	public Guid? UserId { get; set; }
 	public Guid? ContentId { get; set; }
 	public Guid? CommentId { get; set; }
@@ -9,21 +13,6 @@ public sealed class MediaCreateParams : BaseCreateParams<TagMedia> {
 	public Guid? ProductId { get; set; }
 	public string? Title { get; set; }
 	public string? Description { get; set; }
-	
-	public MediaEntity MapToEntity(string filePath) => new() {
-		Path = filePath,
-		UserId = UserId,
-		ContentId = ContentId,
-		CommentId = CommentId,
-		CategoryId = CategoryId,
-		ProductId = ProductId,
-		JsonData = new MediaJson {
-			Title = Title,
-			Description = Description
-		},
-		Tags = Tags
-	};
-
 }
 
 public sealed class MediaUpdateParams : BaseParams {
