@@ -47,6 +47,7 @@
     "FollowRelationshipNotFound": "Error Finding the relation",
     "FutureDateSelected": "Future Date Selected",
     "BeforeDateSelected": "Wrong Date Selected",
-    "UnfollowSuccess": "You no Longer following: "
+    "UnfollowSuccess": "You no Longer following: ",
+    "ProductHasActiveContract": "Product Has Active Contract."
   }
 }

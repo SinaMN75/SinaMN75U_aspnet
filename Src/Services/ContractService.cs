@@ -20,8 +20,9 @@ public class ContractService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ContractResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		ProductEntity? product = await db.Set<ProductEntity>().FirstOrDefaultAsync(x => x.Id == p.ProductId, ct);
+		ProductEntity? product = await db.Set<ProductEntity>().Include(x => x.Contracts).FirstOrDefaultAsync(x => x.Id == p.ProductId, ct);
 		if (product?.Deposit == null || product.Rent == null) return new UResponse<ContractResponse?>(null, Usc.NotFound, ls.Get("ProductNotFound"));
+		if (product.Contracts.Any(y => y.EndDate >= DateTime.UtcNow)) return new UResponse<ContractResponse?>(null, Usc.NotFound, ls.Get("ProductHasActiveContract"));
 
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
 		if (user == null) return new UResponse<ContractResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));

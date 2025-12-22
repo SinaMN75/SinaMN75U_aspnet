@@ -68,4 +68,6 @@ public sealed class InvoiceUpdateParams : BaseUpdateParams<TagInvoice> {
 
 public sealed class InvoiceReadParams : BaseReadParams<TagInvoice> {
 	public InvoiceSelectorArgs SelectorArgs { get; set; } = new();
+
+	public Guid? ContractId { get; set; }
 }

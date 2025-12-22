@@ -27,8 +27,7 @@ public class ProductService(
 
 	public async Task<UResponse<ProductResponse?>> Create(ProductCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null)
-			return new UResponse<ProductResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<ProductResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		List<CategoryEntity> categories = p.Categories.IsNotNullOrEmpty()
 			? await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct) ?? []

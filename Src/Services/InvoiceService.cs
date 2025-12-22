@@ -43,6 +43,7 @@ public class InvoiceService(
 	public async Task<UResponse<IEnumerable<InvoiceResponse>?>> Read(InvoiceReadParams p, CancellationToken ct) {
 		IQueryable<InvoiceEntity> q = db.Set<InvoiceEntity>();
 
+		if (p.ContractId.IsNotNull()) q = q.Where(x => x.ContractId == p.ContractId);
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags.Contains(tag)));
 		if (p.FromCreatedAt.HasValue) q = q.Where(x => x.CreatedAt >= p.FromCreatedAt);
 		if (p.ToCreatedAt.HasValue) q = q.Where(x => x.CreatedAt <= p.ToCreatedAt);
