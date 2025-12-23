@@ -138,20 +138,27 @@ public class InvoiceService(
 	}
 
 	public async Task<UResponse<IEnumerable<InvoiceChartResponse>?>> ReadChartData(BaseParams p, CancellationToken ct) {
-		IQueryable<InvoiceEntity> q = db.Set<InvoiceEntity>();
-
-		List<InvoiceChartResponse> chartData = await q
+		var rawData = await db.Set<InvoiceEntity>()
 			.GroupBy(x => x.CreatedAt.Month)
-			.Select(g => new InvoiceChartResponse {
-				Month = new DateTime(1, g.Key, 1).ToString("MMM"),
+			.Select(g => new {
+				MonthNumber = g.Key,
 				TotalDebt = g.Sum(x => x.DebtAmount),
 				TotalPaid = g.Sum(x => x.PaidAmount),
 				TotalPenalty = g.Sum(x => x.PenaltyAmount),
 				TotalRemaining = g.Sum(x => x.DebtAmount - x.PaidAmount),
 				InvoiceCount = g.Count()
 			})
-			.OrderBy(x => x.Month)
+			.OrderBy(x => x.MonthNumber)
 			.ToListAsync(ct);
+
+		List<InvoiceChartResponse> chartData = rawData.Select(item => new InvoiceChartResponse {
+			Month = new DateTime(1, item.MonthNumber, 1).ToString("MMM"),
+			TotalDebt = item.TotalDebt,
+			TotalPaid = item.TotalPaid,
+			TotalPenalty = item.TotalPenalty,
+			TotalRemaining = item.TotalRemaining,
+			InvoiceCount = item.InvoiceCount
+		}).ToList();
 
 		return new UResponse<IEnumerable<InvoiceChartResponse>?>(chartData);
 	}
