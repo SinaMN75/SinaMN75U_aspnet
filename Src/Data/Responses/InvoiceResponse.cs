@@ -9,3 +9,12 @@ public class InvoiceResponse : BaseResponse<TagInvoice, InvoiceJson> {
 
 	public ContractResponse? Contract { get; set; }
 }
+
+public class InvoiceChartResponse {
+	public string Month { get; set; } = "";
+	public decimal TotalDebt { get; set; }
+	public decimal TotalPaid { get; set; }
+	public decimal TotalPenalty { get; set; }
+	public decimal TotalRemaining { get; set; }
+	public int InvoiceCount { get; set; }
+}

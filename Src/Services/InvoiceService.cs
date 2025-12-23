@@ -7,8 +7,9 @@ public interface IInvoiceService {
 	Task<UResponse<IEnumerable<InvoiceResponse>?>> Read(InvoiceReadParams p, CancellationToken ct);
 	Task<UResponse<InvoiceResponse?>> Update(InvoiceUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
-
 	Task<UResponse> Pay(IdParams p, CancellationToken ct);
+
+	public Task<UResponse<IEnumerable<InvoiceChartResponse>?>> ReadChartData(BaseParams p, CancellationToken ct);
 }
 
 public class InvoiceService(
@@ -48,7 +49,7 @@ public class InvoiceService(
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags.Contains(tag)));
 		if (p.FromCreatedAt.HasValue) q = q.Where(x => x.CreatedAt >= p.FromCreatedAt);
 		if (p.ToCreatedAt.HasValue) q = q.Where(x => x.CreatedAt <= p.ToCreatedAt);
-		
+
 		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
 		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
 		if (p.OrderByUpdatedAt) q = q.OrderBy(x => x.UpdatedAt);
@@ -134,5 +135,24 @@ public class InvoiceService(
 
 		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse();
+	}
+
+	public async Task<UResponse<IEnumerable<InvoiceChartResponse>?>> ReadChartData(BaseParams p, CancellationToken ct) {
+		IQueryable<InvoiceEntity> q = db.Set<InvoiceEntity>();
+
+		List<InvoiceChartResponse> chartData = await q
+			.GroupBy(x => x.CreatedAt.Month)
+			.Select(g => new InvoiceChartResponse {
+				Month = new DateTime(1, g.Key, 1).ToString("MMM"),
+				TotalDebt = g.Sum(x => x.DebtAmount),
+				TotalPaid = g.Sum(x => x.PaidAmount),
+				TotalPenalty = g.Sum(x => x.PenaltyAmount),
+				TotalRemaining = g.Sum(x => x.DebtAmount - x.PaidAmount),
+				InvoiceCount = g.Count()
+			})
+			.OrderBy(x => x.Month)
+			.ToListAsync(ct);
+
+		return new UResponse<IEnumerable<InvoiceChartResponse>?>(chartData);
 	}
 }

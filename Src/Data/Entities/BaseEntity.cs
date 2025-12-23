@@ -19,15 +19,6 @@ public class BaseEntity<T, TJ> where T : Enum where TJ : class {
 
 	[Required]
 	public required ICollection<T> Tags { get; set; }
-
-	public BaseResponse<T, TJ> MapToResponse() => new() {
-		Id = Id,
-		CreatedAt = CreatedAt,
-		UpdatedAt = UpdatedAt,
-		DeletedAt = DeletedAt,
-		JsonData = JsonData,
-		Tags = Tags
-	};
 }
 
 public class VisitCount {

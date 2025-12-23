@@ -133,6 +133,8 @@ public class DashboardService(
 			Media = await db.Set<MediaEntity>().CountAsync(ct),
 			Products = await db.Set<ProductEntity>().CountAsync(ct),
 			Users = await db.Set<UserEntity>().CountAsync(ct),
+			Contracts = await db.Set<ContractEntity>().CountAsync(ct),
+			Invoices = await db.Set<InvoiceEntity>().CountAsync(ct),
 			NewUsers = newUsers.Result ?? [],
 			NewCategories = newCategories.Result ?? [],
 			NewComments = newComments.Result ?? [],
