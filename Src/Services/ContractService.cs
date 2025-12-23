@@ -150,11 +150,11 @@ public class ContractService(
 		if (p.CreatorId.IsNotNull()) q = q.Where(u => u.CreatorId == p.CreatorId);
 		if (p.UserId.IsNotNull()) q = q.Where(u => u.UserId == p.UserId);
 		if (p.ProductId.IsNotNull()) q = q.Where(u => u.ProductId == p.ProductId);
+		if (p.UserName.IsNotNullOrEmpty()) q = q.Include(x => x.User).Where(x => x.User.UserName.Contains(p.UserName));
 		if (p.StartDate.HasValue) q = q.Where(u => u.StartDate <= p.StartDate);
 		if (p.EndDate.HasValue) q = q.Where(u => u.EndDate >= p.EndDate);
 		if (p.FromCreatedAt.HasValue) q = q.Where(u => u.CreatedAt >= p.FromCreatedAt);
 		if (p.ToCreatedAt.HasValue) q = q.Where(u => u.CreatedAt <= p.ToCreatedAt);
-		if (p.UserName.IsNotNullOrEmpty()) q = q.Include(x => x.User).Where(x => x.User.UserName.Contains(p.UserName));
 
 		IQueryable<ContractResponse> list = q.Select(Projections.ContractSelector(p.SelectorArgs));
 

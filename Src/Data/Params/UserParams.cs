@@ -143,6 +143,8 @@ public sealed class UserReadParams : BaseReadParams<TagUser> {
 	public string? PhoneNumber { get; set; }
 	public string? Email { get; set; }
 	public string? Bio { get; set; }
+	public Guid? UserId { get; set; }
+	public Guid? ProductId { get; set; }
 	public DateTime? StartBirthDate { get; set; }
 	public DateTime? EndBirthDate { get; set; }
 	public IEnumerable<Guid>? Categories { get; set; }
