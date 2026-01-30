@@ -16,7 +16,7 @@ public class TxnEntity : BaseEntity<TagTxn, TxnJson> {
 	public required Guid UserId { get; set; }
 	public UserEntity User { get; set; } = null!;
 
-	public new TxnResponse MapToResponse() => new() {
+	public TxnResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt,

@@ -12,7 +12,7 @@ public class InvoiceEntity: BaseEntity<TagInvoice, InvoiceJson> {
 	public ContractEntity Contract { get; set; } = null!;
 	public required Guid? ContractId { get; set; }
 	
-	public new InvoiceResponse MapToResponse() => new() {
+	public InvoiceResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt,

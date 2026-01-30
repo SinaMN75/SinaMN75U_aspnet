@@ -20,6 +20,18 @@ public sealed class ContentSelectorArgs : BaseSelectorsArgs {
 	public MediaSelectorArgs? Media { get; set; }
 }
 
+public sealed class ParkingSelectorArgs : BaseSelectorsArgs {
+	
+}
+
+public sealed class ParkingReportSelectorArgs : BaseSelectorsArgs {
+	
+}
+
+public sealed class VehicleSelectorArgs : BaseSelectorsArgs {
+	
+}
+
 public sealed class TicketSelectorArgs : BaseSelectorsArgs {
 	public MediaSelectorArgs? Media { get; set; }
 	public UserSelectorArgs? User { get; set; }
@@ -57,7 +69,7 @@ public sealed class InvoiceSelectorArgs : BaseSelectorsArgs {
 	public ContractSelectorArgs? Contract { get; set; }
 }
 
-public sealed class CommentSelectorArgs: BaseSelectorsArgs {
+public sealed class CommentSelectorArgs : BaseSelectorsArgs {
 	public CommentSelectorArgs? Children { get; set; }
 	public UserSelectorArgs? User { get; set; }
 	public UserSelectorArgs? Creator { get; set; }
@@ -95,6 +107,42 @@ public static class Projections {
 		Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
 		Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(args.Media)).ToList(),
 		Contracts = args.Contract == null ? null : x.Contracts.AsQueryable().Select(ContractSelector(args.Contract)).ToList(),
+	};
+
+	public static Expression<Func<ParkingEntity, ParkingResponse>> ParkingSelector(ParkingSelectorArgs args) => x => new ParkingResponse {
+		Id = x.Id,
+		CreatedAt = x.CreatedAt,
+		UpdatedAt = x.UpdatedAt,
+		DeletedAt = x.DeletedAt,
+		Tags = x.Tags,
+		JsonData = x.JsonData,
+		Title = x.Title,
+		CreatorId = x.CreatorId
+	};
+	
+	public static Expression<Func<ParkingReportEntity, ParkingReportResponse>> ParkingReportSelector(ParkingReportSelectorArgs args) => x => new ParkingReportResponse {
+		Id = x.Id,
+		CreatedAt = x.CreatedAt,
+		UpdatedAt = x.UpdatedAt,
+		DeletedAt = x.DeletedAt,
+		Tags = x.Tags,
+		JsonData = x.JsonData,
+		CreatorId = x.CreatorId,
+		StartDate = x.StartDate,
+		VehicleId = x.VehicleId,
+		ParkingId = x.ParkingId,
+		Amount = x.Amount,
+		EndDate = x.EndDate
+	};
+	
+	public static Expression<Func<VehicleEntity, VehicleResponse>> VehicleSelector(VehicleSelectorArgs args) => x => new VehicleResponse {
+		Id = x.Id,
+		CreatedAt = x.CreatedAt,
+		UpdatedAt = x.UpdatedAt,
+		DeletedAt = x.DeletedAt,
+		Tags = x.Tags,
+		JsonData = x.JsonData,
+		NumberPlate = x.NumberPlate
 	};
 
 	public static Expression<Func<ProductEntity, ProductResponse>> ProductSelector(ProductSelectorArgs args) {

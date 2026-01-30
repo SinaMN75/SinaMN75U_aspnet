@@ -1,5 +1,3 @@
-using SinaMN75U.Data;
-
 namespace SinaMN75U.Services;
 
 public interface ICommentService {

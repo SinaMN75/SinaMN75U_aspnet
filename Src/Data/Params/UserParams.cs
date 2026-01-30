@@ -38,7 +38,7 @@ public sealed class UserCreateParams : BaseParams {
 
 	public UserEntity MapToEntity() => new() {
 		UserName = UserName,
-		Password = PasswordHasher.Hash(Password),
+		Password = UPasswordHasher.Hash(Password),
 		RefreshToken = "",
 		PhoneNumber = PhoneNumber,
 		Email = Email,

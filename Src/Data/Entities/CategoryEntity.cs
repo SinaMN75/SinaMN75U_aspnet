@@ -20,7 +20,7 @@ public class CategoryEntity : BaseEntity<TagCategory, CategoryJson> {
 	public ICollection<UserEntity> Users { get; set; } = [];
 	public ICollection<MediaEntity> Media { get; set; } = [];
 
-	public new CategoryResponse MapToResponse() => new() {
+	public CategoryResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt,

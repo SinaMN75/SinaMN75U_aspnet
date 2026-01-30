@@ -1,5 +1,3 @@
-using SinaMN75U.Hubs;
-
 namespace SinaMN75U.Utils;
 
 public static partial class AspNetConfig {
@@ -82,6 +80,8 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IChatBotService, ChatBotService>();
 		builder.Services.AddScoped<ITxnService, TxnService>();
 		builder.Services.AddScoped<ITicketService, TicketService>();
+		builder.Services.AddScoped<IVehicleService, VehicleService>();
+		builder.Services.AddScoped<IParkingService, ParkingService>();
 	}
 
 	public static void UseUServices(this WebApplication app) {
@@ -110,8 +110,8 @@ public static partial class AspNetConfig {
 		app.MapTicketRoutes(RouteTags.Ticket);
 		app.MapTxnRoutes(RouteTags.Txn);
 		app.MapDataModelRoutes(RouteTags.DataModel);
-
-		app.MapHub<CallHub>("/call");
+		app.MapParkingRoutes(RouteTags.Parking);
+		app.MapVehicleRoutes(RouteTags.Vehicle);
 	}
 
 	private static string CleanAndFormatSql(string sql) {

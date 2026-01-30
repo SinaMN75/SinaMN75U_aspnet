@@ -1,5 +1,3 @@
-using Microsoft.Extensions.ObjectPool;
-
 namespace SinaMN75U.InnerServices;
 
 public interface ILocalStorageService {

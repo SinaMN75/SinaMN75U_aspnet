@@ -1,6 +1,4 @@
-﻿using SinaMN75U.Data;
-
-namespace SinaMN75U.Services;
+﻿namespace SinaMN75U.Services;
 
 public interface ITxnService {
 	Task<UResponse<TxnResponse?>> Create(TxnCreateParams p, CancellationToken ct);

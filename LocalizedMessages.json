@@ -48,6 +48,7 @@
     "FutureDateSelected": "Future Date Selected",
     "BeforeDateSelected": "Wrong Date Selected",
     "UnfollowSuccess": "You no Longer following: ",
-    "ProductHasActiveContract": "Product Has Active Contract."
+    "ProductHasActiveContract": "Product Has Active Contract.",
+    "TokenExpired": "Auth Token is Expired."
   }
 }

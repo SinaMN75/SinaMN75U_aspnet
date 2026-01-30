@@ -13,7 +13,8 @@ public enum Usc {
 
 	WrongVerificationCode = 601,
 	MaximumLimitReached = 602,
-	UserNotFound = 605,
+	UserNotFound = 603,
+	ExpiredToken = 604,
 
 	EmptyList = 701,
 
@@ -159,5 +160,17 @@ public enum TagTxn {
 
 public enum TagReservationGuest {
 	Primary = 101,
+	Test = 999
+}
+
+public enum TagParking {
+	Test = 999
+}
+
+public enum TagVehicle {
+	Test = 999
+}
+
+public enum TagParkingReport {
 	Test = 999
 }

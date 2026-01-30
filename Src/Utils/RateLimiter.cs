@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.RateLimiting;
-
 namespace SinaMN75U.Utils;
 
 public static class RateLimiter {
@@ -27,8 +25,5 @@ public static class RateLimiter {
 		});
 	}
 
-	private static string? GetRealIp(this HttpContext ctx) {
-		string? forwarded = ctx.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-		return forwarded?.Split(',')[0].Trim() ?? ctx.Connection.RemoteIpAddress?.ToString();
-	}
+	private static string? GetRealIp(this HttpContext ctx) => ctx.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim() ?? ctx.Connection.RemoteIpAddress?.ToString();
 }

@@ -1,6 +1,4 @@
-﻿using SinaMN75U.Data;
-
-namespace SinaMN75U.Services;
+﻿namespace SinaMN75U.Services;
 
 public interface ITicketService {
 	Task<UResponse<TicketResponse?>> Create(TicketCreateParams p, CancellationToken ct);

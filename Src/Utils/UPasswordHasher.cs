@@ -1,6 +1,6 @@
 namespace SinaMN75U.Utils;
 
-public static class PasswordHasher {
+public static class UPasswordHasher {
 	public static string Hash(string password) {
 		byte[] salt = new byte[16];
 		using RandomNumberGenerator rng = RandomNumberGenerator.Create();

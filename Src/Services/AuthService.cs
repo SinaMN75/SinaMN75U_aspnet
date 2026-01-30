@@ -7,7 +7,6 @@ public interface IAuthService {
 	Task<UResponse<LoginResponse?>> RefreshToken(RefreshTokenParams p, CancellationToken ct);
 	Task<UResponse> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> VerifyCodeForLogin(VerifyMobileForLoginParams p, CancellationToken ct);
-	Task<UResponse<LoginResponse?>> TestToken(LoginWithEmailPasswordParams p, CancellationToken ct);
 	Task<UResponse<UserEntity?>> ReadUserByToken(BaseParams p, CancellationToken ct);
 }
 
@@ -28,7 +27,7 @@ public class AuthService(
 			UserName = p.UserName,
 			Email = p.Email,
 			PhoneNumber = p.PhoneNumber,
-			Password = PasswordHasher.Hash(p.Password),
+			Password = UPasswordHasher.Hash(p.Password),
 			RefreshToken = ts.GenerateRefreshToken(),
 			JsonData = new UserJson(),
 			Tags = p.Tags,
@@ -51,7 +50,7 @@ public class AuthService(
 
 	public async Task<UResponse<LoginResponse?>> LoginWithEmailPassword(LoginWithEmailPasswordParams p, CancellationToken ct) {
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Email == p.Email, ct);
-		if (user == null || !PasswordHasher.Verify(p.Password, user.Password))
+		if (user == null || !UPasswordHasher.Verify(p.Password, user.Password))
 			return new UResponse<LoginResponse?>(null, Usc.NotFound, ls.Get("InvalidCredentials"));
 
 		user.RefreshToken = ts.GenerateRefreshToken();
@@ -67,7 +66,7 @@ public class AuthService(
 
 	public async Task<UResponse<LoginResponse?>> LoginWithUserNamePassword(LoginWithUserNamePasswordParams p, CancellationToken ct) {
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.UserName == p.UserName, ct);
-		if (user == null || !PasswordHasher.Verify(p.Password, user.Password))
+		if (user == null || !UPasswordHasher.Verify(p.Password, user.Password))
 			return new UResponse<LoginResponse?>(null, Usc.NotFound, ls.Get("InvalidCredentials"));
 
 		user.RefreshToken = ts.GenerateRefreshToken();
@@ -158,21 +157,6 @@ public class AuthService(
 				Expires = config["Jwt:Expires"] ?? "60"
 			})
 			: new UResponse<LoginResponse?>(null, Usc.WrongVerificationCode);
-	}
-
-	public async Task<UResponse<LoginResponse?>> TestToken(LoginWithEmailPasswordParams p, CancellationToken ct) {
-		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Email == p.Email, ct);
-		if (user == null) return new UResponse<LoginResponse?>(null, Usc.NotFound, ls.Get("InvalidCredentials"));
-
-		user.RefreshToken = ts.GenerateRefreshToken();
-		await db.SaveChangesAsync(ct);
-
-		return new UResponse<LoginResponse?>(new LoginResponse {
-			Token = CreateToken(user),
-			RefreshToken = user.RefreshToken,
-			Expires = config["Jwt:Expires"] ?? "60",
-			User = user.MapToResponse()
-		});
 	}
 
 	public async Task<UResponse<UserEntity?>> ReadUserByToken(BaseParams p, CancellationToken ct) {

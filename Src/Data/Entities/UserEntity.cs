@@ -54,7 +54,7 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 	
 	public ICollection<TxnEntity> Txns { get; set; } = [];
 
-	public new UserResponse MapToResponse() => new() {
+	public UserResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt,

@@ -25,7 +25,7 @@ public class CommentEntity : BaseEntity<TagComment, CommentJson> {
 
 	public ICollection<MediaEntity> Media { get; set; } = [];
 	
-	public new CommentResponse MapToResponse() => new() {
+	public CommentResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt,

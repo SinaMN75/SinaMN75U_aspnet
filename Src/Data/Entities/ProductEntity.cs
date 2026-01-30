@@ -51,7 +51,7 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	public ICollection<FollowEntity> Followers { get; set; } = [];
 	public ICollection<ContractEntity> Contracts { get; set; } = [];
 
-	public new ProductResponse MapToResponse() => new() {
+	public ProductResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt,

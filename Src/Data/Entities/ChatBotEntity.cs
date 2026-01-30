@@ -5,7 +5,7 @@ public class ChatBotEntity: BaseEntity<TagChatBot, ChatBotJsonData> {
 	public UserEntity Creator { get; set; } = null!;
 	public required Guid CreatorId { get; set; }
 	
-	public new ChatBotResponse MapToResponse() => new() {
+	public ChatBotResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt,

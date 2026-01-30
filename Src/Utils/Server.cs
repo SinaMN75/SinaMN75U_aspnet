@@ -1,7 +1,5 @@
 ﻿namespace SinaMN75U.Utils;
 
-using Microsoft.Extensions.Configuration;
-
 public static class Server {
 	private static string? _baseUrl;
 

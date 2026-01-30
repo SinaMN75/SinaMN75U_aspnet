@@ -1,5 +1,3 @@
-using SinaMN75U.Data;
-
 namespace SinaMN75U.Services;
 
 public interface IUserService {
@@ -53,7 +51,7 @@ public class UserService(
 		entities.AddRange(p.Users.Select(userParam => new UserEntity {
 			Id = Guid.CreateVersion7(),
 			UserName = userParam.UserName,
-			Password = PasswordHasher.Hash(userParam.Password),
+			Password = UPasswordHasher.Hash(userParam.Password),
 			RefreshToken = "",
 			PhoneNumber = userParam.PhoneNumber,
 			Email = userParam.Email,
