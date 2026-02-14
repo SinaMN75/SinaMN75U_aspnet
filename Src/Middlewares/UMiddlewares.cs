@@ -2,7 +2,7 @@ using BadHttpRequestException = Microsoft.AspNetCore.Http.BadHttpRequestExceptio
 
 namespace SinaMN75U.Middlewares;
 
-public sealed class UMiddleware(RequestDelegate next, IConfiguration config) {
+public sealed class UMiddleware(RequestDelegate next) {
 	private static readonly Lock LogLock = new();
 
 	public async Task InvokeAsync(HttpContext context) {
@@ -73,7 +73,7 @@ public sealed class UMiddleware(RequestDelegate next, IConfiguration config) {
 
 			context.Response.Body = originalResponseStream;
 
-			bool encrypt = bool.Parse(config["MiddlewareEncryptResponse"] ?? "false");
+			bool encrypt = AppSettings.Instance.Middleware.EncryptResponse;
 			if (encrypt && responseBody.Length > 0) {
 				byte[] payload = Encoding.UTF8.GetBytes(Convert.ToBase64String(Encoding.UTF8.GetBytes(responseBody)));
 				context.Response.ContentLength = payload.Length;
@@ -105,7 +105,7 @@ public sealed class UMiddleware(RequestDelegate next, IConfiguration config) {
 			return (null, raw);
 		}
 
-		bool decrypt = bool.Parse(config["MiddlewareDecryptParams"] ?? "false");
+		bool decrypt = AppSettings.Instance.Middleware.DecryptParams;
 		string decoded = raw;
 		string processed = raw;
 
@@ -119,11 +119,11 @@ public sealed class UMiddleware(RequestDelegate next, IConfiguration config) {
 			processed = decoded;
 		}
 
-		bool needKey = bool.Parse(config["MiddlewareRequireApiKey"] ?? "false");
+		bool needKey = AppSettings.Instance.Middleware.RequireApiKey;
 		if (needKey) {
 			try {
 				JsonElement json = JsonSerializer.Deserialize<JsonElement>(processed);
-				if (!json.TryGetProperty("apiKey", out JsonElement token) || token.GetString() != config["ApiKey"]) {
+				if (!json.TryGetProperty("apiKey", out JsonElement token) || token.GetString() != AppSettings.Instance.ApiKey) {
 					await WriteErrorAsync(ctx, 401, "Invalid API key");
 					return (null, decoded);
 				}
@@ -163,8 +163,8 @@ public sealed class UMiddleware(RequestDelegate next, IConfiguration config) {
 	}
 
 	private void TryLog(HttpContext ctx, long ms, string rawReq, string decodedReq, string res, Exception? ex) {
-		if (!bool.Parse(config["MiddlewareLog"] ?? "false")) return;
-		if (ctx.Response.StatusCode is >= 200 and <= 299 && !bool.Parse(config["MiddlewareLogSuccess"] ?? "false")) return;
+		if (!AppSettings.Instance.Middleware.Log) return;
+		if (ctx.Response.StatusCode is >= 200 and <= 299 && !AppSettings.Instance.Middleware.LogSuccess) return;
 
 		// Truncate large bodies in logs
 		const int maxLen = 10_000;

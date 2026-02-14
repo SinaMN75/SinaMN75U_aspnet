@@ -6,7 +6,7 @@ public interface ITokenService {
 	public JwtClaimData? ExtractClaims(string? token);
 }
 
-public class TokenService(IConfiguration config) : ITokenService {
+public class TokenService : ITokenService {
 	public string GenerateRefreshToken() {
 		byte[] randomNumber = new byte[64];
 		using RandomNumberGenerator rng = RandomNumberGenerator.Create();
@@ -15,11 +15,11 @@ public class TokenService(IConfiguration config) : ITokenService {
 	}
 
 	public string GenerateJwt(IEnumerable<Claim> claims, DateTime expires) => new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
-			issuer:config["Jwt:Issuer"]!,
-			audience:config["Jwt:Audience"]!,
+			issuer:AppSettings.Instance.Jwt.Issuer,
+			audience:AppSettings.Instance.Jwt.Audience,
 			claims:claims,
 			expires: expires,
-			signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]!)), SecurityAlgorithms.HmacSha256)
+			signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AppSettings.Instance.Jwt.Key)), SecurityAlgorithms.HmacSha256)
 		)
 	);
 

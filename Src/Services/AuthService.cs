@@ -15,8 +15,7 @@ public class AuthService(
 	ILocalizationService ls,
 	ITokenService ts,
 	ISmsNotificationService smsNotificationService,
-	ILocalStorageService cache,
-	IConfiguration config
+	ILocalStorageService cache
 ) : IAuthService {
 	public async Task<UResponse<LoginResponse?>> Register(RegisterParams p, CancellationToken ct) {
 		bool isUserExists = await db.Set<UserEntity>().AnyAsync(x => x.UserName == p.UserName, ct);
@@ -43,7 +42,7 @@ public class AuthService(
 		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
-			Expires = config["Jwt:Expires"] ?? "60",
+			Expires = AppSettings.Instance.Jwt.Expires,
 			User = user.MapToResponse()
 		});
 	}
@@ -59,7 +58,7 @@ public class AuthService(
 		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
-			Expires = config["Jwt:Expires"] ?? "60",
+			Expires = AppSettings.Instance.Jwt.Expires,
 			User = user.MapToResponse()
 		});
 	}
@@ -75,7 +74,7 @@ public class AuthService(
 		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
-			Expires = config["Jwt:Expires"] ?? "60",
+			Expires = AppSettings.Instance.Jwt.Expires,
 			User = user.MapToResponse()
 		});
 	}
@@ -94,7 +93,7 @@ public class AuthService(
 		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
-			Expires = config["Jwt:Expires"] ?? "60",
+			Expires = AppSettings.Instance.Jwt.Expires,
 			User = user.MapToResponse()
 		});
 	}
@@ -154,7 +153,7 @@ public class AuthService(
 				Token = CreateToken(user),
 				RefreshToken = user.RefreshToken,
 				User = user.MapToResponse(),
-				Expires = config["Jwt:Expires"] ?? "60"
+				Expires = AppSettings.Instance.Jwt.Expires
 			})
 			: new UResponse<LoginResponse?>(null, Usc.WrongVerificationCode);
 	}

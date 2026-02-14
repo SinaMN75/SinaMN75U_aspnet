@@ -2,7 +2,6 @@ namespace SinaMN75U.Utils;
 
 public static partial class AspNetConfig {
 	public static void AddUServices<T>(this WebApplicationBuilder builder, string sqlDatabaseConnectionStrings) where T : DbContext {
-		Server.Configure(builder.Configuration);
 		builder.Services.Configure<KestrelServerOptions>(o => o.AllowSynchronousIO = false);
 		builder.Services.Configure<IISServerOptions>(o => o.AllowSynchronousIO = false);
 		builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
@@ -21,7 +20,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<DbContext, T>();
 		builder.Services.AddDbContextPool<T>(b => {
 			b.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
-			b.UseNpgsql(builder.Configuration.GetConnectionString(sqlDatabaseConnectionStrings), o => {
+			b.UseNpgsql(AppSettings.Instance.ConnectionStrings.Server, o => {
 				AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 				o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
 				o.EnableRetryOnFailure(5, TimeSpan.FromSeconds(30), null);

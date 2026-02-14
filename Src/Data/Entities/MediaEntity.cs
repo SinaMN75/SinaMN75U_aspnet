@@ -28,7 +28,7 @@ public class MediaEntity : BaseEntity<TagMedia, MediaJson> {
 	public TicketEntity? Ticket { get; set; }
 	
 	[NotMapped]
-	public string Url => $"{Server.BaseUrl}/Media/{Path}";
+	public string Url => $"{AppSettings.Instance.BaseUrl}/Media/{Path}";
 	
 	public MediaResponse MapToResponse() => new() {
 		Path = Path,
