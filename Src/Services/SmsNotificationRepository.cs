@@ -7,7 +7,6 @@ public interface ISmsNotificationService {
 
 public class SmsNotificationService(
 	IHttpClientService http,
-	IConfiguration config,
 	ILocalStorageService cache
 ) : ISmsNotificationService {
 	public async Task<UResponse> SendSms(
@@ -17,29 +16,29 @@ public class SmsNotificationService(
 		string? param2 = null,
 		string? param3 = null
 	) {
-		switch (config["sms.provider"]!) {
+		switch (AppSettings.Instance.SmsPanel.Provider) {
 			case "ghasedak": {
 				await http.Post("https://api.ghasedak.me/v2/verification/send/simple", new {
 						receptor = mobileNumber,
 						type = 1,
-						template = config["sms.pattern"]!,
+						template = AppSettings.Instance.SmsPanel.Pattern,
 						param1,
 						param2,
 						param3
 					},
-					new Dictionary<string, string> { { "apikey", config["sms.apiKey"]! } }
+					new Dictionary<string, string> { { "apikey", AppSettings.Instance.SmsPanel.ApiKey } }
 				);
 				break;
 			}
 			case "kavenegar": {
-				await http.Post($"https://api.kavenegar.com/v1/{config["sms.apiKey"]!}/verify/lookup.json", new {
+				await http.Post($"https://api.kavenegar.com/v1/{AppSettings.Instance.SmsPanel.ApiKey}/verify/lookup.json", new {
 						receptor = mobileNumber,
 						template,
 						token = param1,
 						token2 = param2,
 						token3 = param3
 					},
-					new Dictionary<string, string> { { "apikey", config["sms.apiKey"]! } }
+					new Dictionary<string, string> { { "apikey", AppSettings.Instance.SmsPanel.ApiKey } }
 				);
 				break;
 			}
@@ -56,7 +55,7 @@ public class SmsNotificationService(
 		cache.Set("otp_" + user.Id, otp, TimeSpan.FromMinutes(5));
 		
 		if (user.PhoneNumber.IsNull()) return false;
-		await SendSms(user.PhoneNumber, config["sms.otpPattern"]!, otp);
+		await SendSms(user.PhoneNumber, AppSettings.Instance.SmsPanel.OtpPattern, otp);
 		return true;
 	}
 }
