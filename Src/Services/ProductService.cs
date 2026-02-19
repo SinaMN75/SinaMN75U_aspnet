@@ -232,7 +232,7 @@ public class ProductService(
 		ProductEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			Title = p.Title,
-			Code = p.Code,
+			Code = p.Code == "" ? null : p.Code,
 			Subtitle = p.Subtitle,
 			Description = p.Description,
 			Latitude = p.Latitude,
@@ -245,7 +245,7 @@ public class ProductService(
 			Categories = categories ?? [],
 			Type = p.Type,
 			Content = p.Content,
-			Slug = p.Slug,
+			Slug = p.Slug == "" ? null : p.Slug,
 			Stock = p.Stock ?? 0,
 			Point = p.Point ?? 0,
 			Order = p.Order ?? 0,

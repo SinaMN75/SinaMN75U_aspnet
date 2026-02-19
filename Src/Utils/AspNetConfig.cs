@@ -92,7 +92,8 @@ public static partial class AspNetConfig {
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
 		app.UseMiddleware<UMiddleware>();
-
+		app.UseMiddleware<DbExceptionMiddleware>();
+		
 		app.MapAuthRoutes(RouteTags.Auth);
 		app.MapUserRoutes(RouteTags.User);
 		app.MapMediaRoutes(RouteTags.Media);
