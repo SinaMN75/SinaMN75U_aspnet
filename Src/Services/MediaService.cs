@@ -44,7 +44,7 @@ public class MediaService(
 		else folderName = "generic";
 
 		string name = $"{folderName}/{Guid.CreateVersion7() + Path.GetExtension(p.File.FileName)}";
-		
+
 		List<TagMedia> tags = [p.Tag1];
 		if (p.Tag2 != null) tags.Add(p.Tag2.Value);
 		if (p.Tag3 != null) tags.Add(p.Tag3.Value);
@@ -123,18 +123,14 @@ public class MediaService(
 	}
 
 	private async Task SaveMedia(IFormFile file, string name) {
-		string webRoot = env.WebRootPath;
-		string path = Path.Combine(webRoot, "Media", name);
-		string uploadDir = Path.Combine(webRoot, "Media");
-		if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
-		try {
-			File.Delete(path);
-		}
-		catch (Exception) {
-			// ignored
+		string fullPath = Path.Combine(env.WebRootPath, "Media", name);
+		string? directory = Path.GetDirectoryName(fullPath);
+
+		if (directory != null && !Directory.Exists(directory)) {
+			Directory.CreateDirectory(directory);
 		}
 
-		await using FileStream stream = new(path, FileMode.Create);
+		await using var stream = new FileStream(fullPath, FileMode.Create);
 		await file.CopyToAsync(stream);
 	}
 }
