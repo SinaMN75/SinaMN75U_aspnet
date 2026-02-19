@@ -31,6 +31,7 @@ public class MediaEntity : BaseEntity<TagMedia, MediaJson> {
 	public string Url => $"{AppSettings.Instance.BaseUrl}/Media/{Path}";
 	
 	public MediaResponse MapToResponse() => new() {
+		Id = Id,
 		Path = Path,
 		JsonData = JsonData,
 		Tags = Tags

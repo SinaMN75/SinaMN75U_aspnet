@@ -10,6 +10,7 @@ public static class DataModelRoutes {
 		const int integer = 10;
 
 		MediaResponse mediaResponse = new() {
+			Id = guid,
 			Path = "",
 			Tags = [TagMedia.Image],
 			JsonData = new MediaJson {

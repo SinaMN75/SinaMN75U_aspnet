@@ -85,6 +85,7 @@ public sealed class TxnSelectorArgs : BaseSelectorsArgs {
 public static class Projections {
 	public static Expression<Func<MediaEntity, MediaResponse>> MediaSelector(MediaSelectorArgs args) =>
 		x => new MediaResponse {
+			Id = x.Id,
 			Tags = x.Tags,
 			JsonData = x.JsonData,
 			Path = x.Path

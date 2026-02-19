@@ -4,7 +4,7 @@ public static class ContractRoutes {
 	public static void MapContractRoutes(this IEndpointRouteBuilder app, string tag) {
 		RouteGroupBuilder r = app.MapGroup(tag).WithTags(tag).AddEndpointFilter<UValidationFilter>();
 		r.MapPost("Create", async (ContractCreateParams d, IContractService s, CancellationToken c) => (await s.Create(d, c)).ToResult()).Produces<UResponse<ContractResponse>>();
-		r.MapPost("Read", async (ContractReadParams p, IContractService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Cache(1).Produces<UResponse<IEnumerable<ContractResponse>>>();
+		r.MapPost("Read", async (ContractReadParams p, IContractService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Produces<UResponse<IEnumerable<ContractResponse>>>();
 		r.MapPost("Update", async (ContractUpdateParams d, IContractService s, CancellationToken c) => (await s.Update(d, c)).ToResult()).Produces<UResponse<ContractResponse>>();
 		r.MapPost("Delete", async (IdParams d, IContractService s, CancellationToken c) => (await s.Delete(d, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("SoftDelete", async (SoftDeleteParams d, IContractService s, CancellationToken c) => (await s.SoftDelete(d, c)).ToResult()).Produces<UResponse>();

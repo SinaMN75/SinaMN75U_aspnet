@@ -62,6 +62,7 @@ public class CategoryService(
 			Order = x.Order,
 			ParentId = x.ParentId,
 			Media = x.Media.Select(y => new MediaResponse {
+				Id =  y.Id,
 				Path = y.Path,
 				Tags = y.Tags,
 				JsonData = y.JsonData

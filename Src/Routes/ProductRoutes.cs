@@ -5,7 +5,7 @@ public static class ProductRoutes {
 		RouteGroupBuilder r = app.MapGroup(tag).WithTags(tag).AddEndpointFilter<UValidationFilter>();
 		r.MapPost("Create", async (ProductCreateParams p, IProductService s, CancellationToken c) => (await s.Create(p, c)).ToResult()).Produces<UResponse<ProductResponse>>();
 		r.MapPost("BulkCreate", async (List<ProductCreateParams> p, IProductService s, CancellationToken c) => (await s.BulkCreate(p, c)).ToResult()).Produces<UResponse<ProductResponse>>();
-		r.MapPost("Read", async (ProductReadParams p, IProductService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Cache(1).Produces<UResponse<IEnumerable<ProductResponse>>>();
+		r.MapPost("Read", async (ProductReadParams p, IProductService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Produces<UResponse<IEnumerable<ProductResponse>>>();
 		r.MapPost("ReadById", async (IdParams p, IProductService s, CancellationToken c) => (await s.ReadById(p, c)).ToResult()).Produces<UResponse<ProductResponse>>();
 		r.MapPost("Update", async (ProductUpdateParams p, IProductService s, CancellationToken c) => (await s.Update(p, c)).ToResult()).Produces<UResponse<ProductResponse>>();
 		r.MapPost("Delete", async (IdParams p, IProductService s, CancellationToken c) => (await s.Delete(p, c)).ToResult()).Produces<UResponse>();
