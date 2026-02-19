@@ -89,7 +89,7 @@ public static partial class AspNetConfig {
 		app.UseCors();
 		app.UseDeveloperExceptionPage();
 		app.UseUSwagger();
-		app.UseHttpsRedirection();
+		// app.UseHttpsRedirection();
 		app.UseRateLimiter();
 		app.UseMiddleware<UMiddleware>();
 		app.UseMiddleware<DbExceptionMiddleware>();
