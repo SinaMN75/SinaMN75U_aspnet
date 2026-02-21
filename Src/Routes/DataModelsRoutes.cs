@@ -16,7 +16,7 @@ public static class DataModelRoutes {
 			JsonData = new MediaJson {
 				Description = "",
 				Title = ""
-			},
+			}
 		};
 
 		CategoryResponse categoryResponse = new() {
@@ -100,7 +100,7 @@ public static class DataModelRoutes {
 				Telegram = "",
 				Whatsapp = "",
 				Phone = ""
-			},
+			}
 		};
 
 		ContractResponse contractResponse = new() {
@@ -122,7 +122,7 @@ public static class DataModelRoutes {
 			Rent = dec,
 			UserId = guid,
 			CreatorId = guid,
-			ProductId = guid,
+			ProductId = guid
 		};
 
 		UserResponse userResponse = new() {
@@ -179,7 +179,7 @@ public static class DataModelRoutes {
 			Birthdate = dateTime,
 			Categories = [categoryResponse],
 			Media = [mediaResponse],
-			Contracts = [contractResponse],
+			Contracts = [contractResponse]
 		};
 
 		FollowerFollowingCountResponse followerFollowingCountResponse = new() {
@@ -204,7 +204,7 @@ public static class DataModelRoutes {
 			PaidAmount = dec,
 			PenaltyAmount = dec,
 			DueDate = dateTime,
-			Contract = contractResponse,
+			Contract = contractResponse
 		};
 
 		ProductResponse productResponse = new() {
@@ -257,7 +257,7 @@ public static class DataModelRoutes {
 			Media = [mediaResponse],
 			CommentCount = integer,
 			IsFollowing = false,
-			ChildrenCount = integer,
+			ChildrenCount = integer
 		};
 
 		TicketResponse ticketResponse = new() {
@@ -276,7 +276,7 @@ public static class DataModelRoutes {
 			Tags = [TagTicket.Admin],
 			Media = [mediaResponse],
 			Creator = userResponse,
-			CreatorId = guid,
+			CreatorId = guid
 		};
 
 		TxnResponse txnResponse = new() {

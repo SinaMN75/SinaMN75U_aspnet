@@ -13,7 +13,7 @@ public sealed class TxnCreateParams : BaseCreateParams<TagTxn> {
 		TrackingNumber = TrackingNumber,
 		Amount = Amount,
 		JsonData = new TxnJson {
-			GatewayName = GatewayName,
+			GatewayName = GatewayName
 		},
 		UserId = userId,
 		InvoiceId = InvoiceId

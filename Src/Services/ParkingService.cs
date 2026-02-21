@@ -76,7 +76,7 @@ public class ParkingService(
 			EntityEntry<VehicleEntity> vEntity = await db.Set<VehicleEntity>().AddAsync(new VehicleEntity {
 				JsonData = new VehicleJson(),
 				Tags = [TagVehicle.Test],
-				NumberPlate = p.NumberPlate,
+				NumberPlate = p.NumberPlate
 			}, ct);
 			vehicle = vEntity.Entity;
 		}

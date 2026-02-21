@@ -19,13 +19,11 @@ public enum Usc {
 	EmptyList = 701,
 
 	MediaTypeNotEntered = 801,
-	MediaTypeNotSupported = 802,
+	MediaTypeNotSupported = 802
 }
 
-public enum SoftDeleteBehavior {
-	IgnoreDeleted = 101,
-	ShowDeleted = 102,
-	ShowOnlyDeleted = 103
+public enum TagSmsPanel {
+	NikSms = 101
 }
 
 public enum TagUser {
@@ -81,7 +79,7 @@ public enum TagProduct {
 	Room7 = 407,
 	Room8 = 408,
 	Room9 = 409,
-	Room10 = 410,
+	Room10 = 410
 }
 
 public enum TagComment {

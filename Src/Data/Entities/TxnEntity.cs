@@ -25,7 +25,7 @@ public class TxnEntity : BaseEntity<TagTxn, TxnJson> {
 		Tags = Tags,
 		Amount = Amount,
 		TrackingNumber = TrackingNumber,
-		UserId = UserId,
+		UserId = UserId
 	};
 }
 

@@ -35,7 +35,7 @@ public sealed class InvoiceCreateParams : BaseCreateParams<TagInvoice> {
 		DueDate = DueDate,
 		JsonData = new InvoiceJson {
 			Description = Description,
-			PenaltyPrecentEveryDate =  PenaltyPrecentEveryDate,
+			PenaltyPrecentEveryDate =  PenaltyPrecentEveryDate
 		},
 		Tags = Tags
 	};

@@ -73,7 +73,7 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 		Point = Point,
 		Order = Order,
 		ParentId = ParentId,
-		CreatorId = CreatorId,
+		CreatorId = CreatorId
 	};
 }
 

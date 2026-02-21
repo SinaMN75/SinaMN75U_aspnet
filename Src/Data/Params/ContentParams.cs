@@ -24,7 +24,7 @@ public sealed class ContentCreateParams : BaseParams {
 			Telegram = Telegram,
 			Whatsapp = Whatsapp,
 			Phone = Phone
-		},
+		}
 	};
 
 }

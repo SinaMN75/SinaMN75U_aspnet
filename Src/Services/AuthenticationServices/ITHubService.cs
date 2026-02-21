@@ -62,7 +62,7 @@ public class ITHubService(IHttpClientService httpClient) : IAuthenticationServic
 		await httpClient.Post(
 			uri: "https://gateway.itsaaz.ir/management/api/v1/LegalPerson/RenewToken",
 			body: new {
-				refreshToken = p.RefreshToken,
+				refreshToken = p.RefreshToken
 			},
 			headers: new Dictionary<string, string> { { "Content-Type", "application/x-www-form-urlencoded" } }
 		);

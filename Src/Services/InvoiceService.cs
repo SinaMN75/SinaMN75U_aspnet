@@ -30,7 +30,7 @@ public class InvoiceService(
 			DueDate = p.DueDate,
 			JsonData = new InvoiceJson {
 				Description = p.Description,
-				PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate,
+				PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
 			}
 		}, ct);
 		await db.SaveChangesAsync(ct);

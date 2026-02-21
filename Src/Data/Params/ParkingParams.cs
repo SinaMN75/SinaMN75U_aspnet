@@ -16,7 +16,7 @@ public class ParkingCreateParams : BaseCreateParams<TagParking> {
 		HourlyPrice = HourlyPrice,
 		DailyPrice = DailyPrice,
 		JsonData = new ParkingJson {
-			Title = Title,
+			Title = Title
 		}
 	};
 }

@@ -29,7 +29,7 @@ public class ChatBotService(
 			string responseValue = JsonDocument.Parse(response).RootElement.GetProperty("response").GetString()!;
 			e.JsonData.History.Add(new ChatBotHistoryItem {
 				User = p.Message,
-				Bot = responseValue,
+				Bot = responseValue
 			});
 			db.Set<ChatBotEntity>().Update(e);
 			await db.SaveChangesAsync(ct);
@@ -48,7 +48,7 @@ public class ChatBotService(
 					History = [
 						new ChatBotHistoryItem {
 							User = p.Message,
-							Bot = responseValue,
+							Bot = responseValue
 						}
 					]
 				},

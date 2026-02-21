@@ -54,7 +54,7 @@ public class ContractService(
 				DueDate = p.StartDate,
 				JsonData = new InvoiceJson {
 					Description = "",
-					PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate,
+					PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
 				}
 			}, ct);
 
@@ -73,7 +73,7 @@ public class ContractService(
 				DueDate = p.StartDate,
 				JsonData = new InvoiceJson {
 					Description = "ودیعه",
-					PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate,
+					PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
 				}
 			}, ct);
 
@@ -96,7 +96,7 @@ public class ContractService(
 			JsonData = new InvoiceJson {
 				Description = "قسط اول - قیمت کامل",
 				PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
-			},
+			}
 		}, ct);
 
 		if (totalMonths >= 1) {
@@ -115,7 +115,7 @@ public class ContractService(
 				JsonData = new InvoiceJson {
 					Description = $"قسط دوم - قیمت متناسب ({remainingDaysInFirstMonth} روز از {totalDaysInFirstMonth} روز)",
 					PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
-				},
+				}
 			}, ct);
 		}
 
@@ -133,7 +133,7 @@ public class ContractService(
 				JsonData = new InvoiceJson {
 					Description = $"قسط {i + 1} - قیمت کامل",
 					PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
-				},
+				}
 			}, ct);
 		}
 

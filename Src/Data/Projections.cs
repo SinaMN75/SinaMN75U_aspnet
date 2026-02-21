@@ -1,10 +1,6 @@
 namespace SinaMN75U.Data;
 
-public class BaseSelectorsArgs {
-	public SoftDeleteBehavior SoftDeleteBehavior { get; set; } = SoftDeleteBehavior.IgnoreDeleted;
-}
-
-public sealed class CategorySelectorArgs : BaseSelectorsArgs {
+public sealed class CategorySelectorArgs {
 	public MediaSelectorArgs? Media { get; set; }
 	public CategorySelectorArgs? Children { get; set; }
 	public ProductSelectorArgs? Product { get; set; }
@@ -12,39 +8,39 @@ public sealed class CategorySelectorArgs : BaseSelectorsArgs {
 	public int ChildrenDebt { get; set; }
 }
 
-public sealed class MediaSelectorArgs : BaseSelectorsArgs {
+public sealed class MediaSelectorArgs {
 	public MediaSelectorArgs? Children { get; set; }
 }
 
-public sealed class ContentSelectorArgs : BaseSelectorsArgs {
+public sealed class ContentSelectorArgs {
 	public MediaSelectorArgs? Media { get; set; }
 }
 
-public sealed class ParkingSelectorArgs : BaseSelectorsArgs {
+public sealed class ParkingSelectorArgs {
 	
 }
 
-public sealed class ParkingReportSelectorArgs : BaseSelectorsArgs {
+public sealed class ParkingReportSelectorArgs {
 	
 }
 
-public sealed class VehicleSelectorArgs : BaseSelectorsArgs {
+public sealed class VehicleSelectorArgs {
 	
 }
 
-public sealed class TicketSelectorArgs : BaseSelectorsArgs {
+public sealed class TicketSelectorArgs {
 	public MediaSelectorArgs? Media { get; set; }
 	public UserSelectorArgs? User { get; set; }
 }
 
-public sealed class UserSelectorArgs : BaseSelectorsArgs {
+public sealed class UserSelectorArgs {
 	public CategorySelectorArgs? Category { get; set; }
 	public ContractSelectorArgs? Contract { get; set; }
 	public MediaSelectorArgs? Media { get; set; }
 	public InvoiceSelectorArgs? Invoice { get; set; }
 }
 
-public sealed class ProductSelectorArgs : BaseSelectorsArgs {
+public sealed class ProductSelectorArgs {
 	public Guid? UserId { get; set; }
 	public ProductSelectorArgs? Children { get; set; }
 	public CategorySelectorArgs? Category { get; set; }
@@ -58,18 +54,18 @@ public sealed class ProductSelectorArgs : BaseSelectorsArgs {
 	public int ChildrenDebt { get; set; }
 }
 
-public sealed class ContractSelectorArgs : BaseSelectorsArgs {
+public sealed class ContractSelectorArgs {
 	public UserSelectorArgs? User { get; set; }
 	public UserSelectorArgs? Creator { get; set; }
 	public ProductSelectorArgs? Product { get; set; }
 	public InvoiceSelectorArgs? Invoice { get; set; }
 }
 
-public sealed class InvoiceSelectorArgs : BaseSelectorsArgs {
+public sealed class InvoiceSelectorArgs {
 	public ContractSelectorArgs? Contract { get; set; }
 }
 
-public sealed class CommentSelectorArgs : BaseSelectorsArgs {
+public sealed class CommentSelectorArgs {
 	public CommentSelectorArgs? Children { get; set; }
 	public UserSelectorArgs? User { get; set; }
 	public UserSelectorArgs? Creator { get; set; }
@@ -77,7 +73,7 @@ public sealed class CommentSelectorArgs : BaseSelectorsArgs {
 	public MediaSelectorArgs? Media { get; set; }
 }
 
-public sealed class TxnSelectorArgs : BaseSelectorsArgs {
+public sealed class TxnSelectorArgs {
 	public UserSelectorArgs? User { get; set; }
 	public InvoiceSelectorArgs? Invoice { get; set; }
 }
@@ -107,7 +103,7 @@ public static class Projections {
 		Birthdate = x.Birthdate,
 		Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
 		Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(args.Media)).ToList(),
-		Contracts = args.Contract == null ? null : x.Contracts.AsQueryable().Select(ContractSelector(args.Contract)).ToList(),
+		Contracts = args.Contract == null ? null : x.Contracts.AsQueryable().Select(ContractSelector(args.Contract)).ToList()
 	};
 
 	public static Expression<Func<ParkingEntity, ParkingResponse>> ParkingSelector(ParkingSelectorArgs args) => x => new ParkingResponse {
@@ -159,8 +155,7 @@ public static class Projections {
 				Children = args.Children,
 				Category = args.Category,
 				User = args.User,
-				ChildrenDebt = args.ChildrenDebt - 1,
-				SoftDeleteBehavior = args.SoftDeleteBehavior
+				ChildrenDebt = args.ChildrenDebt - 1
 			});
 		return x => new ProductResponse {
 			Id = x.Id,
@@ -201,7 +196,7 @@ public static class Projections {
 					FirstName = x.Creator.FirstName,
 					LastName = x.Creator.LastName,
 					Media = args.User.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector(args.User.Media)).ToList(),
-					Categories = args.User.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList(),
+					Categories = args.User.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList()
 				}
 		};
 	}
@@ -214,8 +209,7 @@ public static class Projections {
 					Children = args.Children,
 					ChildrenDebt = args.ChildrenDebt - 1,
 					Product = args.Product,
-					User = args.User,
-					SoftDeleteBehavior = args.SoftDeleteBehavior
+					User = args.User
 				}
 			);
 		return x => new CategoryResponse {
@@ -273,7 +267,7 @@ public static class Projections {
 						Rent = x.Invoice.Contract.Rent,
 						UserId = x.Invoice.Contract.UserId,
 						CreatorId = x.Invoice.Contract.CreatorId,
-						ProductId = x.Invoice.Contract.ProductId,
+						ProductId = x.Invoice.Contract.ProductId
 					}
 			},
 		User = args.User == null
@@ -289,7 +283,7 @@ public static class Projections {
 				LastName = x.User.LastName,
 				Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList(),
 				Media = args.User.Media == null ? null : x.User.Media.AsQueryable().Select(MediaSelector(args.User.Media)).ToList()
-			},
+			}
 	};
 
 	public static Expression<Func<TicketEntity, TicketResponse>> TicketSelector(TicketSelectorArgs args) => x => new TicketResponse {
@@ -311,7 +305,7 @@ public static class Projections {
 				LastName = x.Creator.LastName,
 				Categories = args.User.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList(),
 				Media = args.User.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector(args.User.Media)).ToList()
-			},
+			}
 	};
 
 	public static Expression<Func<CommentEntity, CommentResponse>> CommentSelector(CommentSelectorArgs args) => x => new CommentResponse {
@@ -355,7 +349,7 @@ public static class Projections {
 				FirstName = x.User.FirstName,
 				LastName = x.User.LastName,
 				Media = args.User.Media == null ? null : x.User.Media.AsQueryable().Select(MediaSelector(args.User.Media)).ToList(),
-				Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList(),
+				Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList()
 			},
 		Creator = args.Creator == null
 			? null
@@ -369,7 +363,7 @@ public static class Projections {
 				FirstName = x.Creator.FirstName,
 				LastName = x.Creator.LastName,
 				Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector(args.Creator.Media)).ToList(),
-				Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList(),
+				Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
 			},
 		Product = args.Product == null
 			? null
@@ -393,8 +387,8 @@ public static class Projections {
 				Order = x.Product.Order,
 				CreatorId = x.Product.CreatorId,
 				Categories = args.Product.Category == null ? null : x.Product.Categories.AsQueryable().Select(CategorySelector(args.Product.Category)).ToList(),
-				Media = args.Product.Media == null ? null : x.Product.Media.AsQueryable().Select(MediaSelector(args.Product.Media)).ToList(),
-			},
+				Media = args.Product.Media == null ? null : x.Product.Media.AsQueryable().Select(MediaSelector(args.Product.Media)).ToList()
+			}
 	};
 
 	public static Expression<Func<InvoiceEntity, InvoiceResponse>> InvoiceSelector(InvoiceSelectorArgs args) => x => new InvoiceResponse {
@@ -459,8 +453,8 @@ public static class Projections {
 						Rent = x.Contract.Product.Rent,
 						CreatorId = x.Contract.Product.CreatorId,
 						Categories = args.Contract.Product.Category == null ? null : x.Contract.Product.Categories.AsQueryable().Select(CategorySelector(args.Contract.Product.Category)).ToList(),
-						Media = args.Contract.Product.Media == null ? null : x.Contract.Product.Media.AsQueryable().Select(MediaSelector(args.Contract.Product.Media)).ToList(),
-					},
+						Media = args.Contract.Product.Media == null ? null : x.Contract.Product.Media.AsQueryable().Select(MediaSelector(args.Contract.Product.Media)).ToList()
+					}
 			}
 	};
 }
