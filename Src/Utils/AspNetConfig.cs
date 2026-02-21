@@ -81,6 +81,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<ITicketService, TicketService>();
 		builder.Services.AddScoped<IVehicleService, VehicleService>();
 		builder.Services.AddScoped<IParkingService, ParkingService>();
+		builder.Services.AddScoped<IITHubService, ITHubService>();
 	}
 
 	public static void UseUServices(this WebApplication app) {

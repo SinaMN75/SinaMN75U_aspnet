@@ -1,12 +1,12 @@
 namespace SinaMN75U.Services;
 
-public interface IITHubServiceService {
+public interface IITHubService {
 	Task<ITHubGetAccessTokenResponse?> GetAccessToken(CancellationToken ct);
 	Task<UResponse<ITHubShahkarResponse>?> Shahkar(ITHubShahkarParams p, CancellationToken ct);
 	Task<UResponse<ItHubPostalCodeToAddressDetailResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct);
 }
 
-public class ITHubService(IHttpClientService httpClient) : IITHubServiceService {
+public class ITHubService(IHttpClientService httpClient) : IITHubService {
 	public async Task<UResponse<ITHubShahkarResponse>?> Shahkar(ITHubShahkarParams p, CancellationToken ct) {
 		string responseBody = await httpClient.Post(
 			uri: "https://gateway.itsaaz.ir/hub/api/v1/Shahkar/MixVerifyMobile",
