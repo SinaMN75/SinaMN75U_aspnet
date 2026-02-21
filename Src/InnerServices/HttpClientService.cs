@@ -74,10 +74,6 @@ public class HttpClientService(HttpClient httpClient) : IHttpClientService {
 
 
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
-		if (!response.IsSuccessStatusCode) throw new HttpRequestException($"Request failed with status code {response.StatusCode}");
-
-		string responseContent = await response.Content.ReadAsStringAsync();
-
-		return responseContent;
+		return await response.Content.ReadAsStringAsync();
 	}
 }

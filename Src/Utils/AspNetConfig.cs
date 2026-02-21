@@ -90,9 +90,9 @@ public static partial class AspNetConfig {
 		app.UseCors();
 		app.UseDeveloperExceptionPage();
 		app.UseUSwagger();
-		// app.UseHttpsRedirection();
+		app.UseHttpsRedirection();
 		app.UseRateLimiter();
-		app.UseMiddleware<UMiddleware>();
+		// app.UseMiddleware<UMiddleware>();
 		app.UseMiddleware<DbExceptionMiddleware>();
 		
 		app.MapAuthRoutes(RouteTags.Auth);
@@ -113,7 +113,7 @@ public static partial class AspNetConfig {
 		app.MapDataModelRoutes(RouteTags.DataModel);
 		app.MapParkingRoutes(RouteTags.Parking);
 		app.MapVehicleRoutes(RouteTags.Vehicle);
-		app.MapInquiryRoutes(RouteTags.Vehicle);
+		app.MapInquiryRoutes(RouteTags.Inquiry);
 	}
 
 	private static string CleanAndFormatSql(string sql) {

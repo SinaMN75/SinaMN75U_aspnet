@@ -1,21 +1,20 @@
 namespace SinaMN75U.Services;
 
 public interface IITHubService {
-	Task<ITHubGetAccessTokenResponse?> GetAccessToken(CancellationToken ct);
 	Task<UResponse<ITHubShahkarResponse>?> Shahkar(ITHubShahkarParams p, CancellationToken ct);
 	Task<UResponse<ItHubPostalCodeToAddressDetailResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct);
 }
 
 public class ITHubService(IHttpClientService httpClient) : IITHubService {
 	public async Task<UResponse<ITHubShahkarResponse>?> Shahkar(ITHubShahkarParams p, CancellationToken ct) {
-		string responseBody = await httpClient.Post(
+		string responseBody = await httpClient.PostForm(
 			uri: "https://gateway.itsaaz.ir/hub/api/v1/Shahkar/MixVerifyMobile",
-			body: new {
-				nationalCode = p.NationalCode,
-				mobile = p.Mobile
-			},
-			headers: new Dictionary<string, string> { { "Content-Type", "application/x-www-form-urlencoded" } }
+			formData: new Dictionary<string, string> {
+				{ "nationalCode", p.NationalCode },
+				{ "mobile", p.Mobile }
+			}
 		);
+		
 		ITHubShahkarResponse response = responseBody.FromJson<ITHubShahkarResponse>();
 
 		return new UResponse<ITHubShahkarResponse>(response);
@@ -23,45 +22,29 @@ public class ITHubService(IHttpClientService httpClient) : IITHubService {
 
 	public async Task<UResponse<ItHubPostalCodeToAddressDetailResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct) {
 		ITHubGetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.AccessToken == null) {
-			return new UResponse<ItHubPostalCodeToAddressDetailResponse?>(null, Usc.BadRequest);
-		}
+		if (tokenResponse?.AccessToken == null) return new UResponse<ItHubPostalCodeToAddressDetailResponse?>(null, Usc.BadRequest, "توکن اعتبار ندارد.");
 
 		var requestBody = new {
 			postcode = p.PostCode,
 			orderId = p.OrderId
 		};
 
-		Dictionary<string, string> headers = new Dictionary<string, string> {
+		Dictionary<string, string> headers = new() {
 			{ "Authorization", $"Bearer {tokenResponse.AccessToken}" },
 			{ "Accept", "application/json" }
 		};
 
-		try {
-			string responseBody = await httpClient.Post(
-				uri: "https://gateway.itsaaz.ir/hub/api/v1/Address/DetailsTypeA",
-				body: requestBody,
-				headers: headers
-			);
-
-			ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse>? apiResponse = JsonSerializer.Deserialize<ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse>>(responseBody);
-
-			if (apiResponse == null) {
-				return new UResponse<ItHubPostalCodeToAddressDetailResponse?>(null, Usc.BadRequest);
-			}
-
-			if (apiResponse.Error != null) {
-				return new UResponse<ItHubPostalCodeToAddressDetailResponse?>(null, Usc.BadRequest);
-			}
-
-			return new UResponse<ItHubPostalCodeToAddressDetailResponse?>(apiResponse.Data);
-		}
-		catch {
-			return new UResponse<ItHubPostalCodeToAddressDetailResponse?>(null, Usc.BadRequest);
-		}
+		string responseBody = await httpClient.Post(
+			uri: "https://gateway.itsaaz.ir/hub/api/v1/Address/DetailsTypeA",
+			body: requestBody,
+			headers: headers
+		);
+		
+		ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse>? apiResponse = JsonSerializer.Deserialize<ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse>>(responseBody);
+		return new UResponse<ItHubPostalCodeToAddressDetailResponse?>(apiResponse?.Data);
 	}
 
-	public async Task<ITHubGetAccessTokenResponse?> GetAccessToken(CancellationToken ct) {
+	private async Task<ITHubGetAccessTokenResponse?> GetAccessToken(CancellationToken ct) {
 		ItHub itHub = AppSettings.Instance.ItHub;
 		string responseBody = await httpClient.PostForm(
 			uri: "https://gateway.itsaaz.ir/sts/connect/token",
