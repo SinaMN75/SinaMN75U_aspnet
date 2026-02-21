@@ -11,7 +11,7 @@ public class ITHubService(IHttpClientService httpClient) : IAuthenticationServic
 			headers: new Dictionary<string, string> { { "Content-Type", "application/x-www-form-urlencoded" } }
 		);
 		ITHubShahkarResponse response = responseBody.FromJson<ITHubShahkarResponse>();
-		
+
 		return new UResponse<ITHubShahkarResponse>(response);
 	}
 
@@ -25,24 +25,24 @@ public class ITHubService(IHttpClientService httpClient) : IAuthenticationServic
 			headers: new Dictionary<string, string> { { "Content-Type", "application/x-www-form-urlencoded" } }
 		);
 		ITHubPostalCodeToAddressDetailResponse response = responseBody.FromJson<ITHubPostalCodeToAddressDetailResponse>();
-		
+
 		return new UResponse<ITHubPostalCodeToAddressDetailResponse>(response);
 	}
 
 	public async Task<UResponse<ITHubGetAccessTokenResponse>> GetAccessToken(ITHubGetAccessTokenParams p, CancellationToken ct) {
-		string responseBody = await httpClient.Post(
+		string responseBody = await httpClient.PostForm(
 			uri: "https://gateway.itsaaz.ir/sts/connect/token",
-			body: new {
-				grant_type = p.GrantType,
-				client_id = p.ClientId,
-				Client_secret = p.ClientSecret,
-				username = p.UserName,
-				password = p.Password
-			},
-			headers: new Dictionary<string, string> { { "Content-Type", "application/x-www-form-urlencoded" } }
+			formData: new Dictionary<string, string> {
+				{ "grant_type", "password" },
+				{ "client_id", "test" },
+				{ "Client_secret", "test" },
+				{ "username", "test" },
+				{ "password", "test" }
+			}
 		);
-		ITHubGetAccessTokenResponse response = responseBody.FromJson<ITHubGetAccessTokenResponse>();
-		
+
+		ITHubGetAccessTokenResponse? response = JsonSerializer.Deserialize<ITHubGetAccessTokenResponse>(responseBody);
+
 		return new UResponse<ITHubGetAccessTokenResponse>(response);
 	}
 

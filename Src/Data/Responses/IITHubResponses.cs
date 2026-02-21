@@ -5,9 +5,17 @@ public class ITHubResponse<T> {
 }
 
 public class ITHubGetAccessTokenResponse {
-	public required string AccessToken { get; set; }
-	public required int ExpiresIn { get; set; }
-	public required string Type { get; set; }
+	[JsonPropertyName("access_token")]
+	public string AccessToken { get; set; } = null!;
+
+	[JsonPropertyName("expires_in")]
+	public int ExpiresIn { get; set; }
+
+	[JsonPropertyName("token_type")]
+	public string TokenType { get; set; } = null!;
+
+	[JsonPropertyName("scope")]
+	public string Scope { get; set; } = null!;
 }
 
 public class ITHubShahkarResponse {

@@ -23,7 +23,9 @@ public enum Usc {
 }
 
 public enum TagSmsPanel {
-	NikSms = 101
+	NikSms = 101,
+	Ghasedak = 102,
+	Kavenegar = 103
 }
 
 public enum TagUser {

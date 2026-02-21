@@ -37,4 +37,6 @@ public class SmsPanel {
 	public required string Pattern { get; init; }
 	public required string ApiKey { get; init; }
 	public required string OtpPattern { get; init; }
+	public required string UserName { get; set; }
+	public required string Password { get; set; }
 }

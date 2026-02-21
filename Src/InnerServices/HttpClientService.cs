@@ -3,6 +3,7 @@ namespace SinaMN75U.InnerServices;
 public interface IHttpClientService {
 	Task<string> Get(string uri, Dictionary<string, string>? headers = null);
 	Task<string> Post(string uri, object? body, Dictionary<string, string>? headers = null);
+	Task<string> PostForm(string uri, Dictionary<string, string> formData, Dictionary<string, string>? headers = null);
 	Task<string> Put(string uri, object? body, Dictionary<string, string>? headers = null);
 	Task<string> Delete(string uri, Dictionary<string, string>? headers = null);
 	Task<string> Upload(string uri, IFormFile file, Dictionary<string, string>? headers = null);
@@ -15,6 +16,18 @@ public class HttpClientService(HttpClient httpClient) : IHttpClientService {
 	public async Task<string> Get(string uri, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Get, uri, null, headers);
 
 	public async Task<string> Post(string uri, object? body, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Post, uri, body, headers);
+
+	public async Task<string> PostForm(string uri, Dictionary<string, string> formData, Dictionary<string, string>? headers = null) {
+		using HttpRequestMessage request = new(HttpMethod.Post, uri);
+		request.Content = new FormUrlEncodedContent(formData);
+
+		if (headers != null) foreach (KeyValuePair<string, string> h in headers) request.Headers.Add(h.Key, h.Value);
+
+		using HttpResponseMessage response = await _httpClient.SendAsync(request);
+		response.EnsureSuccessStatusCode();
+
+		return await response.Content.ReadAsStringAsync();
+	}
 
 	public async Task<string> Put(string uri, object? body, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Put, uri, body, headers);
 

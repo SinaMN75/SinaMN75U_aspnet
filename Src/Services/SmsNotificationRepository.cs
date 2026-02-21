@@ -16,30 +16,35 @@ public class SmsNotificationService(
 		string? param2 = null,
 		string? param3 = null
 	) {
-		switch (AppSettings.Instance.SmsPanel.Provider) {
-			case "ghasedak": {
+		SmsPanel sms = AppSettings.Instance.SmsPanel;
+		switch (sms.Tag) {
+			case TagSmsPanel.Ghasedak: {
 				await http.Post("https://api.ghasedak.me/v2/verification/send/simple", new {
 						receptor = mobileNumber,
 						type = 1,
-						template = AppSettings.Instance.SmsPanel.Pattern,
+						template = sms.Pattern,
 						param1,
 						param2,
 						param3
 					},
-					new Dictionary<string, string> { { "apikey", AppSettings.Instance.SmsPanel.ApiKey } }
+					new Dictionary<string, string> { { "apikey", sms.ApiKey } }
 				);
 				break;
 			}
-			case "kavenegar": {
-				await http.Post($"https://api.kavenegar.com/v1/{AppSettings.Instance.SmsPanel.ApiKey}/verify/lookup.json", new {
+			case TagSmsPanel.Kavenegar: {
+				await http.Post($"https://api.kavenegar.com/v1/{sms.ApiKey}/verify/lookup.json", new {
 						receptor = mobileNumber,
 						template,
 						token = param1,
 						token2 = param2,
 						token3 = param3
 					},
-					new Dictionary<string, string> { { "apikey", AppSettings.Instance.SmsPanel.ApiKey } }
+					new Dictionary<string, string> { { "apikey", sms.ApiKey } }
 				);
+				break;
+			}
+			case TagSmsPanel.NikSms: {
+				
 				break;
 			}
 		}
