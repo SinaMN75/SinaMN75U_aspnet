@@ -1,7 +1,14 @@
 namespace SinaMN75U.Data.Responses;
 
-public class ITHubResponse<T> {
+public class ItHubBaseResponse<T> {
+	[JsonPropertyName("data")]
 	public T? Data { get; set; }
+
+	[JsonPropertyName("meta")]
+	public object? Meta { get; set; }
+
+	[JsonPropertyName("error")]
+	public object? Error { get; set; }
 }
 
 public class ITHubGetAccessTokenResponse {
@@ -24,22 +31,52 @@ public class ITHubShahkarResponse {
 	public string? Error { get; set; }
 }
 
-public class ITHubPostalCodeToAddressDetailResponse {
-	public string? BuildingName { get; set; }
-	public string? Description { get; set; }
-	public string? Floor { get; set; }
-	public string? HouseNumber { get; set; }
-	public string? LocalityCode { get; set; }
-	public string? LocalityName { get; set; }
-	public string? LocalityType { get; set; }
-	public string? ZipCode { get; set; }
-	public string? Province { get; set; }
-	public string? SideFloor { get; set; }
-	public string? Street { get; set; }
-	public string? Street1 { get; set; }
-	public string? SubLocality { get; set; }
-	public string? TownShip { get; set; }
-	public string? TraceId { get; set; }
-	public string? Village { get; set; }
-	public string? City { get; set; }
+public class ItHubPostalCodeToAddressDetailResponse {
+	[JsonPropertyName("buildingName")]
+	public string BuildingName { get; set; }
+
+	[JsonPropertyName("description")]
+	public string Description { get; set; }
+
+	[JsonPropertyName("floor")]
+	public string Floor { get; set; }
+
+	[JsonPropertyName("houseNumber")]
+	public long HouseNumber { get; set; }
+
+	[JsonPropertyName("localityCode")]
+	public long LocalityCode { get; set; }
+
+	[JsonPropertyName("localityName")]
+	public string LocalityName { get; set; }
+
+	[JsonPropertyName("localityType")]
+	public string LocalityType { get; set; }
+
+	[JsonPropertyName("zipCode")]
+	public string ZipCode { get; set; }
+
+	[JsonPropertyName("province")]
+	public string Province { get; set; }
+
+	[JsonPropertyName("sideFloor")]
+	public string SideFloor { get; set; }
+
+	[JsonPropertyName("street")]
+	public string Street { get; set; }
+
+	[JsonPropertyName("street2")]
+	public string Street2 { get; set; }
+
+	[JsonPropertyName("subLocality")]
+	public string SubLocality { get; set; }
+
+	[JsonPropertyName("townShip")]
+	public string TownShip { get; set; }
+
+	[JsonPropertyName("traceId")]
+	public string TraceId { get; set; }
+
+	[JsonPropertyName("village")]
+	public string Village { get; set; }
 }

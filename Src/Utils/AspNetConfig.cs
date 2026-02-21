@@ -112,6 +112,7 @@ public static partial class AspNetConfig {
 		app.MapDataModelRoutes(RouteTags.DataModel);
 		app.MapParkingRoutes(RouteTags.Parking);
 		app.MapVehicleRoutes(RouteTags.Vehicle);
+		app.MapInquiryRoutes(RouteTags.Vehicle);
 	}
 
 	private static string CleanAndFormatSql(string sql) {

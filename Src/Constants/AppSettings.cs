@@ -5,6 +5,7 @@ public class AppSettings {
 	public required Jwt Jwt { get; init; }
 	public required Middleware Middleware { get; init; }
 	public required SmsPanel SmsPanel { get; init; }
+	public required ItHub ItHub { get; init; }
 	public required string BaseUrl { get; init; }
 	public required string ApiKey { get; init; }
 
@@ -38,5 +39,12 @@ public class SmsPanel {
 	public required string ApiKey { get; init; }
 	public required string OtpPattern { get; init; }
 	public required string UserName { get; set; }
+	public required string Password { get; set; }
+}
+
+public class ItHub {
+	public required string ClientId { get; init; }
+	public required string ClientSecret { get; init; }
+	public required string UserName { get; init; }
 	public required string Password { get; set; }
 }

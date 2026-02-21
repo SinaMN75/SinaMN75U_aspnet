@@ -19,4 +19,5 @@ public static class RouteTags {
 	public const string DataModel = "api/dataModel/";
 	public const string Parking = "api/parking/";
 	public const string Vehicle = "api/vehicle/";
+	public const string Inquiry = "api/inquiry/";
 }
