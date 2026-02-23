@@ -44,7 +44,7 @@ public class AuthService(
 		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
-			Expires = AppSettings.Instance.Jwt.Expires,
+			Expires = Core.App.Jwt.Expires,
 			User = user.MapToResponse()
 		});
 	}
@@ -85,7 +85,7 @@ public class AuthService(
 		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
-			Expires = AppSettings.Instance.Jwt.Expires,
+			Expires = Core.App.Jwt.Expires,
 			User = user.MapToResponse()
 		});
 	}
@@ -101,7 +101,7 @@ public class AuthService(
 		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
-			Expires = AppSettings.Instance.Jwt.Expires,
+			Expires = Core.App.Jwt.Expires,
 			User = user.MapToResponse()
 		});
 	}
@@ -120,7 +120,7 @@ public class AuthService(
 		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = CreateToken(user),
 			RefreshToken = user.RefreshToken,
-			Expires = AppSettings.Instance.Jwt.Expires,
+			Expires = Core.App.Jwt.Expires,
 			User = user.MapToResponse()
 		});
 	}
@@ -175,12 +175,12 @@ public class AuthService(
 		db.Update(user);
 		await db.SaveChangesAsync(ct);
 
-		return p.Otp == AppSettings.Instance.BasicSettings.DefaultVerificationKey || p.Otp == cache.Get(user.Id.ToString())
+		return p.Otp == Core.App.BasicSettings.DefaultVerificationKey || p.Otp == cache.Get(user.Id.ToString())
 			? new UResponse<LoginResponse?>(new LoginResponse {
 					Token = CreateToken(user),
 					RefreshToken = user.RefreshToken,
 					User = user.MapToResponse(),
-					Expires = AppSettings.Instance.Jwt.Expires
+					Expires = Core.App.Jwt.Expires
 				}
 			)
 			: new UResponse<LoginResponse?>(null, Usc.WrongVerificationCode);

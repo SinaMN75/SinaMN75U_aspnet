@@ -72,7 +72,7 @@ public sealed class UMiddleware(RequestDelegate next, ILocalizationService ls) {
 
 			context.Response.Body = originalResponseStream;
 
-			bool encrypt = AppSettings.Instance.Middleware.EncryptResponse;
+			bool encrypt = Core.App.Middleware.EncryptResponse;
 			if (encrypt && responseBody.Length > 0) {
 				byte[] payload = Encoding.UTF8.GetBytes(Convert.ToBase64String(Encoding.UTF8.GetBytes(responseBody)));
 				context.Response.ContentLength = payload.Length;
@@ -100,7 +100,7 @@ public sealed class UMiddleware(RequestDelegate next, ILocalizationService ls) {
 			return (null, raw);
 		}
 
-		bool decrypt = AppSettings.Instance.Middleware.DecryptParams;
+		bool decrypt = Core.App.Middleware.DecryptParams;
 		string decoded = raw;
 		string processed = raw;
 
@@ -114,11 +114,11 @@ public sealed class UMiddleware(RequestDelegate next, ILocalizationService ls) {
 			processed = decoded;
 		}
 
-		bool needKey = AppSettings.Instance.Middleware.RequireApiKey;
+		bool needKey = Core.App.Middleware.RequireApiKey;
 		if (needKey) {
 			try {
 				JsonElement json = JsonSerializer.Deserialize<JsonElement>(processed);
-				if (!json.TryGetProperty("apiKey", out JsonElement token) || token.GetString() != AppSettings.Instance.ApiKey) {
+				if (!json.TryGetProperty("apiKey", out JsonElement token) || token.GetString() != Core.App.ApiKey) {
 					await WriteErrorAsync(ctx, Usc.UnAuthorized, ls.Get("InvalidAPIKey"));
 					return (null, decoded);
 				}
@@ -151,8 +151,8 @@ public sealed class UMiddleware(RequestDelegate next, ILocalizationService ls) {
 	}
 
 	private static void TryLog(HttpContext ctx, long ms, string rawReq, string decodedReq, string res, Exception? ex) {
-		if (!AppSettings.Instance.Middleware.Log) return;
-		if (ctx.Response.StatusCode is >= 200 and <= 299 && !AppSettings.Instance.Middleware.LogSuccess) return;
+		if (!Core.App.Middleware.Log) return;
+		if (ctx.Response.StatusCode is >= 200 and <= 299 && !Core.App.Middleware.LogSuccess) return;
 
 		const int maxLen = 10_000;
 		if (rawReq.Length > maxLen) rawReq = rawReq[..maxLen] + "...<truncated>";

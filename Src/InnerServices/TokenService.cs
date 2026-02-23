@@ -15,11 +15,11 @@ public class TokenService : ITokenService {
 	}
 
 	public string GenerateJwt(IEnumerable<Claim> claims, DateTime expires) => new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
-			issuer:AppSettings.Instance.Jwt.Issuer,
-			audience:AppSettings.Instance.Jwt.Audience,
+			issuer:Core.App.Jwt.Issuer,
+			audience:Core.App.Jwt.Audience,
 			claims:claims,
 			expires: expires,
-			signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AppSettings.Instance.Jwt.Key)), SecurityAlgorithms.HmacSha256)
+			signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Core.App.Jwt.Key)), SecurityAlgorithms.HmacSha256)
 		)
 	);
 

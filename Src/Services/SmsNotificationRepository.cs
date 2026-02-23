@@ -16,7 +16,7 @@ public class SmsNotificationService(
 		string? param2 = null,
 		string? param3 = null
 	) {
-		SmsPanel sms = AppSettings.Instance.SmsPanel;
+		SmsPanel sms = Core.App.SmsPanel;
 		switch (sms.Tag) {
 			case TagSmsPanel.Ghasedak: {
 				await http.Post("https://api.ghasedak.me/v2/verification/send/simple", new {
@@ -54,13 +54,13 @@ public class SmsNotificationService(
 	public async Task<bool> SendOtpSms(UserEntity user) {
 		string? cachedData = cache.Get($"otp_{user.Id}");
 		if (cachedData != null) return false;
-		int length = AppSettings.Instance.BasicSettings.VerificationCodeLenght;
+		int length = Core.App.BasicSettings.VerificationCodeLenght;
 
 		string otp = Random.Shared.Next((int)Math.Pow(10, length - 1), (int)Math.Pow(10, length)).ToString();
 		cache.Set("otp_" + user.Id, otp, TimeSpan.FromMinutes(5));
 
 		if (user.PhoneNumber.IsNull()) return false;
-		await SendSms(user.PhoneNumber, AppSettings.Instance.SmsPanel.OtpPattern, otp);
+		await SendSms(user.PhoneNumber, Core.App.SmsPanel.OtpPattern, otp);
 		return true;
 	}
 }

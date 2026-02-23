@@ -52,7 +52,7 @@ public class ITHubService(IHttpClientService httpClient) : IITHubService {
 	}
 
 	private async Task<ITHubGetAccessTokenResponse?> GetAccessToken(CancellationToken ct) {
-		ItHub itHub = AppSettings.Instance.ItHub;
+		ItHub itHub = Core.App.ItHub;
 		HttpResponseMessage response = await httpClient.PostForm(
 			uri: "https://gateway.itsaaz.ir/sts/connect/token",
 			formData: new Dictionary<string, string> {

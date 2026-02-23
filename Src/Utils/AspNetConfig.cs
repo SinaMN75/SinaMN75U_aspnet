@@ -20,7 +20,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<DbContext, T>();
 		builder.Services.AddDbContextPool<T>(b => {
 			b.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
-			b.UseNpgsql(AppSettings.Instance.ConnectionStrings.Server, o => {
+			b.UseNpgsql(Core.App.ConnectionStrings.Server, o => {
 				AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 				o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
 				o.EnableRetryOnFailure(5, TimeSpan.FromSeconds(30), null);
