@@ -26,7 +26,7 @@ public class ITHubGetAccessTokenResponse {
 }
 
 public class ITHubShahkarResponse {
-	public required bool Data { get; set; }
+	public bool? Data { get; set; }
 	public string? Meta { get; set; }
 	public string? Error { get; set; }
 }
