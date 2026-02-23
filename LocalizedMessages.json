@@ -58,6 +58,12 @@
     "ProductHasActiveContract": "Product Has Active Contract.",
     "ShahkarIsNotAvailableAtThisTime": "Shahkar is not Availble at this Time, Please try again Later.",
     "TokenExpired": "Auth Token is Expired.",
+    "InvalidAPIKey": "Invalid API key",
+    "InvalidJsonBody": "Invalid JSON body",
+    "InvalidBase64RequestBody": "Invalid base64 request body",
+    "RequestTooLarge": "Request too large",
+    "InvalidRequestFormat": "Invalid request format",
+    "InternalServerError": "Internal server error",
     "YourDetailSubmittedSuccesfully": "Your Detail Submitted Succesfully."
   }
 }

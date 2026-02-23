@@ -10,6 +10,8 @@ public enum Usc {
 	Forbidden = 403,
 	NotFound = 404,
 	Conflict = 409,
+	PayloadTooLarge = 413,
+	InternalServerError = 500,
 
 	WrongVerificationCode = 601,
 	MaximumLimitReached = 602,

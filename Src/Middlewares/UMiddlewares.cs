@@ -2,7 +2,7 @@ using BadHttpRequestException = Microsoft.AspNetCore.Http.BadHttpRequestExceptio
 
 namespace SinaMN75U.Middlewares;
 
-public sealed class UMiddleware(RequestDelegate next) {
+public sealed class UMiddleware(RequestDelegate next, ILocalizationService ls) {
 	private static readonly Lock LogLock = new();
 
 	public async Task InvokeAsync(HttpContext context) {
@@ -54,12 +54,12 @@ public sealed class UMiddleware(RequestDelegate next) {
 		}
 		catch (BadHttpRequestException ex) when (ex.Message.Contains("Failed to read parameter")) {
 			exception = ex;
-			await WriteErrorAsync(context, 400, "Invalid request format");
+			await WriteErrorAsync(context, Usc.BadRequest, ls.Get("InvalidRequestFormat"));
 		}
 		catch (Exception ex) {
 			exception = ex;
 			if (!context.Response.HasStarted && !earlyError)
-				await WriteErrorAsync(context, 500, "Internal server error");
+				await WriteErrorAsync(context, Usc.InternalServerError, ls.Get("InternalServerError"));
 		}
 		finally {
 			try {
@@ -94,9 +94,9 @@ public sealed class UMiddleware(RequestDelegate next) {
 		ctx.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase) &&
 		ctx.Request.Path.Value?.Contains("media", StringComparison.OrdinalIgnoreCase) != true;
 
-	private static async Task<(string? Processed, string? Decoded)> PreProcessRequestAsync(HttpContext ctx, string raw) {
+	private async Task<(string? Processed, string? Decoded)> PreProcessRequestAsync(HttpContext ctx, string raw) {
 		if (raw.Length > 100_000) {
-			await WriteErrorAsync(ctx, 413, "Request too large");
+			await WriteErrorAsync(ctx, Usc.PayloadTooLarge, "RequestTooLarge");
 			return (null, raw);
 		}
 
@@ -106,7 +106,7 @@ public sealed class UMiddleware(RequestDelegate next) {
 
 		if (decrypt) {
 			if (!TryDecodeBase64(raw, out byte[] decodedBytes)) {
-				await WriteErrorAsync(ctx, 400, "Invalid base64 request body");
+				await WriteErrorAsync(ctx, Usc.BadRequest, ls.Get("InvalidBase64RequestBody"));
 				return (null, raw);
 			}
 
@@ -119,12 +119,12 @@ public sealed class UMiddleware(RequestDelegate next) {
 			try {
 				JsonElement json = JsonSerializer.Deserialize<JsonElement>(processed);
 				if (!json.TryGetProperty("apiKey", out JsonElement token) || token.GetString() != AppSettings.Instance.ApiKey) {
-					await WriteErrorAsync(ctx, 401, "Invalid API key");
+					await WriteErrorAsync(ctx, Usc.UnAuthorized, ls.Get("InvalidAPIKey"));
 					return (null, decoded);
 				}
 			}
 			catch {
-				await WriteErrorAsync(ctx, 400, "Invalid JSON body");
+				await WriteErrorAsync(ctx, Usc.BadRequest, ls.Get("InvalidJsonBody"));
 				return (null, decoded);
 			}
 		}
@@ -145,15 +145,9 @@ public sealed class UMiddleware(RequestDelegate next) {
 		}
 	}
 
-	private static async Task WriteErrorAsync(HttpContext ctx, int status, string msg) {
+	private static async Task WriteErrorAsync(HttpContext ctx, Usc status, string msg) {
 		if (ctx.Response.HasStarted) return;
-
-		ctx.Response.StatusCode = status;
-		ctx.Response.ContentType = "application/json";
-		byte[] payload = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { error = msg }));
-		ctx.Response.ContentLength = payload.Length;
-		await ctx.Response.Body.WriteAsync(payload);
-		await ctx.Response.Body.FlushAsync();
+		await new UResponse(status, msg).ToResult().ExecuteAsync(ctx);
 	}
 
 	private static void TryLog(HttpContext ctx, long ms, string rawReq, string decodedReq, string res, Exception? ex) {
