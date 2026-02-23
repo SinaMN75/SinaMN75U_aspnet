@@ -26,9 +26,22 @@ public class ITHubGetAccessTokenResponse {
 }
 
 public class ITHubShahkarResponse {
+	[JsonPropertyName("data")]
 	public bool? Data { get; set; }
-	public string? Meta { get; set; }
-	public string? Error { get; set; }
+
+	[JsonPropertyName("meta")]
+	public object? Meta { get; set; }
+
+	[JsonPropertyName("error")]
+	public Error? Error { get; set; }
+}
+
+public class Error {
+	[JsonPropertyName("errorCode")]
+	public long? ErrorCode { get; set; }
+
+	[JsonPropertyName("customMessage")]
+	public string? CustomMessage { get; set; }
 }
 
 public class ItHubPostalCodeToAddressDetailResponse {

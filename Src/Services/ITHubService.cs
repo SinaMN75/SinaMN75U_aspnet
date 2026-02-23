@@ -1,22 +1,28 @@
 namespace SinaMN75U.Services;
 
 public interface IITHubService {
-	Task<UResponse<ITHubShahkarResponse>?> Shahkar(ITHubShahkarParams p, CancellationToken ct);
+	Task<UResponse<ITHubShahkarResponse?>> Shahkar(ITHubShahkarParams p, CancellationToken ct);
 	Task<UResponse<ItHubPostalCodeToAddressDetailResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct);
 }
 
 public class ITHubService(IHttpClientService httpClient) : IITHubService {
-	public async Task<UResponse<ITHubShahkarResponse>?> Shahkar(ITHubShahkarParams p, CancellationToken ct) {
-		HttpResponseMessage response = await httpClient.PostForm(
+	public async Task<UResponse<ITHubShahkarResponse?>> Shahkar(ITHubShahkarParams p, CancellationToken ct) {
+		ITHubGetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
+		if (tokenResponse?.AccessToken == null) return new UResponse<ITHubShahkarResponse?>(null, Usc.BadRequest, "توکن اعتبار ندارد.");
+
+		HttpResponseMessage response = await httpClient.Post(
 			uri: "https://gateway.itsaaz.ir/hub/api/v1/Shahkar/MixVerifyMobile",
-			formData: new Dictionary<string, string> {
-				{ "nationalCode", p.NationalCode },
-				{ "mobile", p.Mobile }
-			}
+			body: new {
+				nationalCode = p.NationalCode,
+				mobile = p.Mobile
+			},
+			headers: new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" } }
 		);
-		
+
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
-		return new UResponse<ITHubShahkarResponse>(responseBody.FromJson<ITHubShahkarResponse>());
+		Console.WriteLine("KLKLKLKLK");
+		Console.WriteLine(responseBody);
+		return new UResponse<ITHubShahkarResponse?>(responseBody.FromJson<ITHubShahkarResponse>());
 	}
 
 	public async Task<UResponse<ItHubPostalCodeToAddressDetailResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct) {
@@ -38,7 +44,7 @@ public class ITHubService(IHttpClientService httpClient) : IITHubService {
 			body: requestBody,
 			headers: headers
 		);
-		
+
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
 
 		ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse>? apiResponse = JsonSerializer.Deserialize<ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse>>(responseBody);
@@ -57,7 +63,7 @@ public class ITHubService(IHttpClientService httpClient) : IITHubService {
 				{ "password", itHub.Password }
 			}
 		);
-		
+
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
 
 		return JsonSerializer.Deserialize<ITHubGetAccessTokenResponse>(responseBody);

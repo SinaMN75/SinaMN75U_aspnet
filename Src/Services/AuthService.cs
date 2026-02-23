@@ -57,13 +57,13 @@ public class AuthService(
 		if (e == null) return new UResponse<UserResponse?>(null, Usc.NotFound);
 
 		e.UpdatedAt = DateTime.UtcNow;
-		UResponse<ITHubShahkarResponse>? shahkarResponse = await iTHubService.Shahkar(new ITHubShahkarParams {
+		UResponse<ITHubShahkarResponse?> shahkarResponse = await iTHubService.Shahkar(new ITHubShahkarParams {
 			NationalCode = p.NationalCode,
 			Mobile = e.PhoneNumber!,
 		}, ct);
 		
-		if (shahkarResponse?.Result == null) return new UResponse<UserResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
-		if (shahkarResponse.Message.IsNotNullOrEmpty()) return new UResponse<UserResponse?>(null, Usc.ShahkarError, shahkarResponse.Result.Error ?? ls.Get("ShahkarIsNotAvailableAtThisTime")); 
+		if (shahkarResponse.Result == null) return new UResponse<UserResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		if (shahkarResponse.Message.IsNotNullOrEmpty()) return new UResponse<UserResponse?>(null, Usc.ShahkarError, shahkarResponse.Result.Error?.CustomMessage ?? ls.Get("ShahkarIsNotAvailableAtThisTime")); 
 		if (!(shahkarResponse.Result.Data ?? false)) return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
 
 		e.NationalCode = p.NationalCode;

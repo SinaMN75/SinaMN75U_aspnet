@@ -422,8 +422,8 @@ public readonly partial struct PersianDateTime : IComparable<PersianDateTime>, I
 	#region Enumerators / Ranges
 
 	public static IEnumerable<PersianDateTime> EnumerateDays(PersianDateTime start, PersianDateTime end, int step = 1) {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(step);
-        PersianDateTime current = start.StartOfDay;
+		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(step);
+		PersianDateTime current = start.StartOfDay;
 		while (current <= end.StartOfDay) {
 			yield return current;
 			current = current.AddDays(step);
@@ -473,13 +473,12 @@ public readonly partial struct PersianDateTime : IComparable<PersianDateTime>, I
 			if (adiff.TotalDays < 30) return farsi ? $"در {ToPersianDigits(((int)adiff.TotalDays).ToString())} روز" : $"in {(int)adiff.TotalDays} days";
 			return farsi ? "در آینده" : "in the future";
 		}
-		else {
-			if (diff.TotalSeconds < 60) return farsi ? "چند ثانیه پیش" : "a few seconds ago";
-			if (diff.TotalMinutes < 60) return farsi ? $"{ToPersianDigits(((int)diff.TotalMinutes).ToString())} دقیقه پیش" : $"{(int)diff.TotalMinutes} minutes ago";
-			if (diff.TotalHours < 24) return farsi ? $"{ToPersianDigits(((int)diff.TotalHours).ToString())} ساعت پیش" : $"{(int)diff.TotalHours} hours ago";
-			if (diff.TotalDays < 30) return farsi ? $"{ToPersianDigits(((int)diff.TotalDays).ToString())} روز پیش" : $"{(int)diff.TotalDays} days ago";
-			return farsi ? "مدتی پیش" : "some time ago";
-		}
+
+		if (diff.TotalSeconds < 60) return farsi ? "چند ثانیه پیش" : "a few seconds ago";
+		if (diff.TotalMinutes < 60) return farsi ? $"{ToPersianDigits(((int)diff.TotalMinutes).ToString())} دقیقه پیش" : $"{(int)diff.TotalMinutes} minutes ago";
+		if (diff.TotalHours < 24) return farsi ? $"{ToPersianDigits(((int)diff.TotalHours).ToString())} ساعت پیش" : $"{(int)diff.TotalHours} hours ago";
+		if (diff.TotalDays < 30) return farsi ? $"{ToPersianDigits(((int)diff.TotalDays).ToString())} روز پیش" : $"{(int)diff.TotalDays} days ago";
+		return farsi ? "مدتی پیش" : "some time ago";
 	}
 
 	public string ToLongDateString(bool usePersianDigits = true) {

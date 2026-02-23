@@ -300,13 +300,13 @@ public static class DataModelRoutes {
 
 		categoryResponse.Parent = new CategoryResponse {
 			Title = "null",
-			JsonData = new CategoryJson { },
+			JsonData = new CategoryJson(),
 			Tags = [TagCategory.Bed]
 		};
 		categoryResponse.Children = [
 			new CategoryResponse {
 				Title = "null",
-				JsonData = new CategoryJson { },
+				JsonData = new CategoryJson(),
 				Tags = [TagCategory.Bed]
 			}
 		];
