@@ -8,7 +8,7 @@ public class ItHubBaseResponse<T> {
 	public object? Meta { get; set; }
 
 	[JsonPropertyName("error")]
-	public object? Error { get; set; }
+	public string? Error { get; set; }
 }
 
 public class ITHubGetAccessTokenResponse {

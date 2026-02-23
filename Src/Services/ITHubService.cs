@@ -14,7 +14,7 @@ public class ITHubService(IHttpClientService httpClient) : IITHubService {
 				{ "mobile", p.Mobile }
 			}
 		);
-		
+
 		ITHubShahkarResponse response = responseBody.FromJson<ITHubShahkarResponse>();
 
 		return new UResponse<ITHubShahkarResponse>(response);
@@ -39,9 +39,9 @@ public class ITHubService(IHttpClientService httpClient) : IITHubService {
 			body: requestBody,
 			headers: headers
 		);
-		
+
 		ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse>? apiResponse = JsonSerializer.Deserialize<ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse>>(responseBody);
-		return new UResponse<ItHubPostalCodeToAddressDetailResponse?>(apiResponse?.Data);
+		return new UResponse<ItHubPostalCodeToAddressDetailResponse?>(apiResponse?.Data, message: apiResponse?.Error ?? "");
 	}
 
 	private async Task<ITHubGetAccessTokenResponse?> GetAccessToken(CancellationToken ct) {

@@ -63,6 +63,7 @@ public class AuthService(
 		}, ct);
 		
 		if (shahkarResponse?.Result == null) return new UResponse<UserResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		if (shahkarResponse.Message.IsNotNullOrEmpty()) return new UResponse<UserResponse?>(null, Usc.ShahkarError, shahkarResponse.Result.Error ?? ls.Get("ShahkarIsNotAvailableAtThisTime")); 
 		if (!shahkarResponse.Result.Data) return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
 
 		e.NationalCode = p.NationalCode;
