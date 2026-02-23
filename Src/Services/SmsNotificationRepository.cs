@@ -44,7 +44,6 @@ public class SmsNotificationService(
 				break;
 			}
 			case TagSmsPanel.NikSms: {
-				
 				break;
 			}
 		}
@@ -55,10 +54,11 @@ public class SmsNotificationService(
 	public async Task<bool> SendOtpSms(UserEntity user) {
 		string? cachedData = cache.Get($"otp_{user.Id}");
 		if (cachedData != null) return false;
+		int length = AppSettings.Instance.BasicSettings.VerificationCodeLenght;
 
-		string otp = Random.Shared.Next(1000, 9999).ToString();
+		string otp = Random.Shared.Next((int)Math.Pow(10, length - 1), (int)Math.Pow(10, length)).ToString();
 		cache.Set("otp_" + user.Id, otp, TimeSpan.FromMinutes(5));
-		
+
 		if (user.PhoneNumber.IsNull()) return false;
 		await SendSms(user.PhoneNumber, AppSettings.Instance.SmsPanel.OtpPattern, otp);
 		return true;

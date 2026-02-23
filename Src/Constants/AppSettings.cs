@@ -1,13 +1,14 @@
 namespace SinaMN75U.Constants;
 
 public class AppSettings {
+	public required string BaseUrl { get; init; }
+	public required string ApiKey { get; init; }
 	public required ConnectionStrings ConnectionStrings { get; init; }
 	public required Jwt Jwt { get; init; }
 	public required Middleware Middleware { get; init; }
 	public required SmsPanel SmsPanel { get; init; }
 	public required ItHub ItHub { get; init; }
-	public required string BaseUrl { get; init; }
-	public required string ApiKey { get; init; }
+	public required BasicSettings BasicSettings { get; init; }
 
 	public static AppSettings Instance { get; private set; } = null!;
 
@@ -47,4 +48,9 @@ public class ItHub {
 	public required string ClientSecret { get; init; }
 	public required string UserName { get; init; }
 	public required string Password { get; set; }
+}
+
+public class BasicSettings {
+	public required string DefaultVerificationKey { get; set; } 
+	public required int VerificationCodeLenght { get; set; }
 }
