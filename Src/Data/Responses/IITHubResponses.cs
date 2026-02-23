@@ -55,10 +55,10 @@ public class ItHubPostalCodeToAddressDetailResponse {
 	public string? Floor { get; set; }
 
 	[JsonPropertyName("houseNumber")]
-	public long HouseNumber { get; set; }
+	public int HouseNumber { get; set; }
 
 	[JsonPropertyName("localityCode")]
-	public long LocalityCode { get; set; }
+	public int LocalityCode { get; set; }
 
 	[JsonPropertyName("localityName")]
 	public string? LocalityName { get; set; }

@@ -5,7 +5,7 @@ public interface IITHubService {
 	Task<UResponse<ItHubPostalCodeToAddressDetailResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct);
 }
 
-public class ITHubService(IHttpClientService httpClient) : IITHubService {
+public class ITHubService(IHttpClientService httpClient, ILocalizationService ls) : IITHubService {
 	public async Task<UResponse<ITHubShahkarResponse?>> Shahkar(ITHubShahkarParams p, CancellationToken ct) {
 		ITHubGetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null) return new UResponse<ITHubShahkarResponse?>(null, Usc.BadRequest, "توکن اعتبار ندارد.");
@@ -20,9 +20,8 @@ public class ITHubService(IHttpClientService httpClient) : IITHubService {
 		);
 
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
-		Console.WriteLine("KLKLKLKLK");
-		Console.WriteLine(responseBody);
-		return new UResponse<ITHubShahkarResponse?>(responseBody.FromJson<ITHubShahkarResponse>());
+		ITHubShahkarResponse result = responseBody.FromJson<ITHubShahkarResponse>();
+		return new UResponse<ITHubShahkarResponse?>(result);
 	}
 
 	public async Task<UResponse<ItHubPostalCodeToAddressDetailResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct) {

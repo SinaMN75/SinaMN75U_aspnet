@@ -23,7 +23,7 @@ public enum Usc {
 	EmptyList = 701,
 
 	MediaTypeNotEntered = 801,
-	MediaTypeNotSupported = 802
+	MediaTypeNotSupported = 802,
 }
 
 public enum TagSmsPanel {

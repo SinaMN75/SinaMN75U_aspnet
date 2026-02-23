@@ -2,6 +2,7 @@
 
 public interface IAddressService {
 	Task<UResponse<AddressResponse?>> Create(AddressCreateParams p, CancellationToken ct);
+	Task<UResponse<AddressResponse?>> CreateFromZipCode(AddressCreateFromZipCodeParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<AddressResponse>?>> Read(AddressReadParams p, CancellationToken ct);
 	Task<UResponse<AddressResponse?>> Update(AddressUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
@@ -11,7 +12,8 @@ public interface IAddressService {
 public class AddressService(
 	DbContext db,
 	ILocalizationService ls,
-	ITokenService ts
+	ITokenService ts,
+	IITHubService itHubService
 ) : IAddressService {
 	public async Task<UResponse<AddressResponse?>> Create(AddressCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
@@ -21,6 +23,61 @@ public class AddressService(
 
 		await db.SaveChangesAsync(ct);
 		return new UResponse<AddressResponse?>(e.Entity.MapToResponse());
+	}
+
+	public async Task<UResponse<AddressResponse?>> CreateFromZipCode(AddressCreateFromZipCodeParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<AddressResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+
+		AddressEntity entity;
+		
+		List<AddressResponse> addresses = await db.Set<AddressEntity>().Where(x => x.ZipCode == p.ZipCode).Select(Projections.AddressSelector(new AddressSelectorArgs())).ToListAsync(ct);
+		if (addresses.IsNotNullOrEmpty()) {
+			AddressResponse i = addresses.First();
+			entity = new AddressEntity {
+				Title = p.Title,
+				JsonData = new AddressJson {
+					Province = i.JsonData.Province,
+					Township = i.JsonData.Township,
+					Street = i.JsonData.Street,
+					Street2 = i.JsonData.Street2,
+					LocalityName = i.JsonData.LocalityName,
+					HouseNumber = i.JsonData.HouseNumber,
+					Floor = i.JsonData.Floor,
+					Description =i.JsonData.Description
+				},
+				Tags = i.Tags
+			};
+			await db.Set<AddressEntity>().AddAsync(entity, ct);
+			await db.SaveChangesAsync(ct);
+			return new UResponse<AddressResponse?>(entity.MapToResponse());
+		}
+		else {
+			UResponse<ItHubPostalCodeToAddressDetailResponse?> address = await itHubService.PostalCodeToAddressDetail(new PostalCodeToAddressDetailParams {
+				PostCode = p.ZipCode,
+				OrderId = "1"
+			}, ct);
+
+			ItHubPostalCodeToAddressDetailResponse i = address.Result!;
+			
+			entity = new AddressEntity {
+				Title = p.Title,
+				JsonData = new AddressJson {
+					Province = i.Province,
+					Township = i.TownShip,
+					Street = i.Street,
+					Street2 = i.Street2,
+					LocalityName = i.LocalityName,
+					HouseNumber = i.HouseNumber.ToString(),
+					Floor = i.Floor,
+					Description =i.Description
+				},
+				Tags = p.Tags
+			};
+			await db.Set<AddressEntity>().AddAsync(entity, ct);
+			await db.SaveChangesAsync(ct);
+			return new UResponse<AddressResponse?>(entity.MapToResponse());
+		}
 	}
 
 	public async Task<UResponse<IEnumerable<AddressResponse>?>> Read(AddressReadParams p, CancellationToken ct) {

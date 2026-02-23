@@ -18,6 +18,7 @@ public sealed class AddressCreateParams : BaseCreateParams<TagAddress> {
 		Id = Id ?? Guid.CreateVersion7(),
 		Title = Title,
 		Tags = Tags,
+		ZipCode = ZipCode,
 		JsonData = new AddressJson {
 			Province = Province,
 			Township = Township,
@@ -26,13 +27,19 @@ public sealed class AddressCreateParams : BaseCreateParams<TagAddress> {
 			LocalityName = LocalityName,
 			HouseNumber = HouseNumber,
 			Floor = Floor,
-			ZipCode = ZipCode,
 			Description = Description
 		}
 	};
 }
 
+public sealed class AddressCreateFromZipCodeParams : BaseCreateParams<TagAddress> {
+	[UValidationRequired("TitleRequired")]
+	public required string Title { get; set; }
+	public required string ZipCode { get; set; }
+}
+
 public sealed class AddressUpdateParams : BaseUpdateParams<TagAddress> {
+	public string? Title { get; set; }
 	public string? Province { get; set; }
 	public string? Township { get; set; }
 	public string? Street { get; set; }
@@ -44,6 +51,8 @@ public sealed class AddressUpdateParams : BaseUpdateParams<TagAddress> {
 	public string? Description { get; set; }
 
 	public AddressEntity MapToEntity(AddressEntity e) {
+		if (Title != null) e.Title = Title;
+		if (ZipCode != null) e.ZipCode = ZipCode;
 		if (Province != null) e.JsonData.Province = Province;
 		if (Township != null) e.JsonData.Township = Township;
 		if (Street != null) e.JsonData.Street = Street;
@@ -51,7 +60,6 @@ public sealed class AddressUpdateParams : BaseUpdateParams<TagAddress> {
 		if (LocalityName != null) e.JsonData.LocalityName = LocalityName;
 		if (HouseNumber != null) e.JsonData.HouseNumber = HouseNumber;
 		if (Floor != null) e.JsonData.Floor = Floor;
-		if (ZipCode != null) e.JsonData.ZipCode = ZipCode;
 		if (Description != null) e.JsonData.Description = Description;
 		if (Tags != null) e.Tags = Tags;
 		return e;

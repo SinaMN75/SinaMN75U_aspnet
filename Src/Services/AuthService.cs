@@ -62,15 +62,15 @@ public class AuthService(
 		}, ct);
 
 		if (shahkarResponse.Result == null) return new UResponse<UserResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
-		if (shahkarResponse.Message.IsNotNullOrEmpty()) return new UResponse<UserResponse?>(null, Usc.ShahkarError, shahkarResponse.Result.Error?.CustomMessage ?? ls.Get("ShahkarIsNotAvailableAtThisTime"));
-		if (!(shahkarResponse.Result.Data ?? false)) return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
+		if (shahkarResponse?.Result?.Error?.CustomMessage?.IsNotNullOrEmpty() ?? false) return new UResponse<UserResponse?>(null, Usc.ShahkarError, shahkarResponse.Result.Error?.CustomMessage ?? ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		if (!(shahkarResponse?.Result?.Data ?? false)) return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
 
 		e.NationalCode = p.NationalCode;
 		e.FirstName = p.FirstName;
 		e.LastName = p.LastName;
 		db.Set<UserEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
-		return new UResponse<UserResponse?>(e.MapToResponse(), message: ls.Get("YourDetailSubmittedSuccesfully"));
+		return new UResponse<UserResponse?>(e.MapToResponse(), message: ls.Get("YourDetailSubmittedSuccessfully"));
 	}
 
 	public async Task<UResponse<LoginResponse?>> LoginWithEmailPassword(LoginWithEmailPasswordParams p, CancellationToken ct) {
