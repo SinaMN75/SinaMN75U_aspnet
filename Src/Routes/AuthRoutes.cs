@@ -10,5 +10,6 @@ public static class AuthRoutes {
 		r.MapPost("GetVerificationCodeForLogin", async (GetMobileVerificationCodeForLoginParams p, IAuthService s, CancellationToken c) => (await s.GetVerificationCodeForLogin(p, c)).ToResult()).Produces<UResponse<UserResponse>>();
 		r.MapPost("VerifyCodeForLogin", async (VerifyMobileForLoginParams p, IAuthService s, CancellationToken c) => (await s.VerifyCodeForLogin(p, c)).ToResult()).Produces<UResponse<LoginResponse>>();
 		r.MapPost("ReadUserByToken", async (BaseParams p, IAuthService s, CancellationToken c) => (await s.ReadUserByToken(p, c)).ToResult()).Produces<UResponse<UserResponse>>();
+		r.MapPost("CompleteProfile", async (AuthCompleteProfileParams p, IAuthService s, CancellationToken c) => (await s.CompleteProfile(p, c)).ToResult()).Produces<UResponse<UserResponse>>();
 	}
 }
