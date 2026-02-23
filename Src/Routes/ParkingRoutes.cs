@@ -8,7 +8,7 @@ public static class ParkingRoutes {
 		r.MapPost("UpdateParking", async (ParkingUpdateParams d, IParkingService s, CancellationToken c) => (await s.UpdateParking(d, c)).ToResult()).Produces<UResponse<ParkingResponse>>();
 		r.MapPost("DeleteParking", async (IdParams d, IParkingService s, CancellationToken c) => (await s.DeleteParking(d, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("SoftDeleteParking", async (SoftDeleteParams d, IParkingService s, CancellationToken c) => (await s.SoftDeleteParking(d, c)).ToResult()).Produces<UResponse>();
-		
+
 		r.MapPost("CreateParkingReport", async (ParkingReportCreateParams d, IParkingService s, CancellationToken c) => (await s.CreateParkingReport(d, c)).ToResult()).Produces<UResponse<ParkingReportResponse>>();
 		r.MapPost("ReadParkingReport", async (ParkingReportReadParams p, IParkingService s, CancellationToken c) => (await s.ReadParkingReport(p, c)).ToResult()).Produces<UResponse<IEnumerable<ParkingReportResponse>>>();
 		r.MapPost("UpdateParkingReport", async (ParkingReportUpdateParams d, IParkingService s, CancellationToken c) => (await s.UpdateParkingReport(d, c)).ToResult()).Produces<UResponse<ParkingReportResponse>>();

@@ -6,7 +6,7 @@ public interface IParkingService {
 	Task<UResponse<ParkingResponse?>> UpdateParking(ParkingUpdateParams p, CancellationToken ct);
 	Task<UResponse> DeleteParking(IdParams p, CancellationToken ct);
 	Task<UResponse> SoftDeleteParking(SoftDeleteParams p, CancellationToken ct);
-	
+
 	Task<UResponse<ParkingReportResponse?>> CreateParkingReport(ParkingReportCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<ParkingReportResponse>?>> ReadParkingReport(ParkingReportReadParams p, CancellationToken ct);
 	Task<UResponse<ParkingReportResponse?>> UpdateParkingReport(ParkingReportUpdateParams p, CancellationToken ct);
@@ -17,8 +17,7 @@ public interface IParkingService {
 public class ParkingService(
 	DbContext db,
 	ILocalizationService ls,
-	ITokenService ts,
-	ILocalStorageService cache
+	ITokenService ts
 ) : IParkingService {
 	public async Task<UResponse<ParkingResponse?>> CreateParking(ParkingCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
@@ -26,7 +25,6 @@ public class ParkingService(
 
 		EntityEntry<ParkingEntity> e = await db.AddAsync(p.MapToEntity(), ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Parking);
 		await db.SaveChangesAsync(ct);
 		return new UResponse<ParkingResponse?>(e.Entity.MapToResponse());
 	}
@@ -45,7 +43,6 @@ public class ParkingService(
 		p.MapToEntity(e);
 		db.Update(p.MapToEntity(e));
 		await db.SaveChangesAsync(ct);
-		cache.DeleteAllByPartialKey(RouteTags.Parking);
 		return new UResponse<ParkingResponse?>(e.MapToResponse());
 	}
 
@@ -55,7 +52,6 @@ public class ParkingService(
 
 		await db.Set<ParkingEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Parking);
 		return new UResponse();
 	}
 
@@ -64,13 +60,13 @@ public class ParkingService(
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
 		await db.Set<ParkingEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
-		cache.DeleteAllByPartialKey(RouteTags.Parking);
 		return new UResponse();
 	}
+
 	public async Task<UResponse<ParkingReportResponse?>> CreateParkingReport(ParkingReportCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ParkingReportResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
-		
+
 		VehicleEntity? vehicle = await db.Set<VehicleEntity>().FirstOrDefaultAsync(x => x.NumberPlate == p.NumberPlate, ct);
 		if (vehicle == null) {
 			EntityEntry<VehicleEntity> vEntity = await db.Set<VehicleEntity>().AddAsync(new VehicleEntity {
@@ -90,7 +86,6 @@ public class ParkingService(
 			Tags = [TagParkingReport.Test]
 		}, ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Parking);
 		await db.SaveChangesAsync(ct);
 		return new UResponse<ParkingReportResponse?>(e.Entity.MapToResponse());
 	}
@@ -109,7 +104,6 @@ public class ParkingService(
 		p.MapToEntity(e);
 		db.Update(p.MapToEntity(e));
 		await db.SaveChangesAsync(ct);
-		cache.DeleteAllByPartialKey(RouteTags.Parking);
 		return new UResponse<ParkingReportResponse?>(e.MapToResponse());
 	}
 
@@ -119,7 +113,6 @@ public class ParkingService(
 
 		await db.Set<ParkingReportEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Parking);
 		return new UResponse();
 	}
 
@@ -128,7 +121,6 @@ public class ParkingService(
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
 		await db.Set<ParkingReportEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
-		cache.DeleteAllByPartialKey(RouteTags.Parking);
 		return new UResponse();
 	}
 }

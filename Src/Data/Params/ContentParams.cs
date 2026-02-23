@@ -3,7 +3,7 @@ namespace SinaMN75U.Data.Params;
 public sealed class ContentCreateParams : BaseParams {
 	[UValidationRequired("TitleRequired")]
 	public required string Title { get; set; }
-	
+
 	public string? Description { get; set; }
 	public string? SubTitle { get; set; }
 	public string? Instagram { get; set; }
@@ -13,7 +13,7 @@ public sealed class ContentCreateParams : BaseParams {
 
 	[UValidationMinCollectionLength(1, "TagsRequired")]
 	public required List<TagContent> Tags { get; set; }
-	
+
 	public ContentEntity MapToEntity() => new() {
 		Tags = Tags,
 		JsonData = new ContentJson {
@@ -26,7 +26,6 @@ public sealed class ContentCreateParams : BaseParams {
 			Phone = Phone
 		}
 	};
-
 }
 
 public sealed class ContentUpdateParams : BaseUpdateParams<TagContent> {
@@ -37,7 +36,7 @@ public sealed class ContentUpdateParams : BaseUpdateParams<TagContent> {
 	public string? Telegram { get; set; }
 	public string? Whatsapp { get; set; }
 	public string? Phone { get; set; }
-	
+
 	public ContentEntity MapToEntity(ContentEntity e) {
 		e.UpdatedAt = DateTime.UtcNow;
 		if (Title != null) e.JsonData.Title = Title;

@@ -9,7 +9,7 @@ public class TxnEntity : BaseEntity<TagTxn, TxnJson> {
 
 	[Required, MaxLength(100)]
 	public required string TrackingNumber { get; set; }
-	
+
 	public required Guid InvoiceId { get; set; }
 	public InvoiceEntity Invoice { get; set; } = null!;
 

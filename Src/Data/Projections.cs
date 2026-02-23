@@ -16,17 +16,13 @@ public sealed class ContentSelectorArgs {
 	public MediaSelectorArgs? Media { get; set; }
 }
 
-public sealed class ParkingSelectorArgs {
-	
-}
+public sealed class ParkingSelectorArgs { }
 
-public sealed class ParkingReportSelectorArgs {
-	
-}
+public sealed class ParkingReportSelectorArgs { }
 
-public sealed class VehicleSelectorArgs {
-	
-}
+public sealed class VehicleSelectorArgs { }
+
+public sealed class AddressSelectorArgs { }
 
 public sealed class TicketSelectorArgs {
 	public MediaSelectorArgs? Media { get; set; }
@@ -79,6 +75,14 @@ public sealed class TxnSelectorArgs {
 }
 
 public static class Projections {
+	public static Expression<Func<AddressEntity, AddressResponse>> AddressSelector(AddressSelectorArgs args) =>
+		x => new AddressResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			Title = x.Title
+		};
+
 	public static Expression<Func<MediaEntity, MediaResponse>> MediaSelector(MediaSelectorArgs args) =>
 		x => new MediaResponse {
 			Id = x.Id,
@@ -117,7 +121,7 @@ public static class Projections {
 		Title = x.Title,
 		CreatorId = x.CreatorId
 	};
-	
+
 	public static Expression<Func<ParkingReportEntity, ParkingReportResponse>> ParkingReportSelector(ParkingReportSelectorArgs args) => x => new ParkingReportResponse {
 		Id = x.Id,
 		CreatedAt = x.CreatedAt,
@@ -132,7 +136,7 @@ public static class Projections {
 		Amount = x.Amount,
 		EndDate = x.EndDate
 	};
-	
+
 	public static Expression<Func<VehicleEntity, VehicleResponse>> VehicleSelector(VehicleSelectorArgs args) => x => new VehicleResponse {
 		Id = x.Id,
 		CreatedAt = x.CreatedAt,

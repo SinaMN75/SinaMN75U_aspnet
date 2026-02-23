@@ -39,7 +39,6 @@ public class AuthService(
 		await db.Set<UserEntity>().AddAsync(user, ct);
 		await db.SaveChangesAsync(ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.User);
 
 		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = CreateToken(user),
@@ -61,9 +60,9 @@ public class AuthService(
 			NationalCode = p.NationalCode,
 			Mobile = e.PhoneNumber!,
 		}, ct);
-		
+
 		if (shahkarResponse.Result == null) return new UResponse<UserResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
-		if (shahkarResponse.Message.IsNotNullOrEmpty()) return new UResponse<UserResponse?>(null, Usc.ShahkarError, shahkarResponse.Result.Error?.CustomMessage ?? ls.Get("ShahkarIsNotAvailableAtThisTime")); 
+		if (shahkarResponse.Message.IsNotNullOrEmpty()) return new UResponse<UserResponse?>(null, Usc.ShahkarError, shahkarResponse.Result.Error?.CustomMessage ?? ls.Get("ShahkarIsNotAvailableAtThisTime"));
 		if (!(shahkarResponse.Result.Data ?? false)) return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
 
 		e.NationalCode = p.NationalCode;
@@ -160,7 +159,6 @@ public class AuthService(
 		await db.SaveChangesAsync(ct);
 		if (!await smsNotificationService.SendOtpSms(e)) return new UResponse(Usc.MaximumLimitReached, ls.Get("MaxOtpReached"));
 
-		cache.DeleteAllByPartialKey(RouteTags.User);
 		return new UResponse();
 	}
 

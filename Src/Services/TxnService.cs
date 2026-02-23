@@ -10,8 +10,7 @@ public interface ITxnService {
 public class TxnService(
 	DbContext db,
 	ILocalizationService ls,
-	ITokenService ts,
-	ILocalStorageService cache
+	ITokenService ts
 ) : ITxnService {
 	public async Task<UResponse<TxnResponse?>> Create(TxnCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
@@ -19,7 +18,6 @@ public class TxnService(
 
 		EntityEntry<TxnEntity> e = await db.AddAsync(p.MapToEntity(userData.Id), ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Txn);
 		await db.SaveChangesAsync(ct);
 		return new UResponse<TxnResponse?>(e.Entity.MapToResponse());
 	}
@@ -42,7 +40,6 @@ public class TxnService(
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Txn);
 		return new UResponse<TxnResponse?>(e.MapToResponse());
 	}
 
@@ -52,7 +49,6 @@ public class TxnService(
 
 		await db.Set<TxnEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Txn);
 		return new UResponse();
 	}
 }

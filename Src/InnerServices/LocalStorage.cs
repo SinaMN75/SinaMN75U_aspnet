@@ -61,7 +61,7 @@ public sealed class UMemoryCacheService : ILocalStorageService {
 			}
 		}
 	}
-	
+
 	public void DeleteAllExcept(string partialKey, string keepSubstring) {
 		foreach (KeyValuePair<string, byte> kv in _keys) {
 			string key = kv.Key;

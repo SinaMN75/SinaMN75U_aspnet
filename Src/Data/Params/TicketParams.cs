@@ -2,7 +2,7 @@ namespace SinaMN75U.Data.Params;
 
 public sealed class TicketCreateParams : BaseParams {
 	public Guid? UserId { get; set; }
-	
+
 	[UValidationRequired("TitleRequired")]
 	public required string Title { get; set; }
 
@@ -16,7 +16,7 @@ public sealed class TicketCreateParams : BaseParams {
 
 	[UValidationMinCollectionLength(1, "TagsRequired")]
 	public required List<TagTicket> Tags { get; set; }
-	
+
 	public TicketEntity MapToEntity(Guid userId) => new() {
 		CreatorId = UserId ?? userId,
 		JsonData = new TicketJson {
@@ -29,7 +29,6 @@ public sealed class TicketCreateParams : BaseParams {
 		},
 		Tags = Tags
 	};
-
 }
 
 public sealed class TicketUpdateParams : BaseUpdateParams<TagTicket> {
@@ -39,7 +38,7 @@ public sealed class TicketUpdateParams : BaseUpdateParams<TagTicket> {
 	public string? Telegram { get; set; }
 	public string? Whatsapp { get; set; }
 	public string? Phone { get; set; }
-	
+
 	public void MapToEntity(TicketEntity e) {
 		if (Title != null) e.JsonData.Title = Title;
 		if (Description != null) e.JsonData.Description = Description;
@@ -49,7 +48,6 @@ public sealed class TicketUpdateParams : BaseUpdateParams<TagTicket> {
 		if (Phone != null) e.JsonData.Phone = Phone;
 		if (Tags != null) e.Tags = Tags;
 	}
-
 }
 
 public sealed class TicketReadParams : BaseReadParams<int> {

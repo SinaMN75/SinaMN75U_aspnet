@@ -16,7 +16,7 @@ public class CommentEntity : BaseEntity<TagComment, CommentJson> {
 
 	public Guid? ProductId { get; set; }
 	public ProductEntity? Product { get; set; }
-	
+
 	public Guid? ParentId { get; set; }
 	public CommentEntity? Parent { get; set; }
 
@@ -24,7 +24,7 @@ public class CommentEntity : BaseEntity<TagComment, CommentJson> {
 	public ICollection<CommentEntity> Children { get; set; } = [];
 
 	public ICollection<MediaEntity> Media { get; set; } = [];
-	
+
 	public CommentResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,

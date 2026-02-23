@@ -16,7 +16,6 @@ public class CategoryService(
 	DbContext db,
 	ILocalizationService ls,
 	ITokenService ts,
-	ILocalStorageService cache,
 	IMediaService mediaService
 ) : ICategoryService {
 	public async Task<UResponse> BulkCreate(IEnumerable<CategoryCreateParams> p, CancellationToken ct) {
@@ -36,7 +35,6 @@ public class CategoryService(
 		await db.SaveChangesAsync(ct);
 		await AddMedia(e.Id, p.Media, ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Category);
 		return new UResponse<CategoryResponse?>(e.MapToResponse());
 	}
 
@@ -62,7 +60,7 @@ public class CategoryService(
 			Order = x.Order,
 			ParentId = x.ParentId,
 			Media = x.Media.Select(y => new MediaResponse {
-				Id =  y.Id,
+				Id = y.Id,
 				Path = y.Path,
 				Tags = y.Tags,
 				JsonData = y.JsonData
@@ -117,17 +115,12 @@ public class CategoryService(
 
 				await db.SaveChangesAsync(ct);
 			}
-
-			cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		}
 
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
 		await AddMedia(e.Id, p.Media ?? [], ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Category);
-		cache.DeleteAllByPartialKey(RouteTags.Product);
-		cache.DeleteAllByPartialKey(RouteTags.User);
 
 		return new UResponse<CategoryResponse?>(e.MapToResponse());
 	}
@@ -138,9 +131,6 @@ public class CategoryService(
 
 		await db.Set<CategoryEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Category);
-		cache.DeleteAllByPartialKey(RouteTags.Product);
-		cache.DeleteAllByPartialKey(RouteTags.User);
 		return new UResponse();
 	}
 
@@ -148,10 +138,7 @@ public class CategoryService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 		await db.Set<CategoryEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
-		
-		cache.DeleteAllByPartialKey(RouteTags.Category);
-		cache.DeleteAllByPartialKey(RouteTags.Product);
-		cache.DeleteAllByPartialKey(RouteTags.User);
+
 		return new UResponse();
 	}
 

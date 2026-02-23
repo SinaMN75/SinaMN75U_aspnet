@@ -51,6 +51,6 @@ public class ItHub {
 }
 
 public class BasicSettings {
-	public required string DefaultVerificationKey { get; set; } 
+	public required string DefaultVerificationKey { get; set; }
 	public required int VerificationCodeLenght { get; set; }
 }

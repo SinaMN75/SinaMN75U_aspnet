@@ -8,18 +8,16 @@ public interface ITicketService {
 }
 
 public class TicketService(
-	DbContext db, 
+	DbContext db,
 	ILocalizationService ls,
-	ITokenService ts,
-	ILocalStorageService cache
-	) : ITicketService {
+	ITokenService ts
+) : ITicketService {
 	public async Task<UResponse<TicketResponse?>> Create(TicketCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<TicketResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
 		EntityEntry<TicketEntity> e = await db.AddAsync(p.MapToEntity(userData.Id), ct);
-		
-		cache.DeleteAllByPartialKey(RouteTags.Ticket);
+
 		await db.SaveChangesAsync(ct);
 		return new UResponse<TicketResponse?>(e.Entity.MapToResponse());
 	}
@@ -47,8 +45,7 @@ public class TicketService(
 
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
-		
-		cache.DeleteAllByPartialKey(RouteTags.Ticket);
+
 		return new UResponse<TicketResponse?>(e.MapToResponse());
 	}
 
@@ -57,8 +54,7 @@ public class TicketService(
 		if (userData == null) return new UResponse<TicketEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
 		await db.Set<TicketEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
-		
-		cache.DeleteAllByPartialKey(RouteTags.Ticket);
+
 		return new UResponse();
 	}
 }

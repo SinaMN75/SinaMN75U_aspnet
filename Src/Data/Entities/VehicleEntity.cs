@@ -7,13 +7,13 @@ public class VehicleEntity : BaseEntity<TagVehicle, VehicleJson> {
 
 	[MaxLength(100)]
 	public string? Title { get; set; }
-	
+
 	[MaxLength(100)]
 	public string? Brand { get; set; }
 
 	[MaxLength(100)]
 	public string? Color { get; set; }
-	
+
 	public VehicleResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,

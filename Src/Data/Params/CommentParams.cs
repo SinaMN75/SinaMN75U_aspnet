@@ -15,7 +15,7 @@ public sealed class CommentCreateParams : BaseParams {
 	[UValidationRequired("TagsRequired")]
 	[UValidationMinCollectionLength(1, "TagsRequired")]
 	public required List<TagComment> Tags { get; set; }
-	
+
 	public CommentEntity MapToEntity() => new() {
 		Description = Description,
 		Score = Score,
@@ -26,13 +26,12 @@ public sealed class CommentCreateParams : BaseParams {
 		JsonData = new CommentJson(),
 		Tags = Tags
 	};
-
 }
 
 public sealed class CommentUpdateParams : BaseUpdateParams<TagComment> {
 	public string? Description { get; set; }
 	public decimal? Score { get; set; }
-	
+
 	public CommentEntity MapToEntity(CommentEntity e) {
 		if (Description != null) e.Description = Description;
 		if (Score.HasValue) e.Score = Score.Value;

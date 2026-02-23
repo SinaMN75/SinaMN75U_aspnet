@@ -11,9 +11,9 @@ public class VehicleCreateParams : BaseCreateParams<TagVehicle> {
 		JsonData = new VehicleJson(),
 		Tags = Tags,
 		NumberPlate = NumberPlate,
-		Brand =  Brand,
+		Brand = Brand,
 		Color = Color,
-		Title =  Title
+		Title = Title
 	};
 }
 

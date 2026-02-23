@@ -3,10 +3,10 @@ namespace SinaMN75U.Data.Params;
 public sealed class ExamCreateParams : BaseCreateParams<TagExam> {
 	[UValidationRequired("TitleRequired")]
 	public required string Title { get; set; }
-	
+
 	[UValidationRequired("DescriptionRequired")]
 	public required string Description { get; set; }
-	
+
 	public required List<QuestionJson> Questions { get; set; }
 	public required List<ExamScoreDetail> ScoreDetails { get; set; }
 

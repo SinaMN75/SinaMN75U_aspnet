@@ -13,8 +13,7 @@ public interface IInvoiceService {
 public class InvoiceService(
 	DbContext db,
 	ILocalizationService ls,
-	ITokenService ts,
-	ILocalStorageService cache
+	ITokenService ts
 ) : IInvoiceService {
 	public async Task<UResponse<InvoiceResponse?>> Create(InvoiceCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
@@ -35,7 +34,6 @@ public class InvoiceService(
 		}, ct);
 		await db.SaveChangesAsync(ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse<InvoiceResponse?>(e.Entity.MapToResponse());
 	}
 
@@ -104,7 +102,6 @@ public class InvoiceService(
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse<InvoiceResponse?>(e.MapToResponse());
 	}
 
@@ -114,7 +111,6 @@ public class InvoiceService(
 
 		await db.Set<InvoiceEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse();
 	}
 
@@ -131,7 +127,6 @@ public class InvoiceService(
 
 		await db.SaveChangesAsync(ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse();
 	}
 

@@ -25,7 +25,7 @@ public sealed class InvoiceCreateParams : BaseCreateParams<TagInvoice> {
 	public DateTime DueDate { get; set; }
 
 	public required string Description { get; set; }
-	
+
 	public InvoiceEntity MapToEntity() => new() {
 		DebtAmount = DebtAmount,
 		CreditorAmount = CreditorAmount,
@@ -35,11 +35,10 @@ public sealed class InvoiceCreateParams : BaseCreateParams<TagInvoice> {
 		DueDate = DueDate,
 		JsonData = new InvoiceJson {
 			Description = Description,
-			PenaltyPrecentEveryDate =  PenaltyPrecentEveryDate
+			PenaltyPrecentEveryDate = PenaltyPrecentEveryDate
 		},
 		Tags = Tags
 	};
-
 }
 
 public sealed class InvoiceUpdateParams : BaseUpdateParams<TagInvoice> {
@@ -52,7 +51,7 @@ public sealed class InvoiceUpdateParams : BaseUpdateParams<TagInvoice> {
 	public string? Description { get; set; }
 	public Guid? UserId { get; set; }
 	public Guid? ContractId { get; set; }
-	
+
 	public void MapToEntity(InvoiceEntity e) {
 		if (DebtAmount.HasValue) e.DebtAmount = DebtAmount.Value;
 		if (CreditorAmount.HasValue) e.CreditorAmount = CreditorAmount.Value;

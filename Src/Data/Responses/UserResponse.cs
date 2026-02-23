@@ -12,7 +12,7 @@ public class UserResponse : BaseResponse<TagUser, UserJson> {
 	public string? City { get; set; }
 	public string? NationalCode { get; set; }
 	public DateTime? Birthdate { get; set; }
-	
+
 	public IEnumerable<CategoryResponse>? Categories { get; set; }
 	public IEnumerable<MediaResponse>? Media { get; set; }
 	public IEnumerable<ContractResponse>? Contracts { get; set; }

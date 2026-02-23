@@ -6,10 +6,10 @@ public class CategoryEntity : BaseEntity<TagCategory, CategoryJson> {
 	public required string Title { get; set; }
 
 	public int? Order { get; set; }
-	
+
 	[MaxLength(100)]
 	public string? Code { get; set; }
-	
+
 	public Guid? ParentId { get; set; }
 	public CategoryEntity? Parent { get; set; }
 

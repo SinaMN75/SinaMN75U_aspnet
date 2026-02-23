@@ -21,7 +21,9 @@ public class HttpClientService(HttpClient httpClient) : IHttpClientService {
 		using HttpRequestMessage request = new(HttpMethod.Post, uri);
 		request.Content = new FormUrlEncodedContent(formData);
 
-		if (headers != null) foreach (KeyValuePair<string, string> h in headers) request.Headers.Add(h.Key, h.Value);
+		if (headers != null)
+			foreach (KeyValuePair<string, string> h in headers)
+				request.Headers.Add(h.Key, h.Value);
 
 		return await _httpClient.SendAsync(request);
 	}
@@ -65,7 +67,7 @@ public class HttpClientService(HttpClient httpClient) : IHttpClientService {
 		if (headers != null)
 			foreach (KeyValuePair<string, string> header in headers)
 				request.Headers.Add(header.Key, header.Value);
-		
+
 		return await _httpClient.SendAsync(request);
 	}
 }

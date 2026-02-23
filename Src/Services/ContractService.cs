@@ -11,8 +11,7 @@ public interface IContractService {
 public class ContractService(
 	DbContext db,
 	ILocalizationService ls,
-	ITokenService ts,
-	ILocalStorageService cache
+	ITokenService ts
 ) : IContractService {
 	public async Task<UResponse<ContractResponse?>> Create(ContractCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
@@ -25,8 +24,6 @@ public class ContractService(
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
 		if (user == null) return new UResponse<ContractResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
 
-		cache.DeleteAllByPartialKey(RouteTags.Contract);
-		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 
 		Guid contractId = Guid.CreateVersion7();
 		ContractEntity e = new() {
@@ -168,8 +165,6 @@ public class ContractService(
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Contract);
-		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse<ContractResponse?>(e.MapToResponse());
 	}
 
@@ -179,8 +174,6 @@ public class ContractService(
 
 		await db.Set<ContractEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Contract);
-		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse();
 	}
 
@@ -189,8 +182,6 @@ public class ContractService(
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
 		await db.Set<ContractEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
-		cache.DeleteAllByPartialKey(RouteTags.Contract);
-		cache.DeleteAllByPartialKey(RouteTags.Invoice);
 		return new UResponse();
 	}
 }

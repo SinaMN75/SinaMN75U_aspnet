@@ -178,3 +178,7 @@ public enum TagVehicle {
 public enum TagParkingReport {
 	Test = 999
 }
+
+public enum TagAddress {
+	Test = 999
+}

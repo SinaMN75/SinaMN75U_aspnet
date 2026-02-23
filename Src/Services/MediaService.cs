@@ -12,8 +12,7 @@ public interface IMediaService {
 
 public class MediaService(
 	IWebHostEnvironment env,
-	DbContext db,
-	ILocalStorageService cache
+	DbContext db
 ) : IMediaService {
 	public async Task<UResponse<MediaResponse?>> Create(MediaCreateParams p, CancellationToken ct) {
 		IEnumerable<string> allowedExtensions = [".png", ".gif", ".jpg", ".jpeg", ".svg", ".webp", ".mp4", ".mov", ".mp3", ".pdf", ".aac", ".apk", ".zip", ".rar", ".mkv"];
@@ -23,23 +22,18 @@ public class MediaService(
 		string folderName;
 		if (p.UserId != null) {
 			folderName = "users";
-			cache.DeleteAllByPartialKey(RouteTags.User);
 		}
 		else if (p.CategoryId != null) {
 			folderName = "categories";
-			cache.DeleteAllByPartialKey(RouteTags.Category);
 		}
 		else if (p.CommentId != null) {
 			folderName = "comments";
-			cache.DeleteAllByPartialKey(RouteTags.Comment);
 		}
 		else if (p.ContentId != null) {
 			folderName = "contents";
-			cache.DeleteAllByPartialKey(RouteTags.Content);
 		}
 		else if (p.ProductId != null) {
 			folderName = "products";
-			cache.DeleteAllByPartialKey(RouteTags.Product);
 		}
 		else folderName = "generic";
 

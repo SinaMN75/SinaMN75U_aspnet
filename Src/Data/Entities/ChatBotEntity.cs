@@ -1,10 +1,10 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("ChatBots")]
-public class ChatBotEntity: BaseEntity<TagChatBot, ChatBotJsonData> {
+public class ChatBotEntity : BaseEntity<TagChatBot, ChatBotJsonData> {
 	public UserEntity Creator { get; set; } = null!;
 	public required Guid CreatorId { get; set; }
-	
+
 	public ChatBotResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,

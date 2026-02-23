@@ -26,7 +26,7 @@ public sealed class MediaUpdateParams : BaseParams {
 	public Guid? CommentId { get; set; }
 	public Guid? CategoryId { get; set; }
 	public Guid? ProductId { get; set; }
-	
+
 	public void MapToEntity(MediaEntity e) {
 		if (Title != null) e.JsonData.Title = Title;
 		if (Description != null) e.JsonData.Description = Description;
@@ -37,8 +37,11 @@ public sealed class MediaUpdateParams : BaseParams {
 		if (CategoryId.HasValue) e.CategoryId = CategoryId;
 		if (ProductId.HasValue) e.ProductId = ProductId;
 
-		if (AddTags != null) foreach (TagMedia t in AddTags) e.Tags.Add(t);
-		if (RemoveTags != null) foreach (TagMedia t in RemoveTags) e.Tags.Remove(t);
+		if (AddTags != null)
+			foreach (TagMedia t in AddTags)
+				e.Tags.Add(t);
+		if (RemoveTags != null)
+			foreach (TagMedia t in RemoveTags)
+				e.Tags.Remove(t);
 	}
-
 }

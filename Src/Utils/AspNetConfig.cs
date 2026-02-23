@@ -56,7 +56,7 @@ public static partial class AspNetConfig {
 			x.MultipartBodyLengthLimit = int.MaxValue;
 			x.MultipartHeadersLengthLimit = int.MaxValue;
 		});
-		
+
 		builder.Services.AddSignalR();
 
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
@@ -82,6 +82,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IVehicleService, VehicleService>();
 		builder.Services.AddScoped<IParkingService, ParkingService>();
 		builder.Services.AddScoped<IITHubService, ITHubService>();
+		builder.Services.AddScoped<IAddressService, AddressService>();
 	}
 
 	public static void UseUServices(this WebApplication app) {
@@ -92,9 +93,9 @@ public static partial class AspNetConfig {
 		app.UseUSwagger();
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
-		// app.UseMiddleware<UMiddleware>();
+		app.UseMiddleware<UMiddleware>();
 		app.UseMiddleware<DbExceptionMiddleware>();
-		
+
 		app.MapAuthRoutes(RouteTags.Auth);
 		app.MapUserRoutes(RouteTags.User);
 		app.MapMediaRoutes(RouteTags.Media);
@@ -114,6 +115,7 @@ public static partial class AspNetConfig {
 		app.MapParkingRoutes(RouteTags.Parking);
 		app.MapVehicleRoutes(RouteTags.Vehicle);
 		app.MapInquiryRoutes(RouteTags.Inquiry);
+		app.MapAddressRoutes(RouteTags.Address);
 	}
 
 	private static string CleanAndFormatSql(string sql) {

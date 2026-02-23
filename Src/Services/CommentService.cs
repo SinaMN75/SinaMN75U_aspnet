@@ -13,8 +13,7 @@ public interface ICommentService {
 public class CommentService(
 	DbContext db,
 	ILocalizationService ls,
-	ITokenService ts,
-	ILocalStorageService cache
+	ITokenService ts
 ) : ICommentService {
 	public async Task<UResponse<CommentResponse?>> Create(CommentCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
@@ -23,13 +22,12 @@ public class CommentService(
 		EntityEntry<CommentEntity> e = await db.Set<CommentEntity>().AddAsync(p.MapToEntity(), ct);
 		await db.SaveChangesAsync(ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Comment);
 		return new UResponse<CommentResponse?>(e.Entity.MapToResponse());
 	}
 
 	public async Task<UResponse<IEnumerable<CommentResponse>?>> Read(CommentReadParams p, CancellationToken ct) {
 		IQueryable<CommentEntity> q = db.Set<CommentEntity>();
-		
+
 		if (p.ProductId.IsNotNull()) q = q.Where(x => x.ProductId == p.ProductId);
 		if (p.CreatorId.IsNotNull()) q = q.Where(x => x.CreatorId == p.CreatorId);
 		if (p.UserId.IsNotNull()) q = q.Where(x => x.UserId == p.UserId);
@@ -57,14 +55,12 @@ public class CommentService(
 		db.Set<CommentEntity>().Update(p.MapToEntity(e));
 		await db.SaveChangesAsync(ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Comment);
 		return new UResponse<CommentResponse?>(e.MapToResponse());
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		await db.Set<CommentEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Comment);
 		return new UResponse();
 	}
 

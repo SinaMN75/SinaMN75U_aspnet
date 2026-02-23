@@ -9,18 +9,16 @@ public interface IContentService {
 }
 
 public class ContentService(
-	DbContext db, 
+	DbContext db,
 	ILocalizationService ls,
-	ITokenService ts,
-	ILocalStorageService cache
-	) : IContentService {
+	ITokenService ts
+) : IContentService {
 	public async Task<UResponse<ContentResponse?>> Create(ContentCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ContentResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
 		EntityEntry<ContentEntity> e = await db.AddAsync(p.MapToEntity(), ct);
-		
-		cache.DeleteAllByPartialKey(RouteTags.Content);
+
 		await db.SaveChangesAsync(ct);
 		return new UResponse<ContentResponse?>(e.Entity.MapToResponse());
 	}
@@ -39,7 +37,6 @@ public class ContentService(
 		p.MapToEntity(e);
 		db.Update(p.MapToEntity(e));
 		await db.SaveChangesAsync(ct);
-		cache.DeleteAllByPartialKey(RouteTags.Content);
 		return new UResponse<ContentResponse?>(e.MapToResponse());
 	}
 
@@ -48,8 +45,7 @@ public class ContentService(
 		if (userData == null) return new UResponse<ContentEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
 		await db.Set<ContentEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
-		
-		cache.DeleteAllByPartialKey(RouteTags.Content);
+
 		return new UResponse();
 	}
 
@@ -58,7 +54,6 @@ public class ContentService(
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
 		await db.Set<ContentEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
-		cache.DeleteAllByPartialKey(RouteTags.Content);
 		return new UResponse();
 	}
 }

@@ -11,8 +11,7 @@ public interface IVehicleService {
 public class VehicleService(
 	DbContext db,
 	ILocalizationService ls,
-	ITokenService ts,
-	ILocalStorageService cache
+	ITokenService ts
 ) : IVehicleService {
 	public async Task<UResponse<VehicleResponse?>> Create(VehicleCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
@@ -20,7 +19,6 @@ public class VehicleService(
 
 		EntityEntry<VehicleEntity> e = await db.AddAsync(p.MapToEntity(), ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Vehicle);
 		await db.SaveChangesAsync(ct);
 		return new UResponse<VehicleResponse?>(e.Entity.MapToResponse());
 	}
@@ -43,7 +41,6 @@ public class VehicleService(
 		p.MapToEntity(e);
 		db.Update(p.MapToEntity(e));
 		await db.SaveChangesAsync(ct);
-		cache.DeleteAllByPartialKey(RouteTags.Vehicle);
 		return new UResponse<VehicleResponse?>(e.MapToResponse());
 	}
 
@@ -53,7 +50,6 @@ public class VehicleService(
 
 		await db.Set<VehicleEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Vehicle);
 		return new UResponse();
 	}
 
@@ -62,7 +58,6 @@ public class VehicleService(
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
 		await db.Set<VehicleEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
-		cache.DeleteAllByPartialKey(RouteTags.Vehicle);
 		return new UResponse();
 	}
 }

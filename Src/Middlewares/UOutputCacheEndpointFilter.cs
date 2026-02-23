@@ -9,7 +9,7 @@ public sealed class CacheResponseFilter(ILocalStorageService cache, int minutes)
 		string body = await ReadRequestBodyAsync(request);
 		string cacheKey = $"{request.Path}{body}";
 
-		if (cache.Get(cacheKey) is { } cachedJson) 
+		if (cache.Get(cacheKey) is { } cachedJson)
 			return Results.Content(cachedJson, "application/json", Encoding.UTF8);
 
 		// Restore the body for the actual endpoint

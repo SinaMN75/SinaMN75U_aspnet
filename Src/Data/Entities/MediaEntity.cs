@@ -23,20 +23,19 @@ public class MediaEntity : BaseEntity<TagMedia, MediaJson> {
 
 	public Guid? ProductId { get; set; }
 	public ProductEntity? Product { get; set; }
-	
+
 	public Guid? TicketId { get; set; }
 	public TicketEntity? Ticket { get; set; }
-	
+
 	[NotMapped]
 	public string Url => $"{Core.App.BaseUrl}/Media/{Path}";
-	
+
 	public MediaResponse MapToResponse() => new() {
 		Id = Id,
 		Path = Path,
 		JsonData = JsonData,
 		Tags = Tags
 	};
-
 }
 
 public class MediaJson {

@@ -16,13 +16,13 @@ public static class UExtensions {
 
 	public static string ToJson<T>(this T obj) => JsonSerializer.Serialize(obj, UJsonOptions.Default);
 	public static T FromJson<T>(this string json) => JsonSerializer.Deserialize<T>(json, UJsonOptions.Default)!;
-	
+
 	public static IEnumerable<IdTitleParams> GetValues<T>() where T : Enum => Enum.GetValues(typeof(T)).Cast<int>()
 		.Select(item => new IdTitleParams {
 			Title = Enum.GetName(typeof(T), item),
 			Id = item
 		}).ToList();
-	
+
 	public static void AddRangeIfNotExist<T>(this ICollection<T>? collection, IEnumerable<T>? items) {
 		if (collection == null || items == null) return;
 		foreach (T item in items)

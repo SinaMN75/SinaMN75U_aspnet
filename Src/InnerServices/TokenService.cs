@@ -15,9 +15,9 @@ public class TokenService : ITokenService {
 	}
 
 	public string GenerateJwt(IEnumerable<Claim> claims, DateTime expires) => new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
-			issuer:Core.App.Jwt.Issuer,
-			audience:Core.App.Jwt.Audience,
-			claims:claims,
+			issuer: Core.App.Jwt.Issuer,
+			audience: Core.App.Jwt.Audience,
+			claims: claims,
 			expires: expires,
 			signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Core.App.Jwt.Key)), SecurityAlgorithms.HmacSha256)
 		)

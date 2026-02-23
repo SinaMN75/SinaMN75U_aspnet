@@ -2,12 +2,11 @@ namespace SinaMN75U.Data.Entities;
 
 [Table("Tickets")]
 public class TicketEntity : BaseEntity<TagTicket, TicketJson> {
-
 	public UserEntity Creator { get; set; } = null!;
 	public required Guid CreatorId { get; set; }
 
 	public ICollection<MediaEntity> Media { get; set; } = [];
-	
+
 	public TicketResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
@@ -17,7 +16,6 @@ public class TicketEntity : BaseEntity<TagTicket, TicketJson> {
 		Tags = Tags,
 		CreatorId = CreatorId
 	};
-
 }
 
 public class TicketJson {

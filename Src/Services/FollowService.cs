@@ -16,8 +16,7 @@ public interface IFollowService {
 public class FollowService(
 	DbContext db,
 	ILocalizationService ls,
-	ITokenService ts,
-	ILocalStorageService cache
+	ITokenService ts
 ) : IFollowService {
 	public async Task<UResponse> Follow(FollowParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
@@ -60,7 +59,6 @@ public class FollowService(
 		await db.Set<FollowEntity>().AddAsync(userFollower, ct);
 		await db.SaveChangesAsync(ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Follow);
 		return new UResponse(Usc.Success, ls.Get("FollowSuccess"));
 	}
 
@@ -90,7 +88,6 @@ public class FollowService(
 		db.Set<FollowEntity>().Remove(userFollower);
 		await db.SaveChangesAsync(ct);
 
-		cache.DeleteAllByPartialKey(RouteTags.Follow);
 		return new UResponse(Usc.Success, ls.Get("UnfollowSuccess"));
 	}
 

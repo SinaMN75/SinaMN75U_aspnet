@@ -14,7 +14,7 @@ public class ParkingEntity : BaseEntity<TagParking, ParkingJson> {
 	public decimal EntrancePrice { get; set; }
 	public decimal HourlyPrice { get; set; }
 	public decimal DailyPrice { get; set; }
-	
+
 	public ParkingResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,

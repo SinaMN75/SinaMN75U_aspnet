@@ -1,5 +1,5 @@
 namespace SinaMN75U.Constants;
 
-public class Core {
-	public static AppSettings App;
+public abstract class Core {
+	public static AppSettings App = null!;
 }
