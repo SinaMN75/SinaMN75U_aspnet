@@ -62,6 +62,7 @@ public class UserService(
 			State = userParam.State,
 			City = userParam.City,
 			Birthdate = userParam.Birthdate,
+			NationalCode = userParam.NationalCode,
 			JsonData = new UserJson {
 				FcmToken = userParam.FcmToken,
 				Health1 = userParam.Health1 ?? [],

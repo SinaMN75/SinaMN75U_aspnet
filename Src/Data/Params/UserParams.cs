@@ -15,6 +15,7 @@ public sealed class UserCreateParams : BaseParams {
 
 	public string? FirstName { get; set; }
 	public string? LastName { get; set; }
+	public string? NationalCode { get; set; }
 	public string? Bio { get; set; }
 	public string? Country { get; set; }
 	public string? State { get; set; }
@@ -48,6 +49,7 @@ public sealed class UserCreateParams : BaseParams {
 		Country = Country,
 		State = State,
 		City = City,
+		NationalCode = NationalCode,
 		Birthdate = Birthdate,
 		JsonData = new UserJson {
 			Weight = Weight,
@@ -80,6 +82,7 @@ public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {
 	public string? FcmToken { get; set; }
 	public string? Address { get; set; }
 	public string? FatherName { get; set; }
+	public string? NationalCode { get; set; }
 	public decimal? Weight { get; set; }
 	public decimal? Height { get; set; }
 	public List<string>? AddHealth1 { get; set; }
@@ -104,6 +107,7 @@ public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {
 		if (Country != null) e.Country = Country;
 		if (State != null) e.State = State;
 		if (City != null) e.City = City;
+		if (NationalCode != null) e.NationalCode = NationalCode;
 		if (Birthdate.HasValue) e.Birthdate = Birthdate;
 
 		if (FcmToken != null) e.JsonData.FcmToken = FcmToken;
@@ -143,8 +147,7 @@ public sealed class UserReadParams : BaseReadParams<TagUser> {
 	public string? PhoneNumber { get; set; }
 	public string? Email { get; set; }
 	public string? Bio { get; set; }
-	public Guid? UserId { get; set; }
-	public Guid? ProductId { get; set; }
+	public string? NationalCode { get; set; }
 	public DateTime? StartBirthDate { get; set; }
 	public DateTime? EndBirthDate { get; set; }
 	public IEnumerable<Guid>? Categories { get; set; }

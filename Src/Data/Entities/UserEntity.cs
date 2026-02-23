@@ -1,9 +1,10 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Users")]
-[Index(nameof(Email), Name = "IX_Users_Email")]
-[Index(nameof(UserName), Name = "IX_Users_UserName")]
-[Index(nameof(PhoneNumber), Name = "IX_Users_PhoneNumber")]
+[Index(nameof(Email), Name = "IX_Users_Email", IsUnique = true)]
+[Index(nameof(UserName), Name = "IX_Users_UserName", IsUnique = true)]
+[Index(nameof(PhoneNumber), Name = "IX_Users_PhoneNumber", IsUnique = true)]
+[Index(nameof(NationalCode), Name = "IX_Users_PhoneNumber", IsUnique = true)]
 public class UserEntity : BaseEntity<TagUser, UserJson> {
 	[Required, MaxLength(100)]
 	public string UserName { get; set; } = null!;
@@ -16,6 +17,9 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 
 	[MaxLength(15)]
 	public string? PhoneNumber { get; set; }
+
+	[MinLength(10), MaxLength(10)]
+	public string? NationalCode { get; set; }
 
 	[MaxLength(100)]
 	public string? Email { get; set; }
@@ -51,7 +55,7 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 	public ICollection<ContractEntity> CreatedContracts { get; set; } = [];
 
 	public ICollection<InvoiceEntity> Invoices { get; set; } = [];
-	
+
 	public ICollection<TxnEntity> Txns { get; set; } = [];
 
 	public UserResponse MapToResponse() => new() {
