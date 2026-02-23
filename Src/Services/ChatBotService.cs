@@ -17,7 +17,7 @@ public class ChatBotService(
 
 		ChatBotEntity? e = await db.Set<ChatBotEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.ChatId, ct);
 		if (e != null) {
-			string response = await http.Post("https://ai.ittalie.ir/sheldon/api/chat", new {
+			HttpResponseMessage response = await http.Post("https://ai.ittalie.ir/sheldon/api/chat", new {
 					user_input = p.Message,
 					chat_history = e.JsonData.History.Select(x => new {
 							user = x.User,
@@ -26,7 +26,7 @@ public class ChatBotService(
 					)
 				}
 			);
-			string responseValue = JsonDocument.Parse(response).RootElement.GetProperty("response").GetString()!;
+			string responseValue = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct)).RootElement.GetProperty("response").GetString()!;
 			e.JsonData.History.Add(new ChatBotHistoryItem {
 				User = p.Message,
 				Bot = responseValue
@@ -36,12 +36,12 @@ public class ChatBotService(
 			return new UResponse<ChatBotResponse?>(e.MapToResponse());
 		}
 		else {
-			string response = await http.Post("https://ai.ittalie.ir/sheldon/api/chat", new {
+			HttpResponseMessage response = await http.Post("https://ai.ittalie.ir/sheldon/api/chat", new {
 					user_input = p.Message,
 					chat_history = new List<string>()
 				}
 			);
-			string responseValue = JsonDocument.Parse(response).RootElement.GetProperty("response").GetString()!;
+			string responseValue = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct)).RootElement.GetProperty("response").GetString()!;
 			EntityEntry<ChatBotEntity> newE = await db.Set<ChatBotEntity>().AddAsync(new ChatBotEntity {
 				CreatorId = userData.Id,
 				JsonData = new ChatBotJsonData {

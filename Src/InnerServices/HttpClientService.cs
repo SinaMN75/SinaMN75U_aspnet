@@ -1,41 +1,38 @@
 namespace SinaMN75U.InnerServices;
 
 public interface IHttpClientService {
-	Task<string> Get(string uri, Dictionary<string, string>? headers = null);
-	Task<string> Post(string uri, object? body, Dictionary<string, string>? headers = null);
-	Task<string> PostForm(string uri, Dictionary<string, string> formData, Dictionary<string, string>? headers = null);
-	Task<string> Put(string uri, object? body, Dictionary<string, string>? headers = null);
-	Task<string> Delete(string uri, Dictionary<string, string>? headers = null);
-	Task<string> Upload(string uri, IFormFile file, Dictionary<string, string>? headers = null);
-	Task<string> Upload(string uri, IFormFile file, string fileName, Dictionary<string, string>? headers = null);
+	Task<HttpResponseMessage> Get(string uri, Dictionary<string, string>? headers = null);
+	Task<HttpResponseMessage> Post(string uri, object? body, Dictionary<string, string>? headers = null);
+	Task<HttpResponseMessage> PostForm(string uri, Dictionary<string, string> formData, Dictionary<string, string>? headers = null);
+	Task<HttpResponseMessage> Put(string uri, object? body, Dictionary<string, string>? headers = null);
+	Task<HttpResponseMessage> Delete(string uri, Dictionary<string, string>? headers = null);
+	Task<HttpResponseMessage> Upload(string uri, IFormFile file, Dictionary<string, string>? headers = null);
+	Task<HttpResponseMessage> Upload(string uri, IFormFile file, string fileName, Dictionary<string, string>? headers = null);
 }
 
 public class HttpClientService(HttpClient httpClient) : IHttpClientService {
 	private readonly HttpClient _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
 
-	public async Task<string> Get(string uri, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Get, uri, null, headers);
+	public async Task<HttpResponseMessage> Get(string uri, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Get, uri, null, headers);
 
-	public async Task<string> Post(string uri, object? body, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Post, uri, body, headers);
+	public async Task<HttpResponseMessage> Post(string uri, object? body, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Post, uri, body, headers);
 
-	public async Task<string> PostForm(string uri, Dictionary<string, string> formData, Dictionary<string, string>? headers = null) {
+	public async Task<HttpResponseMessage> PostForm(string uri, Dictionary<string, string> formData, Dictionary<string, string>? headers = null) {
 		using HttpRequestMessage request = new(HttpMethod.Post, uri);
 		request.Content = new FormUrlEncodedContent(formData);
 
 		if (headers != null) foreach (KeyValuePair<string, string> h in headers) request.Headers.Add(h.Key, h.Value);
 
-		using HttpResponseMessage response = await _httpClient.SendAsync(request);
-		response.EnsureSuccessStatusCode();
-
-		return await response.Content.ReadAsStringAsync();
+		return await _httpClient.SendAsync(request);
 	}
 
-	public async Task<string> Put(string uri, object? body, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Put, uri, body, headers);
+	public async Task<HttpResponseMessage> Put(string uri, object? body, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Put, uri, body, headers);
 
-	public async Task<string> Delete(string uri, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Delete, uri, null, headers);
+	public async Task<HttpResponseMessage> Delete(string uri, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Delete, uri, null, headers);
 
-	public async Task<string> Upload(string uri, IFormFile file, Dictionary<string, string>? headers = null) => await Upload(uri, file, file.FileName, headers);
+	public async Task<HttpResponseMessage> Upload(string uri, IFormFile file, Dictionary<string, string>? headers = null) => await Upload(uri, file, file.FileName, headers);
 
-	public async Task<string> Upload(string uri, IFormFile file, string fileName, Dictionary<string, string>? headers = null) {
+	public async Task<HttpResponseMessage> Upload(string uri, IFormFile file, string fileName, Dictionary<string, string>? headers = null) {
 		if (string.IsNullOrEmpty(uri)) throw new ArgumentException("URI cannot be null or empty.", nameof(uri));
 		ArgumentNullException.ThrowIfNull(file);
 		if (string.IsNullOrEmpty(fileName)) throw new ArgumentException("File name cannot be null or empty.", nameof(fileName));
@@ -53,13 +50,10 @@ public class HttpClientService(HttpClient httpClient) : IHttpClientService {
 			foreach (KeyValuePair<string, string> header in headers)
 				request.Headers.Add(header.Key, header.Value);
 
-		using HttpResponseMessage response = await _httpClient.SendAsync(request);
-		if (!response.IsSuccessStatusCode) throw new HttpRequestException($"Request failed with status code {response.StatusCode}");
-
-		return await response.Content.ReadAsStringAsync();
+		return await _httpClient.SendAsync(request);
 	}
 
-	private async Task<string> Send(HttpMethod method, string uri, object? body = null, Dictionary<string, string>? headers = null) {
+	private async Task<HttpResponseMessage> Send(HttpMethod method, string uri, object? body = null, Dictionary<string, string>? headers = null) {
 		if (string.IsNullOrEmpty(uri)) throw new ArgumentException("URI cannot be null or empty.", nameof(uri));
 
 		using HttpRequestMessage request = new(method, uri);
@@ -71,9 +65,7 @@ public class HttpClientService(HttpClient httpClient) : IHttpClientService {
 		if (headers != null)
 			foreach (KeyValuePair<string, string> header in headers)
 				request.Headers.Add(header.Key, header.Value);
-
-
-		using HttpResponseMessage response = await _httpClient.SendAsync(request);
-		return await response.Content.ReadAsStringAsync();
+		
+		return await _httpClient.SendAsync(request);
 	}
 }

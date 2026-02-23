@@ -2,11 +2,7 @@ using Npgsql;
 
 namespace SinaMN75U.Middlewares;
 
-public class DbExceptionMiddleware(
-	RequestDelegate next,
-	ILogger<DbExceptionMiddleware> logger,
-	ILocalizationService ls
-) {
+public class DbExceptionMiddleware(RequestDelegate next, ILocalizationService ls) {
 	public async Task InvokeAsync(HttpContext context) {
 		try {
 			await next(context);
