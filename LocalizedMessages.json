@@ -57,6 +57,7 @@
     "UnfollowSuccess": "You no Longer following: ",
     "ProductHasActiveContract": "Product Has Active Contract.",
     "ShahkarIsNotAvailableAtThisTime": "Shahkar is not Availble at this Time, Please try again Later.",
-    "TokenExpired": "Auth Token is Expired."
+    "TokenExpired": "Auth Token is Expired.",
+    "YourDetailSubmittedSuccesfully": "Your Detail Submitted Succesfully."
   }
 }

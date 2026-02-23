@@ -71,7 +71,7 @@ public class AuthService(
 		e.LastName = p.LastName;
 		db.Set<UserEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
-		return new UResponse<UserResponse?>(e.MapToResponse());
+		return new UResponse<UserResponse?>(e.MapToResponse(), message: ls.Get("YourDetailSubmittedSuccesfully"));
 	}
 
 	public async Task<UResponse<LoginResponse?>> LoginWithEmailPassword(LoginWithEmailPasswordParams p, CancellationToken ct) {
