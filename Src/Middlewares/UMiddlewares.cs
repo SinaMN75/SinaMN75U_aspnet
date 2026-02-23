@@ -25,12 +25,11 @@ public sealed class UMiddleware(RequestDelegate next) {
 			rawRequestBody = await reader.ReadToEndAsync();
 		}
 		finally {
-			// Always seek, even if read fails
 			try {
 				context.Request.Body.Seek(0, SeekOrigin.Begin);
 			}
 			catch {
-				/* ignore non-seekable streams */
+				// ignored
 			}
 		}
 
@@ -86,9 +85,7 @@ public sealed class UMiddleware(RequestDelegate next) {
 
 			sw.Stop();
 
-			// Fire-and-forget logging
-			_ = Task.Run(() => TryLog(
-				context, sw.ElapsedMilliseconds, rawRequestBody, decodedRequestBodyForLog, responseBody, exception));
+			_ = Task.Run(() => TryLog(context, sw.ElapsedMilliseconds, rawRequestBody, decodedRequestBodyForLog, responseBody, exception));
 		}
 	}
 
@@ -97,10 +94,8 @@ public sealed class UMiddleware(RequestDelegate next) {
 		ctx.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase) &&
 		ctx.Request.Path.Value?.Contains("media", StringComparison.OrdinalIgnoreCase) != true;
 
-	private async Task<(string? Processed, string? Decoded)> PreProcessRequestAsync(HttpContext ctx, string raw) {
-		// Optional: limit request size
-		if (raw.Length > 100_000) // 100 KB
-		{
+	private static async Task<(string? Processed, string? Decoded)> PreProcessRequestAsync(HttpContext ctx, string raw) {
+		if (raw.Length > 100_000) {
 			await WriteErrorAsync(ctx, 413, "Request too large");
 			return (null, raw);
 		}
@@ -140,13 +135,12 @@ public sealed class UMiddleware(RequestDelegate next) {
 	private static bool TryDecodeBase64(string input, out byte[] result) {
 		try {
 			string clean = input.Replace(" ", "").Replace("\n", "").Replace("\r", "").Replace("\t", "");
-			if (clean.Length % 4 != 0)
-				clean += new string('=', 4 - clean.Length % 4);
+			if (clean.Length % 4 != 0) clean += new string('=', 4 - clean.Length % 4);
 			result = Convert.FromBase64String(clean);
 			return true;
 		}
 		catch {
-			result = Array.Empty<byte>();
+			result = [];
 			return false;
 		}
 	}
@@ -162,11 +156,10 @@ public sealed class UMiddleware(RequestDelegate next) {
 		await ctx.Response.Body.FlushAsync();
 	}
 
-	private void TryLog(HttpContext ctx, long ms, string rawReq, string decodedReq, string res, Exception? ex) {
+	private static void TryLog(HttpContext ctx, long ms, string rawReq, string decodedReq, string res, Exception? ex) {
 		if (!AppSettings.Instance.Middleware.Log) return;
 		if (ctx.Response.StatusCode is >= 200 and <= 299 && !AppSettings.Instance.Middleware.LogSuccess) return;
 
-		// Truncate large bodies in logs
 		const int maxLen = 10_000;
 		if (rawReq.Length > maxLen) rawReq = rawReq[..maxLen] + "...<truncated>";
 		if (decodedReq.Length > maxLen) decodedReq = decodedReq[..maxLen] + "...<truncated>";
@@ -192,7 +185,7 @@ public sealed class UMiddleware(RequestDelegate next) {
 
 			lock (LogLock) {
 				List<object> list = File.Exists(file)
-					? JsonSerializer.Deserialize<List<object>>(File.ReadAllText(file), UJsonOptions.Default) ?? new()
+					? JsonSerializer.Deserialize<List<object>>(File.ReadAllText(file), UJsonOptions.Default) ?? []
 					: [];
 				list.Add(entry);
 				File.WriteAllText(file, JsonSerializer.Serialize(list, UJsonOptions.Default));
