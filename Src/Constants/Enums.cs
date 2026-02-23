@@ -15,6 +15,8 @@ public enum Usc {
 	MaximumLimitReached = 602,
 	UserNotFound = 603,
 	ExpiredToken = 604,
+	ShahkarException = 605,
+	ShahkarError = 606,
 
 	EmptyList = 701,
 

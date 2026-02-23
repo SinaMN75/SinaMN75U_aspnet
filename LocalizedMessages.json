@@ -17,6 +17,9 @@
     "TitleRequired": "Title is Required",
     "DescriptionRequired": "Description is Required",
     "SubTitleRequired": "Subtitle is Required",
+    "FirstNameRequired": "First Name is Required",
+    "LastNameRequired": "Last Name is Required",
+    "NationalCodeRequired": "National Code is Required",
     "StartDateRequired": "Start Date is Required",
     "EndDateRequired": "End Date is Required",
     "DateRequired": "Date is Required",
@@ -26,6 +29,10 @@
     "UserNotFound": "Account not found. Please check your details.",
     "EmailInvalid": "Please enter a valid email.",
     "UserNameInvalid": "Username is invalid. Please try another.",
+    "FirstNameInvalid": "First Name is Invalid",
+    "LastNameInvalid": "Last Name is Invalid",
+    "NationalCodeInvalid": "National Code is Invalid",
+    "NationalCodeNotMatchWithPhoneNumberOwner": "National Code is not Match with Phone Number Owner.",
     "PasswordMinLength": "Password must be at least 6 characters.",
     "PasswordRequired": "Please enter a password.",
     "PasswordInvalid": "Password must be 6-100 characters.",
@@ -49,6 +56,7 @@
     "BeforeDateSelected": "Wrong Date Selected",
     "UnfollowSuccess": "You no Longer following: ",
     "ProductHasActiveContract": "Product Has Active Contract.",
+    "ShahkarIsNotAvailableAtThisTime": "Shahkar is not Availble at this Time, Please try again Later.",
     "TokenExpired": "Auth Token is Expired."
   }
 }

@@ -2,6 +2,7 @@ namespace SinaMN75U.Services;
 
 public interface IAuthService {
 	Task<UResponse<LoginResponse?>> Register(RegisterParams p, CancellationToken ct);
+	Task<UResponse<UserResponse?>> CompleteProfile(AuthCompleteProfileParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> LoginWithEmailPassword(LoginWithEmailPasswordParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> LoginWithUserNamePassword(LoginWithUserNamePasswordParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> RefreshToken(RefreshTokenParams p, CancellationToken ct);
@@ -15,7 +16,8 @@ public class AuthService(
 	ILocalizationService ls,
 	ITokenService ts,
 	ISmsNotificationService smsNotificationService,
-	ILocalStorageService cache
+	ILocalStorageService cache,
+	IITHubService iTHubService
 ) : IAuthService {
 	public async Task<UResponse<LoginResponse?>> Register(RegisterParams p, CancellationToken ct) {
 		bool isUserExists = await db.Set<UserEntity>().AnyAsync(x => x.UserName == p.UserName, ct);
@@ -36,7 +38,7 @@ public class AuthService(
 
 		await db.Set<UserEntity>().AddAsync(user, ct);
 		await db.SaveChangesAsync(ct);
-		
+
 		cache.DeleteAllByPartialKey(RouteTags.User);
 
 		return new UResponse<LoginResponse?>(new LoginResponse {
@@ -45,6 +47,30 @@ public class AuthService(
 			Expires = AppSettings.Instance.Jwt.Expires,
 			User = user.MapToResponse()
 		});
+	}
+
+	public async Task<UResponse<UserResponse?>> CompleteProfile(AuthCompleteProfileParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<UserResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
+		if (e == null) return new UResponse<UserResponse?>(null, Usc.NotFound);
+
+		e.UpdatedAt = DateTime.UtcNow;
+		UResponse<ITHubShahkarResponse>? shahkarResponse = await iTHubService.Shahkar(new ITHubShahkarParams {
+			NationalCode = p.NationalCode,
+			Mobile = e.PhoneNumber!,
+		}, ct);
+		
+		if (shahkarResponse?.Result == null) return new UResponse<UserResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		if (!shahkarResponse.Result.Data) return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
+
+		e.NationalCode = p.NationalCode;
+		e.FirstName = p.FirstName;
+		e.LastName = p.LastName;
+		db.Set<UserEntity>().Update(e);
+		await db.SaveChangesAsync(ct);
+		return new UResponse<UserResponse?>(e.MapToResponse());
 	}
 
 	public async Task<UResponse<LoginResponse?>> LoginWithEmailPassword(LoginWithEmailPasswordParams p, CancellationToken ct) {
@@ -132,7 +158,7 @@ public class AuthService(
 
 		await db.SaveChangesAsync(ct);
 		if (!await smsNotificationService.SendOtpSms(e)) return new UResponse(Usc.MaximumLimitReached, ls.Get("MaxOtpReached"));
-		
+
 		cache.DeleteAllByPartialKey(RouteTags.User);
 		return new UResponse();
 	}
