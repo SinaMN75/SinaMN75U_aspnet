@@ -50,7 +50,7 @@ public class BaseUpdateParams<T> : BaseParams {
 public class BaseCreateParams<T> : BaseParams {
 	[UValidationRequired("TagsRequired")]
 	[UValidationMinCollectionLength(1, "TagsRequired")]
-	public required List<T> Tags { get; set; }
+	public required ICollection<T> Tags { get; set; }
 
 	public Guid? Id { get; set; }
 }

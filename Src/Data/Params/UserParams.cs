@@ -26,11 +26,12 @@ public sealed class UserCreateParams : BaseParams {
 	public decimal? Weight { get; set; }
 	public decimal? Height { get; set; }
 	public DateTime? Birthdate { get; set; }
-	public List<string>? Health1 { get; set; }
-	public List<string>? Health2 { get; set; }
-	public List<string>? FoodAllergies { get; set; }
-	public List<string> DrugAllergies { get; set; } = [];
-	public List<string>? Sickness { get; set; }
+	public ICollection<string>? Health1 { get; set; }
+	public ICollection<string>? Health2 { get; set; }
+	public ICollection<string>? FoodAllergies { get; set; }
+	public ICollection<string>? DrugAllergies { get; set; }
+	public ICollection<string>? Sickness { get; set; }
+	public ICollection<string>? NotVerifiedNationalCodes { get; set; }
 
 	[UValidationMinCollectionLength(1, "TagsRequired")]
 	public required List<TagUser> Tags { get; set; }
@@ -60,8 +61,9 @@ public sealed class UserCreateParams : BaseParams {
 			Health1 = Health1 ?? [],
 			Health2 = Health2 ?? [],
 			FoodAllergies = FoodAllergies ?? [],
-			DrugAllergies = DrugAllergies,
-			Sickness = Sickness ?? []
+			DrugAllergies = DrugAllergies ?? [],
+			Sickness = Sickness ?? [],
+			NotVerifiedNationalCodes = NotVerifiedNationalCodes ?? [],
 		},
 		Tags = Tags
 	};
@@ -85,16 +87,18 @@ public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {
 	public string? NationalCode { get; set; }
 	public decimal? Weight { get; set; }
 	public decimal? Height { get; set; }
-	public List<string>? AddHealth1 { get; set; }
-	public List<string>? RemoveHealth1 { get; set; }
-	public List<string>? AddHealth2 { get; set; }
-	public List<string>? RemoveHealth2 { get; set; }
-	public List<string>? FoodAllergies { get; set; }
-	public List<string>? DrugAllergies { get; set; }
-	public List<string>? Sickness { get; set; }
-	public List<string>? Health1 { get; set; }
-	public List<string>? Health2 { get; set; }
-	public IEnumerable<Guid>? Categories { get; set; }
+	public ICollection<string>? AddHealth1 { get; set; }
+	public ICollection<string>? RemoveHealth1 { get; set; }
+	public ICollection<string>? AddHealth2 { get; set; }
+	public ICollection<string>? RemoveHealth2 { get; set; }
+	public ICollection<string>? FoodAllergies { get; set; }
+	public ICollection<string>? DrugAllergies { get; set; }
+	public ICollection<string>? Sickness { get; set; }
+	public ICollection<string>? Health1 { get; set; }
+	public ICollection<string>? Health2 { get; set; }
+	public ICollection<string>? AddNotVerifiedNationalCodes { get; set; }
+	public ICollection<string>? RemoveNotVerifiedNationalCodes { get; set; }
+	public ICollection<Guid>? Categories { get; set; }
 
 	public void MapToEntity(UserEntity e, string? hashedPassword = null) {
 		if (hashedPassword != null) e.Password = hashedPassword;
@@ -118,19 +122,18 @@ public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {
 
 		if (Health1 != null) e.JsonData.Health1 = Health1;
 		if (AddHealth1 != null)
-			foreach (string item in AddHealth1)
-				e.JsonData.Health1?.Add(item);
+			foreach (string item in AddHealth1) e.JsonData.Health1?.Add(item);
 		if (RemoveHealth1 != null)
-			foreach (string item in RemoveHealth1)
-				e.JsonData.Health1?.Remove(item);
-
+			foreach (string item in RemoveHealth1) e.JsonData.Health1?.Remove(item);
 		if (Health2 != null) e.JsonData.Health2 = Health2;
 		if (AddHealth2 != null)
-			foreach (string item in AddHealth2)
-				e.JsonData.Health2?.Add(item);
+			foreach (string item in AddHealth2) e.JsonData.Health2?.Add(item);
 		if (RemoveHealth2 != null)
-			foreach (string item in RemoveHealth2)
-				e.JsonData.Health2?.Remove(item);
+			foreach (string item in RemoveHealth2) e.JsonData.Health2?.Remove(item);
+		if (AddNotVerifiedNationalCodes != null)
+			foreach (string item in AddNotVerifiedNationalCodes) e.JsonData.NotVerifiedNationalCodes?.Add(item);
+		if (RemoveNotVerifiedNationalCodes != null)
+			foreach (string item in RemoveNotVerifiedNationalCodes) e.JsonData.NotVerifiedNationalCodes?.Remove(item);
 
 		if (FoodAllergies != null) e.JsonData.FoodAllergies = FoodAllergies;
 		if (DrugAllergies != null) e.JsonData.DrugAllergies = DrugAllergies;

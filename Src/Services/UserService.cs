@@ -72,7 +72,8 @@ public class UserService(
 				Address = userParam.Address,
 				FatherName = userParam.FatherName,
 				FoodAllergies = userParam.FoodAllergies ?? [],
-				DrugAllergies = userParam.DrugAllergies
+				DrugAllergies = userParam.DrugAllergies ?? [],
+				NotVerifiedNationalCodes = userParam.NotVerifiedNationalCodes ?? []
 			},
 			Tags = userParam.Tags,
 			CreatedAt = DateTime.UtcNow,

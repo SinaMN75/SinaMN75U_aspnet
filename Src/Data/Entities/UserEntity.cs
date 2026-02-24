@@ -89,6 +89,7 @@ public class UserJson {
 	public ICollection<string> FoodAllergies { get; set; } = [];
 	public ICollection<string> DrugAllergies { get; set; } = [];
 	public ICollection<string> Sickness { get; set; } = [];
+	public ICollection<string> NotVerifiedNationalCodes { get; set; } = [];
 	public ICollection<UserAnswerJson> UserAnswerJson { get; set; } = [];
 	public ICollection<VisitCount> VisitCounts { get; set; } = [];
 }

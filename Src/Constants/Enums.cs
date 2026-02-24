@@ -186,6 +186,7 @@ public enum TagAddress {
 public enum TagWallet {
 	Test = 999
 }
+
 public enum TagWalletTxn {
 	Test = 999
 }

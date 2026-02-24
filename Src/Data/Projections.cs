@@ -80,7 +80,8 @@ public static class Projections {
 			Id = x.Id,
 			Tags = x.Tags,
 			JsonData = x.JsonData,
-			Title = x.Title
+			Title = x.Title,
+			CreatorId = x.CreatorId
 		};
 
 	public static Expression<Func<MediaEntity, MediaResponse>> MediaSelector(MediaSelectorArgs args) =>

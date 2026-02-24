@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Params;
 
-public sealed class ContentCreateParams : BaseParams {
+public sealed class ContentCreateParams : BaseCreateParams<TagContent> {
 	[UValidationRequired("TitleRequired")]
 	public required string Title { get; set; }
 
@@ -10,9 +10,6 @@ public sealed class ContentCreateParams : BaseParams {
 	public string? Telegram { get; set; }
 	public string? Whatsapp { get; set; }
 	public string? Phone { get; set; }
-
-	[UValidationMinCollectionLength(1, "TagsRequired")]
-	public required List<TagContent> Tags { get; set; }
 
 	public ContentEntity MapToEntity() => new() {
 		Tags = Tags,
