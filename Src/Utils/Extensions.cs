@@ -52,10 +52,10 @@ public static class UExtensions {
 		public bool ContainsSafe(T item) {
 			return enumerable != null && enumerable.Contains(item);
 		}	
-		
-		public IEnumerable<T> AddSafe(T item) {
-			if (enumerable == null) return [item];
-			List<T> list = enumerable.ToList();
+
+		public IEnumerable<T> AddSafe(T item)
+		{
+			List<T> list = enumerable?.ToList() ?? [];
 			list.Add(item);
 			return list;
 		}

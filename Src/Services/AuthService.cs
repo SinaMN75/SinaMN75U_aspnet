@@ -68,7 +68,7 @@ public class AuthService(
 		if (shahkarResponse.Result?.Error?.CustomMessage?.IsNotNullOrEmpty() ?? false) return new UResponse<UserResponse?>(null, Usc.ShahkarError, shahkarResponse.Result.Error?.CustomMessage ?? ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
 		if (!(shahkarResponse.Result?.Data ?? false)) {
-			e.JsonData.NotVerifiedNationalCodes.AddSafe(p.NationalCode);
+			e.JsonData.NotVerifiedNationalCodes?.Add(p.NationalCode);
 			db.Set<UserEntity>().Update(e);
 			await db.SaveChangesAsync(ct);
 			return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
