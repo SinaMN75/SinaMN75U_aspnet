@@ -55,7 +55,7 @@ public class AuthService(
 		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
 		if (e == null) return new UResponse<UserResponse?>(null, Usc.NotFound);
 
-		if (e.JsonData.NotVerifiedNationalCodes.Contains(p.NationalCode))
+		if (e.JsonData.NotVerifiedNationalCodes.ContainsSafe(p.NationalCode))
 			return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
 
 		UResponse<ITHubShahkarResponse?> shahkarResponse = await iTHubService.Shahkar(new ITHubShahkarParams {
@@ -68,7 +68,7 @@ public class AuthService(
 		if (shahkarResponse.Result?.Error?.CustomMessage?.IsNotNullOrEmpty() ?? false) return new UResponse<UserResponse?>(null, Usc.ShahkarError, shahkarResponse.Result.Error?.CustomMessage ?? ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
 		if (!(shahkarResponse.Result?.Data ?? false)) {
-			e.JsonData.NotVerifiedNationalCodes.Add(p.NationalCode);
+			e.JsonData.NotVerifiedNationalCodes.AddSafe(p.NationalCode);
 			db.Set<UserEntity>().Update(e);
 			await db.SaveChangesAsync(ct);
 			return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));

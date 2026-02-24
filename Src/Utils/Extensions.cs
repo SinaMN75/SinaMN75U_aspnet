@@ -37,18 +37,27 @@ public static class UExtensions {
 				collection.Add(item);
 	}
 
-	extension<T>(IEnumerable<T> list) {
+	extension<T>(IEnumerable<T>? enumerable) {
 		public void RemoveRangeIfExist(IEnumerable<T> itemsToRemove) {
-			ArgumentNullException.ThrowIfNull(list);
-			ArgumentNullException.ThrowIfNull(itemsToRemove);
 			HashSet<T> itemsToRemoveSet = new(itemsToRemove);
-			list.RemoveAll(item => itemsToRemoveSet.Contains(item));
+			enumerable.RemoveAll(item => itemsToRemoveSet.Contains(item));
 		}
 
 		public IEnumerable<T> RemoveAll(Func<T, bool> predicate) {
-			ArgumentNullException.ThrowIfNull(list);
+			ArgumentNullException.ThrowIfNull(enumerable);
 			ArgumentNullException.ThrowIfNull(predicate);
-			return list.Where(item => !predicate(item));
+			return enumerable.Where(item => !predicate(item));
+		}
+		
+		public bool ContainsSafe(T item) {
+			return enumerable != null && enumerable.Contains(item);
+		}	
+		
+		public IEnumerable<T> AddSafe(T item) {
+			if (enumerable == null) return [item];
+			List<T> list = enumerable.ToList();
+			list.Add(item);
+			return list;
 		}
 	}
 }
