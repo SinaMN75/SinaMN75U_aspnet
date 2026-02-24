@@ -43,9 +43,8 @@ public class SmsNotificationService(
 				);
 				break;
 			}
-			case TagSmsPanel.NikSms: {
-				break;
-			}
+			case TagSmsPanel.NikSms:
+			default: break;
 		}
 
 		return new UResponse();
