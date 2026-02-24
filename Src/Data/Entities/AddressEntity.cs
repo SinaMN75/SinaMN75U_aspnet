@@ -1,8 +1,11 @@
 namespace SinaMN75U.Data.Entities;
 
-public class AddressEntity : BaseEntity<TagAddress, AddressJson> {
+public sealed class AddressEntity : BaseEntity<TagAddress, AddressJson> {
 	public required string Title { get; set; }
 	public string? ZipCode { get; set; }
+
+	public UserEntity Creator { get; set; } = null!;
+	public required Guid CreatorId { get; set; }
 
 	public AddressResponse MapToResponse() => new() {
 		Id = Id,
@@ -12,11 +15,12 @@ public class AddressEntity : BaseEntity<TagAddress, AddressJson> {
 		JsonData = JsonData,
 		Tags = Tags,
 		Title = Title,
-		ZipCode = ZipCode
+		ZipCode = ZipCode,
+		CreatorId = CreatorId
 	};
 }
 
-public class AddressJson {
+public sealed class AddressJson {
 	public string? Province { get; set; }
 	public string? Township { get; set; }
 	public string? Street { get; set; }

@@ -35,6 +35,7 @@ public class AddressService(
 		if (addresses.IsNotNullOrEmpty()) {
 			AddressResponse i = addresses.First();
 			entity = new AddressEntity {
+				CreatorId = userData.Id,
 				Title = p.Title,
 				JsonData = new AddressJson {
 					Province = i.JsonData.Province,
@@ -62,6 +63,7 @@ public class AddressService(
 			
 			entity = new AddressEntity {
 				Title = p.Title,
+				CreatorId =  userData.Id,
 				JsonData = new AddressJson {
 					Province = i.Province,
 					Township = i.TownShip,

@@ -182,3 +182,10 @@ public enum TagParkingReport {
 public enum TagAddress {
 	Test = 999
 }
+
+public enum TagWallet {
+	Test = 999
+}
+public enum TagWalletTxn {
+	Test = 999
+}

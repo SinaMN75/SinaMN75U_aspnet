@@ -13,12 +13,14 @@ public sealed class AddressCreateParams : BaseCreateParams<TagAddress> {
 	public string? Floor { get; set; }
 	public string? ZipCode { get; set; }
 	public string? Description { get; set; }
+	public required Guid CreatorId { get; set; }
 
 	public AddressEntity MapToEntity() => new() {
 		Id = Id ?? Guid.CreateVersion7(),
 		Title = Title,
 		Tags = Tags,
 		ZipCode = ZipCode,
+		CreatorId = CreatorId,
 		JsonData = new AddressJson {
 			Province = Province,
 			Township = Township,
@@ -69,5 +71,6 @@ public sealed class AddressUpdateParams : BaseUpdateParams<TagAddress> {
 public sealed class AddressReadParams : BaseReadParams<TagAddress> {
 	public bool OrderByOrder { get; set; }
 	public bool OrderByOrderDesc { get; set; }
+	public Guid? CreatorId { get; set; }
 	public AddressSelectorArgs SelectorArgs { get; set; } = new();
 }
