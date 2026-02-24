@@ -54,24 +54,26 @@ public class AuthService(
 
 		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
 		if (e == null) return new UResponse<UserResponse?>(null, Usc.NotFound);
-		
-		else {
-			UResponse<ITHubShahkarResponse?> shahkarResponse = await iTHubService.Shahkar(new ITHubShahkarParams {
-				NationalCode = p.NationalCode,
-				Mobile = e.PhoneNumber!,
-			}, ct);
 
-			if (shahkarResponse.Result == null) {
-				return new UResponse<UserResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
-			}
-			if (shahkarResponse.Result?.Error?.CustomMessage?.IsNotNullOrEmpty() ?? false) {
-				return new UResponse<UserResponse?>(null, Usc.ShahkarError, shahkarResponse.Result.Error?.CustomMessage ?? ls.Get("ShahkarIsNotAvailableAtThisTime"));
-			}
-			if (!(shahkarResponse.Result?.Data ?? false)) {
-				return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
-			}
+		if (e.JsonData.NotVerifiedNationalCodes.Contains(p.NationalCode))
+			return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
+
+		UResponse<ITHubShahkarResponse?> shahkarResponse = await iTHubService.Shahkar(new ITHubShahkarParams {
+			NationalCode = p.NationalCode,
+			Mobile = e.PhoneNumber!,
+		}, ct);
+
+		if (shahkarResponse.Result == null) return new UResponse<UserResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+
+		if (shahkarResponse.Result?.Error?.CustomMessage?.IsNotNullOrEmpty() ?? false) return new UResponse<UserResponse?>(null, Usc.ShahkarError, shahkarResponse.Result.Error?.CustomMessage ?? ls.Get("ShahkarIsNotAvailableAtThisTime"));
+
+		if (!(shahkarResponse.Result?.Data ?? false)) {
+			e.JsonData.NotVerifiedNationalCodes.Add(p.NationalCode);
+			db.Set<UserEntity>().Update(e);
+			await db.SaveChangesAsync(ct);
+			return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
 		}
-		
+
 		e.UpdatedAt = DateTime.UtcNow;
 		e.NationalCode = p.NationalCode;
 		e.FirstName = p.FirstName;
