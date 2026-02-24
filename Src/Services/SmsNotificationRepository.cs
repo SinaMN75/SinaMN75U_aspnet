@@ -59,7 +59,7 @@ public class SmsNotificationService(
 		cache.Set("otp_" + user.Id, otp, TimeSpan.FromMinutes(5));
 
 		if (user.PhoneNumber.IsNull()) return false;
-		await SendSms(user.PhoneNumber, Core.App.SmsPanel.OtpPattern, otp);
+		await SendSms(user.PhoneNumber, Core.App.SmsPanel.Pattern, otp);
 		return true;
 	}
 }

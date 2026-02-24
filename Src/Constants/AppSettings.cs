@@ -38,7 +38,6 @@ public class SmsPanel {
 	public required TagSmsPanel Tag { get; init; }
 	public required string Pattern { get; init; }
 	public required string ApiKey { get; init; }
-	public required string OtpPattern { get; init; }
 }
 
 public class ItHub {
