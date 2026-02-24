@@ -84,12 +84,12 @@ public class UserJson {
 	public string? FatherName { get; set; }
 	public decimal? Weight { get; set; }
 	public decimal? Height { get; set; }
-	public ICollection<string> Health1 { get; set; } = [];
-	public ICollection<string> Health2 { get; set; } = [];
-	public ICollection<string> FoodAllergies { get; set; } = [];
-	public ICollection<string> DrugAllergies { get; set; } = [];
-	public ICollection<string> Sickness { get; set; } = [];
-	public ICollection<string> NotVerifiedNationalCodes { get; set; } = [];
-	public ICollection<UserAnswerJson> UserAnswerJson { get; set; } = [];
-	public ICollection<VisitCount> VisitCounts { get; set; } = [];
+	public ICollection<string>? Health1 { get; set; } = [];
+	public ICollection<string>? Health2 { get; set; } = [];
+	public ICollection<string>? FoodAllergies { get; set; } = [];
+	public ICollection<string>? DrugAllergies { get; set; } = [];
+	public ICollection<string>? Sickness { get; set; } = [];
+	public ICollection<string>? NotVerifiedNationalCodes { get; set; } = [];
+	public ICollection<UserAnswerJson>? UserAnswerJson { get; set; } = [];
+	public ICollection<VisitCount>? VisitCounts { get; set; } = [];
 }
