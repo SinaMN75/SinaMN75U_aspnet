@@ -32,15 +32,7 @@ public class SmsNotificationService(
 				break;
 			}
 			case TagSmsPanel.Kavenegar: {
-				await http.Post($"https://api.kavenegar.com/v1/{sms.ApiKey}/verify/lookup.json", new {
-						receptor = mobileNumber,
-						template,
-						token = param1,
-						token2 = param2,
-						token3 = param3
-					},
-					new Dictionary<string, string> { { "apikey", sms.ApiKey } }
-				);
+				await http.Post($"https://api.kavenegar.com/v1/{sms.ApiKey}/verify/lookup.json?receptor={mobileNumber}&token={param1}&template={template}", new { });
 				break;
 			}
 			case TagSmsPanel.NikSms:
@@ -56,7 +48,7 @@ public class SmsNotificationService(
 		int length = Core.App.BasicSettings.VerificationCodeLenght;
 
 		string otp = Random.Shared.Next((int)Math.Pow(10, length - 1), (int)Math.Pow(10, length)).ToString();
-		cache.Set("otp_" + user.Id, otp, TimeSpan.FromMinutes(5));
+		cache.Set("otp_" + user.Id, otp, TimeSpan.FromMinutes(1));
 
 		if (user.PhoneNumber.IsNull()) return false;
 		await SendSms(user.PhoneNumber, Core.App.SmsPanel.Pattern, otp);
