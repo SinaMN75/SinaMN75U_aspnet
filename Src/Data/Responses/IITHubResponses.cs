@@ -44,7 +44,7 @@ public class ItHubPostalCodeToAddressDetailResponse {
 	public string? Floor { get; set; }
 
 	[JsonPropertyName("houseNumber")]
-	public int HouseNumber { get; set; }
+	public string? HouseNumber { get; set; }
 
 	[JsonPropertyName("localityCode")]
 	public int LocalityCode { get; set; }

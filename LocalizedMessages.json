@@ -66,6 +66,7 @@
     "InternalServerError": "Internal server error",
     "YourDetailSubmittedSuccessfully": "Your Detail Submitted Successfully.",
     "SystemError": "System Error",
-    "ZipCodeMustBe10CharactersLong": "Zip Code must be 10 Characters Long."
+    "ZipCodeMustBe10CharactersLong": "Zip Code must be 10 Characters Long.",
+    "AddressWithThisZipCodeAlreadyExists": "Address with this ZipCode already exists"
   }
 }

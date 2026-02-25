@@ -28,7 +28,7 @@ public class AddressService(
 	public async Task<UResponse<AddressResponse?>> CreateFromZipCode(AddressCreateFromZipCodeParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<AddressResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
-		
+
 		AddressEntity entity;
 
 		AddressEntity? existingVerifiedAddress = await db.Set<AddressEntity>().Where(x => x.ZipCode == p.ZipCode && x.Tags.Contains(TagAddress.Verified)).FirstOrDefaultAsync(ct);
@@ -47,17 +47,19 @@ public class AddressService(
 					Street = address.Data!.Street,
 					Street2 = address.Data!.Street2,
 					LocalityName = address.Data!.LocalityName,
-					HouseNumber = address.Data!.HouseNumber.ToString(),
+					HouseNumber = address.Data!.HouseNumber,
 					Floor = address.Data!.Floor,
 					Description = address.Data!.Description
 				},
-				Tags = p.Tags
+				Tags = [TagAddress.Verified]
 			};
 		}
 		else {
+			if (existingVerifiedAddress.CreatorId == userData.Id) return new UResponse<AddressResponse?>(null, Usc.Conflict, ls.Get("AddressWithThisZipCodeAlreadyExists"));
 			entity = new AddressEntity {
 				CreatorId = userData.Id,
 				Title = p.Title,
+				ZipCode = p.ZipCode,
 				JsonData = new AddressJson {
 					Province = existingVerifiedAddress.JsonData.Province,
 					Township = existingVerifiedAddress.JsonData.Township,
