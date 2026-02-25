@@ -41,6 +41,7 @@ public class AddressService(
 			entity = new AddressEntity {
 				Title = p.Title,
 				CreatorId = userData.Id,
+				ZipCode = p.ZipCode,
 				JsonData = new AddressJson {
 					Province = address.Data!.Province,
 					Township = address.Data!.TownShip,
