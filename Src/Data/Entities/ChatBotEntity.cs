@@ -17,7 +17,7 @@ public class ChatBotEntity : BaseEntity<TagChatBot, ChatBotJsonData> {
 }
 
 public class ChatBotJsonData {
-	public List<ChatBotHistoryItem> History { get; set; } = [];
+	public ICollection<ChatBotHistoryItem> History { get; set; } = [];
 }
 
 public class ChatBotHistoryItem {

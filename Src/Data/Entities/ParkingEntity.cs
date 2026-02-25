@@ -9,7 +9,7 @@ public class ParkingEntity : BaseEntity<TagParking, ParkingJson> {
 
 	public UserEntity Creator { get; set; } = null!;
 
-	public IEnumerable<Guid> Users { get; set; } = [];
+	public ICollection<Guid> Users { get; set; } = [];
 
 	public decimal EntrancePrice { get; set; }
 	public decimal HourlyPrice { get; set; }
