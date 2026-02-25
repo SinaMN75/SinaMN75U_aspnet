@@ -11,7 +11,7 @@ public sealed class WalletJson {
 	public string? Description { get; set; }
 }
 
-public sealed class WalletTxnEntity: BaseEntity<TagWallet, WalletTxnJson> {
+public sealed class WalletTxnEntity: BaseEntity<TagWalletTxn, WalletTxnJson> {
 	public UserEntity Sender { get; set; } = null!;
 	public required Guid SenderId { get; set; }
 	
