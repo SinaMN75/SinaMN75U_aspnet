@@ -58,17 +58,14 @@ public class AuthService(
 		if (e.JsonData.NotVerifiedNationalCodes.ContainsSafe(p.NationalCode))
 			return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
 
-		UResponse<ITHubShahkarResponse?> shahkarResponse = await iTHubService.Shahkar(new ITHubShahkarParams {
+		ItHubBaseResponse<bool?> shahkarResponse = await iTHubService.Shahkar(new ITHubShahkarParams {
 			NationalCode = p.NationalCode,
 			Mobile = e.PhoneNumber!,
 		}, ct);
 
-		if (shahkarResponse.Result == null) return new UResponse<UserResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
-
-		if (shahkarResponse.Result?.Error?.CustomMessage?.IsNotNullOrEmpty() ?? false) return new UResponse<UserResponse?>(null, Usc.ShahkarError, shahkarResponse.Result.Error?.CustomMessage ?? ls.Get("ShahkarIsNotAvailableAtThisTime"));
-
-		if (!(shahkarResponse.Result?.Data ?? false)) {
-			e.JsonData.NotVerifiedNationalCodes?.Add(p.NationalCode);
+		if (shahkarResponse.Error?.ErrorCode != null && shahkarResponse.Error?.ErrorCode != 400) return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		if (shahkarResponse.Error?.ErrorCode == 400 || shahkarResponse.Data == false) {
+			e.JsonData.NotVerifiedNationalCodes.Add(p.NationalCode);
 			db.Set<UserEntity>().Update(e);
 			await db.SaveChangesAsync(ct);
 			return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));

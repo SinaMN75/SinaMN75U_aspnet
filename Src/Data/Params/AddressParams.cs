@@ -37,6 +37,8 @@ public sealed class AddressCreateParams : BaseCreateParams<TagAddress> {
 public sealed class AddressCreateFromZipCodeParams : BaseCreateParams<TagAddress> {
 	[UValidationRequired("TitleRequired")]
 	public required string Title { get; set; }
+
+	[UValidationStringLength(10, 10, "ZipCodeMustBe10CharactersLong")]
 	public required string ZipCode { get; set; }
 }
 

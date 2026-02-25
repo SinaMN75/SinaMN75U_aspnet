@@ -180,6 +180,7 @@ public enum TagParkingReport {
 }
 
 public enum TagAddress {
+	Verified = 101,
 	Test = 999
 }
 

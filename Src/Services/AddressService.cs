@@ -28,58 +28,53 @@ public class AddressService(
 	public async Task<UResponse<AddressResponse?>> CreateFromZipCode(AddressCreateFromZipCodeParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<AddressResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
-
-		AddressEntity entity;
 		
-		List<AddressResponse> addresses = await db.Set<AddressEntity>().Where(x => x.ZipCode == p.ZipCode).Select(Projections.AddressSelector(new AddressSelectorArgs())).ToListAsync(ct);
-		if (addresses.IsNotNullOrEmpty()) {
-			AddressResponse i = addresses.First();
-			entity = new AddressEntity {
-				CreatorId = userData.Id,
-				Title = p.Title,
-				JsonData = new AddressJson {
-					Province = i.JsonData.Province,
-					Township = i.JsonData.Township,
-					Street = i.JsonData.Street,
-					Street2 = i.JsonData.Street2,
-					LocalityName = i.JsonData.LocalityName,
-					HouseNumber = i.JsonData.HouseNumber,
-					Floor = i.JsonData.Floor,
-					Description =i.JsonData.Description
-				},
-				Tags = i.Tags
-			};
-			await db.Set<AddressEntity>().AddAsync(entity, ct);
-			await db.SaveChangesAsync(ct);
-			return new UResponse<AddressResponse?>(entity.MapToResponse());
-		}
-		else {
-			UResponse<ItHubPostalCodeToAddressDetailResponse?> address = await itHubService.PostalCodeToAddressDetail(new PostalCodeToAddressDetailParams {
+		AddressEntity entity;
+
+		AddressEntity? existingVerifiedAddress = await db.Set<AddressEntity>().Where(x => x.ZipCode == p.ZipCode && x.Tags.Contains(TagAddress.Verified)).FirstOrDefaultAsync(ct);
+		if (existingVerifiedAddress == null) {
+			ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse?> address = await itHubService.PostalCodeToAddressDetail(new PostalCodeToAddressDetailParams {
 				PostCode = p.ZipCode,
 				OrderId = "1"
 			}, ct);
 
-			ItHubPostalCodeToAddressDetailResponse i = address.Result!;
-			
 			entity = new AddressEntity {
 				Title = p.Title,
-				CreatorId =  userData.Id,
+				CreatorId = userData.Id,
 				JsonData = new AddressJson {
-					Province = i.Province,
-					Township = i.TownShip,
-					Street = i.Street,
-					Street2 = i.Street2,
-					LocalityName = i.LocalityName,
-					HouseNumber = i.HouseNumber.ToString(),
-					Floor = i.Floor,
-					Description =i.Description
+					Province = address.Data!.Province,
+					Township = address.Data!.TownShip,
+					Street = address.Data!.Street,
+					Street2 = address.Data!.Street2,
+					LocalityName = address.Data!.LocalityName,
+					HouseNumber = address.Data!.HouseNumber.ToString(),
+					Floor = address.Data!.Floor,
+					Description = address.Data!.Description
 				},
 				Tags = p.Tags
 			};
-			await db.Set<AddressEntity>().AddAsync(entity, ct);
-			await db.SaveChangesAsync(ct);
-			return new UResponse<AddressResponse?>(entity.MapToResponse());
 		}
+		else {
+			entity = new AddressEntity {
+				CreatorId = userData.Id,
+				Title = p.Title,
+				JsonData = new AddressJson {
+					Province = existingVerifiedAddress.JsonData.Province,
+					Township = existingVerifiedAddress.JsonData.Township,
+					Street = existingVerifiedAddress.JsonData.Street,
+					Street2 = existingVerifiedAddress.JsonData.Street2,
+					LocalityName = existingVerifiedAddress.JsonData.LocalityName,
+					HouseNumber = existingVerifiedAddress.JsonData.HouseNumber,
+					Floor = existingVerifiedAddress.JsonData.Floor,
+					Description = existingVerifiedAddress.JsonData.Description
+				},
+				Tags = existingVerifiedAddress.Tags
+			};
+		}
+
+		await db.Set<AddressEntity>().AddAsync(entity, ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse<AddressResponse?>(entity.MapToResponse());
 	}
 
 	public async Task<UResponse<IEnumerable<AddressResponse>?>> Read(AddressReadParams p, CancellationToken ct) {

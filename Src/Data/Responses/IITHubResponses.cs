@@ -8,32 +8,21 @@ public class ItHubBaseResponse<T> {
 	public object? Meta { get; set; }
 
 	[JsonPropertyName("error")]
-	public string? Error { get; set; }
+	public Error? Error { get; set; }
 }
 
 public class ITHubGetAccessTokenResponse {
 	[JsonPropertyName("access_token")]
-	public string? AccessToken { get; set; } = null!;
+	public string? AccessToken { get; set; }
 
 	[JsonPropertyName("expires_in")]
 	public int ExpiresIn { get; set; }
 
 	[JsonPropertyName("token_type")]
-	public string? TokenType { get; set; } = null!;
+	public string? TokenType { get; set; }
 
 	[JsonPropertyName("scope")]
-	public string? Scope { get; set; } = null!;
-}
-
-public class ITHubShahkarResponse {
-	[JsonPropertyName("data")]
-	public bool? Data { get; set; }
-
-	[JsonPropertyName("meta")]
-	public object? Meta { get; set; }
-
-	[JsonPropertyName("error")]
-	public Error? Error { get; set; }
+	public string? Scope { get; set; }
 }
 
 public class Error {

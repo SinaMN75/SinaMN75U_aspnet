@@ -1,14 +1,14 @@
 namespace SinaMN75U.Services;
 
 public interface IITHubService {
-	Task<UResponse<ITHubShahkarResponse?>> Shahkar(ITHubShahkarParams p, CancellationToken ct);
-	Task<UResponse<ItHubPostalCodeToAddressDetailResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct);
+	Task<ItHubBaseResponse<bool?>> Shahkar(ITHubShahkarParams p, CancellationToken ct);
+	Task<ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct);
 }
 
 public class ITHubService(IHttpClientService httpClient, ILocalizationService ls) : IITHubService {
-	public async Task<UResponse<ITHubShahkarResponse?>> Shahkar(ITHubShahkarParams p, CancellationToken ct) {
+	public async Task<ItHubBaseResponse<bool?>> Shahkar(ITHubShahkarParams p, CancellationToken ct) {
 		ITHubGetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.AccessToken == null) return new UResponse<ITHubShahkarResponse?>(null, Usc.BadRequest, "توکن اعتبار ندارد.");
+		if (tokenResponse?.AccessToken == null) return new ItHubBaseResponse<bool?> { Error = new Error { ErrorCode = 605, CustomMessage = ls.Get("ShahkarIsNotAvailableAtThisTime") } };
 
 		HttpResponseMessage response = await httpClient.Post(
 			uri: "https://gateway.itsaaz.ir/hub/api/v1/Shahkar/MixVerifyMobile",
@@ -20,34 +20,25 @@ public class ITHubService(IHttpClientService httpClient, ILocalizationService ls
 		);
 
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
-		ITHubShahkarResponse result = responseBody.FromJson<ITHubShahkarResponse>();
-		return new UResponse<ITHubShahkarResponse?>(result);
+		return responseBody.FromJson<ItHubBaseResponse<bool?>>();
 	}
 
-	public async Task<UResponse<ItHubPostalCodeToAddressDetailResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct) {
+	public async Task<ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct) {
 		ITHubGetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.AccessToken == null) return new UResponse<ItHubPostalCodeToAddressDetailResponse?>(null, Usc.BadRequest, "توکن اعتبار ندارد.");
-
-		var requestBody = new {
-			postcode = p.PostCode,
-			orderId = p.OrderId
-		};
-
-		Dictionary<string, string> headers = new() {
-			{ "Authorization", $"Bearer {tokenResponse.AccessToken}" },
-			{ "Accept", "application/json" }
-		};
-
+		if (tokenResponse?.AccessToken == null) return new ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse?> { Error = new Error { ErrorCode = 605, CustomMessage = ls.Get("ShahkarIsNotAvailableAtThisTime") } };
+		
 		HttpResponseMessage response = await httpClient.Post(
 			uri: "https://gateway.itsaaz.ir/hub/api/v1/Address/DetailsTypeA",
-			body: requestBody,
-			headers: headers
+			body: new { postcode = p.PostCode, orderId = p.OrderId },
+			headers: new Dictionary<string, string> {
+				{ "Authorization", $"Bearer {tokenResponse.AccessToken}" },
+				{ "Accept", "application/json" }
+			}
 		);
 
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
 
-		ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse>? apiResponse = JsonSerializer.Deserialize<ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse>>(responseBody);
-		return new UResponse<ItHubPostalCodeToAddressDetailResponse?>(apiResponse?.Data, message: apiResponse?.Error ?? "");
+		return responseBody.FromJson<ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse?>>();
 	}
 
 	private async Task<ITHubGetAccessTokenResponse?> GetAccessToken(CancellationToken ct) {
