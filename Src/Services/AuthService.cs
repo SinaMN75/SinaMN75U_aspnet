@@ -198,6 +198,8 @@ public class AuthService(
 		UserEntity? user = await db.Set<UserEntity>()
 			.Include(x => x.Media)
 			.Include(x => x.Categories)
+			.Include(x => x.Addresses)
+			.Include(x => x.Wallets)
 			.FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
 		return user == null ? new UResponse<UserEntity?>(null, Usc.NotFound, ls.Get("UserNotFound")) : new UResponse<UserEntity?>(user);
 	}
