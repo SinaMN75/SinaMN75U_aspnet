@@ -32,6 +32,7 @@ public sealed class TicketSelectorArgs {
 public sealed class UserSelectorArgs {
 	public CategorySelectorArgs? Category { get; set; }
 	public ContractSelectorArgs? Contract { get; set; }
+	public AddressSelectorArgs? Address { get; set; }
 	public MediaSelectorArgs? Media { get; set; }
 	public InvoiceSelectorArgs? Invoice { get; set; }
 }
@@ -109,7 +110,8 @@ public static class Projections {
 		NationalCode = x.NationalCode,
 		Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
 		Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(args.Media)).ToList(),
-		Contracts = args.Contract == null ? null : x.Contracts.AsQueryable().Select(ContractSelector(args.Contract)).ToList()
+		Contracts = args.Contract == null ? null : x.Contracts.AsQueryable().Select(ContractSelector(args.Contract)).ToList(),
+		Addresses = args.Address == null ? null : x.Addresses.AsQueryable().Select(AddressSelector(args.Address)).ToList(),
 	};
 
 	public static Expression<Func<ParkingEntity, ParkingResponse>> ParkingSelector(ParkingSelectorArgs args) => x => new ParkingResponse {
