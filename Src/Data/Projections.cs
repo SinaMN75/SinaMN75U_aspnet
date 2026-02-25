@@ -22,7 +22,9 @@ public sealed class ParkingReportSelectorArgs { }
 
 public sealed class VehicleSelectorArgs { }
 
-public sealed class AddressSelectorArgs { }
+public sealed class AddressSelectorArgs {
+	public UserSelectorArgs? Creator { get; set; }
+}
 
 public sealed class TicketSelectorArgs {
 	public MediaSelectorArgs? Media { get; set; }
@@ -82,7 +84,22 @@ public static class Projections {
 			Tags = x.Tags,
 			JsonData = x.JsonData,
 			Title = x.Title,
-			CreatorId = x.CreatorId
+			CreatorId = x.CreatorId,
+			Creator = args.Creator == null
+				? null
+				: new UserResponse {
+					Id = x.Creator.Id,
+					JsonData = x.Creator.JsonData,
+					Tags = x.Creator.Tags,
+					UserName = x.Creator.UserName,
+					PhoneNumber = x.Creator.PhoneNumber,
+					Email = x.Creator.Email,
+					FirstName = x.Creator.FirstName,
+					LastName = x.Creator.LastName,
+					NationalCode = x.Creator.NationalCode,
+					Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector(args.Creator.Media)).ToList(),
+					Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
+				}
 		};
 
 	public static Expression<Func<MediaEntity, MediaResponse>> MediaSelector(MediaSelectorArgs args) =>
