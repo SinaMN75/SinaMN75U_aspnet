@@ -17,7 +17,6 @@ public class UserResponse : BaseResponse<TagUser, UserJson> {
 	public ICollection<MediaResponse>? Media { get; set; }
 	public ICollection<ContractResponse>? Contracts { get; set; }
 	public ICollection<AddressResponse>? Addresses { get; set; }
-	public ICollection<string> NotVerifiedNationalCodes { get; set; } = [];
 }
 
 public sealed class LoginResponse {
@@ -25,4 +24,17 @@ public sealed class LoginResponse {
 	public required string RefreshToken { get; set; }
 	public required string Expires { get; set; }
 	public required UserResponse User { get; set; }
+}
+
+public class UserExtraResponse {
+	public string? NationalCardFront { get; set; }
+	public string? NationalCardBack { get; set; }
+	public string? BirthCertificateFirst { get; set; }
+	public string? BirthCertificateSecond { get; set; }
+	public string? BirthCertificateThird { get; set; }
+	public string? BirthCertificateForth { get; set; }
+	public string? BirthCertificateFifth { get; set; }
+	public string? VisualAuthentication { get; set; }
+
+	public ICollection<string> NotVerifiedNationalCodes { get; set; } = [];
 }

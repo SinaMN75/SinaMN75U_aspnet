@@ -52,10 +52,10 @@ public class AuthService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<UserResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
+		UserEntity? e = await db.Set<UserEntity>().Include(x => x.Extra).AsTracking().FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
 		if (e == null) return new UResponse<UserResponse?>(null, Usc.NotFound);
 
-		if (e.JsonData.NotVerifiedNationalCodes.ContainsSafe(p.NationalCode))
+		if (e.Extra.NotVerifiedNationalCodes.ContainsSafe(p.NationalCode))
 			return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
 
 		ItHubBaseResponse<bool?> shahkarResponse = await iTHubService.Shahkar(new ITHubShahkarParams {
@@ -65,7 +65,7 @@ public class AuthService(
 
 		if (shahkarResponse.Error?.ErrorCode != null && shahkarResponse.Error?.ErrorCode != 400) return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 		if (shahkarResponse.Error?.ErrorCode == 400 || shahkarResponse.Data == false) {
-			e.JsonData.NotVerifiedNationalCodes.Add(p.NationalCode);
+			e.Extra.NotVerifiedNationalCodes.Add(p.NationalCode);
 			db.Set<UserEntity>().Update(e);
 			await db.SaveChangesAsync(ct);
 			return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
@@ -163,7 +163,7 @@ public class AuthService(
 			Email = p.PhoneNumber,
 			JsonData = new UserJson(),
 			Tags = [],
-			UserExtra = new UserExtraEntity {
+			Extra = new UserExtraEntity {
 				UserId = userId,
 				JsonData = new UserExtraJson(),
 				Tags = []

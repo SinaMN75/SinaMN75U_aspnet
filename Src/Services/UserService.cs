@@ -7,6 +7,9 @@ public interface IUserService {
 	public Task<UResponse<UserResponse?>> ReadById(IdParams p, CancellationToken ct);
 	public Task<UResponse<UserResponse?>> Update(UserUpdateParams p, bool auth, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
+
+	public Task<UResponse<UserExtraResponse?>> ReadExtraById(IdParams p, CancellationToken ct);
+	public Task<UResponse> UpdateExtra(UserExtraUpdateParams p, CancellationToken ct);
 }
 
 public class UserService(
@@ -72,8 +75,7 @@ public class UserService(
 				Address = userParam.Address,
 				FatherName = userParam.FatherName,
 				FoodAllergies = userParam.FoodAllergies ?? [],
-				DrugAllergies = userParam.DrugAllergies ?? [],
-				NotVerifiedNationalCodes = userParam.NotVerifiedNationalCodes ?? []
+				DrugAllergies = userParam.DrugAllergies ?? []
 			},
 			Tags = userParam.Tags,
 			CreatedAt = DateTime.UtcNow,
@@ -122,15 +124,6 @@ public class UserService(
 
 		e.UpdatedAt = DateTime.UtcNow;
 
-		if (p.AddHealth1.IsNotNullOrEmpty()) e.JsonData.Health1.AddRangeIfNotExist(p.AddHealth1);
-		if (p.RemoveHealth1.IsNotNullOrEmpty()) e.JsonData.Health1?.RemoveAll(x => p.RemoveHealth1.Contains(x));
-		if (p.AddHealth2.IsNotNullOrEmpty()) e.JsonData.Health2?.AddRangeIfNotExist(p.AddHealth2);
-		if (p.RemoveHealth2.IsNotNullOrEmpty()) e.JsonData.Health2?.RemoveAll(x => p.RemoveHealth2.Contains(x));
-
-		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
-		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
-		if (p.Tags.IsNotNullOrEmpty()) e.Tags = p.Tags;
-
 		if (p.Categories.IsNotNullOrEmpty()) {
 			List<CategoryEntity>? list = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct);
 			e.Categories.AddRangeIfNotExist(list);
@@ -152,9 +145,9 @@ public class UserService(
 		if (e == null) return new UResponse<UserResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
 
 		try {
-			VisitCount? visitCount = e.JsonData.VisitCounts?.FirstOrDefault(v => v.UserId == (userData?.Id ?? Guid.Empty));
+			VisitCount? visitCount = e.JsonData.VisitCounts.FirstOrDefault(v => v.UserId == (userData?.Id ?? Guid.Empty));
 			if (visitCount != null) visitCount.Count++;
-			else e.JsonData.VisitCounts?.Add(new VisitCount { UserId = userData?.Id ?? Guid.Empty, Count = 1 });
+			else e.JsonData.VisitCounts.Add(new VisitCount { UserId = userData?.Id ?? Guid.Empty, Count = 1 });
 		}
 		catch (Exception) {
 			// ignored
@@ -169,5 +162,40 @@ public class UserService(
 
 		int count = await db.Set<UserEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 		return count == 0 ? new UResponse(Usc.NotFound, ls.Get("UserNotFound")) : new UResponse(Usc.Deleted, ls.Get("UserDeleted"));
+	}
+	
+	public async Task<UResponse<UserExtraResponse?>> ReadExtraById(IdParams p, CancellationToken ct) {
+		UserExtraEntity? e = await db.Set<UserExtraEntity>().FirstOrDefaultAsync(x => x.UserId == p.Id, ct);
+		if (e == null) return new UResponse<UserExtraResponse?>(null, Usc.NotFound);
+		
+		return new UResponse<UserExtraResponse?>(new UserExtraResponse {
+			NationalCardFront = e.NationalCardFront,
+			NationalCardBack = e.NationalCardBack,
+			BirthCertificateFirst = e.BirthCertificateFirst,
+			BirthCertificateSecond = e.BirthCertificateSecond,
+			BirthCertificateThird = e.BirthCertificateThird,
+			BirthCertificateForth = e.BirthCertificateForth,
+			BirthCertificateFifth = e.BirthCertificateFifth,
+			VisualAuthentication = e.VisualAuthentication,
+			NotVerifiedNationalCodes = e.NotVerifiedNationalCodes
+		});
+	}
+	
+	public async Task<UResponse> UpdateExtra(UserExtraUpdateParams p, CancellationToken ct) {
+		UserExtraEntity? e = await db.Set<UserExtraEntity>().FirstOrDefaultAsync(x => x.UserId == p.Id, ct);
+		if (e == null) return new UResponse<UserExtraResponse?>(null, Usc.NotFound);
+		
+		e.NationalCardFront = p.NationalCardFront;
+		e.NationalCardBack = p.NationalCardBack;
+		e.BirthCertificateFirst = p.BirthCertificateFirst;
+		e.BirthCertificateSecond = p.BirthCertificateSecond;
+		e.BirthCertificateThird = p.BirthCertificateThird;
+		e.BirthCertificateForth = p.BirthCertificateForth;
+		e.BirthCertificateFifth = p.BirthCertificateFifth;
+		e.VisualAuthentication = p.VisualAuthentication;
+
+		db.Set<UserExtraEntity>().Update(e);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
 	}
 }

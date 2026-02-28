@@ -45,7 +45,7 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 	public DateTime? Birthdate { get; set; }
 
 	[Required]
-	public UserExtraEntity UserExtra { get; set; } = null!;
+	public UserExtraEntity Extra { get; set; } = null!;
 
 	public ICollection<CategoryEntity> Categories { get; set; } = [];
 
@@ -96,7 +96,6 @@ public class UserJson {
 	public ICollection<string> FoodAllergies { get; set; } = [];
 	public ICollection<string> DrugAllergies { get; set; } = [];
 	public ICollection<string> Sickness { get; set; } = [];
-	public ICollection<string> NotVerifiedNationalCodes { get; set; } = [];
 	public ICollection<UserAnswerJson> UserAnswerJson { get; set; } = [];
 	public ICollection<VisitCount> VisitCounts { get; set; } = [];
 }
@@ -105,8 +104,14 @@ public class UserJson {
 public sealed class UserExtraEntity : BaseEntity<TagUserExtra, UserExtraJson> {
 	public string? NationalCardFront { get; set; }
 	public string? NationalCardBack { get; set; }
-	public string? NationalNoteFirst { get; set; }
-	public string? SelfieVerification { get; set; }
+	public string? BirthCertificateFirst { get; set; }
+	public string? BirthCertificateSecond { get; set; }
+	public string? BirthCertificateThird { get; set; }
+	public string? BirthCertificateForth { get; set; }
+	public string? BirthCertificateFifth { get; set; }
+	public string? VisualAuthentication { get; set; }
+
+	public ICollection<string> NotVerifiedNationalCodes { get; set; } = [];
 
 	public UserEntity User { get; set; } = null!;
 	public required Guid UserId { get; set; }

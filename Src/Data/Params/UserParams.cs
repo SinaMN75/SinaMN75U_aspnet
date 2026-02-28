@@ -31,42 +31,49 @@ public sealed class UserCreateParams : BaseParams {
 	public ICollection<string>? FoodAllergies { get; set; }
 	public ICollection<string>? DrugAllergies { get; set; }
 	public ICollection<string>? Sickness { get; set; }
-	public ICollection<string>? NotVerifiedNationalCodes { get; set; }
 
 	[UValidationMinCollectionLength(1, "TagsRequired")]
 	public required List<TagUser> Tags { get; set; }
 
 	public IEnumerable<Guid>? Categories { get; set; }
 
-	public UserEntity MapToEntity() => new() {
-		UserName = UserName,
-		Password = UPasswordHasher.Hash(Password),
-		RefreshToken = "",
-		PhoneNumber = PhoneNumber,
-		Email = Email,
-		FirstName = FirstName,
-		LastName = LastName,
-		Bio = Bio,
-		Country = Country,
-		State = State,
-		City = City,
-		NationalCode = NationalCode,
-		Birthdate = Birthdate,
-		JsonData = new UserJson {
-			Weight = Weight,
-			Height = Height,
-			Address = Address,
-			FatherName = FatherName,
-			FcmToken = FcmToken,
-			Health1 = Health1 ?? [],
-			Health2 = Health2 ?? [],
-			FoodAllergies = FoodAllergies ?? [],
-			DrugAllergies = DrugAllergies ?? [],
-			Sickness = Sickness ?? [],
-			NotVerifiedNationalCodes = NotVerifiedNationalCodes ?? [],
-		},
-		Tags = Tags,
-	};
+	public UserEntity MapToEntity() {
+		Guid id = Guid.CreateVersion7();
+		return new UserEntity {
+			Id = id,
+			UserName = UserName,
+			Password = UPasswordHasher.Hash(Password),
+			RefreshToken = "",
+			PhoneNumber = PhoneNumber,
+			Email = Email,
+			FirstName = FirstName,
+			LastName = LastName,
+			Bio = Bio,
+			Country = Country,
+			State = State,
+			City = City,
+			NationalCode = NationalCode,
+			Birthdate = Birthdate,
+			Tags = Tags,
+			JsonData = new UserJson {
+				Weight = Weight,
+				Height = Height,
+				Address = Address,
+				FatherName = FatherName,
+				FcmToken = FcmToken,
+				Health1 = Health1 ?? [],
+				Health2 = Health2 ?? [],
+				FoodAllergies = FoodAllergies ?? [],
+				DrugAllergies = DrugAllergies ?? [],
+				Sickness = Sickness ?? [],
+			},
+			Extra = {
+				JsonData = new UserExtraJson(),
+				Tags = [],
+				UserId = id
+			}
+		};
+	}
 }
 
 public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {
@@ -99,48 +106,6 @@ public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {
 	public ICollection<string>? AddNotVerifiedNationalCodes { get; set; }
 	public ICollection<string>? RemoveNotVerifiedNationalCodes { get; set; }
 	public ICollection<Guid>? Categories { get; set; }
-
-	public void MapToEntity(UserEntity e, string? hashedPassword = null) {
-		if (hashedPassword != null) e.Password = hashedPassword;
-		if (UserName != null) e.UserName = UserName;
-		if (PhoneNumber != null) e.PhoneNumber = PhoneNumber;
-		if (Email != null) e.Email = Email;
-		if (FirstName != null) e.FirstName = FirstName;
-		if (LastName != null) e.LastName = LastName;
-		if (Bio != null) e.Bio = Bio;
-		if (Country != null) e.Country = Country;
-		if (State != null) e.State = State;
-		if (City != null) e.City = City;
-		if (NationalCode != null) e.NationalCode = NationalCode;
-		if (Birthdate.HasValue) e.Birthdate = Birthdate;
-
-		if (FcmToken != null) e.JsonData.FcmToken = FcmToken;
-		if (Address != null) e.JsonData.Address = Address;
-		if (FatherName != null) e.JsonData.FatherName = FatherName;
-		if (Weight.HasValue) e.JsonData.Weight = Weight;
-		if (Height.HasValue) e.JsonData.Height = Height;
-
-		if (Health1 != null) e.JsonData.Health1 = Health1;
-		if (AddHealth1 != null)
-			foreach (string item in AddHealth1) e.JsonData.Health1?.Add(item);
-		if (RemoveHealth1 != null)
-			foreach (string item in RemoveHealth1) e.JsonData.Health1?.Remove(item);
-		if (Health2 != null) e.JsonData.Health2 = Health2;
-		if (AddHealth2 != null)
-			foreach (string item in AddHealth2) e.JsonData.Health2?.Add(item);
-		if (RemoveHealth2 != null)
-			foreach (string item in RemoveHealth2) e.JsonData.Health2?.Remove(item);
-		if (AddNotVerifiedNationalCodes != null)
-			foreach (string item in AddNotVerifiedNationalCodes) e.JsonData.NotVerifiedNationalCodes?.Add(item);
-		if (RemoveNotVerifiedNationalCodes != null)
-			foreach (string item in RemoveNotVerifiedNationalCodes) e.JsonData.NotVerifiedNationalCodes?.Remove(item);
-
-		if (FoodAllergies != null) e.JsonData.FoodAllergies = FoodAllergies;
-		if (DrugAllergies != null) e.JsonData.DrugAllergies = DrugAllergies;
-		if (Sickness != null) e.JsonData.Sickness = Sickness;
-
-		if (Tags != null) e.Tags = Tags;
-	}
 }
 
 public sealed class UserReadParams : BaseReadParams<TagUser> {
@@ -163,4 +128,18 @@ public sealed class UserBulkCreateParams : BaseParams {
 	[UValidationRequired("UsersRequired")]
 	[UValidationMinCollectionLength(1, "AtLeastOneUserRequired")]
 	public required List<UserCreateParams> Users { get; set; }
+}
+
+public class UserExtraUpdateParams : BaseUpdateParams<TagUserExtra> {
+	public string? NationalCardFront { get; set; }
+	public string? NationalCardBack { get; set; }
+	public string? BirthCertificateFirst { get; set; }
+	public string? BirthCertificateSecond { get; set; }
+	public string? BirthCertificateThird { get; set; }
+	public string? BirthCertificateForth { get; set; }
+	public string? BirthCertificateFifth { get; set; }
+	public string? VisualAuthentication { get; set; }
+
+	public ICollection<string> AddNotVerifiedNationalCodes { get; set; } = [];
+	public ICollection<string> RemoveNotVerifiedNationalCodes { get; set; } = [];
 }
