@@ -25,6 +25,7 @@ public static class DbModelBuilder {
 			b.OwnsMany(i => i.UserAnswerJson).OwnsMany(i => i.Results).OwnsOne(i => i.Answer);
 			b.OwnsMany(i => i.VisitCounts);
 		});
+		builder.Entity<UserExtraEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<ProductEntity>().OwnsOne(e => e.JsonData, b => {
 			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
 			b.OwnsMany(i => i.VisitCounts);
