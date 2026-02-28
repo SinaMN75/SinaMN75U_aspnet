@@ -44,6 +44,9 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 
 	public DateTime? Birthdate { get; set; }
 
+	[Required]
+	public UserExtraEntity UserExtra { get; set; } = null!;
+
 	public ICollection<CategoryEntity> Categories { get; set; } = [];
 
 	public ICollection<MediaEntity> Media { get; set; } = [];
@@ -57,9 +60,9 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 	public ICollection<InvoiceEntity> Invoices { get; set; } = [];
 
 	public ICollection<TxnEntity> Txns { get; set; } = [];
-	
+
 	public ICollection<AddressEntity> Addresses { get; set; } = [];
-	
+
 	public ICollection<WalletEntity> Wallets { get; set; } = [];
 
 	public UserResponse MapToResponse() => new() {
@@ -96,4 +99,19 @@ public class UserJson {
 	public ICollection<string> NotVerifiedNationalCodes { get; set; } = [];
 	public ICollection<UserAnswerJson> UserAnswerJson { get; set; } = [];
 	public ICollection<VisitCount> VisitCounts { get; set; } = [];
+}
+
+[Table("UserExtras")]
+public sealed class UserExtraEntity : BaseEntity<TagUserExtra, UserExtraJson> {
+	public string? NationalCardFront { get; set; }
+	public string? NationalCardBack { get; set; }
+	public string? NationalNoteFirst { get; set; }
+	public string? SelfieVerification { get; set; }
+
+	public UserEntity User { get; set; } = null!;
+	public required Guid UserId { get; set; }
+}
+
+public sealed class UserExtraJson {
+	public string? Description { get; set; }
 }

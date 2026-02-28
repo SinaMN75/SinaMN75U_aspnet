@@ -150,8 +150,10 @@ public class AuthService(
 			return new UResponse();
 		}
 
+		Guid userId = Guid.CreateVersion7();
+		
 		UserEntity e = new() {
-			Id = Guid.CreateVersion7(),
+			Id = userId,
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
 			UserName = p.PhoneNumber,
@@ -160,9 +162,16 @@ public class AuthService(
 			PhoneNumber = p.PhoneNumber,
 			Email = p.PhoneNumber,
 			JsonData = new UserJson(),
-			Tags = []
+			Tags = [],
+			UserExtra = new UserExtraEntity {
+				UserId = userId,
+				JsonData = new UserExtraJson(),
+				Tags = []
+			}
 		};
 
+		await db.Set<UserEntity>().AddAsync(e, ct);
+		
 		await db.SaveChangesAsync(ct);
 		if (!await smsNotificationService.SendOtpSms(e)) return new UResponse(Usc.MaximumLimitReached, ls.Get("MaxOtpReached"));
 

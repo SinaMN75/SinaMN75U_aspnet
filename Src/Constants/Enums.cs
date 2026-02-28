@@ -185,9 +185,15 @@ public enum TagAddress {
 }
 
 public enum TagWallet {
+	Primary = 101,
 	Test = 999
 }
 
 public enum TagWalletTxn {
+	Test = 999
+}
+
+public enum TagUserExtra {
+	Verified = 101,
 	Test = 999
 }

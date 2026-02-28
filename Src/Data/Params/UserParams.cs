@@ -65,7 +65,7 @@ public sealed class UserCreateParams : BaseParams {
 			Sickness = Sickness ?? [],
 			NotVerifiedNationalCodes = NotVerifiedNationalCodes ?? [],
 		},
-		Tags = Tags
+		Tags = Tags,
 	};
 }
 
