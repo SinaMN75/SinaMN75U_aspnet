@@ -1,13 +1,13 @@
 namespace SinaMN75U.Data.Responses;
 
-public class ParkingResponse : BaseResponse<TagParking, ParkingJson> {
+public sealed class ParkingResponse : BaseResponse<TagParking, ParkingJson> {
 	public required string Title { get; set; }
 	public required Guid CreatorId { get; set; }
 	public UserResponse Creator { get; set; } = null!;
 	public IEnumerable<Guid> Users { get; set; } = [];
 }
 
-public class ParkingReportResponse : BaseResponse<TagParkingReport, ParkingReportJson> {
+public sealed class ParkingReportResponse : BaseResponse<TagParkingReport, ParkingReportJson> {
 	public required DateTime StartDate { get; set; }
 	public DateTime? EndDate { get; set; }
 	public decimal? Amount { get; set; }

@@ -44,10 +44,10 @@ public static partial class AspNetConfig {
 			}
 		});
 
-		builder.Services.AddResponseCompression(opts => {
-			opts.EnableForHttps = true;
-			opts.Providers.Add<BrotliCompressionProvider>();
-			opts.Providers.Add<GzipCompressionProvider>();
+		builder.Services.AddResponseCompression(o => {
+			o.EnableForHttps = true;
+			o.Providers.Add<BrotliCompressionProvider>();
+			o.Providers.Add<GzipCompressionProvider>();
 		});
 
 		builder.Services.AddSingleton<IFileProvider>(new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")));
@@ -83,6 +83,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IParkingService, ParkingService>();
 		builder.Services.AddScoped<IITHubService, ITHubService>();
 		builder.Services.AddScoped<IAddressService, AddressService>();
+		builder.Services.AddScoped<IWalletService, WalletService>();
 	}
 
 	public static void UseUServices(this WebApplication app) {
@@ -116,6 +117,7 @@ public static partial class AspNetConfig {
 		app.MapVehicleRoutes(RouteTags.Vehicle);
 		app.MapInquiryRoutes(RouteTags.Inquiry);
 		app.MapAddressRoutes(RouteTags.Address);
+		app.MapWalletRoutes(RouteTags.Wallet);
 	}
 
 	private static string CleanAndFormatSql(string sql) {

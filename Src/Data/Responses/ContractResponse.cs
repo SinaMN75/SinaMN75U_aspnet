@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Responses;
 
-public class ContractResponse : BaseResponse<TagContract, ContractJson> {
+public sealed class ContractResponse : BaseResponse<TagContract, ContractJson> {
 	public required DateTime StartDate { get; set; }
 	public required DateTime EndDate { get; set; }
 	public required decimal Deposit { get; set; }

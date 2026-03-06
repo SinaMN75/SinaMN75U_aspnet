@@ -17,7 +17,8 @@ public class AuthService(
 	ITokenService ts,
 	ISmsNotificationService smsNotificationService,
 	ILocalStorageService cache,
-	IITHubService iTHubService
+	IITHubService iTHubService,
+	IWalletService walletService
 ) : IAuthService {
 	public async Task<UResponse<LoginResponse?>> Register(RegisterParams p, CancellationToken ct) {
 		bool isUserExists = await db.Set<UserEntity>().AnyAsync(x => x.UserName == p.UserName, ct);
@@ -38,7 +39,7 @@ public class AuthService(
 
 		await db.Set<UserEntity>().AddAsync(user, ct);
 		await db.SaveChangesAsync(ct);
-
+		await walletService.Create(user.Id, ct);
 
 		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = CreateToken(user),
@@ -171,8 +172,8 @@ public class AuthService(
 		};
 
 		await db.Set<UserEntity>().AddAsync(e, ct);
-		
 		await db.SaveChangesAsync(ct);
+		await walletService.Create(e.Id, ct);
 		if (!await smsNotificationService.SendOtpSms(e)) return new UResponse(Usc.MaximumLimitReached, ls.Get("MaxOtpReached"));
 
 		return new UResponse();

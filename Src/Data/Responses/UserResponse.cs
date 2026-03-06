@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Responses;
 
-public class UserResponse : BaseResponse<TagUser, UserJson> {
+public sealed class UserResponse : BaseResponse<TagUser, UserJson> {
 	public string? UserName { get; set; } = null!;
 	public string? PhoneNumber { get; set; }
 	public string? Email { get; set; }
@@ -26,7 +26,7 @@ public sealed class LoginResponse {
 	public required UserResponse User { get; set; }
 }
 
-public class UserExtraResponse {
+public sealed class UserExtraResponse {
 	public string? NationalCardFront { get; set; }
 	public string? NationalCardBack { get; set; }
 	public string? BirthCertificateFirst { get; set; }
@@ -35,6 +35,7 @@ public class UserExtraResponse {
 	public string? BirthCertificateForth { get; set; }
 	public string? BirthCertificateFifth { get; set; }
 	public string? VisualAuthentication { get; set; }
+	public string? ESignature { get; set; }
 
 	public ICollection<string> NotVerifiedNationalCodes { get; set; } = [];
 }

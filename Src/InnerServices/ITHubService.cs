@@ -1,11 +1,14 @@
-namespace SinaMN75U.Services;
+namespace SinaMN75U.InnerServices;
 
 public interface IITHubService {
 	Task<ItHubBaseResponse<bool?>> Shahkar(ITHubShahkarParams p, CancellationToken ct);
 	Task<ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct);
 }
 
-public class ITHubService(IHttpClientService httpClient, ILocalizationService ls) : IITHubService {
+public class ITHubService(
+	IHttpClientService httpClient,
+	ILocalizationService ls
+) : IITHubService {
 	public async Task<ItHubBaseResponse<bool?>> Shahkar(ITHubShahkarParams p, CancellationToken ct) {
 		ITHubGetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null) return new ItHubBaseResponse<bool?> { Error = new Error { ErrorCode = 605, CustomMessage = ls.Get("ShahkarIsNotAvailableAtThisTime") } };
@@ -26,7 +29,7 @@ public class ITHubService(IHttpClientService httpClient, ILocalizationService ls
 	public async Task<ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct) {
 		ITHubGetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null) return new ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse?> { Error = new Error { ErrorCode = 605, CustomMessage = ls.Get("ShahkarIsNotAvailableAtThisTime") } };
-		
+
 		HttpResponseMessage response = await httpClient.Post(
 			uri: "https://gateway.itsaaz.ir/hub/api/v1/Address/DetailsTypeA",
 			body: new { postcode = p.PostCode, orderId = p.OrderId },

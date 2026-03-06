@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Params;
 
-public class ParkingCreateParams : BaseCreateParams<TagParking> {
+public sealed class ParkingCreateParams : BaseCreateParams<TagParking> {
 	public required string Title { get; set; }
 	public required Guid CreatorId { get; set; }
 	public required decimal EntrancePrice { get; set; }
@@ -21,7 +21,7 @@ public class ParkingCreateParams : BaseCreateParams<TagParking> {
 	};
 }
 
-public class ParkingUpdateParams : BaseUpdateParams<TagParking> {
+public sealed class ParkingUpdateParams : BaseUpdateParams<TagParking> {
 	public string? Title { get; set; }
 	public decimal? EntrancePrice { get; set; }
 	public decimal? HourlyPrice { get; set; }
@@ -44,7 +44,7 @@ public class ParkingUpdateParams : BaseUpdateParams<TagParking> {
 	}
 }
 
-public class ParkingReadParams : BaseReadParams<TagParking> {
+public sealed class ParkingReadParams : BaseReadParams<TagParking> {
 	public string? Title { get; set; }
 	public Guid? CreatorId { get; set; }
 	public IEnumerable<Guid> Users { get; set; } = [];
@@ -52,7 +52,7 @@ public class ParkingReadParams : BaseReadParams<TagParking> {
 	public required ParkingSelectorArgs SelectorArgs { get; set; }
 }
 
-public class ParkingReportCreateParams : BaseCreateParams<TagParkingReport> {
+public sealed class ParkingReportCreateParams : BaseCreateParams<TagParkingReport> {
 	public Guid? CreatorId { get; set; }
 	public required Guid ParkingId { get; set; }
 	public required DateTime StartDate { get; set; }
@@ -62,7 +62,7 @@ public class ParkingReportCreateParams : BaseCreateParams<TagParkingReport> {
 	public string? Title { get; set; }
 }
 
-public class ParkingReportUpdateParams : BaseUpdateParams<TagParkingReport> {
+public sealed class ParkingReportUpdateParams : BaseUpdateParams<TagParkingReport> {
 	public Guid? CreatorId { get; set; }
 	public Guid? VehicleId { get; set; }
 	public Guid? ParkingId { get; set; }
@@ -87,7 +87,7 @@ public class ParkingReportUpdateParams : BaseUpdateParams<TagParkingReport> {
 	}
 }
 
-public class ParkingReportReadParams : BaseReadParams<TagParking> {
+public sealed class ParkingReportReadParams : BaseReadParams<TagParking> {
 	public Guid? CreatorId { get; set; }
 	public Guid? VehicleId { get; set; }
 	public Guid? ParkingId { get; set; }

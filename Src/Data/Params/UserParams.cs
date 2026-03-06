@@ -130,7 +130,7 @@ public sealed class UserBulkCreateParams : BaseParams {
 	public required List<UserCreateParams> Users { get; set; }
 }
 
-public class UserExtraUpdateParams : BaseUpdateParams<TagUserExtra> {
+public sealed class UserExtraUpdateParams : BaseUpdateParams<TagUserExtra> {
 	public string? NationalCardFront { get; set; }
 	public string? NationalCardBack { get; set; }
 	public string? BirthCertificateFirst { get; set; }
@@ -139,6 +139,7 @@ public class UserExtraUpdateParams : BaseUpdateParams<TagUserExtra> {
 	public string? BirthCertificateForth { get; set; }
 	public string? BirthCertificateFifth { get; set; }
 	public string? VisualAuthentication { get; set; }
+	public string? ESignature { get; set; }
 
 	public ICollection<string> AddNotVerifiedNationalCodes { get; set; } = [];
 	public ICollection<string> RemoveNotVerifiedNationalCodes { get; set; } = [];

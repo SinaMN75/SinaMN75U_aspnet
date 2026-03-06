@@ -101,7 +101,7 @@ public class UserJson {
 }
 
 [Table("UserExtras")]
-public sealed class UserExtraEntity : BaseEntity<TagUserExtra, UserExtraJson> {
+public class UserExtraEntity : BaseEntity<TagUserExtra, UserExtraJson> {
 	public string? NationalCardFront { get; set; }
 	public string? NationalCardBack { get; set; }
 	public string? BirthCertificateFirst { get; set; }
@@ -110,6 +110,7 @@ public sealed class UserExtraEntity : BaseEntity<TagUserExtra, UserExtraJson> {
 	public string? BirthCertificateForth { get; set; }
 	public string? BirthCertificateFifth { get; set; }
 	public string? VisualAuthentication { get; set; }
+	public string? ESignature { get; set; }
 
 	public ICollection<string> NotVerifiedNationalCodes { get; set; } = [];
 
@@ -117,6 +118,6 @@ public sealed class UserExtraEntity : BaseEntity<TagUserExtra, UserExtraJson> {
 	public required Guid UserId { get; set; }
 }
 
-public sealed class UserExtraJson {
+public class UserExtraJson {
 	public string? Description { get; set; }
 }

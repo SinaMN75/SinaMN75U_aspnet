@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Responses;
 
-public class InvoiceResponse : BaseResponse<TagInvoice, InvoiceJson> {
+public sealed class InvoiceResponse : BaseResponse<TagInvoice, InvoiceJson> {
 	public required decimal DebtAmount { get; set; }
 	public required decimal CreditorAmount { get; set; }
 	public required decimal PaidAmount { get; set; }
@@ -10,7 +10,7 @@ public class InvoiceResponse : BaseResponse<TagInvoice, InvoiceJson> {
 	public ContractResponse? Contract { get; set; }
 }
 
-public class InvoiceChartResponse {
+public sealed class InvoiceChartResponse {
 	public string Month { get; set; } = "";
 	public decimal TotalDebt { get; set; }
 	public decimal TotalPaid { get; set; }

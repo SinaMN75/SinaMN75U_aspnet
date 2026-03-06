@@ -6,7 +6,7 @@ public class BaseParams {
 	public string Locale { get; set; } = "en";
 }
 
-public sealed class IdParams : BaseParams {
+public class IdParams : BaseParams {
 	public required Guid? Id { get; set; }
 }
 

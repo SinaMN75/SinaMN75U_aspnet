@@ -67,6 +67,11 @@
     "YourDetailSubmittedSuccessfully": "Your Detail Submitted Successfully.",
     "SystemError": "System Error",
     "ZipCodeMustBe10CharactersLong": "Zip Code must be 10 Characters Long.",
-    "AddressWithThisZipCodeAlreadyExists": "Address with this ZipCode already exists"
+    "AddressWithThisZipCodeAlreadyExists": "Address with this ZipCode already exists.",
+    "BalanceIsLow": "Your Balance is Not Enough.",
+    "SenderWalletNotFound": "Sender Wallet Not Found",
+    "ReceiverWalletNotFound": "Receiver Wallet Not Found",
+    "TransferMoneyDone": "Transfer Money Successful",
+    "WalletForThisUserAlreadyExists": "User Already has Wallet."
   }
 }

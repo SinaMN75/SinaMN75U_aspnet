@@ -19,11 +19,18 @@ public enum Usc {
 	ExpiredToken = 604,
 	ShahkarException = 605,
 	ShahkarError = 606,
+	BalanceIsLow = 607,
+	WalletAlreadyExists = 608,
 
 	EmptyList = 701,
 
 	MediaTypeNotEntered = 801,
 	MediaTypeNotSupported = 802,
+}
+
+public enum TagPurchase {
+	MobileAndNationalCodeVerification = 101,
+	ZipCodeToAddressDetail = 102
 }
 
 public enum TagSmsPanel {

@@ -3,10 +3,10 @@ using Microsoft.Extensions.Options;
 namespace SinaMN75U.Middlewares;
 
 public static class LeanResponseExtensions {
-	public static WebApplication UseLeanResponses(this WebApplication app) {
+	public static void UseLeanResponses(this WebApplication app) {
 		app.Lifetime.ApplicationStarted.Register(() => {
 			IOptions<KestrelServerOptions>? kestrel = app.Services.GetService<IOptions<KestrelServerOptions>>();
-			if (kestrel != null) kestrel.Value.AddServerHeader = false;
+			kestrel?.Value.AddServerHeader = false;
 		});
 		app.Use(async (context, next) => {
 			context.Response.OnStarting(() => {
@@ -27,7 +27,5 @@ public static class LeanResponseExtensions {
 			await next();
 		});
 		app.UseResponseCompression();
-
-		return app;
 	}
 }

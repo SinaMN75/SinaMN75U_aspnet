@@ -1,6 +1,6 @@
 namespace SinaMN75U.Constants;
 
-public class AppSettings {
+public sealed class AppSettings {
 	public required string BaseUrl { get; init; }
 	public required string ApiKey { get; init; }
 	public required ConnectionStrings ConnectionStrings { get; init; }
@@ -15,18 +15,18 @@ public class AppSettings {
 	public static void Initialize(AppSettings settings) => Instance = settings;
 }
 
-public class ConnectionStrings {
+public sealed class ConnectionStrings {
 	public required string Server { get; init; }
 }
 
-public class Jwt {
+public sealed class Jwt {
 	public required string Key { get; init; }
 	public required string Issuer { get; init; }
 	public required string Audience { get; init; }
 	public required string Expires { get; init; }
 }
 
-public class Middleware {
+public sealed class Middleware {
 	public required bool DecryptParams { get; init; }
 	public required bool EncryptResponse { get; init; }
 	public required bool RequireApiKey { get; init; }
@@ -34,20 +34,23 @@ public class Middleware {
 	public required bool LogSuccess { get; init; }
 }
 
-public class SmsPanel {
+public sealed class SmsPanel {
 	public required TagSmsPanel Tag { get; init; }
 	public required string Pattern { get; init; }
 	public required string ApiKey { get; init; }
 }
 
-public class ItHub {
+public sealed class ItHub {
 	public required string ClientId { get; init; }
 	public required string ClientSecret { get; init; }
 	public required string UserName { get; init; }
 	public required string Password { get; set; }
+	public required string WalletOwnerUserName { get; set; }
+	public required decimal ShahkarVerifyNationalCodeAndMobilePrice { get; set; }
+	public required decimal ZipCodeToAddressDetailPrice { get; set; }
 }
 
-public class BasicSettings {
+public sealed class BasicSettings {
 	public required string DefaultVerificationKey { get; set; }
 	public required int VerificationCodeLenght { get; set; }
 }

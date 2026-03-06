@@ -21,4 +21,5 @@ public static class RouteTags {
 	public const string Vehicle = "api/vehicle/";
 	public const string Inquiry = "api/inquiry/";
 	public const string Address = "api/address/";
+	public const string Wallet = "api/wallet/";
 }

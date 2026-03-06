@@ -1,11 +1,11 @@
 namespace SinaMN75U.Services;
 
 public interface IUserService {
-	public Task<UResponse<UserResponse?>> Create(UserCreateParams p, bool auth, CancellationToken ct);
+	public Task<UResponse<UserResponse?>> Create(UserCreateParams p, CancellationToken ct);
 	public Task<UResponse> BulkCreate(UserBulkCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<UserResponse>?>> Read(UserReadParams p, CancellationToken ct);
 	public Task<UResponse<UserResponse?>> ReadById(IdParams p, CancellationToken ct);
-	public Task<UResponse<UserResponse?>> Update(UserUpdateParams p, bool auth, CancellationToken ct);
+	public Task<UResponse<UserResponse?>> Update(UserUpdateParams p, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
 
 	public Task<UResponse<UserExtraResponse?>> ReadExtraById(IdParams p, CancellationToken ct);
@@ -16,11 +16,12 @@ public class UserService(
 	DbContext db,
 	ILocalizationService ls,
 	ITokenService ts,
-	ICategoryService categoryService
+	ICategoryService categoryService,
+	IWalletService walletService
 ) : IUserService {
-	public async Task<UResponse<UserResponse?>> Create(UserCreateParams p, bool auth, CancellationToken ct) {
+	public async Task<UResponse<UserResponse?>> Create(UserCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null && auth) return new UResponse<UserResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<UserResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		UserEntity e = p.MapToEntity();
 
 		if (p.Categories.IsNotNullOrEmpty()) {
@@ -35,6 +36,7 @@ public class UserService(
 
 		await db.Set<UserEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
+		await walletService.Create(e.Id, ct);
 
 		return new UResponse<UserResponse?>(e.MapToResponse(), Usc.Created);
 	}
@@ -115,9 +117,9 @@ public class UserService(
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
-	public async Task<UResponse<UserResponse?>> Update(UserUpdateParams p, bool auth, CancellationToken ct) {
+	public async Task<UResponse<UserResponse?>> Update(UserUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null && auth) return new UResponse<UserResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<UserResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse<UserResponse?>(null, Usc.NotFound);
@@ -163,11 +165,11 @@ public class UserService(
 		int count = await db.Set<UserEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 		return count == 0 ? new UResponse(Usc.NotFound, ls.Get("UserNotFound")) : new UResponse(Usc.Deleted, ls.Get("UserDeleted"));
 	}
-	
+
 	public async Task<UResponse<UserExtraResponse?>> ReadExtraById(IdParams p, CancellationToken ct) {
 		UserExtraEntity? e = await db.Set<UserExtraEntity>().FirstOrDefaultAsync(x => x.UserId == p.Id, ct);
 		if (e == null) return new UResponse<UserExtraResponse?>(null, Usc.NotFound);
-		
+
 		return new UResponse<UserExtraResponse?>(new UserExtraResponse {
 			NationalCardFront = e.NationalCardFront,
 			NationalCardBack = e.NationalCardBack,
@@ -180,11 +182,11 @@ public class UserService(
 			NotVerifiedNationalCodes = e.NotVerifiedNationalCodes
 		});
 	}
-	
+
 	public async Task<UResponse> UpdateExtra(UserExtraUpdateParams p, CancellationToken ct) {
 		UserExtraEntity? e = await db.Set<UserExtraEntity>().FirstOrDefaultAsync(x => x.UserId == p.Id, ct);
 		if (e == null) return new UResponse<UserExtraResponse?>(null, Usc.NotFound);
-		
+
 		e.NationalCardFront = p.NationalCardFront;
 		e.NationalCardBack = p.NationalCardBack;
 		e.BirthCertificateFirst = p.BirthCertificateFirst;
@@ -193,6 +195,7 @@ public class UserService(
 		e.BirthCertificateForth = p.BirthCertificateForth;
 		e.BirthCertificateFifth = p.BirthCertificateFifth;
 		e.VisualAuthentication = p.VisualAuthentication;
+		e.ESignature = p.ESignature;
 
 		db.Set<UserExtraEntity>().Update(e);
 		await db.SaveChangesAsync(ct);

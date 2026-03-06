@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Responses;
 
-public class ProductResponse : BaseResponse<TagProduct, ProductJson> {
+public sealed class ProductResponse : BaseResponse<TagProduct, ProductJson> {
 	public required string Title { get; set; }
 	public string? Code { get; set; }
 	public string? Subtitle { get; set; }

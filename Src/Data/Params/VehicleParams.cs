@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Params;
 
-public class VehicleCreateParams : BaseCreateParams<TagVehicle> {
+public sealed class VehicleCreateParams : BaseCreateParams<TagVehicle> {
 	public required string NumberPlate { get; set; }
 	public string? Title { get; set; }
 	public string? Brand { get; set; }
@@ -17,7 +17,7 @@ public class VehicleCreateParams : BaseCreateParams<TagVehicle> {
 	};
 }
 
-public class VehicleUpdateParams : BaseUpdateParams<TagVehicle> {
+public sealed class VehicleUpdateParams : BaseUpdateParams<TagVehicle> {
 	public string? NumberPlate { get; set; }
 	public string? Title { get; set; }
 	public string? Brand { get; set; }
@@ -36,7 +36,7 @@ public class VehicleUpdateParams : BaseUpdateParams<TagVehicle> {
 	}
 }
 
-public class VehicleReadParams : BaseReadParams<TagVehicle> {
+public sealed class VehicleReadParams : BaseReadParams<TagVehicle> {
 	public string? NumberPlate { get; set; }
 	public string? Title { get; set; }
 	public string? Brand { get; set; }

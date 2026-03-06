@@ -26,6 +26,11 @@ public sealed class AddressSelectorArgs {
 	public UserSelectorArgs? Creator { get; set; }
 }
 
+public sealed class WalletTxnSelectorArgs {
+	public UserSelectorArgs? Sender { get; set; }
+	public UserSelectorArgs? Receiver { get; set; }
+}
+
 public sealed class TicketSelectorArgs {
 	public MediaSelectorArgs? Media { get; set; }
 	public UserSelectorArgs? User { get; set; }
@@ -99,6 +104,62 @@ public static class Projections {
 					NationalCode = x.Creator.NationalCode,
 					Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector(args.Creator.Media)).ToList(),
 					Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
+				}
+		};
+	
+	public static Expression<Func<WalletTxnEntity, WalletTxnResponse>> WalletTxnSelector(WalletTxnSelectorArgs args) =>
+		x => new WalletTxnResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			SenderId = x.SenderId,
+			ReceiverId = x.ReceiverId,
+			Amount = x.Amount,
+			Sender = args.Sender == null
+				? null
+				: new UserResponse {
+					Id = x.Sender.Id,
+					JsonData = x.Sender.JsonData,
+					Tags = x.Sender.Tags,
+					UserName = x.Sender.UserName,
+					PhoneNumber = x.Sender.PhoneNumber,
+					Email = x.Sender.Email,
+					FirstName = x.Sender.FirstName,
+					LastName = x.Sender.LastName,
+					NationalCode = x.Sender.NationalCode,
+					Media = args.Sender.Media == null
+						? null
+						: x.Sender.Media.AsQueryable()
+							.Select(MediaSelector(args.Sender.Media))
+							.ToList(),
+					Categories = args.Sender.Category == null
+						? null
+						: x.Sender.Categories.AsQueryable()
+							.Select(CategorySelector(args.Sender.Category))
+							.ToList()
+				},
+			Receiver = args.Receiver == null
+				? null
+				: new UserResponse {
+					Id = x.Receiver.Id,
+					JsonData = x.Receiver.JsonData,
+					Tags = x.Receiver.Tags,
+					UserName = x.Receiver.UserName,
+					PhoneNumber = x.Receiver.PhoneNumber,
+					Email = x.Receiver.Email,
+					FirstName = x.Receiver.FirstName,
+					LastName = x.Receiver.LastName,
+					NationalCode = x.Receiver.NationalCode,
+					Media = args.Receiver.Media == null
+						? null
+						: x.Receiver.Media.AsQueryable()
+							.Select(MediaSelector(args.Receiver.Media))
+							.ToList(),
+					Categories = args.Receiver.Category == null
+						? null
+						: x.Receiver.Categories.AsQueryable()
+							.Select(CategorySelector(args.Receiver.Category))
+							.ToList()
 				}
 		};
 
