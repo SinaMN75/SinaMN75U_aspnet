@@ -43,8 +43,7 @@ public class SmsNotificationService(
 	}
 
 	public async Task<bool> SendOtpSms(UserEntity user) {
-		string? cachedData = cache.Get($"otp_{user.Id}");
-		if (cachedData != null) return false;
+		if (cache.Get($"otp_{user.Id}") != null) return false;
 		int length = Core.App.BasicSettings.VerificationCodeLenght;
 
 		string otp = Random.Shared.Next((int)Math.Pow(10, length - 1), (int)Math.Pow(10, length)).ToString();

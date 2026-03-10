@@ -59,6 +59,7 @@ public static partial class AspNetConfig {
 
 		builder.Services.AddSignalR();
 
+		builder.Services.AddScoped<IMediaService, MediaService>();
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
 		builder.Services.AddSingleton<IHttpClientService, HttpClientService>();
 		builder.Services.AddSingleton<ILocalStorageService, UMemoryCacheService>();
@@ -67,7 +68,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IAuthService, AuthService>();
 		builder.Services.AddScoped<ICategoryService, CategoryService>();
 		builder.Services.AddScoped<ISmsNotificationService, SmsNotificationService>();
-		builder.Services.AddScoped<IMediaService, MediaService>();
+		builder.Services.AddScoped<IMediaRepository, MediaRepository>();
 		builder.Services.AddScoped<IContentService, ContentService>();
 		builder.Services.AddScoped<IProductService, ProductService>();
 		builder.Services.AddScoped<ICommentService, CommentService>();

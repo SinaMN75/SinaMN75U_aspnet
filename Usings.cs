@@ -51,4 +51,5 @@ global using SinaMN75U.Services;
 global using SinaMN75U.Utils;
 global using SinaMN75U.Middlewares;
 global using SinaMN75U.Data;
+global using SinaMN75U.Data.Media;
 global using Swashbuckle.AspNetCore.SwaggerUI;

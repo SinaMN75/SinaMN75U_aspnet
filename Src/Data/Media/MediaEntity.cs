@@ -1,10 +1,12 @@
-namespace SinaMN75U.Data.Entities;
+namespace SinaMN75U.Data.Media;
 
 [Table("Media")]
 [Index(nameof(UserId), Name = "IX_Media_UserId")]
 [Index(nameof(ContentId), Name = "IX_Media_ContentId")]
 [Index(nameof(CategoryId), Name = "IX_Media_CategoryId")]
+[Index(nameof(CommentId), Name = "IX_Media_CommentId")]
 [Index(nameof(ProductId), Name = "IX_Media_ProductId")]
+[Index(nameof(TicketId), Name = "IX_Media_TicketId")]
 public class MediaEntity : BaseEntity<TagMedia, MediaJson> {
 	[Required, MaxLength(200)]
 	public required string Path { get; set; }
@@ -26,9 +28,6 @@ public class MediaEntity : BaseEntity<TagMedia, MediaJson> {
 
 	public Guid? TicketId { get; set; }
 	public TicketEntity? Ticket { get; set; }
-
-	[NotMapped]
-	public string Url => $"{Core.App.BaseUrl}/Media/{Path}";
 
 	public MediaResponse MapToResponse() => new() {
 		Id = Id,

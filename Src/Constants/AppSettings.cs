@@ -9,10 +9,6 @@ public sealed class AppSettings {
 	public required SmsPanel SmsPanel { get; init; }
 	public required ItHub ItHub { get; init; }
 	public required BasicSettings BasicSettings { get; init; }
-
-	public static AppSettings Instance { get; private set; } = null!;
-
-	public static void Initialize(AppSettings settings) => Instance = settings;
 }
 
 public sealed class ConnectionStrings {
