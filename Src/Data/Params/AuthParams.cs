@@ -57,9 +57,6 @@ public sealed class VerifyMobileForLoginParams : BaseParams {
 
 	[UValidationRequired("OtpRequired")]
 	public required string Otp { get; set; }
-
-	public string? FirstName { get; set; }
-	public string? LastName { get; set; }
 }
 
 public sealed class AuthCompleteProfileParams : BaseParams {

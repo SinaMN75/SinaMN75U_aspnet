@@ -184,9 +184,6 @@ public class AuthService(
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == mobile, ct);
 		if (user == null) return new UResponse<LoginResponse?>(null, Usc.UserNotFound);
 
-		user.FirstName = p.FirstName ?? user.FirstName;
-		user.LastName = p.LastName ?? user.LastName;
-
 		db.Update(user);
 		await db.SaveChangesAsync(ct);
 
