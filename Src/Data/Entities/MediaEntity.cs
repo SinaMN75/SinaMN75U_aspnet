@@ -1,4 +1,4 @@
-namespace SinaMN75U.Data.Media;
+namespace SinaMN75U.Data.Entities;
 
 [Table("Media")]
 [Index(nameof(UserId), Name = "IX_Media_UserId")]

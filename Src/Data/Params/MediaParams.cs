@@ -1,4 +1,4 @@
-namespace SinaMN75U.Data.Media;
+namespace SinaMN75U.Data.Params;
 
 public sealed class MediaCreateParams {
 	public required IFormFile File { get; set; }

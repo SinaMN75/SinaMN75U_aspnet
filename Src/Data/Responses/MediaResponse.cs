@@ -1,4 +1,4 @@
-namespace SinaMN75U.Data.Media;
+namespace SinaMN75U.Data.Responses;
 
 public sealed class MediaResponse {
 	public required Guid Id { get; set; }

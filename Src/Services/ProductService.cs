@@ -254,7 +254,7 @@ public class ProductService(
 
 	private async Task AddMedia(Guid productId, ICollection<Guid> ids, CancellationToken ct) {
 		if (ids.IsNullOrEmpty()) return;
-		List<MediaEntity> media = await mediaService.Read(new BaseReadParams<TagMedia> { Ids = ids }).ToListAsync(ct);
+		List<MediaEntity> media = await mediaService.ReadEntity(new BaseReadParams<TagMedia> { Ids = ids }, ct) ?? [];
 		if (media.Count == 0) return;
 		foreach (MediaEntity i in media)
 			await db.Set<MediaEntity>().Where(x => x.Id == i.Id).ExecuteUpdateAsync(

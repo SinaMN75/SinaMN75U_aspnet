@@ -67,7 +67,6 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IAuthService, AuthService>();
 		builder.Services.AddScoped<ICategoryService, CategoryService>();
 		builder.Services.AddScoped<ISmsNotificationService, SmsNotificationService>();
-		builder.Services.AddScoped<IMediaRepository, MediaRepository>();
 		builder.Services.AddScoped<IContentService, ContentService>();
 		builder.Services.AddScoped<IProductService, ProductService>();
 		builder.Services.AddScoped<ICommentService, CommentService>();
