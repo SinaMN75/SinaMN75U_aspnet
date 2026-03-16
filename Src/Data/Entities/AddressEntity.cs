@@ -1,3 +1,5 @@
+using SinaMN75U.Data.ServiceResponses;
+
 namespace SinaMN75U.Data.Entities;
 
 public sealed class AddressEntity : BaseEntity<TagAddress, AddressJson> {
@@ -7,7 +9,7 @@ public sealed class AddressEntity : BaseEntity<TagAddress, AddressJson> {
 	public UserEntity Creator { get; set; } = null!;
 	public required Guid CreatorId { get; set; }
 
-	public AddressResponse MapToResponse() => new() {
+	public AddressServiceResponse MapToServiceResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
 		UpdatedAt = UpdatedAt,
@@ -16,7 +18,7 @@ public sealed class AddressEntity : BaseEntity<TagAddress, AddressJson> {
 		Tags = Tags,
 		Title = Title,
 		ZipCode = ZipCode,
-		CreatorId = CreatorId
+		CreatorId = CreatorId,
 	};
 }
 

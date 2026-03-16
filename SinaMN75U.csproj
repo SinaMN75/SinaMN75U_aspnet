@@ -12,9 +12,4 @@
         <PackageReference Include="Swashbuckle.AspNetCore" Version="10.0.1"/>
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Src\Data\ServiceParams\" />
-      <Folder Include="Src\Data\ServiceResponses\" />
-    </ItemGroup>
-
 </Project>

@@ -1,37 +1,24 @@
-using SinaMN75U.Data.ServiceParams;
+namespace SinaMN75U.Data.ServiceParams;
 
-namespace SinaMN75U.Data.Params;
-
-public class BaseParams {
-	public string ApiKey { get; set; } = null!;
-	public string Token { get; set; } = null!;
-	public string Locale { get; set; } = "en";
-}
-
-public class IdParams : BaseParams {
+public class IdServiceParams {
 	public required Guid? Id { get; set; }
-
-	public IdServiceParams MapToServiceParams() => new() { Id = Id };
 }
 
-public sealed class SoftDeleteParams : BaseParams {
+public sealed class SoftDeleteServiceParams {
 	public required Guid? Id { get; set; }
 	public required DateTime? DateTime { get; set; }
-
-	public SoftDeleteServiceParams MapToServiceParams() => new() { Id = Id, DateTime = DateTime };
 }
 
-public sealed class IdListParams : BaseParams {
-	[Required]
+public sealed class IdListServiceParams {
 	public required IEnumerable<Guid> Ids { get; set; }
 }
 
-public sealed class IdTitleParams : BaseParams {
+public sealed class IdTitleServiceParams {
 	public int? Id { get; set; }
 	public string? Title { get; set; }
 }
 
-public class BaseReadParams<T> : BaseParams {
+public class BaseReadServiceParams<T> {
 	public int PageSize { get; set; } = 100;
 	public int PageNumber { get; set; } = 1;
 	public DateTime? FromCreatedAt { get; set; }
@@ -44,8 +31,7 @@ public class BaseReadParams<T> : BaseParams {
 	public IEnumerable<Guid> Ids { get; set; } = [];
 }
 
-public class BaseUpdateParams<T> : BaseParams {
-	[UValidationRequired("IdRequired")]
+public class BaseUpdateServiceParams<T> {
 	public required Guid Id { get; set; }
 
 	public IEnumerable<T>? AddTags { get; set; }
@@ -53,10 +39,7 @@ public class BaseUpdateParams<T> : BaseParams {
 	public ICollection<T>? Tags { get; set; }
 }
 
-public class BaseCreateParams<T> : BaseParams {
-	[UValidationRequired("TagsRequired")]
-	[UValidationMinCollectionLength(1, "TagsRequired")]
+public class BaseCreateServiceParams<T> {
 	public required ICollection<T> Tags { get; set; }
-
 	public Guid? Id { get; set; }
 }

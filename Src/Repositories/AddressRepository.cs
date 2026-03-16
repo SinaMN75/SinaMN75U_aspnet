@@ -1,8 +1,10 @@
+using SinaMN75U.Data.ServiceParams;
+using SinaMN75U.Data.ServiceResponses;
+
 namespace SinaMN75U.Repositories;
 
 public interface IAddressRepository {
 	Task<UResponse<AddressResponse?>> Create(AddressCreateParams p, CancellationToken ct);
-	Task<UResponse<AddressResponse?>> CreateFromZipCode(AddressCreateFromZipCodeParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<AddressResponse>?>> Read(AddressReadParams p, CancellationToken ct);
 	Task<UResponse<AddressResponse?>> Update(AddressUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
@@ -10,107 +12,69 @@ public interface IAddressRepository {
 }
 
 public class AddressRepository(
-	DbContext db,
 	ILocalizationService ls,
 	ITokenService ts,
-	IITHubService itHubService
+	IEfService efs,
+	IAddressService addressService
 ) : IAddressRepository {
 	public async Task<UResponse<AddressResponse?>> Create(AddressCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<AddressResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
-		EntityEntry<AddressEntity> e = await db.AddAsync(p.MapToEntity(), ct);
-
-		await db.SaveChangesAsync(ct);
-		return new UResponse<AddressResponse?>(e.Entity.MapToResponse());
-	}
-
-	public async Task<UResponse<AddressResponse?>> CreateFromZipCode(AddressCreateFromZipCodeParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<AddressResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
-
-		AddressEntity entity;
-
-		AddressEntity? existingVerifiedAddress = await db.Set<AddressEntity>().Where(x => x.ZipCode == p.ZipCode && x.Tags.Contains(TagAddress.Verified)).FirstOrDefaultAsync(ct);
-		if (existingVerifiedAddress == null) {
-			ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse?> address = await itHubService.PostalCodeToAddressDetail(new PostalCodeToAddressDetailParams {
-				PostCode = p.ZipCode,
-				OrderId = "1"
-			}, ct);
-
-			entity = new AddressEntity {
-				Title = p.Title,
-				CreatorId = userData.Id,
-				ZipCode = p.ZipCode,
-				JsonData = new AddressJson {
-					Province = address.Data!.Province,
-					Township = address.Data!.TownShip,
-					Street = address.Data!.Street,
-					Street2 = address.Data!.Street2,
-					LocalityName = address.Data!.LocalityName,
-					HouseNumber = address.Data!.HouseNumber,
-					Floor = address.Data!.Floor,
-					Description = address.Data!.Description
-				},
-				Tags = [TagAddress.Verified]
-			};
-		}
-		else {
-			if (existingVerifiedAddress.CreatorId == userData.Id) return new UResponse<AddressResponse?>(null, Usc.Conflict, ls.Get("AddressWithThisZipCodeAlreadyExists"));
-			entity = new AddressEntity {
-				CreatorId = userData.Id,
-				Title = p.Title,
-				ZipCode = p.ZipCode,
-				JsonData = new AddressJson {
-					Province = existingVerifiedAddress.JsonData.Province,
-					Township = existingVerifiedAddress.JsonData.Township,
-					Street = existingVerifiedAddress.JsonData.Street,
-					Street2 = existingVerifiedAddress.JsonData.Street2,
-					LocalityName = existingVerifiedAddress.JsonData.LocalityName,
-					HouseNumber = existingVerifiedAddress.JsonData.HouseNumber,
-					Floor = existingVerifiedAddress.JsonData.Floor,
-					Description = existingVerifiedAddress.JsonData.Description
-				},
-				Tags = existingVerifiedAddress.Tags
-			};
-		}
-
-		await db.Set<AddressEntity>().AddAsync(entity, ct);
-		await db.SaveChangesAsync(ct);
-		return new UResponse<AddressResponse?>(entity.MapToResponse());
+		AddressCreateServiceParams serviceParams = new() {
+			Tags = p.Tags,
+			Id = p.Id,
+			Title = p.Title,
+			Province = p.Province,
+			Township = p.Township,
+			Street = p.Street,
+			Street2 = p.Street2,
+			LocalityName = p.LocalityName,
+			HouseNumber = p.HouseNumber,
+			Floor = p.Floor,
+			ZipCode = p.ZipCode,
+			Description = p.Description,
+			CreatorId = p.CreatorId ?? userData.Id
+		};
+		AddressServiceResponse address = await addressService.Create(serviceParams, ct);
+		await efs.SaveChangesAsync(ct);
+		return new UResponse<AddressResponse?>(address.MapToResponse());
 	}
 
 	public async Task<UResponse<IEnumerable<AddressResponse>?>> Read(AddressReadParams p, CancellationToken ct) {
-		IQueryable<AddressResponse> q = db.Set<AddressEntity>().Select(Projections.AddressSelector(p.SelectorArgs));
-		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<AddressResponse>?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+
+		PaginatedServiceResponse<IEnumerable<AddressServiceResponse>> paginatedList = await addressService.Read(p.MapToServiceParams(), ct);
+
+		return new UResponse<IEnumerable<AddressResponse>?>(paginatedList.Items.Select(x => x.MapToResponse())) {
+			PageSize = paginatedList.PageSize,
+			PageCount = paginatedList.PageCount,
+			TotalCount = paginatedList.TotalCount
+		};
 	}
 
 	public async Task<UResponse<AddressResponse?>> Update(AddressUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<AddressResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
-		AddressEntity? e = await db.Set<AddressEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse<AddressResponse?>(null, Usc.NotFound, ls.Get("AddressNotFound"));
-		p.MapToEntity(e);
-		db.Update(p.MapToEntity(e));
-		await db.SaveChangesAsync(ct);
-		return new UResponse<AddressResponse?>(e.MapToResponse());
+		(ErrorServiceResponse?, AddressServiceResponse?) serviceResponse = await addressService.Update(p.MapToParams(), ct);
+		return serviceResponse.Item1 != null ? new UResponse<AddressResponse?>(null, serviceResponse.Item1.StatusCode, ls.Get(serviceResponse.Item1.ErrorCode)) : new UResponse<AddressResponse?>(serviceResponse.Item2!.MapToResponse(), Usc.Success, ls.Get("AddressUpdatedSuccessfully"));
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<AddressEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
-		await db.Set<AddressEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
-
-		return new UResponse();
+		ErrorServiceResponse? sr = await addressService.Delete(p.MapToServiceParams(), ct);
+		return new UResponse(sr?.StatusCode ?? Usc.Deleted, ls.Get(sr?.ErrorCode ?? "AddressDeletedSuccessfully"));
 	}
 
 	public async Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
-		await db.Set<AddressEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
-		return new UResponse();
+		ErrorServiceResponse? sr = await addressService.SoftDelete(p.MapToServiceParams(), ct);
+		return new UResponse(sr?.StatusCode ?? Usc.Deleted, ls.Get(sr?.ErrorCode ?? "AddressDeletedSuccessfully"));
 	}
 }

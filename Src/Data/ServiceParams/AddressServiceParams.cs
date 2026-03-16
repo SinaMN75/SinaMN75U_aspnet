@@ -1,11 +1,7 @@
-using SinaMN75U.Data.ServiceParams;
+namespace SinaMN75U.Data.ServiceParams;
 
-namespace SinaMN75U.Data.Params;
-
-public sealed class AddressCreateParams : BaseCreateParams<TagAddress> {
-	[UValidationRequired("TitleRequired")]
+public sealed class AddressCreateServiceParams : BaseCreateServiceParams<TagAddress> {
 	public required string Title { get; set; }
-
 	public string? Province { get; set; }
 	public string? Township { get; set; }
 	public string? Street { get; set; }
@@ -15,10 +11,14 @@ public sealed class AddressCreateParams : BaseCreateParams<TagAddress> {
 	public string? Floor { get; set; }
 	public string? ZipCode { get; set; }
 	public string? Description { get; set; }
-	public Guid? CreatorId { get; set; }
+	public required Guid CreatorId { get; set; }
 }
 
-public sealed class AddressUpdateParams : BaseUpdateParams<TagAddress> {
+public sealed class AddressBulkCreateServiceParams {
+	public required IEnumerable<AddressCreateServiceParams> List { get; set; }
+}
+
+public sealed class AddressUpdateServiceParams : BaseUpdateServiceParams<TagAddress> {
 	public string? Title { get; set; }
 	public string? Province { get; set; }
 	public string? Township { get; set; }
@@ -44,43 +44,9 @@ public sealed class AddressUpdateParams : BaseUpdateParams<TagAddress> {
 		if (Tags != null) e.Tags = Tags;
 		return e;
 	}
-
-	public AddressUpdateServiceParams MapToParams() => new() {
-		Id = Id,
-		AddTags = AddTags,
-		RemoveTags = RemoveTags,
-		Tags = Tags,
-		Title = Title,
-		Province = Province,
-		Township = Township,
-		Street = Street,
-		Street2 = Street2,
-		LocalityName = LocalityName,
-		HouseNumber = HouseNumber,
-		Floor = Floor,
-		ZipCode = ZipCode,
-		Description = Description
-	};
 }
 
-public sealed class AddressReadParams : BaseReadParams<TagAddress> {
-	public bool OrderByOrder { get; set; }
-	public bool OrderByOrderDesc { get; set; }
+public sealed class AddressReadServiceParams : BaseReadServiceParams<TagAddress> {
 	public Guid? CreatorId { get; set; }
 	public AddressSelectorArgs SelectorArgs { get; set; } = new();
-
-	public AddressReadServiceParams MapToServiceParams() => new() {
-		PageSize = PageSize,
-		PageNumber = PageNumber,
-		FromCreatedAt = FromCreatedAt,
-		ToCreatedAt = ToCreatedAt,
-		OrderByCreatedAt = OrderByOrder,
-		OrderByCreatedAtDesc = OrderByOrderDesc,
-		OrderByUpdatedAt = OrderByUpdatedAt,
-		OrderByUpdatedAtDesc = OrderByUpdatedAtDesc,
-		Tags = Tags,
-		Ids = Ids,
-		CreatorId = CreatorId,
-		SelectorArgs = SelectorArgs
-	};
 }

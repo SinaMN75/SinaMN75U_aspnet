@@ -79,6 +79,9 @@ public class LocalizationService : ILocalizationService {
 		{ "ReceiverWalletNotFound", "Receiver Wallet Not Found" },
 		{ "TransferMoneyDone", "Transfer Money Successful" },
 		{ "WalletForThisUserAlreadyExists", "User Already has Wallet." },
+		{ "AddressNotFound", "Address Not Found" },
+		{ "AddressUpdatedSuccessfully", "Address Updated Successfully" },
+		{ "AddressDeletedSuccessfully", "Address Deleted Successfully" },
 	};
 
 	public string Get(string key, string locale = "en") {
