@@ -8,7 +8,8 @@ namespace SinaMN75U.Data.Media;
 [Index(nameof(ProductId), Name = "IX_Media_ProductId")]
 [Index(nameof(TicketId), Name = "IX_Media_TicketId")]
 public class MediaEntity : BaseEntity<TagMedia, MediaJson> {
-	[Required, MaxLength(200)]
+	[Required]
+	[MaxLength(200)]
 	public required string Path { get; set; }
 
 	public Guid? UserId { get; set; }
@@ -29,12 +30,14 @@ public class MediaEntity : BaseEntity<TagMedia, MediaJson> {
 	public Guid? TicketId { get; set; }
 	public TicketEntity? Ticket { get; set; }
 
-	public MediaResponse MapToResponse() => new() {
-		Id = Id,
-		Path = Path,
-		JsonData = JsonData,
-		Tags = Tags
-	};
+	public MediaResponse MapToResponse() {
+		return new MediaResponse {
+			Id = Id,
+			Path = Path,
+			JsonData = JsonData,
+			Tags = Tags
+		};
+	}
 }
 
 public class MediaJson {

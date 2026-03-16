@@ -17,18 +17,20 @@ public sealed class TicketCreateParams : BaseParams {
 	[UValidationMinCollectionLength(1, "TagsRequired")]
 	public required List<TagTicket> Tags { get; set; }
 
-	public TicketEntity MapToEntity(Guid userId) => new() {
-		CreatorId = UserId ?? userId,
-		JsonData = new TicketJson {
-			Title = Title,
-			Description = Description,
-			Instagram = Instagram,
-			Telegram = Telegram,
-			Whatsapp = Whatsapp,
-			Phone = Phone
-		},
-		Tags = Tags
-	};
+	public TicketEntity MapToEntity(Guid userId) {
+		return new TicketEntity {
+			CreatorId = UserId ?? userId,
+			JsonData = new TicketJson {
+				Title = Title,
+				Description = Description,
+				Instagram = Instagram,
+				Telegram = Telegram,
+				Whatsapp = Whatsapp,
+				Phone = Phone
+			},
+			Tags = Tags
+		};
+	}
 }
 
 public sealed class TicketUpdateParams : BaseUpdateParams<TagTicket> {

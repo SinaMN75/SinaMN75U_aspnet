@@ -4,13 +4,16 @@ public sealed class UserCreateParams : BaseParams {
 	[UValidationRequired("UserNameRequired"), UValidationStringLength(2, 100, "UserNameMinLenght")]
 	public required string UserName { get; set; }
 
-	[UValidationRequired("PasswordRequired"), UValidationStringLength(4, 100, "PasswordMinLength")]
+	[UValidationRequired("PasswordRequired")]
+	[UValidationStringLength(4, 100, "PasswordMinLength")]
 	public required string Password { get; set; }
 
-	[UValidationRequired("PasswordRequired"), UValidationStringLength(4, 100, "PasswordMinLength")]
+	[UValidationRequired("PasswordRequired")]
+	[UValidationStringLength(4, 100, "PasswordMinLength")]
 	public required string PhoneNumber { get; set; }
 
-	[UValidationRequired("PasswordRequired"), UValidationStringLength(4, 100, "PasswordMinLength")]
+	[UValidationRequired("PasswordRequired")]
+	[UValidationStringLength(4, 100, "PasswordMinLength")]
 	public required string Email { get; set; }
 
 	public string? FirstName { get; set; }
@@ -65,7 +68,7 @@ public sealed class UserCreateParams : BaseParams {
 				Health2 = Health2 ?? [],
 				FoodAllergies = FoodAllergies ?? [],
 				DrugAllergies = DrugAllergies ?? [],
-				Sickness = Sickness ?? [],
+				Sickness = Sickness ?? []
 			},
 			Extra = {
 				JsonData = new UserExtraJson(),

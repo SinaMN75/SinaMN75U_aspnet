@@ -61,7 +61,7 @@ public class AuthService(
 
 		ItHubBaseResponse<bool?> shahkarResponse = await iTHubService.Shahkar(new ITHubShahkarParams {
 			NationalCode = p.NationalCode,
-			Mobile = e.PhoneNumber!,
+			Mobile = e.PhoneNumber!
 		}, ct);
 
 		if (shahkarResponse.Error?.ErrorCode != null && shahkarResponse.Error?.ErrorCode != 400) return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("ShahkarIsNotAvailableAtThisTime"));
@@ -152,7 +152,7 @@ public class AuthService(
 		}
 
 		Guid userId = Guid.CreateVersion7();
-		
+
 		UserEntity e = new() {
 			Id = userId,
 			CreatedAt = DateTime.UtcNow,
@@ -211,17 +211,19 @@ public class AuthService(
 		return user == null ? new UResponse<UserEntity?>(null, Usc.NotFound, ls.Get("UserNotFound")) : new UResponse<UserEntity?>(user);
 	}
 
-	private string CreateToken(UserEntity user) => ts.GenerateJwt([
-			new Claim(JwtRegisteredClaimNames.Jti, user.Id.ToString()),
-			new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName),
-			new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
-			new Claim(JwtRegisteredClaimNames.PhoneNumber, user.PhoneNumber ?? ""),
-			new Claim(JwtRegisteredClaimNames.Name, user.FirstName ?? ""),
-			new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName ?? ""),
-			new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()),
-			new Claim(ClaimTypes.Expiration, DateTime.UtcNow.Add(TimeSpan.FromSeconds(60)).ToString(CultureInfo.InvariantCulture)),
-			new Claim(ClaimTypes.Role, string.Join(",", user.Tags))
-		],
-		DateTime.UtcNow.AddMinutes(60)
-	);
+	private string CreateToken(UserEntity user) {
+		return ts.GenerateJwt([
+				new Claim(JwtRegisteredClaimNames.Jti, user.Id.ToString()),
+				new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName),
+				new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
+				new Claim(JwtRegisteredClaimNames.PhoneNumber, user.PhoneNumber ?? ""),
+				new Claim(JwtRegisteredClaimNames.Name, user.FirstName ?? ""),
+				new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName ?? ""),
+				new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()),
+				new Claim(ClaimTypes.Expiration, DateTime.UtcNow.Add(TimeSpan.FromSeconds(60)).ToString(CultureInfo.InvariantCulture)),
+				new Claim(ClaimTypes.Role, string.Join(",", user.Tags))
+			],
+			DateTime.UtcNow.AddMinutes(60)
+		);
+	}
 }

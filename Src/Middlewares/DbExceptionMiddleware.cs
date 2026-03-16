@@ -16,7 +16,7 @@ public class DbExceptionMiddleware(RequestDelegate next, ILocalizationService ls
 		if (ex.InnerException is PostgresException { SqlState: "23505" } pgEx) {
 			UResponse response = new(
 				Usc.Conflict,
-				message: pgEx.ConstraintName switch {
+				pgEx.ConstraintName switch {
 					"IX_Products_Slug" => ls.Get("SlugIsDuplicated"),
 					"IX_Products_Code" => ls.Get("CodeIsDuplicated"),
 					_ => "A unique constraint violation occurred."

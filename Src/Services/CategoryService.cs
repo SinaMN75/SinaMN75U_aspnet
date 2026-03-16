@@ -84,16 +84,15 @@ public class CategoryService(
 		e.UpdatedAt = DateTime.UtcNow;
 		e = p.MapToEntity(e);
 
-		if (p.ProductDeposit.IsNotNull()) {
+		if (p.ProductDeposit.IsNotNull())
 			await db.Set<ProductEntity>()
 				.Where(x => x.Categories.Any(c => c.Id == e.Id))
-				.ExecuteUpdateAsync(set => set.SetProperty(x => x.Deposit, p.ProductDeposit.Value), cancellationToken: ct);
-		}
+				.ExecuteUpdateAsync(set => set.SetProperty(x => x.Deposit, p.ProductDeposit.Value), ct);
 
 		if (p.ProductRent.IsNotNull()) {
 			await db.Set<ProductEntity>()
 				.Where(x => x.Categories.Any(c => c.Id == e.Id))
-				.ExecuteUpdateAsync(set => set.SetProperty(x => x.Rent, p.ProductRent.Value), cancellationToken: ct);
+				.ExecuteUpdateAsync(set => set.SetProperty(x => x.Rent, p.ProductRent.Value), ct);
 
 			if (p.UpdateInvoicesRent) {
 				PersianDateTime today = PersianDateTime.Today;

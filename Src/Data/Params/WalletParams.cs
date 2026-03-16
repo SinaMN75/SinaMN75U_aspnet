@@ -6,7 +6,7 @@ public sealed class WalletPurchaseParams : BaseParams {
 	public bool AllowMinusBalance { get; set; }
 }
 
-public sealed class WalletTransferParams: BaseParams {
+public sealed class WalletTransferParams : BaseParams {
 	public Guid? SenderId { get; set; }
 	public required Guid ReceiverId { get; set; }
 	public required decimal Amount { get; set; }

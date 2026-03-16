@@ -6,19 +6,23 @@ namespace SinaMN75U.Data.Entities;
 [Index(nameof(PhoneNumber), Name = "IX_Users_PhoneNumber", IsUnique = true)]
 [Index(nameof(NationalCode), Name = "IX_Users_NationalCode", IsUnique = true)]
 public class UserEntity : BaseEntity<TagUser, UserJson> {
-	[Required, MaxLength(100)]
+	[Required]
+	[MaxLength(100)]
 	public string UserName { get; set; } = null!;
 
-	[Required, MaxLength(200)]
+	[Required]
+	[MaxLength(200)]
 	public string Password { get; set; } = null!;
 
-	[Required, MaxLength(200)]
+	[Required]
+	[MaxLength(200)]
 	public string RefreshToken { get; set; } = null!;
 
 	[MaxLength(15)]
 	public string? PhoneNumber { get; set; }
 
-	[MinLength(10), MaxLength(10)]
+	[MinLength(10)]
+	[MaxLength(10)]
 	public string? NationalCode { get; set; }
 
 	[MaxLength(100)]
@@ -65,24 +69,26 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 
 	public ICollection<WalletEntity> Wallets { get; set; } = [];
 
-	public UserResponse MapToResponse() => new() {
-		Id = Id,
-		CreatedAt = CreatedAt,
-		UpdatedAt = UpdatedAt,
-		DeletedAt = DeletedAt,
-		JsonData = JsonData,
-		Tags = Tags,
-		UserName = UserName,
-		PhoneNumber = PhoneNumber,
-		Email = Email,
-		FirstName = FirstName,
-		LastName = LastName,
-		Bio = Bio,
-		Country = Country,
-		State = State,
-		City = City,
-		Birthdate = Birthdate
-	};
+	public UserResponse MapToResponse() {
+		return new UserResponse {
+			Id = Id,
+			CreatedAt = CreatedAt,
+			UpdatedAt = UpdatedAt,
+			DeletedAt = DeletedAt,
+			JsonData = JsonData,
+			Tags = Tags,
+			UserName = UserName,
+			PhoneNumber = PhoneNumber,
+			Email = Email,
+			FirstName = FirstName,
+			LastName = LastName,
+			Bio = Bio,
+			Country = Country,
+			State = State,
+			City = City,
+			Birthdate = Birthdate
+		};
+	}
 }
 
 public class UserJson {

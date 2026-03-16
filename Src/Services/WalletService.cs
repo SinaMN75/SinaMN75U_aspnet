@@ -20,7 +20,7 @@ public class WalletService(
 			UserId = userId,
 			JsonData = new WalletJson(),
 			Tags = [],
-			Balance = 0,
+			Balance = 0
 		};
 		await db.Set<WalletEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);

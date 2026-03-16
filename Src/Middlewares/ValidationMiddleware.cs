@@ -21,12 +21,19 @@ public class UValidationFilter : IEndpointFilter {
 }
 
 public abstract class UValidationAttribute(string key) : ValidationAttribute {
-	protected string GetErrorMessage(ValidationContext context) => context.GetRequiredService<ILocalizationService>().Get(key);
-	public override string FormatErrorMessage(string name) => key;
+	protected string GetErrorMessage(ValidationContext context) {
+		return context.GetRequiredService<ILocalizationService>().Get(key);
+	}
+
+	public override string FormatErrorMessage(string name) {
+		return key;
+	}
 }
 
 public sealed class UValidationRequiredAttribute(string key) : UValidationAttribute(key) {
-	protected override ValidationResult? IsValid(object? value, ValidationContext context) => value == null || value is string str && string.IsNullOrWhiteSpace(str) ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
+	protected override ValidationResult? IsValid(object? value, ValidationContext context) {
+		return value == null || value is string str && string.IsNullOrWhiteSpace(str) ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
+	}
 }
 
 public sealed class UValidationStringLengthAttribute(int min, int max, string key) : UValidationAttribute(key) {
@@ -37,27 +44,39 @@ public sealed class UValidationStringLengthAttribute(int min, int max, string ke
 }
 
 public sealed class UValidationEmailAttribute(string key) : UValidationAttribute(key) {
-	protected override ValidationResult? IsValid(object? value, ValidationContext context) => value is string str && !new EmailAddressAttribute().IsValid(str) ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
+	protected override ValidationResult? IsValid(object? value, ValidationContext context) {
+		return value is string str && !new EmailAddressAttribute().IsValid(str) ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
+	}
 }
 
 public sealed class UValidationGuidAttribute(string key) : UValidationAttribute(key) {
-	protected override ValidationResult? IsValid(object? value, ValidationContext context) => value is string str && str.IsGuid() ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
+	protected override ValidationResult? IsValid(object? value, ValidationContext context) {
+		return value is string str && str.IsGuid() ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
+	}
 }
 
 public sealed class UValidationRegexAttribute(string pattern, string key) : UValidationAttribute(key) {
-	protected override ValidationResult? IsValid(object? value, ValidationContext context) => value is string str && !new Regex(pattern).IsMatch(str) ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
+	protected override ValidationResult? IsValid(object? value, ValidationContext context) {
+		return value is string str && !new Regex(pattern).IsMatch(str) ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
+	}
 }
 
 public sealed class UValidationCompareAttribute(string otherProperty, string key) : UValidationAttribute(key) {
-	protected override ValidationResult? IsValid(object? value, ValidationContext context) => !Equals(value, context.ObjectType.GetProperty(otherProperty)?.GetValue(context.ObjectInstance)) ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
+	protected override ValidationResult? IsValid(object? value, ValidationContext context) {
+		return !Equals(value, context.ObjectType.GetProperty(otherProperty)?.GetValue(context.ObjectInstance)) ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
+	}
 }
 
 public sealed class UValidationFutureDateAttribute(string key) : UValidationAttribute(key) {
-	protected override ValidationResult? IsValid(object? value, ValidationContext context) => value is DateTime date && date < DateTime.Now ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
+	protected override ValidationResult? IsValid(object? value, ValidationContext context) {
+		return value is DateTime date && date < DateTime.Now ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
+	}
 }
 
 public sealed class UValidationBeforeDateAttribute(string key) : UValidationAttribute(key) {
-	protected override ValidationResult? IsValid(object? value, ValidationContext context) => value is DateTime date && date > DateTime.Now ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
+	protected override ValidationResult? IsValid(object? value, ValidationContext context) {
+		return value is DateTime date && date > DateTime.Now ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
+	}
 }
 
 public sealed class UValidationMinCollectionLengthAttribute(int min, string key) : UValidationAttribute(key) {

@@ -26,7 +26,9 @@ public class UResponse(Usc status = Usc.Success, string message = "") {
 	public int? TotalCount { get; set; }
 	public string Message { get; set; } = message;
 
-	public IResult ToResult() => TypedResults.Json(this, statusCode: (short)Status);
+	public IResult ToResult() {
+		return TypedResults.Json(this, statusCode: (short)Status);
+	}
 }
 
 public static class UResponseExtensions {
@@ -43,9 +45,7 @@ public static class UResponseExtensions {
 		return new UResponse<IEnumerable<T>?>(items) {
 			TotalCount = totalCount,
 			PageCount = (int)Math.Ceiling(totalCount / (decimal)pageSize),
-			PageSize = pageSize,
+			PageSize = pageSize
 		};
 	}
-	
-	
 }

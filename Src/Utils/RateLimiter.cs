@@ -16,8 +16,8 @@ public static class RateLimiter {
 
 			o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(ctx =>
 				RateLimitPartition.GetFixedWindowLimiter(
-					partitionKey: ctx.GetRealIp() ?? "unknown",
-					factory: _ => new FixedWindowRateLimiterOptions {
+					ctx.GetRealIp() ?? "unknown",
+					_ => new FixedWindowRateLimiterOptions {
 						PermitLimit = 200,
 						Window = TimeSpan.FromMinutes(1),
 						QueueLimit = 10
@@ -25,5 +25,7 @@ public static class RateLimiter {
 		});
 	}
 
-	private static string? GetRealIp(this HttpContext ctx) => ctx.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim() ?? ctx.Connection.RemoteIpAddress?.ToString();
+	private static string? GetRealIp(this HttpContext ctx) {
+		return ctx.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim() ?? ctx.Connection.RemoteIpAddress?.ToString();
+	}
 }

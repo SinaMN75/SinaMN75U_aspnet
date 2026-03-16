@@ -1,5 +1,3 @@
-using SinaMN75U.Data.ServiceParams;
-
 namespace SinaMN75U.Data.Params;
 
 public class BaseParams {
@@ -10,15 +8,11 @@ public class BaseParams {
 
 public class IdParams : BaseParams {
 	public required Guid? Id { get; set; }
-
-	public IdServiceParams MapToServiceParams() => new() { Id = Id };
 }
 
 public sealed class SoftDeleteParams : BaseParams {
 	public required Guid? Id { get; set; }
 	public required DateTime? DateTime { get; set; }
-
-	public SoftDeleteServiceParams MapToServiceParams() => new() { Id = Id, DateTime = DateTime };
 }
 
 public sealed class IdListParams : BaseParams {

@@ -11,7 +11,7 @@ public static class MediaRoutes {
 			if (!File.Exists(filePath)) return Task.FromResult(Results.NotFound("File not found"));
 			FileExtensionContentTypeProvider provider = new();
 			if (!provider.TryGetContentType(filePath, out string? contentType)) contentType = "application/octet-stream";
-			return Task.FromResult(Results.File(new FileStream(filePath, FileMode.Open, FileAccess.Read), contentType, fileDownloadName: Path.Combine(env.WebRootPath, "Media", filePath)));
+			return Task.FromResult(Results.File(new FileStream(filePath, FileMode.Open, FileAccess.Read), contentType, Path.Combine(env.WebRootPath, "Media", filePath)));
 		});
 	}
 }

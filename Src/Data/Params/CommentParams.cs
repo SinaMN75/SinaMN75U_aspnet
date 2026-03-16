@@ -16,16 +16,18 @@ public sealed class CommentCreateParams : BaseParams {
 	[UValidationMinCollectionLength(1, "TagsRequired")]
 	public required List<TagComment> Tags { get; set; }
 
-	public CommentEntity MapToEntity() => new() {
-		Description = Description,
-		Score = Score,
-		ParentId = ParentId,
-		ProductId = ProductId,
-		UserId = UserId,
-		CreatorId = CreatorId ?? Guid.Empty,
-		JsonData = new CommentJson(),
-		Tags = Tags
-	};
+	public CommentEntity MapToEntity() {
+		return new CommentEntity {
+			Description = Description,
+			Score = Score,
+			ParentId = ParentId,
+			ProductId = ProductId,
+			UserId = UserId,
+			CreatorId = CreatorId ?? Guid.Empty,
+			JsonData = new CommentJson(),
+			Tags = Tags
+		};
+	}
 }
 
 public sealed class CommentUpdateParams : BaseUpdateParams<TagComment> {

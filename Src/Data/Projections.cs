@@ -1,5 +1,3 @@
-using SinaMN75U.Data.ServiceResponses;
-
 namespace SinaMN75U.Data;
 
 public sealed class CategorySelectorArgs {
@@ -85,8 +83,8 @@ public sealed class TxnSelectorArgs {
 }
 
 public static class Projections {
-	public static Expression<Func<AddressEntity, AddressResponse>> AddressSelector(AddressSelectorArgs args) =>
-		x => new AddressResponse {
+	public static Expression<Func<AddressEntity, AddressResponse>> AddressSelector(AddressSelectorArgs args) {
+		return x => new AddressResponse {
 			Id = x.Id,
 			Tags = x.Tags,
 			JsonData = x.JsonData,
@@ -108,33 +106,10 @@ public static class Projections {
 					Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
 				}
 		};
-	
-	public static Expression<Func<AddressEntity, AddressServiceResponse>> ServiceAddressSelector(AddressSelectorArgs args) =>
-		x => new AddressServiceResponse {
-			Id = x.Id,
-			Tags = x.Tags,
-			JsonData = x.JsonData,
-			Title = x.Title,
-			CreatorId = x.CreatorId,
-			Creator = args.Creator == null
-				? null
-				: new UserServiceResponse {
-					Id = x.Creator.Id,
-					JsonData = x.Creator.JsonData,
-					Tags = x.Creator.Tags,
-					UserName = x.Creator.UserName,
-					PhoneNumber = x.Creator.PhoneNumber,
-					Email = x.Creator.Email,
-					FirstName = x.Creator.FirstName,
-					LastName = x.Creator.LastName,
-					NationalCode = x.Creator.NationalCode,
-					Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector(args.Creator.Media)).ToList(),
-					Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
-				}
-		};
-	
-	public static Expression<Func<WalletTxnEntity, WalletTxnResponse>> WalletTxnSelector(WalletTxnSelectorArgs args) =>
-		x => new WalletTxnResponse {
+	}
+
+	public static Expression<Func<WalletTxnEntity, WalletTxnResponse>> WalletTxnSelector(WalletTxnSelectorArgs args) {
+		return x => new WalletTxnResponse {
 			Id = x.Id,
 			Tags = x.Tags,
 			JsonData = x.JsonData,
@@ -188,71 +163,81 @@ public static class Projections {
 							.ToList()
 				}
 		};
+	}
 
-	public static Expression<Func<MediaEntity, MediaResponse>> MediaSelector(MediaSelectorArgs args) =>
-		x => new MediaResponse {
+	public static Expression<Func<MediaEntity, MediaResponse>> MediaSelector(MediaSelectorArgs args) {
+		return x => new MediaResponse {
 			Id = x.Id,
 			Tags = x.Tags,
 			JsonData = x.JsonData,
 			Path = x.Path
 		};
+	}
 
-	public static Expression<Func<UserEntity, UserResponse>> UserSelector(UserSelectorArgs args) => x => new UserResponse {
-		Id = x.Id,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		UserName = x.UserName,
-		PhoneNumber = x.PhoneNumber,
-		Email = x.Email,
-		FirstName = x.FirstName,
-		LastName = x.LastName,
-		Bio = x.Bio,
-		Country = x.Country,
-		State = x.State,
-		City = x.City,
-		Birthdate = x.Birthdate,
-		NationalCode = x.NationalCode,
-		Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
-		Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(args.Media)).ToList(),
-		Contracts = args.Contract == null ? null : x.Contracts.AsQueryable().Select(ContractSelector(args.Contract)).ToList(),
-		Addresses = args.Address == null ? null : x.Addresses.AsQueryable().Select(AddressSelector(args.Address)).ToList(),
-	};
+	public static Expression<Func<UserEntity, UserResponse>> UserSelector(UserSelectorArgs args) {
+		return x => new UserResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			UserName = x.UserName,
+			PhoneNumber = x.PhoneNumber,
+			Email = x.Email,
+			FirstName = x.FirstName,
+			LastName = x.LastName,
+			Bio = x.Bio,
+			Country = x.Country,
+			State = x.State,
+			City = x.City,
+			Birthdate = x.Birthdate,
+			NationalCode = x.NationalCode,
+			Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(args.Media)).ToList(),
+			Contracts = args.Contract == null ? null : x.Contracts.AsQueryable().Select(ContractSelector(args.Contract)).ToList(),
+			Addresses = args.Address == null ? null : x.Addresses.AsQueryable().Select(AddressSelector(args.Address)).ToList()
+		};
+	}
 
-	public static Expression<Func<ParkingEntity, ParkingResponse>> ParkingSelector(ParkingSelectorArgs args) => x => new ParkingResponse {
-		Id = x.Id,
-		CreatedAt = x.CreatedAt,
-		UpdatedAt = x.UpdatedAt,
-		DeletedAt = x.DeletedAt,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		Title = x.Title,
-		CreatorId = x.CreatorId
-	};
+	public static Expression<Func<ParkingEntity, ParkingResponse>> ParkingSelector(ParkingSelectorArgs args) {
+		return x => new ParkingResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			UpdatedAt = x.UpdatedAt,
+			DeletedAt = x.DeletedAt,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			Title = x.Title,
+			CreatorId = x.CreatorId
+		};
+	}
 
-	public static Expression<Func<ParkingReportEntity, ParkingReportResponse>> ParkingReportSelector(ParkingReportSelectorArgs args) => x => new ParkingReportResponse {
-		Id = x.Id,
-		CreatedAt = x.CreatedAt,
-		UpdatedAt = x.UpdatedAt,
-		DeletedAt = x.DeletedAt,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		CreatorId = x.CreatorId,
-		StartDate = x.StartDate,
-		VehicleId = x.VehicleId,
-		ParkingId = x.ParkingId,
-		Amount = x.Amount,
-		EndDate = x.EndDate
-	};
+	public static Expression<Func<ParkingReportEntity, ParkingReportResponse>> ParkingReportSelector(ParkingReportSelectorArgs args) {
+		return x => new ParkingReportResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			UpdatedAt = x.UpdatedAt,
+			DeletedAt = x.DeletedAt,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			StartDate = x.StartDate,
+			VehicleId = x.VehicleId,
+			ParkingId = x.ParkingId,
+			Amount = x.Amount,
+			EndDate = x.EndDate
+		};
+	}
 
-	public static Expression<Func<VehicleEntity, VehicleResponse>> VehicleSelector(VehicleSelectorArgs args) => x => new VehicleResponse {
-		Id = x.Id,
-		CreatedAt = x.CreatedAt,
-		UpdatedAt = x.UpdatedAt,
-		DeletedAt = x.DeletedAt,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		NumberPlate = x.NumberPlate
-	};
+	public static Expression<Func<VehicleEntity, VehicleResponse>> VehicleSelector(VehicleSelectorArgs args) {
+		return x => new VehicleResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			UpdatedAt = x.UpdatedAt,
+			DeletedAt = x.DeletedAt,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			NumberPlate = x.NumberPlate
+		};
+	}
 
 	public static Expression<Func<ProductEntity, ProductResponse>> ProductSelector(ProductSelectorArgs args) {
 		Expression<Func<ProductEntity, ProductResponse>>? childSelector = null;
@@ -340,240 +325,252 @@ public static class Projections {
 		};
 	}
 
-	public static Expression<Func<ContentEntity, ContentResponse>> ContentSelector(ContentSelectorArgs args) => x => new ContentResponse {
-		Id = x.Id,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(args.Media)).ToList()
-	};
+	public static Expression<Func<ContentEntity, ContentResponse>> ContentSelector(ContentSelectorArgs args) {
+		return x => new ContentResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(args.Media)).ToList()
+		};
+	}
 
-	public static Expression<Func<TxnEntity, TxnResponse>> TxnSelector(TxnSelectorArgs args) => x => new TxnResponse {
-		Id = x.Id,
-		CreatedAt = x.CreatedAt,
-		UpdatedAt = x.UpdatedAt,
-		DeletedAt = x.DeletedAt,
-		Tags = x.Tags,
-		Amount = x.Amount,
-		TrackingNumber = x.TrackingNumber,
-		JsonData = x.JsonData,
-		UserId = x.UserId,
-		InvoiceId = x.InvoiceId,
-		Invoice = args.Invoice == null
-			? null
-			: new InvoiceResponse {
-				DebtAmount = x.Invoice.DebtAmount,
-				CreditorAmount = x.Invoice.CreditorAmount,
-				PaidAmount = x.Invoice.PaidAmount,
-				PenaltyAmount = x.Invoice.PenaltyAmount,
-				DueDate = x.Invoice.DueDate,
-				JsonData = x.Invoice.JsonData,
-				Tags = x.Invoice.Tags,
-				Contract = args.Invoice.Contract == null
-					? null
-					: new ContractResponse {
-						Id = x.Invoice.Contract.Id,
-						JsonData = x.Invoice.Contract.JsonData,
-						Tags = x.Invoice.Contract.Tags,
-						StartDate = x.Invoice.Contract.StartDate,
-						EndDate = x.Invoice.Contract.EndDate,
-						Deposit = x.Invoice.Contract.Deposit,
-						Rent = x.Invoice.Contract.Rent,
-						UserId = x.Invoice.Contract.UserId,
-						CreatorId = x.Invoice.Contract.CreatorId,
-						ProductId = x.Invoice.Contract.ProductId
-					}
-			},
-		User = args.User == null
-			? null
-			: new UserResponse {
-				Id = x.User.Id,
-				JsonData = x.User.JsonData,
-				Tags = x.User.Tags,
-				UserName = x.User.UserName,
-				PhoneNumber = x.User.PhoneNumber,
-				Email = x.User.Email,
-				FirstName = x.User.FirstName,
-				LastName = x.User.LastName,
-				NationalCode = x.User.NationalCode,
-				Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList(),
-				Media = args.User.Media == null ? null : x.User.Media.AsQueryable().Select(MediaSelector(args.User.Media)).ToList()
-			}
-	};
+	public static Expression<Func<TxnEntity, TxnResponse>> TxnSelector(TxnSelectorArgs args) {
+		return x => new TxnResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			UpdatedAt = x.UpdatedAt,
+			DeletedAt = x.DeletedAt,
+			Tags = x.Tags,
+			Amount = x.Amount,
+			TrackingNumber = x.TrackingNumber,
+			JsonData = x.JsonData,
+			UserId = x.UserId,
+			InvoiceId = x.InvoiceId,
+			Invoice = args.Invoice == null
+				? null
+				: new InvoiceResponse {
+					DebtAmount = x.Invoice.DebtAmount,
+					CreditorAmount = x.Invoice.CreditorAmount,
+					PaidAmount = x.Invoice.PaidAmount,
+					PenaltyAmount = x.Invoice.PenaltyAmount,
+					DueDate = x.Invoice.DueDate,
+					JsonData = x.Invoice.JsonData,
+					Tags = x.Invoice.Tags,
+					Contract = args.Invoice.Contract == null
+						? null
+						: new ContractResponse {
+							Id = x.Invoice.Contract.Id,
+							JsonData = x.Invoice.Contract.JsonData,
+							Tags = x.Invoice.Contract.Tags,
+							StartDate = x.Invoice.Contract.StartDate,
+							EndDate = x.Invoice.Contract.EndDate,
+							Deposit = x.Invoice.Contract.Deposit,
+							Rent = x.Invoice.Contract.Rent,
+							UserId = x.Invoice.Contract.UserId,
+							CreatorId = x.Invoice.Contract.CreatorId,
+							ProductId = x.Invoice.Contract.ProductId
+						}
+				},
+			User = args.User == null
+				? null
+				: new UserResponse {
+					Id = x.User.Id,
+					JsonData = x.User.JsonData,
+					Tags = x.User.Tags,
+					UserName = x.User.UserName,
+					PhoneNumber = x.User.PhoneNumber,
+					Email = x.User.Email,
+					FirstName = x.User.FirstName,
+					LastName = x.User.LastName,
+					NationalCode = x.User.NationalCode,
+					Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList(),
+					Media = args.User.Media == null ? null : x.User.Media.AsQueryable().Select(MediaSelector(args.User.Media)).ToList()
+				}
+		};
+	}
 
-	public static Expression<Func<TicketEntity, TicketResponse>> TicketSelector(TicketSelectorArgs args) => x => new TicketResponse {
-		Id = x.Id,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		CreatorId = x.CreatorId,
-		Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(args.Media)).ToList(),
-		Creator = args.User == null
-			? null
-			: new UserResponse {
-				Id = x.Creator.Id,
-				JsonData = x.Creator.JsonData,
-				Tags = x.Creator.Tags,
-				UserName = x.Creator.UserName,
-				PhoneNumber = x.Creator.PhoneNumber,
-				Email = x.Creator.Email,
-				FirstName = x.Creator.FirstName,
-				LastName = x.Creator.LastName,
-				NationalCode = x.Creator.NationalCode,
-				Categories = args.User.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList(),
-				Media = args.User.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector(args.User.Media)).ToList()
-			}
-	};
+	public static Expression<Func<TicketEntity, TicketResponse>> TicketSelector(TicketSelectorArgs args) {
+		return x => new TicketResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(args.Media)).ToList(),
+			Creator = args.User == null
+				? null
+				: new UserResponse {
+					Id = x.Creator.Id,
+					JsonData = x.Creator.JsonData,
+					Tags = x.Creator.Tags,
+					UserName = x.Creator.UserName,
+					PhoneNumber = x.Creator.PhoneNumber,
+					Email = x.Creator.Email,
+					FirstName = x.Creator.FirstName,
+					LastName = x.Creator.LastName,
+					NationalCode = x.Creator.NationalCode,
+					Categories = args.User.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList(),
+					Media = args.User.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector(args.User.Media)).ToList()
+				}
+		};
+	}
 
-	public static Expression<Func<CommentEntity, CommentResponse>> CommentSelector(CommentSelectorArgs args) => x => new CommentResponse {
-		Id = x.Id,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		CreatorId = x.CreatorId,
-		UserId = x.UserId,
-		ProductId = x.ProductId,
-		ParentId = x.ParentId,
-		Score = x.Score,
-		Description = x.Description,
-		Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(args.Media)).ToList(),
-		Creator = args.Creator == null ? null : x.Creator.MapToResponse(),
-		User = args.User == null ? null : x.User!.MapToResponse(),
-		Product = args.Product == null ? null : x.Product!.MapToResponse(),
-		Children = args.Children == null ? null : x.Children.AsQueryable().Select(CommentSelector(args.Children)).ToList()
-	};
+	public static Expression<Func<CommentEntity, CommentResponse>> CommentSelector(CommentSelectorArgs args) {
+		return x => new CommentResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			UserId = x.UserId,
+			ProductId = x.ProductId,
+			ParentId = x.ParentId,
+			Score = x.Score,
+			Description = x.Description,
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(args.Media)).ToList(),
+			Creator = args.Creator == null ? null : x.Creator.MapToResponse(),
+			User = args.User == null ? null : x.User!.MapToResponse(),
+			Product = args.Product == null ? null : x.Product!.MapToResponse(),
+			Children = args.Children == null ? null : x.Children.AsQueryable().Select(CommentSelector(args.Children)).ToList()
+		};
+	}
 
-	public static Expression<Func<ContractEntity, ContractResponse>> ContractSelector(ContractSelectorArgs args) => x => new ContractResponse {
-		Id = x.Id,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		StartDate = x.StartDate,
-		EndDate = x.EndDate,
-		Deposit = x.Deposit,
-		Rent = x.Rent,
-		UserId = x.UserId,
-		CreatorId = x.CreatorId,
-		ProductId = x.ProductId,
-		Invoices = args.Invoice == null ? null : x.Invoices.AsQueryable().Select(InvoiceSelector(args.Invoice)).ToList(),
-		User = args.User == null
-			? null
-			: new UserResponse {
-				Id = x.User.Id,
-				JsonData = x.User.JsonData,
-				Tags = x.User.Tags,
-				UserName = x.User.UserName,
-				PhoneNumber = x.User.PhoneNumber,
-				Email = x.User.Email,
-				FirstName = x.User.FirstName,
-				LastName = x.User.LastName,
-				NationalCode = x.User.NationalCode,
-				Media = args.User.Media == null ? null : x.User.Media.AsQueryable().Select(MediaSelector(args.User.Media)).ToList(),
-				Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList()
-			},
-		Creator = args.Creator == null
-			? null
-			: new UserResponse {
-				Id = x.Creator.Id,
-				JsonData = x.Creator.JsonData,
-				Tags = x.Creator.Tags,
-				UserName = x.Creator.UserName,
-				PhoneNumber = x.Creator.PhoneNumber,
-				Email = x.Creator.Email,
-				FirstName = x.Creator.FirstName,
-				LastName = x.Creator.LastName,
-				NationalCode = x.Creator.NationalCode,
-				Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector(args.Creator.Media)).ToList(),
-				Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
-			},
-		Product = args.Product == null
-			? null
-			: new ProductResponse {
-				Id = x.Product.Id,
-				JsonData = x.Product.JsonData,
-				Tags = x.Product.Tags,
-				Title = x.Product.Title,
-				Code = x.Product.Code,
-				Subtitle = x.Product.Subtitle,
-				Description = x.Product.Description,
-				Slug = x.Product.Slug,
-				Type = x.Product.Type,
-				Content = x.Product.Content,
-				Latitude = x.Product.Latitude,
-				Longitude = x.Product.Longitude,
-				Deposit = x.Product.Deposit,
-				Rent = x.Product.Rent,
-				Stock = x.Product.Stock,
-				Point = x.Product.Point,
-				Order = x.Product.Order,
-				CreatorId = x.Product.CreatorId,
-				Categories = args.Product.Category == null ? null : x.Product.Categories.AsQueryable().Select(CategorySelector(args.Product.Category)).ToList(),
-				Media = args.Product.Media == null ? null : x.Product.Media.AsQueryable().Select(MediaSelector(args.Product.Media)).ToList()
-			}
-	};
+	public static Expression<Func<ContractEntity, ContractResponse>> ContractSelector(ContractSelectorArgs args) {
+		return x => new ContractResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			StartDate = x.StartDate,
+			EndDate = x.EndDate,
+			Deposit = x.Deposit,
+			Rent = x.Rent,
+			UserId = x.UserId,
+			CreatorId = x.CreatorId,
+			ProductId = x.ProductId,
+			Invoices = args.Invoice == null ? null : x.Invoices.AsQueryable().Select(InvoiceSelector(args.Invoice)).ToList(),
+			User = args.User == null
+				? null
+				: new UserResponse {
+					Id = x.User.Id,
+					JsonData = x.User.JsonData,
+					Tags = x.User.Tags,
+					UserName = x.User.UserName,
+					PhoneNumber = x.User.PhoneNumber,
+					Email = x.User.Email,
+					FirstName = x.User.FirstName,
+					LastName = x.User.LastName,
+					NationalCode = x.User.NationalCode,
+					Media = args.User.Media == null ? null : x.User.Media.AsQueryable().Select(MediaSelector(args.User.Media)).ToList(),
+					Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList()
+				},
+			Creator = args.Creator == null
+				? null
+				: new UserResponse {
+					Id = x.Creator.Id,
+					JsonData = x.Creator.JsonData,
+					Tags = x.Creator.Tags,
+					UserName = x.Creator.UserName,
+					PhoneNumber = x.Creator.PhoneNumber,
+					Email = x.Creator.Email,
+					FirstName = x.Creator.FirstName,
+					LastName = x.Creator.LastName,
+					NationalCode = x.Creator.NationalCode,
+					Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector(args.Creator.Media)).ToList(),
+					Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
+				},
+			Product = args.Product == null
+				? null
+				: new ProductResponse {
+					Id = x.Product.Id,
+					JsonData = x.Product.JsonData,
+					Tags = x.Product.Tags,
+					Title = x.Product.Title,
+					Code = x.Product.Code,
+					Subtitle = x.Product.Subtitle,
+					Description = x.Product.Description,
+					Slug = x.Product.Slug,
+					Type = x.Product.Type,
+					Content = x.Product.Content,
+					Latitude = x.Product.Latitude,
+					Longitude = x.Product.Longitude,
+					Deposit = x.Product.Deposit,
+					Rent = x.Product.Rent,
+					Stock = x.Product.Stock,
+					Point = x.Product.Point,
+					Order = x.Product.Order,
+					CreatorId = x.Product.CreatorId,
+					Categories = args.Product.Category == null ? null : x.Product.Categories.AsQueryable().Select(CategorySelector(args.Product.Category)).ToList(),
+					Media = args.Product.Media == null ? null : x.Product.Media.AsQueryable().Select(MediaSelector(args.Product.Media)).ToList()
+				}
+		};
+	}
 
-	public static Expression<Func<InvoiceEntity, InvoiceResponse>> InvoiceSelector(InvoiceSelectorArgs args) => x => new InvoiceResponse {
-		Id = x.Id,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		DebtAmount = x.DebtAmount,
-		CreditorAmount = x.CreditorAmount,
-		PaidAmount = x.PaidAmount,
-		PenaltyAmount = x.PenaltyAmount,
-		DueDate = x.DueDate,
-		Contract = args.Contract == null
-			? null
-			: new ContractResponse {
-				Id = x.Contract.Id,
-				JsonData = x.Contract.JsonData,
-				Tags = x.Contract.Tags,
-				StartDate = x.Contract.StartDate,
-				EndDate = x.Contract.EndDate,
-				Deposit = x.Contract.Deposit,
-				Rent = x.Contract.Rent,
-				UserId = x.Contract.UserId,
-				CreatorId = x.Contract.CreatorId,
-				ProductId = x.Contract.ProductId,
-				Creator = args.Contract.Creator == null
-					? null
-					: new UserResponse {
-						Id = x.Contract.Creator.Id,
-						JsonData = x.Contract.Creator.JsonData,
-						Tags = x.Contract.Creator.Tags,
-						UserName = x.Contract.Creator.UserName,
-						PhoneNumber = x.Contract.Creator.PhoneNumber,
-						Email = x.Contract.Creator.Email,
-						FirstName = x.Contract.Creator.FirstName,
-						LastName = x.Contract.Creator.LastName,
-						NationalCode = x.Contract.Creator.NationalCode,
-						Categories = args.Contract.Creator.Category == null ? null : x.Contract.Creator.Categories.AsQueryable().Select(CategorySelector(args.Contract.Creator.Category)).ToList(),
-						Media = args.Contract.Creator.Media == null ? null : x.Contract.Creator.Media.AsQueryable().Select(MediaSelector(args.Contract.Creator.Media)).ToList()
-					},
-				User = args.Contract.User == null
-					? null
-					: new UserResponse {
-						Id = x.Contract.User.Id,
-						JsonData = x.Contract.User.JsonData,
-						Tags = x.Contract.User.Tags,
-						UserName = x.Contract.User.UserName,
-						PhoneNumber = x.Contract.User.PhoneNumber,
-						Email = x.Contract.User.Email,
-						FirstName = x.Contract.User.FirstName,
-						LastName = x.Contract.User.LastName,
-						NationalCode = x.Contract.User.NationalCode,
-						Categories = args.Contract.User.Category == null ? null : x.Contract.User.Categories.AsQueryable().Select(CategorySelector(args.Contract.User.Category)).ToList(),
-						Media = args.Contract.User.Media == null ? null : x.Contract.User.Media.AsQueryable().Select(MediaSelector(args.Contract.User.Media)).ToList()
-					},
-				Product = args.Contract.Product == null
-					? null
-					: new ProductResponse {
-						Id = x.Contract.Product.Id,
-						JsonData = x.Contract.Product.JsonData,
-						Tags = x.Contract.Product.Tags,
-						Title = x.Contract.Product.Title,
-						Code = x.Contract.Product.Code,
-						Deposit = x.Contract.Product.Deposit,
-						Rent = x.Contract.Product.Rent,
-						CreatorId = x.Contract.Product.CreatorId,
-						Categories = args.Contract.Product.Category == null ? null : x.Contract.Product.Categories.AsQueryable().Select(CategorySelector(args.Contract.Product.Category)).ToList(),
-						Media = args.Contract.Product.Media == null ? null : x.Contract.Product.Media.AsQueryable().Select(MediaSelector(args.Contract.Product.Media)).ToList()
-					}
-			}
-	};
+	public static Expression<Func<InvoiceEntity, InvoiceResponse>> InvoiceSelector(InvoiceSelectorArgs args) {
+		return x => new InvoiceResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			DebtAmount = x.DebtAmount,
+			CreditorAmount = x.CreditorAmount,
+			PaidAmount = x.PaidAmount,
+			PenaltyAmount = x.PenaltyAmount,
+			DueDate = x.DueDate,
+			Contract = args.Contract == null
+				? null
+				: new ContractResponse {
+					Id = x.Contract.Id,
+					JsonData = x.Contract.JsonData,
+					Tags = x.Contract.Tags,
+					StartDate = x.Contract.StartDate,
+					EndDate = x.Contract.EndDate,
+					Deposit = x.Contract.Deposit,
+					Rent = x.Contract.Rent,
+					UserId = x.Contract.UserId,
+					CreatorId = x.Contract.CreatorId,
+					ProductId = x.Contract.ProductId,
+					Creator = args.Contract.Creator == null
+						? null
+						: new UserResponse {
+							Id = x.Contract.Creator.Id,
+							JsonData = x.Contract.Creator.JsonData,
+							Tags = x.Contract.Creator.Tags,
+							UserName = x.Contract.Creator.UserName,
+							PhoneNumber = x.Contract.Creator.PhoneNumber,
+							Email = x.Contract.Creator.Email,
+							FirstName = x.Contract.Creator.FirstName,
+							LastName = x.Contract.Creator.LastName,
+							NationalCode = x.Contract.Creator.NationalCode,
+							Categories = args.Contract.Creator.Category == null ? null : x.Contract.Creator.Categories.AsQueryable().Select(CategorySelector(args.Contract.Creator.Category)).ToList(),
+							Media = args.Contract.Creator.Media == null ? null : x.Contract.Creator.Media.AsQueryable().Select(MediaSelector(args.Contract.Creator.Media)).ToList()
+						},
+					User = args.Contract.User == null
+						? null
+						: new UserResponse {
+							Id = x.Contract.User.Id,
+							JsonData = x.Contract.User.JsonData,
+							Tags = x.Contract.User.Tags,
+							UserName = x.Contract.User.UserName,
+							PhoneNumber = x.Contract.User.PhoneNumber,
+							Email = x.Contract.User.Email,
+							FirstName = x.Contract.User.FirstName,
+							LastName = x.Contract.User.LastName,
+							NationalCode = x.Contract.User.NationalCode,
+							Categories = args.Contract.User.Category == null ? null : x.Contract.User.Categories.AsQueryable().Select(CategorySelector(args.Contract.User.Category)).ToList(),
+							Media = args.Contract.User.Media == null ? null : x.Contract.User.Media.AsQueryable().Select(MediaSelector(args.Contract.User.Media)).ToList()
+						},
+					Product = args.Contract.Product == null
+						? null
+						: new ProductResponse {
+							Id = x.Contract.Product.Id,
+							JsonData = x.Contract.Product.JsonData,
+							Tags = x.Contract.Product.Tags,
+							Title = x.Contract.Product.Title,
+							Code = x.Contract.Product.Code,
+							Deposit = x.Contract.Product.Deposit,
+							Rent = x.Contract.Product.Rent,
+							CreatorId = x.Contract.Product.CreatorId,
+							Categories = args.Contract.Product.Category == null ? null : x.Contract.Product.Categories.AsQueryable().Select(CategorySelector(args.Contract.Product.Category)).ToList(),
+							Media = args.Contract.Product.Media == null ? null : x.Contract.Product.Media.AsQueryable().Select(MediaSelector(args.Contract.Product.Media)).ToList()
+						}
+				}
+		};
+	}
 }

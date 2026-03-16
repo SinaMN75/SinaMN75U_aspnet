@@ -6,17 +6,19 @@ public class WalletEntity : BaseEntity<TagWallet, WalletJson> {
 
 	public required decimal Balance { get; set; }
 
-	public WalletResponse MapToResponse() => new() {
-		Id = Id,
-		CreatedAt = CreatedAt,
-		UpdatedAt = UpdatedAt,
-		DeletedAt = DeletedAt,
-		JsonData = JsonData,
-		Tags = Tags,
-		User = User.MapToResponse(),
-		UserId = UserId,
-		Balance = Balance
-	};
+	public WalletResponse MapToResponse() {
+		return new WalletResponse {
+			Id = Id,
+			CreatedAt = CreatedAt,
+			UpdatedAt = UpdatedAt,
+			DeletedAt = DeletedAt,
+			JsonData = JsonData,
+			Tags = Tags,
+			User = User.MapToResponse(),
+			UserId = UserId,
+			Balance = Balance
+		};
+	}
 }
 
 public class WalletJson {

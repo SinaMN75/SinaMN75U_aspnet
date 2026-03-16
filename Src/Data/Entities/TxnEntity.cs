@@ -4,10 +4,12 @@ namespace SinaMN75U.Data.Entities;
 [Index(nameof(TrackingNumber), IsUnique = true)]
 [Index(nameof(UserId))]
 public class TxnEntity : BaseEntity<TagTxn, TxnJson> {
-	[Required, Column(TypeName = "decimal(18,2)")]
+	[Required]
+	[Column(TypeName = "decimal(18,2)")]
 	public required decimal Amount { get; set; }
 
-	[Required, MaxLength(100)]
+	[Required]
+	[MaxLength(100)]
 	public required string TrackingNumber { get; set; }
 
 	public required Guid InvoiceId { get; set; }
@@ -16,17 +18,19 @@ public class TxnEntity : BaseEntity<TagTxn, TxnJson> {
 	public required Guid UserId { get; set; }
 	public UserEntity User { get; set; } = null!;
 
-	public TxnResponse MapToResponse() => new() {
-		Id = Id,
-		CreatedAt = CreatedAt,
-		UpdatedAt = UpdatedAt,
-		DeletedAt = DeletedAt,
-		JsonData = JsonData,
-		Tags = Tags,
-		Amount = Amount,
-		TrackingNumber = TrackingNumber,
-		UserId = UserId
-	};
+	public TxnResponse MapToResponse() {
+		return new TxnResponse {
+			Id = Id,
+			CreatedAt = CreatedAt,
+			UpdatedAt = UpdatedAt,
+			DeletedAt = DeletedAt,
+			JsonData = JsonData,
+			Tags = Tags,
+			Amount = Amount,
+			TrackingNumber = TrackingNumber,
+			UserId = UserId
+		};
+	}
 }
 
 public class TxnJson {

@@ -60,12 +60,15 @@ public sealed class VerifyMobileForLoginParams : BaseParams {
 }
 
 public sealed class AuthCompleteProfileParams : BaseParams {
-	[UValidationRequired("FirstNameRequired"), UValidationStringLength(2, 40, "FirstNameInvalid")]
+	[UValidationRequired("FirstNameRequired")]
+	[UValidationStringLength(2, 40, "FirstNameInvalid")]
 	public required string FirstName { get; set; }
 
-	[UValidationRequired("LastNameRequired"), UValidationStringLength(2, 40, "LastNameInvalid")]
+	[UValidationRequired("LastNameRequired")]
+	[UValidationStringLength(2, 40, "LastNameInvalid")]
 	public required string LastName { get; set; }
 
-	[UValidationRequired("NationalCodeRequired"), UValidationStringLength(10, 10, "NationalCodeInvalid")]
+	[UValidationRequired("NationalCodeRequired")]
+	[UValidationStringLength(10, 10, "NationalCodeInvalid")]
 	public required string NationalCode { get; set; }
 }

@@ -25,7 +25,7 @@ public static partial class AspNetConfig {
 				o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
 				o.EnableRetryOnFailure(5, TimeSpan.FromSeconds(30), null);
 			});
-			if (builder.Environment.IsDevelopment()) {
+			if (builder.Environment.IsDevelopment())
 				b.LogTo(message => {
 						if (message.Contains("Executed DbCommand")) {
 							Match timeMatch = MyRegex3().Match(message);
@@ -41,7 +41,6 @@ public static partial class AspNetConfig {
 					},
 					[DbLoggerCategory.Database.Command.Name],
 					LogLevel.Information);
-			}
 		});
 
 		builder.Services.AddResponseCompression(o => {
@@ -63,7 +62,6 @@ public static partial class AspNetConfig {
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
 		builder.Services.AddSingleton<IHttpClientService, HttpClientService>();
 		builder.Services.AddSingleton<ILocalStorageService, UMemoryCacheService>();
-		builder.Services.AddScoped<IEfService, EfService>();
 		builder.Services.AddScoped<ITokenService, TokenService>();
 		builder.Services.AddScoped<IUserService, UserService>();
 		builder.Services.AddScoped<IAuthService, AuthService>();
@@ -86,7 +84,6 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IITHubService, ITHubService>();
 		builder.Services.AddScoped<IAddressService, AddressService>();
 		builder.Services.AddScoped<IWalletService, WalletService>();
-		builder.Services.AddScoped<IAddressRepository, AddressRepository>();
 	}
 
 	public static void UseUServices(this WebApplication app) {

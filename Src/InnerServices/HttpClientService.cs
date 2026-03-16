@@ -13,9 +13,13 @@ public interface IHttpClientService {
 public class HttpClientService(HttpClient httpClient) : IHttpClientService {
 	private readonly HttpClient _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
 
-	public async Task<HttpResponseMessage> Get(string uri, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Get, uri, null, headers);
+	public async Task<HttpResponseMessage> Get(string uri, Dictionary<string, string>? headers = null) {
+		return await Send(HttpMethod.Get, uri, null, headers);
+	}
 
-	public async Task<HttpResponseMessage> Post(string uri, object? body, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Post, uri, body, headers);
+	public async Task<HttpResponseMessage> Post(string uri, object? body, Dictionary<string, string>? headers = null) {
+		return await Send(HttpMethod.Post, uri, body, headers);
+	}
 
 	public async Task<HttpResponseMessage> PostForm(string uri, Dictionary<string, string> formData, Dictionary<string, string>? headers = null) {
 		using HttpRequestMessage request = new(HttpMethod.Post, uri);
@@ -28,11 +32,17 @@ public class HttpClientService(HttpClient httpClient) : IHttpClientService {
 		return await _httpClient.SendAsync(request);
 	}
 
-	public async Task<HttpResponseMessage> Put(string uri, object? body, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Put, uri, body, headers);
+	public async Task<HttpResponseMessage> Put(string uri, object? body, Dictionary<string, string>? headers = null) {
+		return await Send(HttpMethod.Put, uri, body, headers);
+	}
 
-	public async Task<HttpResponseMessage> Delete(string uri, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Delete, uri, null, headers);
+	public async Task<HttpResponseMessage> Delete(string uri, Dictionary<string, string>? headers = null) {
+		return await Send(HttpMethod.Delete, uri, null, headers);
+	}
 
-	public async Task<HttpResponseMessage> Upload(string uri, IFormFile file, Dictionary<string, string>? headers = null) => await Upload(uri, file, file.FileName, headers);
+	public async Task<HttpResponseMessage> Upload(string uri, IFormFile file, Dictionary<string, string>? headers = null) {
+		return await Upload(uri, file, file.FileName, headers);
+	}
 
 	public async Task<HttpResponseMessage> Upload(string uri, IFormFile file, string fileName, Dictionary<string, string>? headers = null) {
 		if (string.IsNullOrEmpty(uri)) throw new ArgumentException("URI cannot be null or empty.", nameof(uri));

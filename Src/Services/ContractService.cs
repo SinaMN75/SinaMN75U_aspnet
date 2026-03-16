@@ -99,7 +99,7 @@ public class ContractService(
 		if (totalMonths >= 1) {
 			int remainingDaysInFirstMonth = PersianDateTime.DaysInMonth(startDate.Year, startDate.Month) - startDate.Day + 1;
 			int totalDaysInFirstMonth = PersianDateTime.DaysInMonth(startDate.Year, startDate.Month);
-			decimal proportionalPrice = (remainingDaysInFirstMonth / (decimal)totalDaysInFirstMonth) * rent;
+			decimal proportionalPrice = remainingDaysInFirstMonth / (decimal)totalDaysInFirstMonth * rent;
 
 			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 				Tags = [TagInvoice.NotPaid, TagInvoice.Rent],

@@ -9,7 +9,7 @@ public sealed class ITHubRefreshManagementAccessTokenParams {
 	public required string RefreshToken { get; set; }
 }
 
-public sealed class ITHubShahkarParams: BaseParams {
+public sealed class ITHubShahkarParams : BaseParams {
 	public required string NationalCode { get; set; }
 	public required string Mobile { get; set; }
 }

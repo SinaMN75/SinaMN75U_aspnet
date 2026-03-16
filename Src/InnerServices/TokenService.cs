@@ -14,14 +14,16 @@ public class TokenService : ITokenService {
 		return Convert.ToBase64String(randomNumber);
 	}
 
-	public string GenerateJwt(IEnumerable<Claim> claims, DateTime expires) => new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
-			issuer: Core.App.Jwt.Issuer,
-			audience: Core.App.Jwt.Audience,
-			claims: claims,
-			expires: expires,
-			signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Core.App.Jwt.Key)), SecurityAlgorithms.HmacSha256)
-		)
-	);
+	public string GenerateJwt(IEnumerable<Claim> claims, DateTime expires) {
+		return new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
+				Core.App.Jwt.Issuer,
+				Core.App.Jwt.Audience,
+				claims,
+				expires: expires,
+				signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Core.App.Jwt.Key)), SecurityAlgorithms.HmacSha256)
+			)
+		);
+	}
 
 	public JwtClaimData? ExtractClaims(string? token) {
 		try {

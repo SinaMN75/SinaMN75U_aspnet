@@ -23,23 +23,25 @@ public sealed class CategoryCreateParams : BaseParams {
 	public IEnumerable<CategoryCreateParams> Children { get; set; } = [];
 	public ICollection<Guid> Media { get; set; } = [];
 
-	public CategoryEntity MapToEntity() => new() {
-		Id = Id ?? Guid.CreateVersion7(),
-		Title = Title,
-		ParentId = ParentId,
-		Order = Order,
-		Code = Code,
-		Tags = Tags,
-		JsonData = new CategoryJson {
-			Subtitle = Subtitle,
-			Location = Location,
-			Type = Type,
-			Link = Link,
-			Address = Address,
-			PhoneNumber = PhoneNumber,
-			RelatedProducts = RelatedProducts
-		}
-	};
+	public CategoryEntity MapToEntity() {
+		return new CategoryEntity {
+			Id = Id ?? Guid.CreateVersion7(),
+			Title = Title,
+			ParentId = ParentId,
+			Order = Order,
+			Code = Code,
+			Tags = Tags,
+			JsonData = new CategoryJson {
+				Subtitle = Subtitle,
+				Location = Location,
+				Type = Type,
+				Link = Link,
+				Address = Address,
+				PhoneNumber = PhoneNumber,
+				RelatedProducts = RelatedProducts
+			}
+		};
+	}
 }
 
 public sealed class CategoryUpdateParams : BaseUpdateParams<TagCategory> {

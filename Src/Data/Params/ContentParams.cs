@@ -11,18 +11,20 @@ public sealed class ContentCreateParams : BaseCreateParams<TagContent> {
 	public string? Whatsapp { get; set; }
 	public string? Phone { get; set; }
 
-	public ContentEntity MapToEntity() => new() {
-		Tags = Tags,
-		JsonData = new ContentJson {
-			Title = Title,
-			Description = Description,
-			SubTitle = SubTitle,
-			Instagram = Instagram,
-			Telegram = Telegram,
-			Whatsapp = Whatsapp,
-			Phone = Phone
-		}
-	};
+	public ContentEntity MapToEntity() {
+		return new ContentEntity {
+			Tags = Tags,
+			JsonData = new ContentJson {
+				Title = Title,
+				Description = Description,
+				SubTitle = SubTitle,
+				Instagram = Instagram,
+				Telegram = Telegram,
+				Whatsapp = Whatsapp,
+				Phone = Phone
+			}
+		};
+	}
 }
 
 public sealed class ContentUpdateParams : BaseUpdateParams<TagContent> {

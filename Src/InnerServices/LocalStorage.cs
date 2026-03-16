@@ -9,11 +9,10 @@ public interface ILocalStorageService {
 }
 
 public sealed class UMemoryCacheService : ILocalStorageService {
+	private const int MaxSize = 10_000;
 	private readonly MemoryCache _cache;
 	private readonly ConcurrentDictionary<string, byte> _keys;
 	private readonly ObjectPool<MemoryCacheEntryOptions> _optionsPool;
-
-	private const int MaxSize = 10_000;
 
 	public UMemoryCacheService() {
 		_cache = new MemoryCache(new MemoryCacheOptions {
@@ -28,12 +27,11 @@ public sealed class UMemoryCacheService : ILocalStorageService {
 	}
 
 	public void Set(string key, string value, TimeSpan expireTime) {
-		if (_keys.Count >= MaxSize) {
+		if (_keys.Count >= MaxSize)
 			foreach (KeyValuePair<string, byte> kv in _keys) {
 				Delete(kv.Key);
 				break;
 			}
-		}
 
 		MemoryCacheEntryOptions options = _optionsPool.Get();
 		options.AbsoluteExpirationRelativeToNow = expireTime;
@@ -54,12 +52,11 @@ public sealed class UMemoryCacheService : ILocalStorageService {
 	}
 
 	public void DeleteAllByPartialKey(string partialKey) {
-		foreach (KeyValuePair<string, byte> kv in _keys) {
+		foreach (KeyValuePair<string, byte> kv in _keys)
 			if (kv.Key.Contains(partialKey, StringComparison.Ordinal)) {
 				_cache.Remove(kv.Key);
 				_keys.TryRemove(kv.Key, out _);
 			}
-		}
 	}
 
 	public void DeleteAllExcept(string partialKey, string keepSubstring) {
@@ -69,10 +66,9 @@ public sealed class UMemoryCacheService : ILocalStorageService {
 			if (!key.Contains(partialKey, StringComparison.Ordinal))
 				continue;
 
-			if (_cache.TryGetValue(key, out string? value)) {
+			if (_cache.TryGetValue(key, out string? value))
 				if (value != null && value.Contains(keepSubstring, StringComparison.Ordinal))
 					continue;
-			}
 
 			_cache.Remove(key);
 			_keys.TryRemove(key, out _);

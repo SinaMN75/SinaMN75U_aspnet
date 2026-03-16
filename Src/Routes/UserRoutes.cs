@@ -9,7 +9,7 @@ public static class UserRoutes {
 		r.MapPost("ReadById", async (IdParams d, IUserService s, CancellationToken c) => (await s.ReadById(d, c)).ToResult()).Produces<UResponse<UserResponse>>();
 		r.MapPost("Update", async (UserUpdateParams d, IUserService s, CancellationToken c) => (await s.Update(d, c)).ToResult()).Produces<UResponse<UserResponse>>();
 		r.MapPost("Delete", async (IdParams d, IUserService s, CancellationToken c) => (await s.Delete(d, c)).ToResult()).Produces<UResponse>();
-		r.MapPost("ReadExtraById", async (IdParams d, IUserService s, CancellationToken c) => (await s.ReadExtraById(d, c)).ToResult()).Produces<UResponse<UserExtraEntity>>();
+		r.MapPost("ReadExtraById", async (IdParams d, IUserService s, CancellationToken c) => (await s.ReadExtraById(d, c)).ToResult()).Produces<UResponse<UserExtraResponse>>();
 		r.MapPost("UpdateExtra", async (UserExtraUpdateParams d, IUserService s, CancellationToken c) => (await s.UpdateExtra(d, c)).ToResult()).Produces<UResponse>();
 	}
 }

@@ -91,14 +91,16 @@ public class MediaRepository(
 		return new UResponse();
 	}
 
-	private static string GetFolderName(MediaCreateParams p) => p switch {
-		{ UserId: not null } => "users",
-		{ CategoryId: not null } => "categories",
-		{ CommentId: not null } => "comments",
-		{ ContentId: not null } => "contents",
-		{ ProductId: not null } => "products",
-		_ => "generic"
-	};
+	private static string GetFolderName(MediaCreateParams p) {
+		return p switch {
+			{ UserId: not null } => "users",
+			{ CategoryId: not null } => "categories",
+			{ CommentId: not null } => "comments",
+			{ ContentId: not null } => "contents",
+			{ ProductId: not null } => "products",
+			_ => "generic"
+		};
+	}
 
 	private async Task SaveMediaAsync(IFormFile file, string relativePath) {
 		string fullPath = Path.Combine(env.WebRootPath, "Media", relativePath);

@@ -26,19 +26,21 @@ public sealed class InvoiceCreateParams : BaseCreateParams<TagInvoice> {
 
 	public required string Description { get; set; }
 
-	public InvoiceEntity MapToEntity() => new() {
-		DebtAmount = DebtAmount,
-		CreditorAmount = CreditorAmount,
-		PaidAmount = PaidAmount,
-		PenaltyAmount = PenaltyAmount,
-		ContractId = ContractId,
-		DueDate = DueDate,
-		JsonData = new InvoiceJson {
-			Description = Description,
-			PenaltyPrecentEveryDate = PenaltyPrecentEveryDate
-		},
-		Tags = Tags
-	};
+	public InvoiceEntity MapToEntity() {
+		return new InvoiceEntity {
+			DebtAmount = DebtAmount,
+			CreditorAmount = CreditorAmount,
+			PaidAmount = PaidAmount,
+			PenaltyAmount = PenaltyAmount,
+			ContractId = ContractId,
+			DueDate = DueDate,
+			JsonData = new InvoiceJson {
+				Description = Description,
+				PenaltyPrecentEveryDate = PenaltyPrecentEveryDate
+			},
+			Tags = Tags
+		};
+	}
 }
 
 public sealed class InvoiceUpdateParams : BaseUpdateParams<TagInvoice> {

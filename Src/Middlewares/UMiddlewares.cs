@@ -72,8 +72,7 @@ public sealed class UMiddleware(RequestDelegate next, ILocalizationService ls) {
 
 			context.Response.Body = originalResponseStream;
 
-			bool encrypt = Core.App.Middleware.EncryptResponse;
-			if (encrypt && responseBody.Length > 0) {
+			if (Core.App.Middleware.EncryptResponse && responseBody.Length > 0) {
 				byte[] payload = Encoding.UTF8.GetBytes(Convert.ToBase64String(Encoding.UTF8.GetBytes(responseBody)));
 				context.Response.ContentLength = payload.Length;
 				await originalResponseStream.WriteAsync(payload);
@@ -89,10 +88,11 @@ public sealed class UMiddleware(RequestDelegate next, ILocalizationService ls) {
 		}
 	}
 
-	private static bool ShouldHandle(HttpContext ctx) =>
-		ctx.Request.Method.Equals("POST", StringComparison.OrdinalIgnoreCase) &&
-		ctx.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase) &&
-		ctx.Request.Path.Value?.Contains("media", StringComparison.OrdinalIgnoreCase) != true;
+	private static bool ShouldHandle(HttpContext ctx) {
+		return ctx.Request.Method.Equals("POST", StringComparison.OrdinalIgnoreCase) &&
+		       ctx.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase) &&
+		       ctx.Request.Path.Value?.Contains("media", StringComparison.OrdinalIgnoreCase) != true;
+	}
 
 	private async Task<(string? Processed, string? Decoded)> PreProcessRequestAsync(HttpContext ctx, string raw) {
 		if (raw.Length > 100_000) {
@@ -100,11 +100,10 @@ public sealed class UMiddleware(RequestDelegate next, ILocalizationService ls) {
 			return (null, raw);
 		}
 
-		bool decrypt = Core.App.Middleware.DecryptParams;
 		string decoded = raw;
 		string processed = raw;
 
-		if (decrypt) {
+		if (Core.App.Middleware.DecryptParams) {
 			if (!TryDecodeBase64(raw, out byte[] decodedBytes)) {
 				await WriteErrorAsync(ctx, Usc.BadRequest, ls.Get("InvalidBase64RequestBody"));
 				return (null, raw);
@@ -114,8 +113,7 @@ public sealed class UMiddleware(RequestDelegate next, ILocalizationService ls) {
 			processed = decoded;
 		}
 
-		bool needKey = Core.App.Middleware.RequireApiKey;
-		if (needKey) {
+		if (Core.App.Middleware.RequireApiKey)
 			try {
 				JsonElement json = JsonSerializer.Deserialize<JsonElement>(processed);
 				if (!json.TryGetProperty("apiKey", out JsonElement token) || token.GetString() != Core.App.ApiKey) {
@@ -127,7 +125,6 @@ public sealed class UMiddleware(RequestDelegate next, ILocalizationService ls) {
 				await WriteErrorAsync(ctx, Usc.BadRequest, ls.Get("InvalidJsonBody"));
 				return (null, decoded);
 			}
-		}
 
 		return (processed, decoded);
 	}
@@ -199,13 +196,15 @@ public sealed class UMiddleware(RequestDelegate next, ILocalizationService ls) {
 		}
 	}
 
-	private static object? JsonElementToDynamic(JsonElement e) => e.ValueKind switch {
-		JsonValueKind.Object => e.EnumerateObject().ToDictionary(p => p.Name, p => JsonElementToDynamic(p.Value)),
-		JsonValueKind.Array => e.EnumerateArray().Select(JsonElementToDynamic).ToList(),
-		JsonValueKind.String => e.GetString(),
-		JsonValueKind.Number => e.TryGetInt64(out long l) ? l : e.GetDouble(),
-		JsonValueKind.True => true,
-		JsonValueKind.False => false,
-		_ => null
-	};
+	private static object? JsonElementToDynamic(JsonElement e) {
+		return e.ValueKind switch {
+			JsonValueKind.Object => e.EnumerateObject().ToDictionary(p => p.Name, p => JsonElementToDynamic(p.Value)),
+			JsonValueKind.Array => e.EnumerateArray().Select(JsonElementToDynamic).ToList(),
+			JsonValueKind.String => e.GetString(),
+			JsonValueKind.Number => e.TryGetInt64(out long l) ? l : e.GetDouble(),
+			JsonValueKind.True => true,
+			JsonValueKind.False => false,
+			_ => null
+		};
+	}
 }

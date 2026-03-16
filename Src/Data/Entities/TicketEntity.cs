@@ -7,15 +7,17 @@ public class TicketEntity : BaseEntity<TagTicket, TicketJson> {
 
 	public ICollection<MediaEntity> Media { get; set; } = [];
 
-	public TicketResponse MapToResponse() => new() {
-		Id = Id,
-		CreatedAt = CreatedAt,
-		UpdatedAt = UpdatedAt,
-		DeletedAt = DeletedAt,
-		JsonData = JsonData,
-		Tags = Tags,
-		CreatorId = CreatorId
-	};
+	public TicketResponse MapToResponse() {
+		return new TicketResponse {
+			Id = Id,
+			CreatedAt = CreatedAt,
+			UpdatedAt = UpdatedAt,
+			DeletedAt = DeletedAt,
+			JsonData = JsonData,
+			Tags = Tags,
+			CreatorId = CreatorId
+		};
+	}
 }
 
 public class TicketJson {

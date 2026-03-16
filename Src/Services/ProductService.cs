@@ -154,17 +154,15 @@ public class ProductService(
 				.Where(x => x.ProductId == p.Id)
 				.Include(x => x.Invoices);
 
-			foreach (ContractEntity contract in contracts) {
-				foreach (InvoiceEntity invoice in contract.Invoices) {
-					if (invoice.Tags.Contains(TagInvoice.NotPaid)) {
-						decimal oldPrice = invoice.DebtAmount;
-						decimal newPrice = p.Rent.Value;
-						decimal newDebt = oldPrice / totalDays * currentDay + newPrice / totalDays * remainingDays;
-						invoice.DebtAmount = Math.Round(newDebt, 2);
-						db.Update(invoice);
-					}
+			foreach (ContractEntity contract in contracts)
+			foreach (InvoiceEntity invoice in contract.Invoices)
+				if (invoice.Tags.Contains(TagInvoice.NotPaid)) {
+					decimal oldPrice = invoice.DebtAmount;
+					decimal newPrice = p.Rent.Value;
+					decimal newDebt = oldPrice / totalDays * currentDay + newPrice / totalDays * remainingDays;
+					invoice.DebtAmount = Math.Round(newDebt, 2);
+					db.Update(invoice);
 				}
-			}
 		}
 
 		db.Set<ProductEntity>().Update(e);
@@ -210,9 +208,7 @@ public class ProductService(
 		foreach ((ProductEntity childEntity, ProductCreateParams childParams) in childEntities.Zip(children, (e, p) => (e, p))) {
 			await AddMedia(childEntity.Id, childParams.Media ?? [], ct);
 
-			if (childParams.Children.IsNotNullOrEmpty()) {
-				await AddChildrenRecursively(childParams.Children ?? [], userId, childEntity.Id, categories, ct);
-			}
+			if (childParams.Children.IsNotNullOrEmpty()) await AddChildrenRecursively(childParams.Children ?? [], userId, childEntity.Id, categories, ct);
 		}
 	}
 
@@ -260,11 +256,10 @@ public class ProductService(
 		if (ids.IsNullOrEmpty()) return;
 		List<MediaEntity> media = await mediaService.Read(new BaseReadParams<TagMedia> { Ids = ids }).ToListAsync(ct);
 		if (media.Count == 0) return;
-		foreach (MediaEntity i in media) {
+		foreach (MediaEntity i in media)
 			await db.Set<MediaEntity>().Where(x => x.Id == i.Id).ExecuteUpdateAsync(
 				u => u.SetProperty(y => y.ProductId, productId),
 				ct
 			);
-		}
 	}
 }

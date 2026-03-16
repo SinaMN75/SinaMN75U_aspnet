@@ -17,18 +17,14 @@ public sealed class CacheResponseFilter(ILocalStorageService cache, int minutes)
 
 		object? result = await next(context);
 
-		if (result is IResult originalResult && httpContext.Response.StatusCode == StatusCodes.Status200OK) {
-			return new ModifiedResult(originalResult, cacheKey, cache, TimeSpan.FromMinutes(minutes));
-		}
+		if (result is IResult originalResult && httpContext.Response.StatusCode == StatusCodes.Status200OK) return new ModifiedResult(originalResult, cacheKey, cache, TimeSpan.FromMinutes(minutes));
 
 		return result;
 	}
 
 	private static async Task<string> ReadRequestBodyAsync(HttpRequest request) {
 		// Enable buffering if not already enabled
-		if (!request.Body.CanSeek) {
-			request.EnableBuffering();
-		}
+		if (!request.Body.CanSeek) request.EnableBuffering();
 
 		try {
 			request.Body.Position = 0;
@@ -102,7 +98,8 @@ public class ModifiedResult(IResult originalResult, string key, ILocalStorageSer
 
 public static class CacheFilterExtensions {
 	public static TBuilder Cache<TBuilder>(this TBuilder builder, int minutes)
-		where TBuilder : IEndpointConventionBuilder =>
-		builder.AddEndpointFilter(async (context, next) =>
+		where TBuilder : IEndpointConventionBuilder {
+		return builder.AddEndpointFilter(async (context, next) =>
 			await new CacheResponseFilter(context.HttpContext.RequestServices.GetRequiredService<ILocalStorageService>(), minutes).InvokeAsync(context, next));
+	}
 }

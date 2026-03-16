@@ -20,18 +20,20 @@ public class CategoryEntity : BaseEntity<TagCategory, CategoryJson> {
 	public ICollection<UserEntity> Users { get; set; } = [];
 	public ICollection<MediaEntity> Media { get; set; } = [];
 
-	public CategoryResponse MapToResponse() => new() {
-		Id = Id,
-		CreatedAt = CreatedAt,
-		UpdatedAt = UpdatedAt,
-		DeletedAt = DeletedAt,
-		JsonData = JsonData,
-		Tags = Tags,
-		Title = Title,
-		Order = Order,
-		Code = Code,
-		ParentId = ParentId
-	};
+	public CategoryResponse MapToResponse() {
+		return new CategoryResponse {
+			Id = Id,
+			CreatedAt = CreatedAt,
+			UpdatedAt = UpdatedAt,
+			DeletedAt = DeletedAt,
+			JsonData = JsonData,
+			Tags = Tags,
+			Title = Title,
+			Order = Order,
+			Code = Code,
+			ParentId = ParentId
+		};
+	}
 }
 
 public class CategoryJson {

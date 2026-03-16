@@ -179,7 +179,8 @@ public class UserService(
 			BirthCertificateForth = e.BirthCertificateForth,
 			BirthCertificateFifth = e.BirthCertificateFifth,
 			VisualAuthentication = e.VisualAuthentication,
-			NotVerifiedNationalCodes = e.NotVerifiedNationalCodes
+			NotVerifiedNationalCodes = e.NotVerifiedNationalCodes,
+			ESignature = e.ESignature
 		});
 	}
 
