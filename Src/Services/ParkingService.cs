@@ -1,13 +1,13 @@
 ﻿namespace SinaMN75U.Services;
 
 public interface IParkingService {
-	Task<UResponse> CreateParking(ParkingCreateParams p, CancellationToken ct);
+	Task<UResponse<Guid?>> CreateParking(ParkingCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<ParkingResponse>?>> ReadParking(ParkingReadParams p, CancellationToken ct);
 	Task<UResponse> UpdateParking(ParkingUpdateParams p, CancellationToken ct);
 	Task<UResponse> DeleteParking(IdParams p, CancellationToken ct);
 	Task<UResponse> SoftDeleteParking(SoftDeleteParams p, CancellationToken ct);
 
-	Task<UResponse> CreateParkingReport(ParkingReportCreateParams p, CancellationToken ct);
+	Task<UResponse<Guid?>> CreateParkingReport(ParkingReportCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<ParkingReportResponse>?>> ReadParkingReport(ParkingReportReadParams p, CancellationToken ct);
 	Task<UResponse> UpdateParkingReport(ParkingReportUpdateParams p, CancellationToken ct);
 	Task<UResponse> DeleteParkingReport(IdParams p, CancellationToken ct);
@@ -19,13 +19,27 @@ public class ParkingService(
 	ILocalizationService ls,
 	ITokenService ts
 ) : IParkingService {
-	public async Task<UResponse> CreateParking(ParkingCreateParams p, CancellationToken ct) {
+	public async Task<UResponse<Guid?>> CreateParking(ParkingCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
-		await db.AddAsync(p.MapToEntity(), ct);
+		ParkingEntity e = new() {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
+			JsonData = new ParkingJson {
+				Title = p.Title
+			},
+			Tags = p.Tags,
+			Title = p.Title,
+			CreatorId = p.CreatorId,
+			EntrancePrice = p.EntrancePrice,
+			HourlyPrice = p.HourlyPrice,
+			DailyPrice = p.DailyPrice
+		};
+		await db.Set<ParkingEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
-		return new UResponse();
+		return new UResponse<Guid?>(e.Id);
 	}
 
 	public async Task<UResponse<IEnumerable<ParkingResponse>?>> ReadParking(ParkingReadParams p, CancellationToken ct) {
@@ -62,9 +76,9 @@ public class ParkingService(
 		return new UResponse();
 	}
 
-	public async Task<UResponse> CreateParkingReport(ParkingReportCreateParams p, CancellationToken ct) {
+	public async Task<UResponse<Guid?>> CreateParkingReport(ParkingReportCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
 		VehicleEntity? vehicle = await db.Set<VehicleEntity>().FirstOrDefaultAsync(x => x.NumberPlate == p.NumberPlate, ct);
 		if (vehicle == null) {
@@ -76,17 +90,18 @@ public class ParkingService(
 			vehicle = vEntity.Entity;
 		}
 
-		await db.AddAsync(new ParkingReportEntity {
+		ParkingReportEntity e = new() {
 			StartDate = p.StartDate,
 			CreatorId = p.CreatorId ?? userData.Id,
 			VehicleId = vehicle.Id,
 			ParkingId = p.ParkingId,
 			JsonData = new ParkingReportJson(),
 			Tags = [TagParkingReport.Test]
-		}, ct);
+		};
+		await db.Set<ParkingReportEntity>().AddAsync(e, ct);
 
 		await db.SaveChangesAsync(ct);
-		return new UResponse();
+		return new UResponse<Guid?>(e.Id);
 	}
 
 	public async Task<UResponse<IEnumerable<ParkingReportResponse>?>> ReadParkingReport(ParkingReportReadParams p, CancellationToken ct) {

@@ -1,7 +1,7 @@
 ﻿namespace SinaMN75U.Services;
 
 public interface ITxnService {
-	Task<UResponse> Create(TxnCreateParams p, CancellationToken ct);
+	Task<UResponse<Guid?>> Create(TxnCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<TxnResponse>?>> Read(TxnReadParams p, CancellationToken ct);
 	Task<UResponse> Update(TxnUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
@@ -12,13 +12,27 @@ public class TxnService(
 	ILocalizationService ls,
 	ITokenService ts
 ) : ITxnService {
-	public async Task<UResponse> Create(TxnCreateParams p, CancellationToken ct) {
+	public async Task<UResponse<Guid?>> Create(TxnCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
-		await db.AddAsync(p.MapToEntity(userData.Id), ct);
+		TxnEntity e = new() {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
+			JsonData = new TxnJson {
+				GatewayName = p.GatewayName
+			},
+			Tags = p.Tags,
+			Amount = p.Amount,
+			TrackingNumber = p.TrackingNumber,
+			InvoiceId = p.InvoiceId,
+			UserId = userData.Id,
+		};
+		
+		await db.Set<TxnEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
-		return new UResponse();
+		return new UResponse<Guid?>(e.Id);
 	}
 
 	public async Task<UResponse<IEnumerable<TxnResponse>?>> Read(TxnReadParams p, CancellationToken ct) {

@@ -1,7 +1,7 @@
 ﻿namespace SinaMN75U.Services;
 
 public interface IContentService {
-	Task<UResponse> Create(ContentCreateParams p, CancellationToken ct);
+	Task<UResponse<Guid?>> Create(ContentCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<ContentResponse>?>> Read(ContentReadParams p, CancellationToken ct);
 	Task<UResponse> Update(ContentUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
@@ -13,13 +13,29 @@ public class ContentService(
 	ILocalizationService ls,
 	ITokenService ts
 ) : IContentService {
-	public async Task<UResponse> Create(ContentCreateParams p, CancellationToken ct) {
+	public async Task<UResponse<Guid?>> Create(ContentCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
-		await db.AddAsync(p.MapToEntity(), ct);
+		ContentEntity e = new() {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
+			JsonData = new ContentJson {
+				Title = p.Title,
+				SubTitle = p.SubTitle,
+				Description = p.Description,
+				Instagram = p.Instagram,
+				Telegram = p.Telegram,
+				Whatsapp = p.Whatsapp,
+				Phone = p.Phone
+			},
+			Tags = p.Tags
+		};
+		
+		await db.AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
-		return new UResponse();
+		return new UResponse<Guid?>(e.Id);
 	}
 
 	public async Task<UResponse<IEnumerable<ContentResponse>?>> Read(ContentReadParams p, CancellationToken ct) {

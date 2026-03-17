@@ -14,7 +14,6 @@ public class ProductService(
 	DbContext db,
 	ITokenService ts,
 	ILocalizationService ls,
-	ICategoryService categoryService,
 	IMediaService mediaService
 ) : IProductService {
 	public async Task<UResponse> BulkCreate(List<ProductCreateParams> p, CancellationToken ct) {
@@ -27,7 +26,7 @@ public class ProductService(
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		List<CategoryEntity> categories = p.Categories.IsNotNullOrEmpty()
-			? await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct) ?? []
+			? await db.Set<CategoryEntity>().AsTracking().Where(x => p.Categories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct)
 			: [];
 
 		ProductEntity e = FillData(p, userData.Id, p.ParentId, categories);
@@ -132,14 +131,14 @@ public class ProductService(
 		if (p.Tags.IsNotNullOrEmpty()) e.Tags = p.Tags;
 
 		if (p.AddCategories.IsNotNullOrEmpty())
-			e.Categories.AddRangeIfNotExist(await categoryService.ReadEntity(new CategoryReadParams { Ids = p.AddCategories }, ct) ?? []);
+			e.Categories.AddRangeIfNotExist(await db.Set<CategoryEntity>().AsTracking().Where(x => p.AddCategories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct));
 
 		if (p.RemoveCategories.IsNotNullOrEmpty())
-			e.Categories.RemoveRangeIfExist(await categoryService.ReadEntity(new CategoryReadParams { Ids = p.RemoveCategories }, ct) ?? []);
+			e.Categories.RemoveRangeIfExist(await db.Set<CategoryEntity>().AsTracking().Where(x => p.RemoveCategories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct));
 
 		if (p.Categories.IsNotNull()) {
 			if (p.Categories.Count == 0) e.Categories = [];
-			else e.Categories = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct) ?? [];
+			else e.Categories =await db.Set<CategoryEntity>().AsTracking().Where(x => p.Categories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct);
 		}
 
 		if (p is { UpdateInvoicesPrices: true, Rent: not null }) {

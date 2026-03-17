@@ -1,7 +1,7 @@
 ﻿namespace SinaMN75U.Services;
 
 public interface IInvoiceService {
-	Task<UResponse> Create(InvoiceCreateParams p, CancellationToken ct);
+	Task<UResponse<Guid?>> Create(InvoiceCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<InvoiceResponse>?>> Read(InvoiceReadParams p, CancellationToken ct);
 	Task<UResponse> Update(InvoiceUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
@@ -15,9 +15,9 @@ public class InvoiceService(
 	ILocalizationService ls,
 	ITokenService ts
 ) : IInvoiceService {
-	public async Task<UResponse> Create(InvoiceCreateParams p, CancellationToken ct) {
+	public async Task<UResponse<Guid?>> Create(InvoiceCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		EntityEntry<InvoiceEntity> e = await db.AddAsync(new InvoiceEntity {
 			Tags = p.Tags,
@@ -34,7 +34,7 @@ public class InvoiceService(
 		}, ct);
 		await db.SaveChangesAsync(ct);
 
-		return new UResponse();
+		return new UResponse<Guid?>(e.Entity.Id);
 	}
 
 	public async Task<UResponse<IEnumerable<InvoiceResponse>?>> Read(InvoiceReadParams p, CancellationToken ct) {

@@ -6,20 +6,6 @@ public sealed class TxnCreateParams : BaseCreateParams<TagTxn> {
 	public required string TrackingNumber { get; set; }
 	public required Guid InvoiceId { get; set; }
 	public string? GatewayName { get; set; }
-
-	public TxnEntity MapToEntity(Guid userId) {
-		return new TxnEntity {
-			Id = Id ?? Guid.CreateVersion7(),
-			Tags = Tags,
-			TrackingNumber = TrackingNumber,
-			Amount = Amount,
-			JsonData = new TxnJson {
-				GatewayName = GatewayName
-			},
-			UserId = userId,
-			InvoiceId = InvoiceId
-		};
-	}
 }
 
 public sealed class TxnUpdateParams : BaseUpdateParams<TagTxn> {

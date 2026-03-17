@@ -8,8 +8,6 @@ public interface ICategoryService {
 	Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct);
 	Task<UResponse<CategoryResponse?>> ReadById(IdParams p, CancellationToken ct);
-
-	Task<List<CategoryEntity>?> ReadEntity(CategoryReadParams p, CancellationToken ct);
 }
 
 public class CategoryService(
@@ -139,12 +137,6 @@ public class CategoryService(
 		await db.Set<CategoryEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
 
 		return new UResponse();
-	}
-
-	public async Task<List<CategoryEntity>?> ReadEntity(CategoryReadParams p, CancellationToken ct) {
-		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>().AsTracking().OrderByDescending(x => x.Id);
-		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
-		return await q.ToListAsync(ct);
 	}
 
 	private async Task AddChildrenRecursively(IEnumerable<CategoryCreateParams> children, Guid parentId, CancellationToken ct) {

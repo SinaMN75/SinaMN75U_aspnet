@@ -1,7 +1,7 @@
 namespace SinaMN75U.Services;
 
 public interface IMediaService {
-	Task<UResponse> Create(MediaCreateParams p, CancellationToken ct);
+	Task<UResponse<Guid?>> Create(MediaCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<MediaResponse>?>> Read(BaseReadParams<TagMedia> p, CancellationToken ct);
 	Task<UResponse> Update(MediaUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
@@ -14,10 +14,10 @@ public class MediaService(
 	IWebHostEnvironment env,
 	DbContext db
 ) : IMediaService {
-	public async Task<UResponse> Create(MediaCreateParams p, CancellationToken ct) {
+	public async Task<UResponse<Guid?>> Create(MediaCreateParams p, CancellationToken ct) {
 		IEnumerable<string> allowedExtensions = [".png", ".gif", ".jpg", ".jpeg", ".svg", ".webp", ".mp4", ".mov", ".mp3", ".pdf", ".aac", ".apk", ".zip", ".rar", ".mkv"];
 		if (!allowedExtensions.Contains(Path.GetExtension(p.File.FileName.ToLower())))
-			return new UResponse(Usc.MediaTypeNotSupported);
+			return new UResponse<Guid?>(null, Usc.MediaTypeNotSupported);
 
 		string folderName;
 		if (p.UserId != null) {
@@ -58,7 +58,7 @@ public class MediaService(
 		await SaveMedia(p.File, name);
 		await db.Set<MediaEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
-		return new UResponse(message: Path.Combine(env.WebRootPath, "Media"));
+		return new UResponse<Guid?>(e.Id, message: Path.Combine(env.WebRootPath, "Media"));
 	}
 
 	public async Task<UResponse<IEnumerable<MediaResponse>?>> Read(BaseReadParams<TagMedia> p, CancellationToken ct) {

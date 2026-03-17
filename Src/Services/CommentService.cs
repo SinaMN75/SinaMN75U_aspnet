@@ -1,7 +1,7 @@
 namespace SinaMN75U.Services;
 
 public interface ICommentService {
-	public Task<UResponse> Create(CommentCreateParams p, CancellationToken ct);
+	public Task<UResponse<Guid?>> Create(CommentCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<CommentResponse>?>> Read(CommentReadParams p, CancellationToken ct);
 	public Task<UResponse<CommentResponse?>> ReadById(IdParams p, CancellationToken ct);
 	public Task<UResponse> Update(CommentUpdateParams p, CancellationToken ct);
@@ -15,13 +15,27 @@ public class CommentService(
 	ILocalizationService ls,
 	ITokenService ts
 ) : ICommentService {
-	public async Task<UResponse> Create(CommentCreateParams p, CancellationToken ct) {
+	public async Task<UResponse<Guid?>> Create(CommentCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		await db.Set<CommentEntity>().AddAsync(p.MapToEntity(), ct);
+		CommentEntity e = new CommentEntity {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
+			JsonData = new CommentJson(),
+			Tags = p.Tags,
+			Score = p.Score,
+			Description = p.Description,
+			CreatorId = p.CreatorId ?? userData.Id,
+			UserId = p.UserId,
+			ProductId = p.ProductId,
+			ParentId = p.ParentId
+		};
+
+		await db.Set<CommentEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
-		return new UResponse();
+		return new UResponse<Guid?>(e.Id);
 	}
 
 	public async Task<UResponse<IEnumerable<CommentResponse>?>> Read(CommentReadParams p, CancellationToken ct) {

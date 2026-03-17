@@ -1,7 +1,7 @@
 namespace SinaMN75U.Services;
 
 public interface IUserService {
-	public Task<UResponse> Create(UserCreateParams p, CancellationToken ct);
+	public Task<UResponse<Guid?>> Create(UserCreateParams p, CancellationToken ct);
 	public Task<UResponse> BulkCreate(UserBulkCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<UserResponse>?>> Read(UserReadParams p, CancellationToken ct);
 	public Task<UResponse<UserResponse?>> ReadById(IdParams p, CancellationToken ct);
@@ -17,12 +17,11 @@ public class UserService(
 	DbContext db,
 	ILocalizationService ls,
 	ITokenService ts,
-	ICategoryService categoryService,
 	IWalletService walletService
 ) : IUserService {
-	public async Task<UResponse> Create(UserCreateParams p, CancellationToken ct) {
+	public async Task<UResponse<Guid?>> Create(UserCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		UserEntity e = p.MapToEntity();
 
 		if (p.Categories.IsNotNullOrEmpty()) {
@@ -39,7 +38,7 @@ public class UserService(
 		await CreateExtra(e.Id, ct);
 		await walletService.Create(e.Id, ct);
 		await db.SaveChangesAsync(ct);
-		return new UResponse(Usc.Created);
+		return new UResponse<Guid?>(e.Id, Usc.Created);
 	}
 
 	public async Task<UResponse> BulkCreate(UserBulkCreateParams p, CancellationToken ct) {
@@ -128,7 +127,7 @@ public class UserService(
 		e.UpdatedAt = DateTime.UtcNow;
 
 		if (p.Categories.IsNotNullOrEmpty()) {
-			List<CategoryEntity>? list = await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct);
+			List<CategoryEntity> list = await db.Set<CategoryEntity>().AsTracking().Where(x => p.Categories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct);
 			e.Categories.AddRangeIfNotExist(list);
 		}
 

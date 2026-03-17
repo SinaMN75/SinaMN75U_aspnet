@@ -5,18 +5,6 @@ public sealed class VehicleCreateParams : BaseCreateParams<TagVehicle> {
 	public string? Title { get; set; }
 	public string? Brand { get; set; }
 	public string? Color { get; set; }
-
-	public VehicleEntity MapToEntity() {
-		return new VehicleEntity {
-			Id = Id ?? Guid.CreateVersion7(),
-			JsonData = new VehicleJson(),
-			Tags = Tags,
-			NumberPlate = NumberPlate,
-			Brand = Brand,
-			Color = Color,
-			Title = Title
-		};
-	}
 }
 
 public sealed class VehicleUpdateParams : BaseUpdateParams<TagVehicle> {

@@ -1,7 +1,7 @@
 ﻿namespace SinaMN75U.Services;
 
 public interface IVehicleService {
-	Task<UResponse> Create(VehicleCreateParams p, CancellationToken ct);
+	Task<UResponse<Guid?>> Create(VehicleCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<VehicleResponse>?>> Read(VehicleReadParams p, CancellationToken ct);
 	Task<UResponse> Update(VehicleUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
@@ -13,13 +13,27 @@ public class VehicleService(
 	ILocalizationService ls,
 	ITokenService ts
 ) : IVehicleService {
-	public async Task<UResponse> Create(VehicleCreateParams p, CancellationToken ct) {
+	public async Task<UResponse<Guid?>> Create(VehicleCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
-		await db.AddAsync(p.MapToEntity(), ct);
+		VehicleEntity e = new() {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
+			JsonData = new VehicleJson {
+				Title = p.Title
+			},
+			Tags = p.Tags,
+			NumberPlate = p.NumberPlate,
+			Title = p.Title,
+			Brand = p.Brand,
+			Color = p.Color
+		};
+		
+		await db.Set<VehicleEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
-		return new UResponse();
+		return new UResponse<Guid?>(e.Id);
 	}
 
 	public async Task<UResponse<IEnumerable<VehicleResponse>?>> Read(VehicleReadParams p, CancellationToken ct) {

@@ -7,20 +7,6 @@ public sealed class ParkingCreateParams : BaseCreateParams<TagParking> {
 	public required decimal HourlyPrice { get; set; }
 	public required decimal DailyPrice { get; set; }
 	public IEnumerable<Guid> Users { get; set; } = [];
-
-	public ParkingEntity MapToEntity() {
-		return new ParkingEntity {
-			Tags = Tags,
-			CreatorId = CreatorId,
-			Title = Title,
-			EntrancePrice = EntrancePrice,
-			HourlyPrice = HourlyPrice,
-			DailyPrice = DailyPrice,
-			JsonData = new ParkingJson {
-				Title = Title
-			}
-		};
-	}
 }
 
 public sealed class ParkingUpdateParams : BaseUpdateParams<TagParking> {
