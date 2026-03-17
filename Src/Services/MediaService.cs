@@ -124,7 +124,7 @@ public class MediaService(
 			Directory.CreateDirectory(directory);
 		}
 
-		await using FileStream stream = new FileStream(fullPath, FileMode.Create);
+		await using FileStream stream = new(fullPath, FileMode.Create);
 		await file.CopyToAsync(stream);
 	}
 }

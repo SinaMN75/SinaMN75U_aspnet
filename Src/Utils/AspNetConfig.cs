@@ -55,9 +55,7 @@ public static partial class AspNetConfig {
 			x.MultipartBodyLengthLimit = int.MaxValue;
 			x.MultipartHeadersLengthLimit = int.MaxValue;
 		});
-
-		builder.Services.AddSignalR();
-
+		
 		builder.Services.AddScoped<IMediaService, MediaService>();
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
 		builder.Services.AddSingleton<IHttpClientService, HttpClientService>();
@@ -79,7 +77,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<ITicketService, TicketService>();
 		builder.Services.AddScoped<IVehicleService, VehicleService>();
 		builder.Services.AddScoped<IParkingService, ParkingService>();
-		builder.Services.AddScoped<IITHubService, ITHubService>();
+		builder.Services.AddScoped<InquiryService, InquiryService>();
 		builder.Services.AddScoped<IAddressService, AddressService>();
 		builder.Services.AddScoped<IWalletService, WalletService>();
 	}

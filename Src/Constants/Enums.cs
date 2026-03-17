@@ -43,7 +43,15 @@ public enum TagUser {
 	Male = 100,
 	Female = 101,
 	SuperAdmin = 201,
-	Guest = 202
+	Guest = 202,
+	ESignatureVerified = 301,
+	BirthCertificate1Verified = 302,
+	BirthCertificate2Verified = 303,
+	BirthCertificate3Verified = 304,
+	BirthCertificate4Verified = 305,
+	NationalCardFrontVerified = 306,
+	NationalCardBackVerified = 307,
+	VisualAuthenticationVerified = 308,
 }
 
 public enum TagCategory {

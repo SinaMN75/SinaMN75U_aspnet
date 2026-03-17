@@ -19,7 +19,7 @@ public class CommentService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		CommentEntity e = new CommentEntity {
+		CommentEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
@@ -59,6 +59,9 @@ public class CommentService(
 	}
 
 	public async Task<UResponse> Update(CommentUpdateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
 		CommentEntity? e = await db.Set<CommentEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("CommentNotFound"));
 		if (p.Score.IsNotNull()) e.Score = p.Score.Value;
@@ -72,8 +75,10 @@ public class CommentService(
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
-		await db.Set<CommentEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
+		await db.Set<CommentEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 		return new UResponse();
 	}
 

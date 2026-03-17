@@ -50,11 +50,11 @@ public static class UExtensions {
 	}
 
 	public static string ToJson<T>(this T obj) {
-		return JsonSerializer.Serialize(obj, UJsonOptions.Default);
+		return JsonSerializer.Serialize(obj, Core.Default);
 	}
 
 	public static T FromJson<T>(this string json) {
-		return JsonSerializer.Deserialize<T>(json, UJsonOptions.Default)!;
+		return JsonSerializer.Deserialize<T>(json, Core.Default)!;
 	}
 
 	public static IEnumerable<IdTitleParams> GetValues<T>() where T : Enum {

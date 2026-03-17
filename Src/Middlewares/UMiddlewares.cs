@@ -176,10 +176,10 @@ public sealed class UMiddleware(RequestDelegate next, ILocalizationService ls) {
 
 			lock (LogLock) {
 				List<object> list = File.Exists(file)
-					? JsonSerializer.Deserialize<List<object>>(File.ReadAllText(file), UJsonOptions.Default) ?? []
+					? JsonSerializer.Deserialize<List<object>>(File.ReadAllText(file), Core.Default) ?? []
 					: [];
 				list.Add(entry);
-				File.WriteAllText(file, JsonSerializer.Serialize(list, UJsonOptions.Default));
+				File.WriteAllText(file, JsonSerializer.Serialize(list, Core.Default));
 			}
 		}
 		catch {

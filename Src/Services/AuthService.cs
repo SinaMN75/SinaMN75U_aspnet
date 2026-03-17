@@ -17,7 +17,7 @@ public class AuthService(
 	ITokenService ts,
 	ISmsNotificationService smsNotificationService,
 	ILocalStorageService cache,
-	IITHubService iTHubService,
+	IInquiryService inquiryService,
 	IWalletService walletService,
 	IUserService userService
 ) : IAuthService {
@@ -60,7 +60,7 @@ public class AuthService(
 		if (e.Extra.NotVerifiedNationalCodes.ContainsSafe(p.NationalCode))
 			return new UResponse(Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
 
-		UResponse<bool?> shahkarResponse = await iTHubService.Shahkar(new ITHubShahkarParams {
+		UResponse<bool?> shahkarResponse = await inquiryService.Shahkar(new ITHubShahkarParams {
 			NationalCode = p.NationalCode,
 			Mobile = e.PhoneNumber!
 		}, ct);
