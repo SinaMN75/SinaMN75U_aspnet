@@ -27,7 +27,7 @@ public class TxnService(
 			Amount = p.Amount,
 			TrackingNumber = p.TrackingNumber,
 			InvoiceId = p.InvoiceId,
-			UserId = userData.Id,
+			UserId = userData.Id
 		};
 		
 		await db.Set<TxnEntity>().AddAsync(e, ct);

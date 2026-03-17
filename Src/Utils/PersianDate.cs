@@ -11,17 +11,15 @@ public readonly partial struct PersianDateTime : IComparable<PersianDateTime>, I
 	public int Millisecond { get; }
 	public DateTimeKind Kind { get; }
 
-	#region Constructors / Factory
-
 	public PersianDateTime(int year, int month, int day, int hour = 0, int minute = 0, int second = 0, int millisecond = 0, DateTimeKind kind = DateTimeKind.Unspecified) {
-		if (year < 1 || year > 9999) throw new ArgumentOutOfRangeException(nameof(year));
-		if (month < 1 || month > 12) throw new ArgumentOutOfRangeException(nameof(month));
+		if (year is < 1 or > 9999) throw new ArgumentOutOfRangeException(nameof(year));
+		if (month is < 1 or > 12) throw new ArgumentOutOfRangeException(nameof(month));
 		int dim = DaysInMonth(year, month);
 		if (day < 1 || day > dim) throw new ArgumentOutOfRangeException(nameof(day));
-		if (hour < 0 || hour > 23) throw new ArgumentOutOfRangeException(nameof(hour));
-		if (minute < 0 || minute > 59) throw new ArgumentOutOfRangeException(nameof(minute));
-		if (second < 0 || second > 59) throw new ArgumentOutOfRangeException(nameof(second));
-		if (millisecond < 0 || millisecond > 999) throw new ArgumentOutOfRangeException(nameof(millisecond));
+		if (hour is < 0 or > 23) throw new ArgumentOutOfRangeException(nameof(hour));
+		if (minute is < 0 or > 59) throw new ArgumentOutOfRangeException(nameof(minute));
+		if (second is < 0 or > 59) throw new ArgumentOutOfRangeException(nameof(second));
+		if (millisecond is < 0 or > 999) throw new ArgumentOutOfRangeException(nameof(millisecond));
 
 		Year = year;
 		Month = month;
@@ -44,10 +42,6 @@ public readonly partial struct PersianDateTime : IComparable<PersianDateTime>, I
 		Kind = dateTime.Kind;
 	}
 
-	#endregion
-
-	#region Static Now / Today / UtcNow
-
 	public static PersianDateTime Now => new(DateTime.Now);
 
 	public static PersianDateTime UtcNow => new(DateTime.UtcNow);
@@ -56,10 +50,6 @@ public readonly partial struct PersianDateTime : IComparable<PersianDateTime>, I
 
 	public PersianDateTime DateOnly => new(Year, Month, Day, 0, 0, 0, 0, Kind);
 
-	#endregion
-
-	#region Conversions
-
 	public DateTime ToDateTime() {
 		return Pc.ToDateTime(Year, Month, Day, Hour, Minute, Second, Millisecond);
 	}
@@ -67,72 +57,30 @@ public readonly partial struct PersianDateTime : IComparable<PersianDateTime>, I
 	public DateTime ToDateTime(DateTimeKind kind) {
 		DateTime dt = ToDateTime();
 		if (kind == DateTimeKind.Unspecified) return DateTime.SpecifyKind(dt, DateTimeKind.Unspecified);
-		if (kind == DateTimeKind.Utc) return DateTime.SpecifyKind(dt, DateTimeKind.Utc).ToUniversalTime();
-		return DateTime.SpecifyKind(dt, DateTimeKind.Local).ToLocalTime();
+		return kind == DateTimeKind.Utc ? DateTime.SpecifyKind(dt, DateTimeKind.Utc).ToUniversalTime() : DateTime.SpecifyKind(dt, DateTimeKind.Local).ToLocalTime();
 	}
 
-	public static PersianDateTime FromDateTime(DateTime dt) {
-		return new PersianDateTime(dt);
-	}
+	public static PersianDateTime FromDateTime(DateTime dt) => new(dt);
 
-	public static PersianDateTime FromUnixTimeSeconds(long unixSeconds) {
-		DateTime dt = DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime;
-		return new PersianDateTime(dt);
-	}
+	public static PersianDateTime FromUnixTimeSeconds(long unixSeconds) => new(DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime);
 
-	public long ToUnixTimeSeconds() {
-		DateTime dt = ToDateTime();
-		return new DateTimeOffset(DateTime.SpecifyKind(dt, DateTimeKind.Utc)).ToUnixTimeSeconds();
-	}
+	public long ToUnixTimeSeconds() => new DateTimeOffset(DateTime.SpecifyKind(ToDateTime(), DateTimeKind.Utc)).ToUnixTimeSeconds();
 
-	#endregion
+	public PersianDateTime AddYears(int years) => new(Pc.AddYears(ToDateTime(), years));
 
-	#region Arithmetic
+	public PersianDateTime AddMonths(int months) => new(Pc.AddMonths(ToDateTime(), months));
 
-	public PersianDateTime AddYears(int years) {
-		DateTime dt = ToDateTime();
-		DateTime newDt = Pc.AddYears(dt, years);
-		return new PersianDateTime(newDt);
-	}
+	public PersianDateTime AddDays(double days) => new(ToDateTime().AddDays(days));
 
-	public PersianDateTime AddMonths(int months) {
-		DateTime dt = ToDateTime();
-		DateTime newDt = Pc.AddMonths(dt, months);
-		return new PersianDateTime(newDt);
-	}
+	public PersianDateTime AddHours(double hours) => new(ToDateTime().AddHours(hours));
 
-	public PersianDateTime AddDays(double days) {
-		DateTime dt = ToDateTime().AddDays(days);
-		return new PersianDateTime(dt);
-	}
+	public PersianDateTime AddMinutes(double minutes) => new(ToDateTime().AddMinutes(minutes));
 
-	public PersianDateTime AddHours(double hours) {
-		DateTime dt = ToDateTime().AddHours(hours);
-		return new PersianDateTime(dt);
-	}
+	public PersianDateTime AddSeconds(double seconds) => new(ToDateTime().AddSeconds(seconds));
 
-	public PersianDateTime AddMinutes(double minutes) {
-		DateTime dt = ToDateTime().AddMinutes(minutes);
-		return new PersianDateTime(dt);
-	}
+	public PersianDateTime AddMilliseconds(double ms) => new(ToDateTime().AddMilliseconds(ms));
 
-	public PersianDateTime AddSeconds(double seconds) {
-		DateTime dt = ToDateTime().AddSeconds(seconds);
-		return new PersianDateTime(dt);
-	}
-
-	public PersianDateTime AddMilliseconds(double ms) {
-		DateTime dt = ToDateTime().AddMilliseconds(ms);
-		return new PersianDateTime(dt);
-	}
-
-	public PersianDateTime Add(TimeSpan ts) {
-		return AddMilliseconds(ts.TotalMilliseconds);
-	}
-
-	#endregion
-
-	#region Start/End helpers
+	public PersianDateTime Add(TimeSpan ts) => AddMilliseconds(ts.TotalMilliseconds);
 
 	public PersianDateTime StartOfDay => new(Year, Month, Day, 0, 0, 0, 0, Kind);
 
@@ -140,45 +88,25 @@ public readonly partial struct PersianDateTime : IComparable<PersianDateTime>, I
 
 	public PersianDateTime StartOfMonth => new(Year, Month, 1, 0, 0, 0, 0, Kind);
 
-	public PersianDateTime EndOfMonth {
-		get {
-			int dim = DaysInMonth(Year, Month);
-			return new PersianDateTime(Year, Month, dim, 23, 59, 59, 999, Kind);
-		}
-	}
+	public PersianDateTime EndOfMonth => new(Year, Month, DaysInMonth(Year, Month), 23, 59, 59, 999, Kind);
 
 	public PersianDateTime StartOfYear => new(Year, 1, 1, 0, 0, 0, 0, Kind);
 
-	public PersianDateTime EndOfYear {
-		get {
-			int dim = DaysInMonth(Year, 12);
-			return new PersianDateTime(Year, 12, dim, 23, 59, 59, 999, Kind);
-		}
-	}
+	public PersianDateTime EndOfYear => new(Year, 12, DaysInMonth(Year, 12), 23, 59, 59, 999, Kind);
 
-	#endregion
+	public static bool IsLeapYear(int persianYear) => Pc.IsLeapYear(persianYear);
 
-	#region Utilities: Leap, DaysInMonth, Weekday
-
-	public static bool IsLeapYear(int persianYear) {
-		return Pc.IsLeapYear(persianYear);
-	}
-
-	public bool IsLeapYear() {
-		return IsLeapYear(Year);
-	}
+	public bool IsLeapYear() => IsLeapYear(Year);
 
 	public static int DaysInMonth(int persianYear, int persianMonth) {
-		if (persianMonth < 1 || persianMonth > 12) throw new ArgumentOutOfRangeException(nameof(persianMonth));
+		if (persianMonth is < 1 or > 12) throw new ArgumentOutOfRangeException(nameof(persianMonth));
 
 		if (persianMonth <= 6) return 31;
 		if (persianMonth <= 11) return 30;
 		return Pc.IsLeapYear(persianYear) ? 30 : 29;
 	}
 
-	public int DaysInMonth() {
-		return DaysInMonth(Year, Month);
-	}
+	public int DaysInMonth() => DaysInMonth(Year, Month);
 
 	public DayOfWeek DayOfWeek => ToDateTime().DayOfWeek;
 
@@ -195,24 +123,20 @@ public readonly partial struct PersianDateTime : IComparable<PersianDateTime>, I
 		};
 	}
 
-	public static string[] PersianMonthNamesFarsi { get; } = new[] {
+	public static string[] PersianMonthNamesFarsi { get; } = [
 		"فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
 		"مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"
-	};
+	];
 
-	public static string[] PersianMonthNamesLatin { get; } = new[] {
+	public static string[] PersianMonthNamesLatin { get; } = [
 		"Farvardin", "Ordibehesht", "Khordad", "Tir", "Mordad", "Shahrivar",
 		"Mehr", "Aban", "Azar", "Dey", "Bahman", "Esfand"
-	};
+	];
 
 	public static string GetMonthName(int month, bool farsi = true) {
 		if (month is < 1 or > 12) throw new ArgumentOutOfRangeException(nameof(month));
 		return farsi ? PersianMonthNamesFarsi[month - 1] : PersianMonthNamesLatin[month - 1];
 	}
-
-	#endregion
-
-	#region Parsing / Formatting
 
 	public static string ReplacePersianDigits(string input) {
 		if (string.IsNullOrEmpty(input)) return input;
@@ -236,8 +160,6 @@ public readonly partial struct PersianDateTime : IComparable<PersianDateTime>, I
 
 	public string ToString(string format, bool usePersianDigits = false, bool monthNameFarsi = true) {
 		if (string.IsNullOrEmpty(format)) format = "yyyy/MM/dd HH:mm:ss";
-
-
 		StringBuilder result = new();
 		for (int i = 0; i < format.Length;) {
 			if (i + 4 <= format.Length && format.Substring(i, 4) == "yyyy") {
@@ -345,10 +267,8 @@ public readonly partial struct PersianDateTime : IComparable<PersianDateTime>, I
 		if (string.IsNullOrEmpty(input)) return input;
 		StringBuilder sb = new(input.Length);
 		foreach (char ch in input)
-			if (ch >= '0' && ch <= '9')
-				sb.Append((char)('\u06F0' + (ch - '0')));
-			else
-				sb.Append(ch);
+			if (ch is >= '0' and <= '9') sb.Append((char)('\u06F0' + (ch - '0')));
+			else sb.Append(ch);
 
 		return sb.ToString();
 	}
@@ -359,13 +279,11 @@ public readonly partial struct PersianDateTime : IComparable<PersianDateTime>, I
 		input = input.Trim();
 		input = ReplacePersianDigits(input);
 
-
 		string datePart = input;
 		string? timePart = null;
 		string[] parts = input.Split(' ', 'T');
 		if (parts.Length >= 1) datePart = parts[0];
 		if (parts.Length >= 2) timePart = parts[1];
-
 
 		string[] dateTokens = Regex.Split(datePart, @"\D+");
 		if (dateTokens.Length < 3) return false;
@@ -375,7 +293,7 @@ public readonly partial struct PersianDateTime : IComparable<PersianDateTime>, I
 
 		int hh = 0, mm = 0, ss = 0, fff = 0;
 		if (!string.IsNullOrEmpty(timePart)) {
-			string[] timeTokens = Regex.Split(timePart, @"\D+");
+			string[] timeTokens = MyRegex1().Split(timePart);
 			if (timeTokens.Length >= 1 && !string.IsNullOrEmpty(timeTokens[0])) int.TryParse(timeTokens[0], out hh);
 			if (timeTokens.Length >= 2 && !string.IsNullOrEmpty(timeTokens[1])) int.TryParse(timeTokens[1], out mm);
 			if (timeTokens.Length >= 3 && !string.IsNullOrEmpty(timeTokens[2])) int.TryParse(timeTokens[2], out ss);
@@ -392,59 +310,27 @@ public readonly partial struct PersianDateTime : IComparable<PersianDateTime>, I
 		}
 	}
 
-	public static PersianDateTime Parse(string input, DateTimeKind kind = DateTimeKind.Unspecified) {
-		if (TryParse(input, out PersianDateTime pd, kind)) return pd;
-		throw new FormatException("Input string was not in a correct Persian date format.");
-	}
+	public static PersianDateTime Parse(string input, DateTimeKind kind = DateTimeKind.Unspecified) => TryParse(input, out PersianDateTime pd, kind) ? pd : throw new FormatException("Input string was not in a correct Persian date format.");
 
-	#endregion
+	public int CompareTo(PersianDateTime other) => ToDateTime().CompareTo(other.ToDateTime());
 
-	#region Comparison / Equality / Operators
+	public bool Equals(PersianDateTime other) => Year == other.Year && Month == other.Month && Day == other.Day && Hour == other.Hour && Minute == other.Minute && Second == other.Second && Millisecond == other.Millisecond;
 
-	public int CompareTo(PersianDateTime other) {
-		return ToDateTime().CompareTo(other.ToDateTime());
-	}
+	public override bool Equals(object? obj) => obj is PersianDateTime p && Equals(p);
 
-	public bool Equals(PersianDateTime other) {
-		return Year == other.Year && Month == other.Month && Day == other.Day
-		       && Hour == other.Hour && Minute == other.Minute && Second == other.Second && Millisecond == other.Millisecond;
-	}
+	public override int GetHashCode() => HashCode.Combine(Year, Month, Day, Hour, Minute, Second, Millisecond);
 
-	public override bool Equals(object? obj) {
-		return obj is PersianDateTime p && Equals(p);
-	}
+	public static bool operator ==(PersianDateTime a, PersianDateTime b) => a.Equals(b);
 
-	public override int GetHashCode() {
-		return HashCode.Combine(Year, Month, Day, Hour, Minute, Second, Millisecond);
-	}
+	public static bool operator !=(PersianDateTime a, PersianDateTime b) => !a.Equals(b);
 
-	public static bool operator ==(PersianDateTime a, PersianDateTime b) {
-		return a.Equals(b);
-	}
+	public static bool operator <(PersianDateTime a, PersianDateTime b) => a.CompareTo(b) < 0;
 
-	public static bool operator !=(PersianDateTime a, PersianDateTime b) {
-		return !a.Equals(b);
-	}
+	public static bool operator >(PersianDateTime a, PersianDateTime b) => a.CompareTo(b) > 0;
 
-	public static bool operator <(PersianDateTime a, PersianDateTime b) {
-		return a.CompareTo(b) < 0;
-	}
+	public static bool operator <=(PersianDateTime a, PersianDateTime b) => a.CompareTo(b) <= 0;
 
-	public static bool operator >(PersianDateTime a, PersianDateTime b) {
-		return a.CompareTo(b) > 0;
-	}
-
-	public static bool operator <=(PersianDateTime a, PersianDateTime b) {
-		return a.CompareTo(b) <= 0;
-	}
-
-	public static bool operator >=(PersianDateTime a, PersianDateTime b) {
-		return a.CompareTo(b) >= 0;
-	}
-
-	#endregion
-
-	#region Enumerators / Ranges
+	public static bool operator >=(PersianDateTime a, PersianDateTime b) => a.CompareTo(b) >= 0;
 
 	public static IEnumerable<PersianDateTime> EnumerateDays(PersianDateTime start, PersianDateTime end, int step = 1) {
 		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(step);
@@ -465,13 +351,8 @@ public readonly partial struct PersianDateTime : IComparable<PersianDateTime>, I
 	}
 
 	public static IEnumerable<PersianDateTime> EnumerateYears(int startYear, int endYear) {
-		for (int y = startYear; y <= endYear; y++)
-			yield return new PersianDateTime(y, 1, 1);
+		for (int y = startYear; y <= endYear; y++) yield return new PersianDateTime(y, 1, 1);
 	}
-
-	#endregion
-
-	#region Misc helpers
 
 	public int DayOfYear => Pc.GetDayOfYear(ToDateTime());
 
@@ -482,13 +363,9 @@ public readonly partial struct PersianDateTime : IComparable<PersianDateTime>, I
 		return cal.GetWeekOfYear(dt, CalendarWeekRule.FirstFourDayWeek, firstDayOfWeek);
 	}
 
-	public bool IsSameDate(PersianDateTime other) {
-		return Year == other.Year && Month == other.Month && Day == other.Day;
-	}
+	public bool IsSameDate(PersianDateTime other) => Year == other.Year && Month == other.Month && Day == other.Day;
 
-	public TimeSpan Subtract(PersianDateTime other) {
-		return ToDateTime() - other.ToDateTime();
-	}
+	public TimeSpan Subtract(PersianDateTime other) => ToDateTime() - other.ToDateTime();
 
 	public string ToRelativeString(bool farsi = true) {
 		DateTime now = DateTime.Now;
@@ -518,38 +395,22 @@ public readonly partial struct PersianDateTime : IComparable<PersianDateTime>, I
 		return $"{dayName} {dayStr} {monthName} {yearStr}";
 	}
 
-	#endregion
+	public static PersianDateTime FromGregorian(DateTime dt) => new(dt);
 
-	#region Extensions / Converters as helper static methods
-
-	public static PersianDateTime FromGregorian(DateTime dt) {
-		return new PersianDateTime(dt);
-	}
-
-	public static DateTime ToGregorianDateTime(int year, int month, int day, int hour = 0, int minute = 0, int second = 0, int millisecond = 0) {
-		return Pc.ToDateTime(year, month, day, hour, minute, second, millisecond);
-	}
+	public static DateTime ToGregorianDateTime(int year, int month, int day, int hour = 0, int minute = 0, int second = 0, int millisecond = 0) => Pc.ToDateTime(year, month, day, hour, minute, second, millisecond);
 
 	[GeneratedRegex("[\u06F0-\u06F9]", RegexOptions.Compiled)]
 	private static partial Regex MyRegex();
-
-	#endregion
+    [GeneratedRegex(@"\D+")]
+    private static partial Regex MyRegex1();
 }
 
 public static class PersianDateTimeExtensions {
-	public static PersianDateTime ToPersian(this DateTime dt) {
-		return PersianDateTime.FromDateTime(dt);
-	}
+	public static PersianDateTime ToPersian(this DateTime dt) => PersianDateTime.FromDateTime(dt);
 
-	public static string ToPersianString(this DateTime dt, string format = "yyyy/MM/dd HH:mm:ss", bool usePersianDigits = false) {
-		PersianDateTime pd = dt.ToPersian();
-		return pd.ToString(format, usePersianDigits);
-	}
+	public static string ToPersianString(this DateTime dt, string format = "yyyy/MM/dd HH:mm:ss", bool usePersianDigits = false) => dt.ToPersian().ToString(format, usePersianDigits);
 
-	public static DateTime ParsePersianToDateTime(string persianDateString, DateTimeKind kind = DateTimeKind.Unspecified) {
-		PersianDateTime pd = PersianDateTime.Parse(persianDateString, kind);
-		return pd.ToDateTime();
-	}
+	public static DateTime ParsePersianToDateTime(string persianDateString, DateTimeKind kind = DateTimeKind.Unspecified) => PersianDateTime.Parse(persianDateString, kind).ToDateTime();
 
 	public static bool TryParsePersianToDateTime(string persianDateString, out DateTime dt, DateTimeKind kind = DateTimeKind.Unspecified) {
 		if (PersianDateTime.TryParse(persianDateString, out PersianDateTime pd, kind)) {
@@ -565,25 +426,16 @@ public static class PersianDateTimeExtensions {
 public static class PersianDate {
 	private static readonly PersianCalendar Pc = new();
 
-	public static string ToJalaliString(DateTime dt) {
-		return $"{Pc.GetYear(dt):0000}/{Pc.GetMonth(dt):00}/{Pc.GetDayOfMonth(dt):00}";
-	}
+	public static string ToJalaliString(DateTime dt) => $"{Pc.GetYear(dt):0000}/{Pc.GetMonth(dt):00}/{Pc.GetDayOfMonth(dt):00}";
 
 	public static string ToJalaliLongString(DateTime dt) {
-		string[] months = {
-			"فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
-			"مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"
-		};
-		string[] weekdays = {
-			"یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه", "شنبه"
-		};
+		string[] months = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
+		string[] weekdays = ["یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه", "شنبه"];
 
 		return $"{weekdays[(int)dt.DayOfWeek]} {Pc.GetDayOfMonth(dt)} {months[Pc.GetMonth(dt) - 1]} {Pc.GetYear(dt)}";
 	}
 
-	public static DateTime ToGregorian(int y, int m, int d) {
-		return Pc.ToDateTime(y, m, d, 0, 0, 0, 0);
-	}
+	public static DateTime ToGregorian(int y, int m, int d) => Pc.ToDateTime(y, m, d, 0, 0, 0, 0);
 
 	public static DateTime Parse(string persianDate) {
 		string[] parts = persianDate.Split('/', '-', '.');
@@ -603,37 +455,21 @@ public static class PersianDate {
 		}
 	}
 
-	public static bool IsLeapYear(int year) {
-		return Pc.IsLeapYear(year);
-	}
+	public static bool IsLeapYear(int year) => Pc.IsLeapYear(year);
 
-	public static int Year(DateTime dt) {
-		return Pc.GetYear(dt);
-	}
+	public static int Year(DateTime dt) => Pc.GetYear(dt);
 
-	public static int Month(DateTime dt) {
-		return Pc.GetMonth(dt);
-	}
+	public static int Month(DateTime dt) => Pc.GetMonth(dt);
 
-	public static int Day(DateTime dt) {
-		return Pc.GetDayOfMonth(dt);
-	}
+	public static int Day(DateTime dt) => Pc.GetDayOfMonth(dt);
 
-	public static string AddDays(string persianDate, int days) {
-		return ToJalaliString(Parse(persianDate).AddDays(days));
-	}
+	public static string AddDays(string persianDate, int days) => ToJalaliString(Parse(persianDate).AddDays(days));
 
-	public static string AddMonths(string persianDate, int months) {
-		return ToJalaliString(Pc.AddMonths(Parse(persianDate), months));
-	}
+	public static string AddMonths(string persianDate, int months) => ToJalaliString(Pc.AddMonths(Parse(persianDate), months));
 
-	public static string AddYears(string persianDate, int years) {
-		return ToJalaliString(Pc.AddYears(Parse(persianDate), years));
-	}
+	public static string AddYears(string persianDate, int years) => ToJalaliString(Pc.AddYears(Parse(persianDate), years));
 
-	public static string GetStartOfDay(string persianDate) {
-		return ToJalaliString(Parse(persianDate).Date);
-	}
+	public static string GetStartOfDay(string persianDate) => ToJalaliString(Parse(persianDate).Date);
 
 	public static string GetEndOfDay(string persianDate) {
 		DateTime dt = Parse(persianDate);
@@ -655,25 +491,13 @@ public static class PersianDate {
 		return $"{y:0000}/{m:00}/{days:00}";
 	}
 
-	public static string GetStartOfYear(string persianDate) {
-		DateTime dt = Parse(persianDate);
-		return $"{Year(dt):0000}/01/01";
-	}
+	public static string GetStartOfYear(string persianDate) => $"{Year(Parse(persianDate)):0000}/01/01";
 
-	public static string GetEndOfYear(string persianDate) {
-		DateTime dt = Parse(persianDate);
-		return $"{Year(dt):0000}/12/29";
-	}
+	public static string GetEndOfYear(string persianDate) => $"{Year(Parse(persianDate)):0000}/12/29";
 
-	public static bool IsBefore(string p1, string p2) {
-		return Parse(p1) < Parse(p2);
-	}
+	public static bool IsBefore(string p1, string p2) => Parse(p1) < Parse(p2);
 
-	public static bool IsAfter(string p1, string p2) {
-		return Parse(p1) > Parse(p2);
-	}
+	public static bool IsAfter(string p1, string p2) => Parse(p1) > Parse(p2);
 
-	public static bool IsSame(string p1, string p2) {
-		return Parse(p1).Date == Parse(p2).Date;
-	}
+	public static bool IsSame(string p1, string p2) => Parse(p1).Date == Parse(p2).Date;
 }

@@ -66,7 +66,7 @@ public class MediaService(
 
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
 
-		return await q.Select(Projections.MediaSelector(new MediaSelectorArgs())).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		return await q.Select(Projections.MediaSelector()).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse> Update(MediaUpdateParams p, CancellationToken ct) {

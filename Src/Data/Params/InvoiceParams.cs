@@ -13,7 +13,7 @@ public sealed class InvoiceCreateParams : BaseCreateParams<TagInvoice> {
 	[UValidationRequired("PriceRequired")]
 	public required decimal PenaltyAmount { get; set; }
 
-	public int PenaltyPrecentEveryDate { get; set; } = 0;
+	public int PenaltyPrecentEveryDate { get; set; }
 
 	[UValidationRequired("UserIdRequired")]
 	public required Guid UserId { get; set; }

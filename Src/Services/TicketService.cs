@@ -29,7 +29,7 @@ public class TicketService(
 				Phone = p.Phone
 			},
 			Tags = p.Tags,
-			CreatorId = userData.Id,
+			CreatorId = userData.Id
 		};
 
 		await db.Set<TicketEntity>().AddAsync(e, ct);

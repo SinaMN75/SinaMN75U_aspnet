@@ -63,12 +63,7 @@ public sealed class UserCreateParams : BaseParams {
 				Height = Height,
 				Address = Address,
 				FatherName = FatherName,
-				FcmToken = FcmToken,
-				Health1 = Health1 ?? [],
-				Health2 = Health2 ?? [],
-				FoodAllergies = FoodAllergies ?? [],
-				DrugAllergies = DrugAllergies ?? [],
-				Sickness = Sickness ?? []
+				FcmToken = FcmToken
 			},
 			Extra = {
 				JsonData = new UserExtraJson(),
@@ -97,17 +92,6 @@ public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {
 	public string? NationalCode { get; set; }
 	public decimal? Weight { get; set; }
 	public decimal? Height { get; set; }
-	public ICollection<string>? AddHealth1 { get; set; }
-	public ICollection<string>? RemoveHealth1 { get; set; }
-	public ICollection<string>? AddHealth2 { get; set; }
-	public ICollection<string>? RemoveHealth2 { get; set; }
-	public ICollection<string>? FoodAllergies { get; set; }
-	public ICollection<string>? DrugAllergies { get; set; }
-	public ICollection<string>? Sickness { get; set; }
-	public ICollection<string>? Health1 { get; set; }
-	public ICollection<string>? Health2 { get; set; }
-	public ICollection<string>? AddNotVerifiedNationalCodes { get; set; }
-	public ICollection<string>? RemoveNotVerifiedNationalCodes { get; set; }
 	public ICollection<Guid>? Categories { get; set; }
 }
 

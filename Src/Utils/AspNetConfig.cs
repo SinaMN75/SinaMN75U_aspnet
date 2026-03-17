@@ -147,6 +147,6 @@ public static partial class AspNetConfig {
 	[GeneratedRegex(@"\((\d+)ms\)")]
 	private static partial Regex MyRegex3();
 
-	[GeneratedRegex(@"SELECT.*", RegexOptions.Singleline)]
+	[GeneratedRegex("SELECT.*", RegexOptions.Singleline)]
 	private static partial Regex MyRegex4();
 }

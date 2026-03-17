@@ -62,7 +62,7 @@ public sealed class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
 
 	public decimal? ProductDeposit { get; set; }
 	public decimal? ProductRent { get; set; }
-	public bool UpdateInvoicesRent { get; set; } = false;
+	public bool UpdateInvoicesRent { get; set; }
 
 	public CategoryEntity MapToEntity(CategoryEntity e) {
 		if (Title != null) e.Title = Title;

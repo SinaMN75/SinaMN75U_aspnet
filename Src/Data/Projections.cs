@@ -102,7 +102,7 @@ public static class Projections {
 					FirstName = x.Creator.FirstName,
 					LastName = x.Creator.LastName,
 					NationalCode = x.Creator.NationalCode,
-					Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector(args.Creator.Media)).ToList(),
+					Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
 					Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
 				}
 		};
@@ -131,7 +131,7 @@ public static class Projections {
 					Media = args.Sender.Media == null
 						? null
 						: x.Sender.Media.AsQueryable()
-							.Select(MediaSelector(args.Sender.Media))
+							.Select(MediaSelector())
 							.ToList(),
 					Categories = args.Sender.Category == null
 						? null
@@ -154,7 +154,7 @@ public static class Projections {
 					Media = args.Receiver.Media == null
 						? null
 						: x.Receiver.Media.AsQueryable()
-							.Select(MediaSelector(args.Receiver.Media))
+							.Select(MediaSelector())
 							.ToList(),
 					Categories = args.Receiver.Category == null
 						? null
@@ -165,7 +165,7 @@ public static class Projections {
 		};
 	}
 
-	public static Expression<Func<MediaEntity, MediaResponse>> MediaSelector(MediaSelectorArgs args) {
+	public static Expression<Func<MediaEntity, MediaResponse>> MediaSelector() {
 		return x => new MediaResponse {
 			Id = x.Id,
 			Tags = x.Tags,
@@ -191,7 +191,7 @@ public static class Projections {
 			Birthdate = x.Birthdate,
 			NationalCode = x.NationalCode,
 			Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
-			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(args.Media)).ToList(),
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 			Contracts = args.Contract == null ? null : x.Contracts.AsQueryable().Select(ContractSelector(args.Contract)).ToList(),
 			Addresses = args.Address == null ? null : x.Addresses.AsQueryable().Select(AddressSelector(args.Address)).ToList()
 		};
@@ -274,7 +274,7 @@ public static class Projections {
 			Order = x.Order,
 			ParentId = x.ParentId,
 			CreatorId = x.CreatorId,
-			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(args.Media)).ToList(),
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 			Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
 			Contracts = args.Contract == null ? null : x.Contracts.AsQueryable().Select(ContractSelector(args.Contract)).ToList(),
 			Children = args.Children != null && args.ChildrenDebt > 0 ? x.Children.AsQueryable().Select(childSelector!).ToList() : null,
@@ -293,7 +293,7 @@ public static class Projections {
 					FirstName = x.Creator.FirstName,
 					LastName = x.Creator.LastName,
 					NationalCode = x.Creator.NationalCode,
-					Media = args.User.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector(args.User.Media)).ToList(),
+					Media = args.User.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
 					Categories = args.User.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList()
 				}
 		};
@@ -320,7 +320,7 @@ public static class Projections {
 			ParentId = x.ParentId,
 			Users = args.User == null ? null : x.Users.AsQueryable().Select(UserSelector(args.User)).ToList(),
 			Products = args.Product == null ? null : x.Products.AsQueryable().Select(ProductSelector(args.Product)).ToList(),
-			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(args.Media)).ToList(),
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 			Children = args.Children != null && args.ChildrenDebt > 0 ? x.Children.AsQueryable().Select(childSelector!).ToList() : null
 		};
 	}
@@ -330,7 +330,7 @@ public static class Projections {
 			Id = x.Id,
 			Tags = x.Tags,
 			JsonData = x.JsonData,
-			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(args.Media)).ToList()
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList()
 		};
 	}
 
@@ -384,7 +384,7 @@ public static class Projections {
 					LastName = x.User.LastName,
 					NationalCode = x.User.NationalCode,
 					Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList(),
-					Media = args.User.Media == null ? null : x.User.Media.AsQueryable().Select(MediaSelector(args.User.Media)).ToList()
+					Media = args.User.Media == null ? null : x.User.Media.AsQueryable().Select(MediaSelector()).ToList()
 				}
 		};
 	}
@@ -395,7 +395,7 @@ public static class Projections {
 			Tags = x.Tags,
 			JsonData = x.JsonData,
 			CreatorId = x.CreatorId,
-			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(args.Media)).ToList(),
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 			Creator = args.User == null
 				? null
 				: new UserResponse {
@@ -409,7 +409,7 @@ public static class Projections {
 					LastName = x.Creator.LastName,
 					NationalCode = x.Creator.NationalCode,
 					Categories = args.User.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList(),
-					Media = args.User.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector(args.User.Media)).ToList()
+					Media = args.User.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList()
 				}
 		};
 	}
@@ -425,7 +425,7 @@ public static class Projections {
 			ParentId = x.ParentId,
 			Score = x.Score,
 			Description = x.Description,
-			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector(args.Media)).ToList(),
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 			Creator = args.Creator == null ? null : x.Creator.MapToResponse(),
 			User = args.User == null ? null : x.User!.MapToResponse(),
 			Product = args.Product == null ? null : x.Product!.MapToResponse(),
@@ -458,7 +458,7 @@ public static class Projections {
 					FirstName = x.User.FirstName,
 					LastName = x.User.LastName,
 					NationalCode = x.User.NationalCode,
-					Media = args.User.Media == null ? null : x.User.Media.AsQueryable().Select(MediaSelector(args.User.Media)).ToList(),
+					Media = args.User.Media == null ? null : x.User.Media.AsQueryable().Select(MediaSelector()).ToList(),
 					Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList()
 				},
 			Creator = args.Creator == null
@@ -473,7 +473,7 @@ public static class Projections {
 					FirstName = x.Creator.FirstName,
 					LastName = x.Creator.LastName,
 					NationalCode = x.Creator.NationalCode,
-					Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector(args.Creator.Media)).ToList(),
+					Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
 					Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
 				},
 			Product = args.Product == null
@@ -498,7 +498,7 @@ public static class Projections {
 					Order = x.Product.Order,
 					CreatorId = x.Product.CreatorId,
 					Categories = args.Product.Category == null ? null : x.Product.Categories.AsQueryable().Select(CategorySelector(args.Product.Category)).ToList(),
-					Media = args.Product.Media == null ? null : x.Product.Media.AsQueryable().Select(MediaSelector(args.Product.Media)).ToList()
+					Media = args.Product.Media == null ? null : x.Product.Media.AsQueryable().Select(MediaSelector()).ToList()
 				}
 		};
 	}
@@ -539,7 +539,7 @@ public static class Projections {
 							LastName = x.Contract.Creator.LastName,
 							NationalCode = x.Contract.Creator.NationalCode,
 							Categories = args.Contract.Creator.Category == null ? null : x.Contract.Creator.Categories.AsQueryable().Select(CategorySelector(args.Contract.Creator.Category)).ToList(),
-							Media = args.Contract.Creator.Media == null ? null : x.Contract.Creator.Media.AsQueryable().Select(MediaSelector(args.Contract.Creator.Media)).ToList()
+							Media = args.Contract.Creator.Media == null ? null : x.Contract.Creator.Media.AsQueryable().Select(MediaSelector()).ToList()
 						},
 					User = args.Contract.User == null
 						? null
@@ -554,7 +554,7 @@ public static class Projections {
 							LastName = x.Contract.User.LastName,
 							NationalCode = x.Contract.User.NationalCode,
 							Categories = args.Contract.User.Category == null ? null : x.Contract.User.Categories.AsQueryable().Select(CategorySelector(args.Contract.User.Category)).ToList(),
-							Media = args.Contract.User.Media == null ? null : x.Contract.User.Media.AsQueryable().Select(MediaSelector(args.Contract.User.Media)).ToList()
+							Media = args.Contract.User.Media == null ? null : x.Contract.User.Media.AsQueryable().Select(MediaSelector()).ToList()
 						},
 					Product = args.Contract.Product == null
 						? null
@@ -568,7 +568,7 @@ public static class Projections {
 							Rent = x.Contract.Product.Rent,
 							CreatorId = x.Contract.Product.CreatorId,
 							Categories = args.Contract.Product.Category == null ? null : x.Contract.Product.Categories.AsQueryable().Select(CategorySelector(args.Contract.Product.Category)).ToList(),
-							Media = args.Contract.Product.Media == null ? null : x.Contract.Product.Media.AsQueryable().Select(MediaSelector(args.Contract.Product.Media)).ToList()
+							Media = args.Contract.Product.Media == null ? null : x.Contract.Product.Media.AsQueryable().Select(MediaSelector()).ToList()
 						}
 				}
 		};

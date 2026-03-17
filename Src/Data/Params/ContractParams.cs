@@ -14,7 +14,7 @@ public sealed class ContractCreateParams : BaseCreateParams<TagContract> {
 	public required Guid ProductId { get; set; }
 
 	public string? Description { get; set; }
-	public int PenaltyPrecentEveryDate { get; set; } = 0;
+	public int PenaltyPrecentEveryDate { get; set; }
 }
 
 public sealed class ContractUpdateParams : BaseUpdateParams<TagContract> {

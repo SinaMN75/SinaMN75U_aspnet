@@ -51,7 +51,7 @@ public enum TagUser {
 	BirthCertificate4Verified = 305,
 	NationalCardFrontVerified = 306,
 	NationalCardBackVerified = 307,
-	VisualAuthenticationVerified = 308,
+	VisualAuthenticationVerified = 308
 }
 
 public enum TagCategory {

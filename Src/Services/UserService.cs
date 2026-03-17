@@ -70,14 +70,10 @@ public class UserService(
 			NationalCode = userParam.NationalCode,
 			JsonData = new UserJson {
 				FcmToken = userParam.FcmToken,
-				Health1 = userParam.Health1 ?? [],
-				Sickness = userParam.Sickness ?? [],
 				Weight = userParam.Weight,
 				Height = userParam.Height,
 				Address = userParam.Address,
-				FatherName = userParam.FatherName,
-				FoodAllergies = userParam.FoodAllergies ?? [],
-				DrugAllergies = userParam.DrugAllergies ?? []
+				FatherName = userParam.FatherName
 			},
 			Tags = userParam.Tags,
 			CreatedAt = DateTime.UtcNow,
@@ -123,14 +119,13 @@ public class UserService(
 
 		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound);
-
-		e.UpdatedAt = DateTime.UtcNow;
-
+		
 		if (p.Categories.IsNotNullOrEmpty()) {
 			List<CategoryEntity> list = await db.Set<CategoryEntity>().AsTracking().Where(x => p.Categories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct);
 			e.Categories.AddRangeIfNotExist(list);
 		}
-
+		
+		e.UpdatedAt = DateTime.UtcNow;
 		db.Set<UserEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
 
