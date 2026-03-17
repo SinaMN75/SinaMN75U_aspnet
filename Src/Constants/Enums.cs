@@ -212,3 +212,9 @@ public enum TagUserExtra {
 	Verified = 101,
 	Test = 999
 }
+
+public enum TagTerminal {
+	Atm = 101,
+	WallCashless = 102,
+	DeskCashless = 103
+}

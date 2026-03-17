@@ -1,0 +1,7 @@
+namespace SinaMN75U.Data.Responses;
+
+public class TerminalResponse : BaseResponse<TagTerminal, TerminalJson> {
+	public string? SimCardNumber { get; set; }
+	public string? SimCardSerial { get; set; }
+	public string? Imei { get; set; }
+}
