@@ -1,7 +1,7 @@
 ﻿namespace SinaMN75U.Services;
 
 public interface IChatBotService {
-	Task<UResponse<ChatBotResponse?>> Create(ChatBotCreateParams p, CancellationToken ct);
+	Task<UResponse> Create(ChatBotCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<ChatBotEntity>?>> Read(ChatBotReadParams p, CancellationToken ct);
 }
 
@@ -11,9 +11,9 @@ public class ChatBotService(
 	ITokenService ts,
 	IHttpClientService http
 ) : IChatBotService {
-	public async Task<UResponse<ChatBotResponse?>> Create(ChatBotCreateParams p, CancellationToken ct) {
+	public async Task<UResponse> Create(ChatBotCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ChatBotResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		ChatBotEntity? e = await db.Set<ChatBotEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.ChatId, ct);
 		if (e != null) {
@@ -33,7 +33,7 @@ public class ChatBotService(
 			});
 			db.Set<ChatBotEntity>().Update(e);
 			await db.SaveChangesAsync(ct);
-			return new UResponse<ChatBotResponse?>(e.MapToResponse());
+			return new UResponse();
 		}
 		else {
 			HttpResponseMessage response = await http.Post("https://ai.ittalie.ir/sheldon/api/chat", new {

@@ -1,50 +1,47 @@
 namespace SinaMN75U.InnerServices;
 
 public interface IITHubService {
-	Task<ItHubBaseResponse<bool?>> Shahkar(ITHubShahkarParams p, CancellationToken ct);
-	Task<ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct);
+	Task<UResponse<bool?>> Shahkar(ITHubShahkarParams p, CancellationToken ct);
+	Task<UResponse<ItHubPostalCodeToAddressDetailBaseResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct);
 }
 
 public class ITHubService(
 	IHttpClientService httpClient,
 	ILocalizationService ls
 ) : IITHubService {
-	public async Task<ItHubBaseResponse<bool?>> Shahkar(ITHubShahkarParams p, CancellationToken ct) {
-		ITHubGetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.AccessToken == null) return new ItHubBaseResponse<bool?> { Error = new Error { ErrorCode = 605, CustomMessage = ls.Get("ShahkarIsNotAvailableAtThisTime") } };
+	public async Task<UResponse<bool?>> Shahkar(ITHubShahkarParams p, CancellationToken ct) {
+		ITHubGetAccessTokenBaseResponse? tokenResponse = await GetAccessToken(ct);
+		if (tokenResponse?.Data?.AccessToken == null) return new UResponse<bool?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
 		HttpResponseMessage response = await httpClient.Post(
 			"https://gateway.itsaaz.ir/hub/api/v1/Shahkar/MixVerifyMobile",
-			new {
-				nationalCode = p.NationalCode,
-				mobile = p.Mobile
-			},
-			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" } }
+			new { nationalCode = p.NationalCode, mobile = p.Mobile },
+			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.Data?.AccessToken}" } }
 		);
 
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
-		return responseBody.FromJson<ItHubBaseResponse<bool?>>();
+		return new UResponse<bool?>(responseBody.FromJson<ITHubShahkarBaseResponse>().Data);
 	}
 
-	public async Task<ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct) {
-		ITHubGetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.AccessToken == null) return new ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse?> { Error = new Error { ErrorCode = 605, CustomMessage = ls.Get("ShahkarIsNotAvailableAtThisTime") } };
+	public async Task<UResponse<ItHubPostalCodeToAddressDetailBaseResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct) {
+		ITHubGetAccessTokenBaseResponse? tokenResponse = await GetAccessToken(ct);
+		if (tokenResponse?.Data?.AccessToken == null) return new UResponse<ItHubPostalCodeToAddressDetailBaseResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
 		HttpResponseMessage response = await httpClient.Post(
 			"https://gateway.itsaaz.ir/hub/api/v1/Address/DetailsTypeA",
 			new { postcode = p.PostCode, orderId = p.OrderId },
 			new Dictionary<string, string> {
-				{ "Authorization", $"Bearer {tokenResponse.AccessToken}" },
+				{ "Authorization", $"Bearer {tokenResponse.Data.AccessToken}" },
 				{ "Accept", "application/json" }
 			}
 		);
 
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
 
-		return responseBody.FromJson<ItHubBaseResponse<ItHubPostalCodeToAddressDetailResponse?>>();
+		return new UResponse<ItHubPostalCodeToAddressDetailBaseResponse?>(responseBody.FromJson<ItHubPostalCodeToAddressDetailBaseResponse>());
 	}
 
-	private async Task<ITHubGetAccessTokenResponse?> GetAccessToken(CancellationToken ct) {
+	private async Task<ITHubGetAccessTokenBaseResponse?> GetAccessToken(CancellationToken ct) {
 		ItHub itHub = Core.App.ItHub;
 		HttpResponseMessage response = await httpClient.PostForm(
 			"https://gateway.itsaaz.ir/sts/connect/token",
@@ -59,6 +56,6 @@ public class ITHubService(
 
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
 
-		return JsonSerializer.Deserialize<ITHubGetAccessTokenResponse>(responseBody);
+		return JsonSerializer.Deserialize<ITHubGetAccessTokenBaseResponse>(responseBody);
 	}
 }

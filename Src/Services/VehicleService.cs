@@ -1,9 +1,9 @@
 ﻿namespace SinaMN75U.Services;
 
 public interface IVehicleService {
-	Task<UResponse<VehicleResponse?>> Create(VehicleCreateParams p, CancellationToken ct);
+	Task<UResponse> Create(VehicleCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<VehicleResponse>?>> Read(VehicleReadParams p, CancellationToken ct);
-	Task<UResponse<VehicleResponse?>> Update(VehicleUpdateParams p, CancellationToken ct);
+	Task<UResponse> Update(VehicleUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct);
 }
@@ -13,14 +13,13 @@ public class VehicleService(
 	ILocalizationService ls,
 	ITokenService ts
 ) : IVehicleService {
-	public async Task<UResponse<VehicleResponse?>> Create(VehicleCreateParams p, CancellationToken ct) {
+	public async Task<UResponse> Create(VehicleCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<VehicleResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
-		EntityEntry<VehicleEntity> e = await db.AddAsync(p.MapToEntity(), ct);
-
+		await db.AddAsync(p.MapToEntity(), ct);
 		await db.SaveChangesAsync(ct);
-		return new UResponse<VehicleResponse?>(e.Entity.MapToResponse());
+		return new UResponse();
 	}
 
 	public async Task<UResponse<IEnumerable<VehicleResponse>?>> Read(VehicleReadParams p, CancellationToken ct) {
@@ -32,21 +31,21 @@ public class VehicleService(
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
-	public async Task<UResponse<VehicleResponse?>> Update(VehicleUpdateParams p, CancellationToken ct) {
+	public async Task<UResponse> Update(VehicleUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<VehicleResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
 		VehicleEntity? e = await db.Set<VehicleEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse<VehicleResponse?>(null, Usc.NotFound, ls.Get("VehicleNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("VehicleNotFound"));
 		p.MapToEntity(e);
 		db.Update(p.MapToEntity(e));
 		await db.SaveChangesAsync(ct);
-		return new UResponse<VehicleResponse?>(e.MapToResponse());
+		return new UResponse();
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<VehicleEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
 		await db.Set<VehicleEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 

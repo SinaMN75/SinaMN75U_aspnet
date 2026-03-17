@@ -10,7 +10,6 @@ public class DashboardService(
 	ICategoryService categoryService,
 	ICommentService commentService,
 	IContentService contentService,
-	IExamService examService,
 	IMediaService mediaService,
 	IProductService productService,
 	IUserService userService
@@ -121,7 +120,6 @@ public class DashboardService(
 		UResponse<IEnumerable<CategoryResponse>?> newCategories = await categoryService.Read(new CategoryReadParams { PageSize = 5 }, ct);
 		UResponse<IEnumerable<CommentResponse>?> newComments = await commentService.Read(new CommentReadParams { PageSize = 5 }, ct);
 		UResponse<IEnumerable<ContentResponse>?> newContents = await contentService.Read(new ContentReadParams { PageSize = 5 }, ct);
-		UResponse<IEnumerable<ExamEntity>?> newExams = await examService.Read(new ExamReadParams { PageSize = 5 }, ct);
 		UResponse<IEnumerable<MediaResponse>?> newMedia = await mediaService.Read(new BaseReadParams<TagMedia> { PageSize = 5 }, ct);
 		UResponse<IEnumerable<ProductResponse>?> newProducts = await productService.Read(new ProductReadParams { PageSize = 5 }, ct);
 
@@ -129,7 +127,6 @@ public class DashboardService(
 			Categories = await db.Set<CategoryEntity>().CountAsync(ct),
 			Comments = await db.Set<CommentEntity>().CountAsync(ct),
 			Contents = await db.Set<ContentEntity>().CountAsync(ct),
-			Exams = await db.Set<ExamEntity>().CountAsync(ct),
 			Media = await db.Set<MediaEntity>().CountAsync(ct),
 			Products = await db.Set<ProductEntity>().CountAsync(ct),
 			Users = await db.Set<UserEntity>().CountAsync(ct),
@@ -139,7 +136,6 @@ public class DashboardService(
 			NewCategories = newCategories.Result ?? [],
 			NewComments = newComments.Result ?? [],
 			NewContents = newContents.Result ?? [],
-			NewExams = newExams.Result ?? [],
 			NewMedia = newMedia.Result ?? [],
 			NewProducts = newProducts.Result ?? []
 		};

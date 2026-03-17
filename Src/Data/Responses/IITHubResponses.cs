@@ -1,14 +1,13 @@
 namespace SinaMN75U.Data.Responses;
 
-public sealed class ItHubBaseResponse<T> {
+public sealed class ITHubShahkarBaseResponse {
 	[JsonPropertyName("data")]
-	public T? Data { get; set; }
+	public bool? Data { get; set; }
+}
 
-	[JsonPropertyName("meta")]
-	public object? Meta { get; set; }
-
-	[JsonPropertyName("error")]
-	public Error? Error { get; set; }
+public sealed class ITHubGetAccessTokenBaseResponse {
+	[JsonPropertyName("data")]
+	public ITHubGetAccessTokenResponse? Data { get; set; }
 }
 
 public sealed class ITHubGetAccessTokenResponse {
@@ -25,12 +24,9 @@ public sealed class ITHubGetAccessTokenResponse {
 	public string? Scope { get; set; }
 }
 
-public sealed class Error {
-	[JsonPropertyName("errorCode")]
-	public long? ErrorCode { get; set; }
-
-	[JsonPropertyName("customMessage")]
-	public string? CustomMessage { get; set; }
+public sealed class ItHubPostalCodeToAddressDetailBaseResponse {
+	[JsonPropertyName("data")]
+	public ItHubPostalCodeToAddressDetailResponse? Data { get; set; }
 }
 
 public sealed class ItHubPostalCodeToAddressDetailResponse {

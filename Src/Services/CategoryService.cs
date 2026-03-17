@@ -2,12 +2,12 @@ namespace SinaMN75U.Services;
 
 public interface ICategoryService {
 	Task<UResponse> BulkCreate(IEnumerable<CategoryCreateParams> p, CancellationToken ct);
-	Task<UResponse<CategoryResponse?>> Create(CategoryCreateParams p, CancellationToken ct);
-	Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct);
-	Task<UResponse<CategoryResponse?>> ReadById(IdParams p, CancellationToken ct);
-	Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct);
+	Task<UResponse<Guid?>> Create(CategoryCreateParams p, CancellationToken ct);
+	Task<UResponse> Update(CategoryUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct);
+	Task<UResponse<CategoryResponse?>> ReadById(IdParams p, CancellationToken ct);
 
 	Task<List<CategoryEntity>?> ReadEntity(CategoryReadParams p, CancellationToken ct);
 }
@@ -23,9 +23,9 @@ public class CategoryService(
 		return new UResponse();
 	}
 
-	public async Task<UResponse<CategoryResponse?>> Create(CategoryCreateParams p, CancellationToken ct) {
+	public async Task<UResponse<Guid?>> Create(CategoryCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<CategoryResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		CategoryEntity e = p.MapToEntity();
 		await db.Set<CategoryEntity>().AddAsync(e, ct);
@@ -35,7 +35,7 @@ public class CategoryService(
 		await db.SaveChangesAsync(ct);
 		await AddMedia(e.Id, p.Media, ct);
 
-		return new UResponse<CategoryResponse?>(e.MapToResponse());
+		return new UResponse<Guid?>(e.Id);
 	}
 
 	public async Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct) {
@@ -74,12 +74,12 @@ public class CategoryService(
 		return e == null ? new UResponse<CategoryResponse?>(null, Usc.NotFound, ls.Get("CategoryNotFound")) : new UResponse<CategoryResponse?>(e);
 	}
 
-	public async Task<UResponse<CategoryResponse?>> Update(CategoryUpdateParams p, CancellationToken ct) {
+	public async Task<UResponse> Update(CategoryUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<CategoryResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		CategoryEntity? e = await db.Set<CategoryEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse<CategoryResponse?>(null, Usc.NotFound, ls.Get("CategoryNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("CategoryNotFound"));
 
 		e.UpdatedAt = DateTime.UtcNow;
 		e = p.MapToEntity(e);
@@ -121,12 +121,12 @@ public class CategoryService(
 		await AddMedia(e.Id, p.Media ?? [], ct);
 
 
-		return new UResponse<CategoryResponse?>(e.MapToResponse());
+		return new UResponse();
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<CategoryEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<CategoryEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 

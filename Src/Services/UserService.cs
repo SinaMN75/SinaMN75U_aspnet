@@ -1,13 +1,14 @@
 namespace SinaMN75U.Services;
 
 public interface IUserService {
-	public Task<UResponse<UserResponse?>> Create(UserCreateParams p, CancellationToken ct);
+	public Task<UResponse> Create(UserCreateParams p, CancellationToken ct);
 	public Task<UResponse> BulkCreate(UserBulkCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<UserResponse>?>> Read(UserReadParams p, CancellationToken ct);
 	public Task<UResponse<UserResponse?>> ReadById(IdParams p, CancellationToken ct);
-	public Task<UResponse<UserResponse?>> Update(UserUpdateParams p, CancellationToken ct);
+	public Task<UResponse> Update(UserUpdateParams p, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
 
+	public Task<UResponse> CreateExtra(Guid userId, CancellationToken ct);
 	public Task<UResponse<UserExtraResponse?>> ReadExtraById(IdParams p, CancellationToken ct);
 	public Task<UResponse> UpdateExtra(UserExtraUpdateParams p, CancellationToken ct);
 }
@@ -19,9 +20,9 @@ public class UserService(
 	ICategoryService categoryService,
 	IWalletService walletService
 ) : IUserService {
-	public async Task<UResponse<UserResponse?>> Create(UserCreateParams p, CancellationToken ct) {
+	public async Task<UResponse> Create(UserCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<UserResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		UserEntity e = p.MapToEntity();
 
 		if (p.Categories.IsNotNullOrEmpty()) {
@@ -35,10 +36,10 @@ public class UserService(
 		}
 
 		await db.Set<UserEntity>().AddAsync(e, ct);
-		await db.SaveChangesAsync(ct);
+		await CreateExtra(e.Id, ct);
 		await walletService.Create(e.Id, ct);
-
-		return new UResponse<UserResponse?>(e.MapToResponse(), Usc.Created);
+		await db.SaveChangesAsync(ct);
+		return new UResponse(Usc.Created);
 	}
 
 	public async Task<UResponse> BulkCreate(UserBulkCreateParams p, CancellationToken ct) {
@@ -117,12 +118,12 @@ public class UserService(
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
-	public async Task<UResponse<UserResponse?>> Update(UserUpdateParams p, CancellationToken ct) {
+	public async Task<UResponse> Update(UserUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<UserResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse<UserResponse?>(null, Usc.NotFound);
+		if (e == null) return new UResponse(Usc.NotFound);
 
 		e.UpdatedAt = DateTime.UtcNow;
 
@@ -134,7 +135,7 @@ public class UserService(
 		db.Set<UserEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
 
-		return new UResponse<UserResponse?>(e.MapToResponse());
+		return new UResponse();
 	}
 
 	public async Task<UResponse<UserResponse?>> ReadById(IdParams p, CancellationToken ct) {
@@ -164,6 +165,17 @@ public class UserService(
 
 		int count = await db.Set<UserEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 		return count == 0 ? new UResponse(Usc.NotFound, ls.Get("UserNotFound")) : new UResponse(Usc.Deleted, ls.Get("UserDeleted"));
+	}
+
+	public async Task<UResponse> CreateExtra(Guid userId, CancellationToken ct) {
+		await db.Set<UserExtraEntity>().AddAsync(new UserExtraEntity {
+			UserId = userId,
+			Id = userId,
+			JsonData = new UserExtraJson(),
+			Tags = []
+		}, ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
 	}
 
 	public async Task<UResponse<UserExtraResponse?>> ReadExtraById(IdParams p, CancellationToken ct) {

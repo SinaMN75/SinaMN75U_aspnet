@@ -2,7 +2,7 @@ namespace SinaMN75U.InnerServices;
 
 public interface ITokenService {
 	public string GenerateRefreshToken();
-	public string GenerateJwt(IEnumerable<Claim> claims, DateTime expires);
+	public string GenerateJwt(UserEntity user);
 	public JwtClaimData? ExtractClaims(string? token);
 }
 
@@ -14,12 +14,22 @@ public class TokenService : ITokenService {
 		return Convert.ToBase64String(randomNumber);
 	}
 
-	public string GenerateJwt(IEnumerable<Claim> claims, DateTime expires) {
+	public string GenerateJwt(UserEntity user) {
 		return new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
 				Core.App.Jwt.Issuer,
 				Core.App.Jwt.Audience,
-				claims,
-				expires: expires,
+				[
+					new Claim(JwtRegisteredClaimNames.Jti, user.Id.ToString()),
+					new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName),
+					new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
+					new Claim(JwtRegisteredClaimNames.PhoneNumber, user.PhoneNumber ?? ""),
+					new Claim(JwtRegisteredClaimNames.Name, user.FirstName ?? ""),
+					new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName ?? ""),
+					new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()),
+					new Claim(ClaimTypes.Expiration, DateTime.UtcNow.Add(TimeSpan.FromSeconds(60)).ToString(CultureInfo.InvariantCulture)),
+					new Claim(ClaimTypes.Role, string.Join(",", user.Tags))
+				],
+				expires: DateTime.UtcNow.AddMinutes(60),
 				signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Core.App.Jwt.Key)), SecurityAlgorithms.HmacSha256)
 			)
 		);

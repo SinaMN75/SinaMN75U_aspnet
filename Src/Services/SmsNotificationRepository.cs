@@ -1,7 +1,7 @@
 ﻿namespace SinaMN75U.Services;
 
 public interface ISmsNotificationService {
-	Task<UResponse> SendSms(string mobileNumber, string template, string param1, string? param2 = null, string? param3 = null);
+	Task SendSms(string mobileNumber, string template, string param1, string? param2 = null, string? param3 = null);
 	Task<bool> SendOtpSms(UserEntity user);
 }
 
@@ -9,7 +9,7 @@ public class SmsNotificationService(
 	IHttpClientService http,
 	ILocalStorageService cache
 ) : ISmsNotificationService {
-	public async Task<UResponse> SendSms(
+	public async Task SendSms(
 		string mobileNumber,
 		string template,
 		string param1,
@@ -38,8 +38,6 @@ public class SmsNotificationService(
 			case TagSmsPanel.NikSms:
 			default: break;
 		}
-
-		return new UResponse();
 	}
 
 	public async Task<bool> SendOtpSms(UserEntity user) {

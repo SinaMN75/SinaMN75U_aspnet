@@ -6,8 +6,8 @@ public class BaseParams {
 	public string Locale { get; set; } = "en";
 }
 
-public class IdParams : BaseParams {
-	public required Guid? Id { get; set; }
+public sealed class IdParams : BaseParams {
+	public required Guid Id { get; set; }
 }
 
 public sealed class SoftDeleteParams : BaseParams {

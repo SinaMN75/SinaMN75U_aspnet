@@ -22,7 +22,6 @@ public static class DbModelBuilder {
 		builder.Entity<WalletTxnEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<UserEntity>().OwnsOne(e => e.JsonData, b => {
 			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
-			b.OwnsMany(i => i.UserAnswerJson).OwnsMany(i => i.Results).OwnsOne(i => i.Answer);
 			b.OwnsMany(i => i.VisitCounts);
 		});
 		builder.Entity<UserExtraEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
@@ -34,11 +33,6 @@ public static class DbModelBuilder {
 		builder.Entity<CommentEntity>().OwnsOne(e => e.JsonData, b => {
 			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
 			b.OwnsMany(i => i.Reacts);
-		});
-		builder.Entity<ExamEntity>().OwnsOne(e => e.JsonData, b => {
-			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
-			b.OwnsMany(i => i.Questions).OwnsMany(i => i.Options);
-			b.OwnsMany(i => i.ScoreDetails);
 		});
 		builder.Entity<ChatBotEntity>().OwnsOne(e => e.JsonData, b => {
 			RelationalOwnedNavigationBuilderExtensions.ToJson(b);

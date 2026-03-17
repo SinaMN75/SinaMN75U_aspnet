@@ -1,9 +1,9 @@
 ﻿namespace SinaMN75U.Services;
 
 public interface ITicketService {
-	Task<UResponse<TicketResponse?>> Create(TicketCreateParams p, CancellationToken ct);
+	Task<UResponse> Create(TicketCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<TicketResponse>?>> Read(TicketReadParams p, CancellationToken ct);
-	Task<UResponse<TicketResponse?>> Update(TicketUpdateParams p, CancellationToken ct);
+	Task<UResponse> Update(TicketUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 }
 
@@ -12,14 +12,14 @@ public class TicketService(
 	ILocalizationService ls,
 	ITokenService ts
 ) : ITicketService {
-	public async Task<UResponse<TicketResponse?>> Create(TicketCreateParams p, CancellationToken ct) {
+	public async Task<UResponse> Create(TicketCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<TicketResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
-		EntityEntry<TicketEntity> e = await db.AddAsync(p.MapToEntity(userData.Id), ct);
+		await db.AddAsync(p.MapToEntity(userData.Id), ct);
 
 		await db.SaveChangesAsync(ct);
-		return new UResponse<TicketResponse?>(e.Entity.MapToResponse());
+		return new UResponse();
 	}
 
 	public async Task<UResponse<IEnumerable<TicketResponse>?>> Read(TicketReadParams p, CancellationToken ct) {
@@ -27,9 +27,9 @@ public class TicketService(
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
-	public async Task<UResponse<TicketResponse?>> Update(TicketUpdateParams p, CancellationToken ct) {
+	public async Task<UResponse> Update(TicketUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<TicketResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
 		TicketEntity e = (await db.Set<TicketEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
 		e.UpdatedAt = DateTime.UtcNow;
@@ -46,12 +46,12 @@ public class TicketService(
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
 
-		return new UResponse<TicketResponse?>(e.MapToResponse());
+		return new UResponse();
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<TicketEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
 		await db.Set<TicketEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 

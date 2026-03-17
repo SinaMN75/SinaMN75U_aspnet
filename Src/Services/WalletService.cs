@@ -3,7 +3,7 @@ namespace SinaMN75U.Services;
 public interface IWalletService {
 	Task<UResponse> Transfer(WalletTransferParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<WalletTxnResponse>?>> ReadTxn(WalletTxnReadParams p, CancellationToken ct);
-	Task<UResponse<WalletResponse?>> Create(Guid userId, CancellationToken ct);
+	Task<UResponse> Create(Guid userId, CancellationToken ct);
 	Task<UResponse> Purchase(WalletPurchaseParams p, CancellationToken ct);
 }
 
@@ -12,9 +12,9 @@ public class WalletService(
 	ILocalizationService ls,
 	ITokenService ts
 ) : IWalletService {
-	public async Task<UResponse<WalletResponse?>> Create(Guid userId, CancellationToken ct) {
+	public async Task<UResponse> Create(Guid userId, CancellationToken ct) {
 		WalletEntity? existingWallet = await db.Set<WalletEntity>().FirstOrDefaultAsync(x => x.UserId == userId, ct);
-		if (existingWallet != null) return new UResponse<WalletResponse?>(null, Usc.WalletAlreadyExists, ls.Get("WalletForThisUserAlreadyExists"));
+		if (existingWallet != null) return new UResponse(Usc.WalletAlreadyExists, ls.Get("WalletForThisUserAlreadyExists"));
 
 		WalletEntity e = new() {
 			UserId = userId,
@@ -24,7 +24,7 @@ public class WalletService(
 		};
 		await db.Set<WalletEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
-		return new UResponse<WalletResponse?>(e.MapToResponse());
+		return new UResponse();
 	}
 
 	public async Task<UResponse> Purchase(WalletPurchaseParams p, CancellationToken ct) {
@@ -35,7 +35,6 @@ public class WalletService(
 			JsonData = x.JsonData,
 			Tags = x.Tags
 		}).FirstOrDefaultAsync(x => x.UserName == Core.App.ItHub.WalletOwnerUserName, ct))!;
-		UResponse response;
 		return p.Tag switch {
 			TagPurchase.MobileAndNationalCodeVerification => await Transfer(new WalletTransferParams {
 				ApiKey = p.ApiKey,

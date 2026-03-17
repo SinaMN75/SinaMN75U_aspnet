@@ -2,10 +2,10 @@ namespace SinaMN75U.Services;
 
 public interface IProductService {
 	public Task<UResponse> BulkCreate(List<ProductCreateParams> p, CancellationToken ct);
-	public Task<UResponse<ProductResponse?>> Create(ProductCreateParams p, CancellationToken ct);
+	public Task<UResponse<Guid?>> Create(ProductCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<ProductResponse>?>> Read(ProductReadParams p, CancellationToken ct);
 	public Task<UResponse<ProductResponse?>> ReadById(IdParams p, CancellationToken ct);
-	public Task<UResponse<ProductResponse?>> Update(ProductUpdateParams p, CancellationToken ct);
+	public Task<UResponse> Update(ProductUpdateParams p, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	public Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct);
 }
@@ -22,24 +22,23 @@ public class ProductService(
 		return new UResponse();
 	}
 
-	public async Task<UResponse<ProductResponse?>> Create(ProductCreateParams p, CancellationToken ct) {
+	public async Task<UResponse<Guid?>> Create(ProductCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ProductResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		List<CategoryEntity> categories = p.Categories.IsNotNullOrEmpty()
 			? await categoryService.ReadEntity(new CategoryReadParams { Ids = p.Categories }, ct) ?? []
 			: [];
 
 		ProductEntity e = FillData(p, userData.Id, p.ParentId, categories);
-		EntityEntry<ProductEntity> created = await db.Set<ProductEntity>().AddAsync(e, ct);
-
+		await db.Set<ProductEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
 
 		if (p.Children.IsNotNullOrEmpty()) await AddChildrenRecursively(p.Children, userData.Id, e.Id, categories, ct);
 
 		await AddMedia(e.Id, p.Media ?? [], ct);
 
-		return new UResponse<ProductResponse?>(created.Entity.MapToResponse());
+		return new UResponse<Guid?>(e.Id);
 	}
 
 	public async Task<UResponse<IEnumerable<ProductResponse>?>> Read(ProductReadParams p, CancellationToken ct) {
@@ -95,12 +94,12 @@ public class ProductService(
 		return new UResponse<ProductResponse?>(e.MapToResponse());
 	}
 
-	public async Task<UResponse<ProductResponse?>> Update(ProductUpdateParams p, CancellationToken ct) {
+	public async Task<UResponse> Update(ProductUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ProductResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		ProductEntity? e = await db.Set<ProductEntity>().AsTracking().Include(x => x.Categories).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse<ProductResponse?>(null, Usc.NotFound, ls.Get("ProductNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ProductNotFound"));
 
 		e.UpdatedAt = DateTime.UtcNow;
 		if (p.Title.IsNotNull()) e.Title = p.Title;
@@ -169,12 +168,12 @@ public class ProductService(
 		await db.SaveChangesAsync(ct);
 		await AddMedia(p.Id, p.Media ?? [], ct);
 
-		return new UResponse<ProductResponse?>(e.MapToResponse());
+		return new UResponse();
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ProductEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		int count = await db.Set<ProductEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 
@@ -183,7 +182,7 @@ public class ProductService(
 
 	public async Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ProductEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		int count = await db.Set<ProductEntity>().WhereIn(u => u.Id, p.Ids).ExecuteDeleteAsync(ct);
 

@@ -1,9 +1,9 @@
 ﻿namespace SinaMN75U.Services;
 
 public interface IInvoiceService {
-	Task<UResponse<InvoiceResponse?>> Create(InvoiceCreateParams p, CancellationToken ct);
+	Task<UResponse> Create(InvoiceCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<InvoiceResponse>?>> Read(InvoiceReadParams p, CancellationToken ct);
-	Task<UResponse<InvoiceResponse?>> Update(InvoiceUpdateParams p, CancellationToken ct);
+	Task<UResponse> Update(InvoiceUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	Task<UResponse> Pay(IdParams p, CancellationToken ct);
 
@@ -15,9 +15,9 @@ public class InvoiceService(
 	ILocalizationService ls,
 	ITokenService ts
 ) : IInvoiceService {
-	public async Task<UResponse<InvoiceResponse?>> Create(InvoiceCreateParams p, CancellationToken ct) {
+	public async Task<UResponse> Create(InvoiceCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<InvoiceResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		EntityEntry<InvoiceEntity> e = await db.AddAsync(new InvoiceEntity {
 			Tags = p.Tags,
@@ -34,7 +34,7 @@ public class InvoiceService(
 		}, ct);
 		await db.SaveChangesAsync(ct);
 
-		return new UResponse<InvoiceResponse?>(e.Entity.MapToResponse());
+		return new UResponse();
 	}
 
 	public async Task<UResponse<IEnumerable<InvoiceResponse>?>> Read(InvoiceReadParams p, CancellationToken ct) {
@@ -80,9 +80,9 @@ public class InvoiceService(
 		return response;
 	}
 
-	public async Task<UResponse<InvoiceResponse?>> Update(InvoiceUpdateParams p, CancellationToken ct) {
+	public async Task<UResponse> Update(InvoiceUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<InvoiceResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		InvoiceEntity e = (await db.Set<InvoiceEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
 		e.UpdatedAt = DateTime.UtcNow;
@@ -102,12 +102,12 @@ public class InvoiceService(
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
 
-		return new UResponse<InvoiceResponse?>(e.MapToResponse());
+		return new UResponse();
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<InvoiceEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<InvoiceEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 

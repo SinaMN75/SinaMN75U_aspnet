@@ -2,13 +2,13 @@ namespace SinaMN75U.Services;
 
 public interface IAuthService {
 	Task<UResponse<LoginResponse?>> Register(RegisterParams p, CancellationToken ct);
-	Task<UResponse<UserResponse?>> CompleteProfile(AuthCompleteProfileParams p, CancellationToken ct);
+	Task<UResponse> CompleteProfile(AuthCompleteProfileParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> LoginWithEmailPassword(LoginWithEmailPasswordParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> LoginWithUserNamePassword(LoginWithUserNamePasswordParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> RefreshToken(RefreshTokenParams p, CancellationToken ct);
 	Task<UResponse> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> VerifyCodeForLogin(VerifyMobileForLoginParams p, CancellationToken ct);
-	Task<UResponse<UserEntity?>> ReadUserByToken(BaseParams p, CancellationToken ct);
+	Task<UResponse<UserResponse?>> ReadUserByToken(BaseParams p, CancellationToken ct);
 }
 
 public class AuthService(
@@ -18,12 +18,12 @@ public class AuthService(
 	ISmsNotificationService smsNotificationService,
 	ILocalStorageService cache,
 	IITHubService iTHubService,
-	IWalletService walletService
+	IWalletService walletService,
+	IUserService userService
 ) : IAuthService {
 	public async Task<UResponse<LoginResponse?>> Register(RegisterParams p, CancellationToken ct) {
 		bool isUserExists = await db.Set<UserEntity>().AnyAsync(x => x.UserName == p.UserName, ct);
-		if (isUserExists)
-			return new UResponse<LoginResponse?>(null, Usc.Conflict, ls.Get("UserAlreadyExist"));
+		if (isUserExists) return new UResponse<LoginResponse?>(null, Usc.Conflict, ls.Get("UserAlreadyExist"));
 
 		UserEntity user = new() {
 			UserName = p.UserName,
@@ -38,38 +38,39 @@ public class AuthService(
 		};
 
 		await db.Set<UserEntity>().AddAsync(user, ct);
-		await db.SaveChangesAsync(ct);
+		await userService.CreateExtra(user.Id, ct);
 		await walletService.Create(user.Id, ct);
+		await db.SaveChangesAsync(ct);
 
 		return new UResponse<LoginResponse?>(new LoginResponse {
-			Token = CreateToken(user),
+			Token = ts.GenerateJwt(user),
 			RefreshToken = user.RefreshToken,
 			Expires = Core.App.Jwt.Expires,
 			User = user.MapToResponse()
 		});
 	}
 
-	public async Task<UResponse<UserResponse?>> CompleteProfile(AuthCompleteProfileParams p, CancellationToken ct) {
+	public async Task<UResponse> CompleteProfile(AuthCompleteProfileParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<UserResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		UserEntity? e = await db.Set<UserEntity>().Include(x => x.Extra).AsTracking().FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
-		if (e == null) return new UResponse<UserResponse?>(null, Usc.NotFound);
+		if (e == null) return new UResponse(Usc.NotFound);
 
 		if (e.Extra.NotVerifiedNationalCodes.ContainsSafe(p.NationalCode))
-			return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
+			return new UResponse(Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
 
-		ItHubBaseResponse<bool?> shahkarResponse = await iTHubService.Shahkar(new ITHubShahkarParams {
+		UResponse<bool?> shahkarResponse = await iTHubService.Shahkar(new ITHubShahkarParams {
 			NationalCode = p.NationalCode,
 			Mobile = e.PhoneNumber!
 		}, ct);
 
-		if (shahkarResponse.Error?.ErrorCode != null && shahkarResponse.Error?.ErrorCode != 400) return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("ShahkarIsNotAvailableAtThisTime"));
-		if (shahkarResponse.Error?.ErrorCode == 400 || shahkarResponse.Data == false) {
+		if (shahkarResponse.Result == null) return new UResponse(Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		if (shahkarResponse.Result == false) {
 			e.Extra.NotVerifiedNationalCodes.Add(p.NationalCode);
 			db.Set<UserEntity>().Update(e);
 			await db.SaveChangesAsync(ct);
-			return new UResponse<UserResponse?>(null, Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
+			return new UResponse(Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
 		}
 
 		e.UpdatedAt = DateTime.UtcNow;
@@ -90,7 +91,7 @@ public class AuthService(
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse<LoginResponse?>(new LoginResponse {
-			Token = CreateToken(user),
+			Token = ts.GenerateJwt(user),
 			RefreshToken = user.RefreshToken,
 			Expires = Core.App.Jwt.Expires,
 			User = user.MapToResponse()
@@ -106,7 +107,7 @@ public class AuthService(
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse<LoginResponse?>(new LoginResponse {
-			Token = CreateToken(user),
+			Token = ts.GenerateJwt(user),
 			RefreshToken = user.RefreshToken,
 			Expires = Core.App.Jwt.Expires,
 			User = user.MapToResponse()
@@ -125,7 +126,7 @@ public class AuthService(
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse<LoginResponse?>(new LoginResponse {
-			Token = CreateToken(user),
+			Token = ts.GenerateJwt(user),
 			RefreshToken = user.RefreshToken,
 			Expires = Core.App.Jwt.Expires,
 			User = user.MapToResponse()
@@ -172,8 +173,9 @@ public class AuthService(
 		};
 
 		await db.Set<UserEntity>().AddAsync(e, ct);
-		await db.SaveChangesAsync(ct);
+		await userService.CreateExtra(e.Id, ct);
 		await walletService.Create(e.Id, ct);
+		await db.SaveChangesAsync(ct);
 		if (!await smsNotificationService.SendOtpSms(e)) return new UResponse(Usc.MaximumLimitReached, ls.Get("MaxOtpReached"));
 
 		return new UResponse();
@@ -189,7 +191,7 @@ public class AuthService(
 
 		return p.Otp == Core.App.BasicSettings.DefaultVerificationKey || p.Otp == cache.Get(user.Id.ToString())
 			? new UResponse<LoginResponse?>(new LoginResponse {
-					Token = CreateToken(user),
+					Token = ts.GenerateJwt(user),
 					RefreshToken = user.RefreshToken,
 					User = user.MapToResponse(),
 					Expires = Core.App.Jwt.Expires
@@ -198,9 +200,9 @@ public class AuthService(
 			: new UResponse<LoginResponse?>(null, Usc.WrongVerificationCode);
 	}
 
-	public async Task<UResponse<UserEntity?>> ReadUserByToken(BaseParams p, CancellationToken ct) {
+	public async Task<UResponse<UserResponse?>> ReadUserByToken(BaseParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<UserEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<UserResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		UserEntity? user = await db.Set<UserEntity>()
 			.Include(x => x.Media)
@@ -208,22 +210,6 @@ public class AuthService(
 			.Include(x => x.Addresses)
 			.Include(x => x.Wallets)
 			.FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
-		return user == null ? new UResponse<UserEntity?>(null, Usc.NotFound, ls.Get("UserNotFound")) : new UResponse<UserEntity?>(user);
-	}
-
-	private string CreateToken(UserEntity user) {
-		return ts.GenerateJwt([
-				new Claim(JwtRegisteredClaimNames.Jti, user.Id.ToString()),
-				new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName),
-				new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
-				new Claim(JwtRegisteredClaimNames.PhoneNumber, user.PhoneNumber ?? ""),
-				new Claim(JwtRegisteredClaimNames.Name, user.FirstName ?? ""),
-				new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName ?? ""),
-				new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()),
-				new Claim(ClaimTypes.Expiration, DateTime.UtcNow.Add(TimeSpan.FromSeconds(60)).ToString(CultureInfo.InvariantCulture)),
-				new Claim(ClaimTypes.Role, string.Join(",", user.Tags))
-			],
-			DateTime.UtcNow.AddMinutes(60)
-		);
+		return user == null ? new UResponse<UserResponse?>(null, Usc.NotFound, ls.Get("UserNotFound")) : new UResponse<UserResponse?>(user.MapToResponse());
 	}
 }

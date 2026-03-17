@@ -1,9 +1,9 @@
 ﻿namespace SinaMN75U.Services;
 
 public interface IContractService {
-	Task<UResponse<ContractResponse?>> Create(ContractCreateParams p, CancellationToken ct);
+	Task<UResponse> Create(ContractCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<ContractResponse>?>> Read(ContractReadParams p, CancellationToken ct);
-	Task<UResponse<ContractResponse?>> Update(ContractUpdateParams p, CancellationToken ct);
+	Task<UResponse> Update(ContractUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct);
 }
@@ -13,16 +13,16 @@ public class ContractService(
 	ILocalizationService ls,
 	ITokenService ts
 ) : IContractService {
-	public async Task<UResponse<ContractResponse?>> Create(ContractCreateParams p, CancellationToken ct) {
+	public async Task<UResponse> Create(ContractCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ContractResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		ProductEntity? product = await db.Set<ProductEntity>().Include(x => x.Contracts).FirstOrDefaultAsync(x => x.Id == p.ProductId, ct);
-		if (product?.Deposit == null || product.Rent == null) return new UResponse<ContractResponse?>(null, Usc.NotFound, ls.Get("ProductNotFound"));
-		if (product.Contracts.Any(y => y.EndDate >= DateTime.UtcNow)) return new UResponse<ContractResponse?>(null, Usc.NotFound, ls.Get("ProductHasActiveContract"));
+		if (product?.Deposit == null || product.Rent == null) return new UResponse(Usc.NotFound, ls.Get("ProductNotFound"));
+		if (product.Contracts.Any(y => y.EndDate >= DateTime.UtcNow)) return new UResponse(Usc.NotFound, ls.Get("ProductHasActiveContract"));
 
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
-		if (user == null) return new UResponse<ContractResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
+		if (user == null) return new UResponse(Usc.NotFound, ls.Get("UserNotFound"));
 
 
 		Guid contractId = Guid.CreateVersion7();
@@ -56,7 +56,7 @@ public class ContractService(
 			}, ct);
 
 			await db.SaveChangesAsync(ct);
-			return new UResponse<ContractResponse?>(e.MapToResponse());
+			return new UResponse();
 		}
 
 		if (e.Deposit >= 1)
@@ -135,7 +135,7 @@ public class ContractService(
 		}
 
 		await db.SaveChangesAsync(ct);
-		return new UResponse<ContractResponse?>(e.MapToResponse());
+		return new UResponse();
 	}
 
 	public async Task<UResponse<IEnumerable<ContractResponse>?>> Read(ContractReadParams p, CancellationToken ct) {
@@ -156,21 +156,21 @@ public class ContractService(
 		return await list.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
-	public async Task<UResponse<ContractResponse?>> Update(ContractUpdateParams p, CancellationToken ct) {
+	public async Task<UResponse> Update(ContractUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ContractResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		ContractEntity e = (await db.Set<ContractEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
 		e = p.MapToEntity(e);
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
 
-		return new UResponse<ContractResponse?>(e.MapToResponse());
+		return new UResponse();
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ContractEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<ContractEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 

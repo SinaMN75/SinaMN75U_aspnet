@@ -94,7 +94,6 @@ public class FollowService(
 	public async Task<UResponse<IEnumerable<UserEntity>>> ReadFollowers(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IEnumerable<UserEntity>>([], Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		p.Id ??= userData.Id;
 
 		List<UserEntity> followers = (await db.Set<FollowEntity>()
 			.Where(x => x.UserId == p.Id)
@@ -107,7 +106,6 @@ public class FollowService(
 	public async Task<UResponse<IEnumerable<UserEntity>>> ReadFollowedUsers(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IEnumerable<UserEntity>>([], Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		p.Id ??= userData.Id;
 		List<UserEntity> following = (await db.Set<FollowEntity>()
 			.Where(x => x.CreatorId == p.Id)
 			.Select(x => x.User)
@@ -119,7 +117,6 @@ public class FollowService(
 	public async Task<UResponse<IEnumerable<ProductEntity>>> ReadFollowedProducts(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IEnumerable<ProductEntity>>([], Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		p.Id ??= userData.Id;
 		List<ProductEntity> following = (await db.Set<FollowEntity>()
 			.Where(x => x.CreatorId == p.Id)
 			.Select(x => x.Product)
@@ -131,7 +128,6 @@ public class FollowService(
 	public async Task<UResponse<IEnumerable<CategoryEntity>>> ReadFollowedCategories(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IEnumerable<CategoryEntity>>([], Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		p.Id ??= userData.Id;
 		List<CategoryEntity> following = (await db.Set<FollowEntity>()
 			.Where(x => x.CreatorId == p.Id)
 			.Select(x => x.Category)

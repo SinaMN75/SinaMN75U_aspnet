@@ -70,7 +70,6 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IContentService, ContentService>();
 		builder.Services.AddScoped<IProductService, ProductService>();
 		builder.Services.AddScoped<ICommentService, CommentService>();
-		builder.Services.AddScoped<IExamService, ExamService>();
 		builder.Services.AddScoped<IFollowService, FollowService>();
 		builder.Services.AddScoped<IDashboardService, DashboardService>();
 		builder.Services.AddScoped<IInvoiceService, InvoiceService>();
@@ -104,14 +103,12 @@ public static partial class AspNetConfig {
 		app.MapProductRoutes(RouteTags.Product);
 		app.MapCommentRoutes(RouteTags.Comment);
 		app.MapCategoryRoutes(RouteTags.Category);
-		app.MapExamRoutes(RouteTags.Exam);
 		app.MapDashboardRoutes(RouteTags.Dashboard);
 		app.MapContractRoutes(RouteTags.Contract);
 		app.MapInvoiceRoutes(RouteTags.Invoice);
 		app.MapChatBotRoutes(RouteTags.ChatBot);
 		app.MapTicketRoutes(RouteTags.Ticket);
 		app.MapTxnRoutes(RouteTags.Txn);
-		app.MapDataModelRoutes(RouteTags.DataModel);
 		app.MapParkingRoutes(RouteTags.Parking);
 		app.MapVehicleRoutes(RouteTags.Vehicle);
 		app.MapInquiryRoutes(RouteTags.Inquiry);

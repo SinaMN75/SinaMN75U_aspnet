@@ -1,10 +1,10 @@
 namespace SinaMN75U.Services;
 
 public interface ICommentService {
-	public Task<UResponse<CommentResponse?>> Create(CommentCreateParams p, CancellationToken ct);
+	public Task<UResponse> Create(CommentCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<CommentResponse>?>> Read(CommentReadParams p, CancellationToken ct);
 	public Task<UResponse<CommentResponse?>> ReadById(IdParams p, CancellationToken ct);
-	public Task<UResponse<CommentResponse?>> Update(CommentUpdateParams p, CancellationToken ct);
+	public Task<UResponse> Update(CommentUpdateParams p, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	public Task<UResponse<int>> ReadProductCommentCount(IdParams p, CancellationToken ct);
 	public Task<UResponse<int>> ReadUserCommentCount(IdParams p, CancellationToken ct);
@@ -15,14 +15,13 @@ public class CommentService(
 	ILocalizationService ls,
 	ITokenService ts
 ) : ICommentService {
-	public async Task<UResponse<CommentResponse?>> Create(CommentCreateParams p, CancellationToken ct) {
+	public async Task<UResponse> Create(CommentCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<CommentResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		EntityEntry<CommentEntity> e = await db.Set<CommentEntity>().AddAsync(p.MapToEntity(), ct);
+		await db.Set<CommentEntity>().AddAsync(p.MapToEntity(), ct);
 		await db.SaveChangesAsync(ct);
-
-		return new UResponse<CommentResponse?>(e.Entity.MapToResponse());
+		return new UResponse();
 	}
 
 	public async Task<UResponse<IEnumerable<CommentResponse>?>> Read(CommentReadParams p, CancellationToken ct) {
@@ -45,9 +44,9 @@ public class CommentService(
 		return e == null ? new UResponse<CommentResponse?>(null, Usc.NotFound, ls.Get("CommentNotFound")) : new UResponse<CommentResponse?>(e);
 	}
 
-	public async Task<UResponse<CommentResponse?>> Update(CommentUpdateParams p, CancellationToken ct) {
+	public async Task<UResponse> Update(CommentUpdateParams p, CancellationToken ct) {
 		CommentEntity? e = await db.Set<CommentEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse<CommentResponse?>(null, Usc.NotFound, ls.Get("CommentNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("CommentNotFound"));
 		if (p.Score.IsNotNull()) e.Score = p.Score.Value;
 		if (p.Description.IsNotNullOrEmpty()) e.Description = p.Description;
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
@@ -55,7 +54,7 @@ public class CommentService(
 		db.Set<CommentEntity>().Update(p.MapToEntity(e));
 		await db.SaveChangesAsync(ct);
 
-		return new UResponse<CommentResponse?>(e.MapToResponse());
+		return new UResponse();
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {

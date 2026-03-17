@@ -1,9 +1,9 @@
 ﻿namespace SinaMN75U.Services;
 
 public interface ITxnService {
-	Task<UResponse<TxnResponse?>> Create(TxnCreateParams p, CancellationToken ct);
+	Task<UResponse> Create(TxnCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<TxnResponse>?>> Read(TxnReadParams p, CancellationToken ct);
-	Task<UResponse<TxnResponse?>> Update(TxnUpdateParams p, CancellationToken ct);
+	Task<UResponse> Update(TxnUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 }
 
@@ -12,14 +12,13 @@ public class TxnService(
 	ILocalizationService ls,
 	ITokenService ts
 ) : ITxnService {
-	public async Task<UResponse<TxnResponse?>> Create(TxnCreateParams p, CancellationToken ct) {
+	public async Task<UResponse> Create(TxnCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<TxnResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
-		EntityEntry<TxnEntity> e = await db.AddAsync(p.MapToEntity(userData.Id), ct);
-
+		await db.AddAsync(p.MapToEntity(userData.Id), ct);
 		await db.SaveChangesAsync(ct);
-		return new UResponse<TxnResponse?>(e.Entity.MapToResponse());
+		return new UResponse();
 	}
 
 	public async Task<UResponse<IEnumerable<TxnResponse>?>> Read(TxnReadParams p, CancellationToken ct) {
@@ -27,9 +26,9 @@ public class TxnService(
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
-	public async Task<UResponse<TxnResponse?>> Update(TxnUpdateParams p, CancellationToken ct) {
+	public async Task<UResponse> Update(TxnUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<TxnResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
 		TxnEntity e = (await db.Set<TxnEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
 		e.UpdatedAt = DateTime.UtcNow;
@@ -40,12 +39,12 @@ public class TxnService(
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
 
-		return new UResponse<TxnResponse?>(e.MapToResponse());
+		return new UResponse();
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<TxnEntity?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
 		await db.Set<TxnEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
