@@ -15,9 +15,6 @@ public sealed class UserResponse : BaseResponse<TagUser, UserJson> {
 
 	public ICollection<CategoryResponse>? Categories { get; set; }
 	public ICollection<MediaResponse>? Media { get; set; }
-	public ICollection<ContractResponse>? Contracts { get; set; }
-	public ICollection<AddressResponse>? Addresses { get; set; }
-	public ICollection<TerminalResponse>? Terminals { get; set; }
 }
 
 public sealed class LoginResponse {

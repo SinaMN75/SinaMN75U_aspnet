@@ -70,6 +70,8 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 	public ICollection<WalletEntity> Wallets { get; set; } = [];
 	
 	public ICollection<TerminalEntity> Terminals { get; set; } = [];
+	
+	public ICollection<BankAccountEntity> BankAccounts { get; set; } = [];
 
 	public UserResponse MapToResponse() => new() {
 		Id = Id,

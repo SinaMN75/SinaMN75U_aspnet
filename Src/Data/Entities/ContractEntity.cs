@@ -24,23 +24,21 @@ public class ContractEntity : BaseEntity<TagContract, ContractJson> {
 
 	public ICollection<InvoiceEntity> Invoices { get; set; } = [];
 
-	public ContractResponse MapToResponse() {
-		return new ContractResponse {
-			Id = Id,
-			CreatedAt = CreatedAt,
-			UpdatedAt = UpdatedAt,
-			DeletedAt = DeletedAt,
-			JsonData = JsonData,
-			Tags = Tags,
-			StartDate = StartDate,
-			EndDate = EndDate,
-			Deposit = Deposit,
-			Rent = Rent,
-			UserId = UserId,
-			CreatorId = CreatorId,
-			ProductId = ProductId
-		};
-	}
+	public ContractResponse MapToResponse() => new() {
+		Id = Id,
+		CreatedAt = CreatedAt,
+		UpdatedAt = UpdatedAt,
+		DeletedAt = DeletedAt,
+		JsonData = JsonData,
+		Tags = Tags,
+		StartDate = StartDate,
+		EndDate = EndDate,
+		Deposit = Deposit,
+		Rent = Rent,
+		UserId = UserId,
+		CreatorId = CreatorId,
+		ProductId = ProductId
+	};
 }
 
 public class ContractJson {

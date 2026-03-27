@@ -1,5 +1,6 @@
 namespace SinaMN75U.Data.Entities;
 
+[Table("Follows")]
 public class FollowEntity : BaseEntity<TagFollow, FollowJson> {
 	public required Guid CreatorId { get; set; }
 	public UserEntity? Creator { get; set; }

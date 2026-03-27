@@ -30,14 +30,12 @@ public class MediaEntity : BaseEntity<TagMedia, MediaJson> {
 	public Guid? TicketId { get; set; }
 	public TicketEntity? Ticket { get; set; }
 
-	public MediaResponse MapToResponse() {
-		return new MediaResponse {
-			Id = Id,
-			Path = Path,
-			JsonData = JsonData,
-			Tags = Tags
-		};
-	}
+	public MediaResponse MapToResponse() => new() {
+		Id = Id,
+		Path = Path,
+		JsonData = JsonData,
+		Tags = Tags
+	};
 }
 
 public class MediaJson {

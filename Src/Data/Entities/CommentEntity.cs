@@ -26,22 +26,20 @@ public class CommentEntity : BaseEntity<TagComment, CommentJson> {
 
 	public ICollection<MediaEntity> Media { get; set; } = [];
 
-	public CommentResponse MapToResponse() {
-		return new CommentResponse {
-			Id = Id,
-			CreatedAt = CreatedAt,
-			UpdatedAt = UpdatedAt,
-			DeletedAt = DeletedAt,
-			JsonData = JsonData,
-			Tags = Tags,
-			Score = Score,
-			Description = Description,
-			ParentId = ParentId,
-			CreatorId = CreatorId,
-			UserId = UserId,
-			ProductId = ProductId
-		};
-	}
+	public CommentResponse MapToResponse() => new() {
+		Id = Id,
+		CreatedAt = CreatedAt,
+		UpdatedAt = UpdatedAt,
+		DeletedAt = DeletedAt,
+		JsonData = JsonData,
+		Tags = Tags,
+		Score = Score,
+		Description = Description,
+		ParentId = ParentId,
+		CreatorId = CreatorId,
+		UserId = UserId,
+		ProductId = ProductId
+	};
 }
 
 public class CommentJson {

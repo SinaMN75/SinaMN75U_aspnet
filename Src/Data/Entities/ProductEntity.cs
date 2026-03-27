@@ -52,32 +52,30 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	public ICollection<FollowEntity> Followers { get; set; } = [];
 	public ICollection<ContractEntity> Contracts { get; set; } = [];
 
-	public ProductResponse MapToResponse() {
-		return new ProductResponse {
-			Id = Id,
-			CreatedAt = CreatedAt,
-			UpdatedAt = UpdatedAt,
-			DeletedAt = DeletedAt,
-			JsonData = JsonData,
-			Tags = Tags,
-			Title = Title,
-			Code = Code,
-			Subtitle = Subtitle,
-			Description = Description,
-			Slug = Slug,
-			Type = Type,
-			Content = Content,
-			Latitude = Latitude,
-			Longitude = Longitude,
-			Deposit = Deposit,
-			Rent = Rent,
-			Stock = Stock,
-			Point = Point,
-			Order = Order,
-			ParentId = ParentId,
-			CreatorId = CreatorId
-		};
-	}
+	public ProductResponse MapToResponse() => new() {
+		Id = Id,
+		CreatedAt = CreatedAt,
+		UpdatedAt = UpdatedAt,
+		DeletedAt = DeletedAt,
+		JsonData = JsonData,
+		Tags = Tags,
+		Title = Title,
+		Code = Code,
+		Subtitle = Subtitle,
+		Description = Description,
+		Slug = Slug,
+		Type = Type,
+		Content = Content,
+		Latitude = Latitude,
+		Longitude = Longitude,
+		Deposit = Deposit,
+		Rent = Rent,
+		Stock = Stock,
+		Point = Point,
+		Order = Order,
+		ParentId = ParentId,
+		CreatorId = CreatorId
+	};
 }
 
 public class ProductJson {

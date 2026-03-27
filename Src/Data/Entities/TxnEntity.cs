@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Txn")]
-[Index(nameof(TrackingNumber), IsUnique = true,  Name = "IX_Txn_TrackingNumber")]
+[Index(nameof(TrackingNumber), IsUnique = true, Name = "IX_Txn_TrackingNumber")]
 [Index(nameof(UserId), Name = "IX_Txn_UserId")]
 public class TxnEntity : BaseEntity<TagTxn, TxnJson> {
 	[Required]
@@ -18,19 +18,17 @@ public class TxnEntity : BaseEntity<TagTxn, TxnJson> {
 	public required Guid UserId { get; set; }
 	public UserEntity User { get; set; } = null!;
 
-	public TxnResponse MapToResponse() {
-		return new TxnResponse {
-			Id = Id,
-			CreatedAt = CreatedAt,
-			UpdatedAt = UpdatedAt,
-			DeletedAt = DeletedAt,
-			JsonData = JsonData,
-			Tags = Tags,
-			Amount = Amount,
-			TrackingNumber = TrackingNumber,
-			UserId = UserId
-		};
-	}
+	public TxnResponse MapToResponse() => new() {
+		Id = Id,
+		CreatedAt = CreatedAt,
+		UpdatedAt = UpdatedAt,
+		DeletedAt = DeletedAt,
+		JsonData = JsonData,
+		Tags = Tags,
+		Amount = Amount,
+		TrackingNumber = TrackingNumber,
+		UserId = UserId
+	};
 }
 
 public class TxnJson {
