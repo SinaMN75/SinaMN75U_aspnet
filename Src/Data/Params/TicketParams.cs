@@ -1,8 +1,6 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class TicketCreateParams : BaseParams {
-	public Guid? UserId { get; set; }
-
 	[UValidationRequired("TitleRequired")]
 	public required string Title { get; set; }
 
@@ -25,16 +23,6 @@ public sealed class TicketUpdateParams : BaseUpdateParams<TagTicket> {
 	public string? Telegram { get; set; }
 	public string? Whatsapp { get; set; }
 	public string? Phone { get; set; }
-
-	public void MapToEntity(TicketEntity e) {
-		if (Title != null) e.JsonData.Title = Title;
-		if (Description != null) e.JsonData.Description = Description;
-		if (Instagram != null) e.JsonData.Instagram = Instagram;
-		if (Telegram != null) e.JsonData.Telegram = Telegram;
-		if (Whatsapp != null) e.JsonData.Whatsapp = Whatsapp;
-		if (Phone != null) e.JsonData.Phone = Phone;
-		if (Tags != null) e.Tags = Tags;
-	}
 }
 
 public sealed class TicketReadParams : BaseReadParams<int> {

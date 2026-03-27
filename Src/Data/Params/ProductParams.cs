@@ -30,40 +30,8 @@ public sealed class ProductCreateParams : BaseCreateParams<TagProduct> {
 	public ICollection<ProductCreateParams>? Children { get; set; }
 
 	public Guid? ParentId { get; set; }
-	public Guid? CreatorId { get; set; }
 
 	public ICollection<Guid>? Media { get; set; }
-
-	public ProductEntity MapToEntity() {
-		return new ProductEntity {
-			Title = Title,
-			Code = Code,
-			Subtitle = Subtitle,
-			Description = Description,
-			Slug = Slug,
-			Type = Type,
-			Content = Content,
-			Latitude = Latitude,
-			Longitude = Longitude,
-			Stock = Stock ?? 0,
-			Point = Point ?? 0,
-			Order = Order ?? 0,
-			Deposit = Deposit,
-			Rent = Rent,
-			ParentId = ParentId,
-			CreatorId = CreatorId ?? Guid.Empty,
-			JsonData = new ProductJson {
-				ActionType = ActionType,
-				ActionTitle = ActionTitle,
-				ActionUri = ActionUri,
-				Details = Details,
-				PhoneNumber = PhoneNumber,
-				Address = Address,
-				RelatedProducts = RelatedProducts?.ToList() ?? []
-			},
-			Tags = Tags
-		};
-	}
 }
 
 public sealed class ProductUpdateParams : BaseUpdateParams<TagProduct> {

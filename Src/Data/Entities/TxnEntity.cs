@@ -1,8 +1,8 @@
 namespace SinaMN75U.Data.Entities;
 
-[Table("Txns")]
-[Index(nameof(TrackingNumber), IsUnique = true)]
-[Index(nameof(UserId))]
+[Table("Txn")]
+[Index(nameof(TrackingNumber), IsUnique = true,  Name = "IX_Txn_TrackingNumber")]
+[Index(nameof(UserId), Name = "IX_Txn_UserId")]
 public class TxnEntity : BaseEntity<TagTxn, TxnJson> {
 	[Required]
 	[Column(TypeName = "decimal(18,2)")]

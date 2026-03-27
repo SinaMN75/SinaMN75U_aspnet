@@ -1,66 +1,65 @@
 ﻿namespace SinaMN75U.Services;
 
-public interface IContentService {
-	Task<UResponse<Guid?>> Create(ContentCreateParams p, CancellationToken ct);
-	Task<UResponse<IEnumerable<ContentResponse>?>> Read(ContentReadParams p, CancellationToken ct);
-	Task<UResponse> Update(ContentUpdateParams p, CancellationToken ct);
+public interface IBankAccountService {
+	Task<UResponse<Guid?>> Create(BankAccountCreateParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<BankAccountResponse>?>> Read(BankAccountReadParams p, CancellationToken ct);
+	Task<UResponse> Update(BankAccountUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct);
 }
 
-public class ContentService(
+public class BankAccountService(
 	DbContext db,
 	ILocalizationService ls,
 	ITokenService ts
-) : IContentService {
-	public async Task<UResponse<Guid?>> Create(ContentCreateParams p, CancellationToken ct) {
+) : IBankAccountService {
+	public async Task<UResponse<Guid?>> Create(BankAccountCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
-		ContentEntity e = new() {
+		BankAccountEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
-			JsonData = new ContentJson {
-				Title = p.Title,
-				SubTitle = p.SubTitle,
+			JsonData = new BankAccountJson {
 				Description = p.Description,
-				Instagram = p.Instagram,
-				Telegram = p.Telegram,
-				Whatsapp = p.Whatsapp,
-				Phone = p.Phone
 			},
-			Tags = p.Tags
+			Tags = p.Tags,
+			CardNumber = p.CardNumber,
+			AccountNumber = p.AccountNumber,
+			IBanNumber = p.IBanNumber,
+			BankName = p.BankName,
+			OwnerName = p.OwnerName,
+			UserId = p.UserId ?? userData.Id,
 		};
-		
+
 		await db.AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
 		return new UResponse<Guid?>(e.Id);
 	}
 
-	public async Task<UResponse<IEnumerable<ContentResponse>?>> Read(ContentReadParams p, CancellationToken ct) {
-		IQueryable<ContentResponse> q = db.Set<ContentEntity>().Select(Projections.ContentSelector(p.SelectorArgs));
+	public async Task<UResponse<IEnumerable<BankAccountResponse>?>> Read(BankAccountReadParams p, CancellationToken ct) {
+		IQueryable<BankAccountResponse> q = db.Set<BankAccountEntity>().Select(Projections.BankAccountSelector(p.SelectorArgs));
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
-	public async Task<UResponse> Update(ContentUpdateParams p, CancellationToken ct) {
+	public async Task<UResponse> Update(BankAccountUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
-		ContentEntity? e = await db.Set<ContentEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ContentNotFound"));
-		
-		if (p.Title != null) e.JsonData.Title = p.Title;
-		if (p.SubTitle != null) e.JsonData.SubTitle = p.SubTitle;
+		BankAccountEntity? e = await db.Set<BankAccountEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("BankAccountNotFound"));
+
+		if (p.IBanNumber != null) e.IBanNumber = p.IBanNumber;
+		if (p.AccountNumber != null) e.AccountNumber = p.AccountNumber;
+		if (p.CardNumber != null) e.CardNumber = p.CardNumber;
+		if (p.OwnerName != null) e.OwnerName = p.OwnerName;
+		if (p.BankName != null) e.BankName = p.BankName;
 		if (p.Description != null) e.JsonData.Description = p.Description;
-		if (p.Instagram != null) e.JsonData.Instagram = p.Instagram;
-		if (p.Telegram != null) e.JsonData.Telegram = p.Telegram;
-		if (p.Whatsapp != null) e.JsonData.Whatsapp = p.Whatsapp;
-		if (p.Phone != null) e.JsonData.Phone = p.Phone;
 		if (p.Tags != null) e.Tags = p.Tags;
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
-		
+
 		e.UpdatedAt = DateTime.UtcNow;
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
@@ -71,8 +70,7 @@ public class ContentService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
-		await db.Set<ContentEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
-
+		await db.Set<BankAccountEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 		return new UResponse();
 	}
 
@@ -80,7 +78,7 @@ public class ContentService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 
-		await db.Set<ContentEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
+		await db.Set<BankAccountEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
 		return new UResponse();
 	}
 }

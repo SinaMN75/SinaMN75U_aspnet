@@ -36,6 +36,7 @@ public class BaseReadParams<T> : BaseParams {
 	public bool OrderByUpdatedAtDesc { get; set; }
 	public IEnumerable<T>? Tags { get; set; }
 	public IEnumerable<Guid> Ids { get; set; } = [];
+	public Guid? CreatorId { get; set; }
 }
 
 public class BaseUpdateParams<T> : BaseParams {
@@ -53,4 +54,6 @@ public class BaseCreateParams<T> : BaseParams {
 	public required ICollection<T> Tags { get; set; }
 
 	public Guid? Id { get; set; }
+
+	public Guid? CreatorId { get; set; }
 }

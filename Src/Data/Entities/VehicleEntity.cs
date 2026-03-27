@@ -1,6 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Vehicles")]
+[Index(nameof(NumberPlate), Name = "IX_Vehicles_NumberPlate", IsUnique = true)]
 public class VehicleEntity : BaseEntity<TagVehicle, VehicleJson> {
 	[Required]
 	[MinLength(6)]

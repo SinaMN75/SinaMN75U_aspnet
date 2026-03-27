@@ -43,6 +43,9 @@ public class MediaService(
 		if (p.Tag2 != null) tags.Add(p.Tag2.Value);
 		if (p.Tag3 != null) tags.Add(p.Tag3.Value);
 		MediaEntity e = new() {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
 			Path = name,
 			UserId = p.UserId,
 			CategoryId = p.CategoryId,

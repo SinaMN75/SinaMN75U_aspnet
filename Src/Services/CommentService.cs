@@ -20,7 +20,7 @@ public class CommentService(
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		CommentEntity e = new() {
-			Id = Guid.CreateVersion7(),
+			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
 			JsonData = new CommentJson(),
@@ -64,11 +64,14 @@ public class CommentService(
 
 		CommentEntity? e = await db.Set<CommentEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("CommentNotFound"));
+		
 		if (p.Score.IsNotNull()) e.Score = p.Score.Value;
 		if (p.Description.IsNotNullOrEmpty()) e.Description = p.Description;
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
-		db.Set<CommentEntity>().Update(p.MapToEntity(e));
+		if (p.Tags != null) e.Tags = p.Tags;
+		
+		db.Set<CommentEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();

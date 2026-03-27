@@ -218,6 +218,8 @@ public class ProductService(
 	) {
 		ProductEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
 			Title = p.Title,
 			Code = p.Code == "" ? null : p.Code,
 			Subtitle = p.Subtitle,

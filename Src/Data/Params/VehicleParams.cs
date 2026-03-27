@@ -12,18 +12,6 @@ public sealed class VehicleUpdateParams : BaseUpdateParams<TagVehicle> {
 	public string? Title { get; set; }
 	public string? Brand { get; set; }
 	public string? Color { get; set; }
-
-	public VehicleEntity MapToEntity(VehicleEntity e) {
-		e.UpdatedAt = DateTime.UtcNow;
-		if (NumberPlate.IsNotNull()) e.NumberPlate = NumberPlate;
-		if (Title.IsNotNull()) e.Title = Title;
-		if (Brand.IsNotNull()) e.Brand = Brand;
-		if (Color.IsNotNull()) e.Color = Color;
-		if (Tags.IsNotNull()) e.Tags = Tags;
-		if (AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(AddTags);
-		if (RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(tag => RemoveTags.Contains(tag));
-		return e;
-	}
 }
 
 public sealed class VehicleReadParams : BaseReadParams<TagVehicle> {

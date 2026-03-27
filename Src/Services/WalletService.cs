@@ -17,6 +17,9 @@ public class WalletService(
 		if (existingWallet != null) return new UResponse(Usc.WalletAlreadyExists, ls.Get("WalletForThisUserAlreadyExists"));
 
 		WalletEntity e = new() {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
 			UserId = userId,
 			JsonData = new WalletJson(),
 			Tags = [],
@@ -32,6 +35,8 @@ public class WalletService(
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
 		UserEntity receiver = (await db.Set<UserEntity>().Select(x => new UserEntity {
 			Id = x.Id,
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
 			JsonData = x.JsonData,
 			Tags = x.Tags
 		}).FirstOrDefaultAsync(x => x.UserName == Core.App.ItHub.WalletOwnerUserName, ct))!;
@@ -77,6 +82,9 @@ public class WalletService(
 		receiverWallet.Balance = senderBalance;
 
 		await db.Set<WalletTxnEntity>().AddAsync(new WalletTxnEntity {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
 			SenderId = senderId,
 			ReceiverId = p.ReceiverId,
 			Amount = senderBalance,
@@ -84,6 +92,9 @@ public class WalletService(
 			Tags = []
 		}, ct);
 		await db.Set<WalletTxnEntity>().AddAsync(new WalletTxnEntity {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
 			SenderId = senderId,
 			ReceiverId = p.ReceiverId,
 			Amount = receiverBalance,

@@ -23,16 +23,18 @@ public class ContractService(
 
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
 		if (user == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("UserNotFound"));
-		
+
 		Guid contractId = Guid.CreateVersion7();
 		ContractEntity e = new() {
 			Id = contractId,
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
 			StartDate = p.StartDate,
 			EndDate = p.EndDate,
 			Deposit = p.Deposit ?? product.Deposit ?? 0,
 			Rent = p.Rent ?? product.Rent ?? 0,
 			UserId = user.Id,
-			CreatorId = userData.Id,
+			CreatorId = p.CreatorId ?? userData.Id,
 			ProductId = product.Id,
 			JsonData = new ContractJson { Description = p.Description },
 			Tags = p.Tags
@@ -41,6 +43,9 @@ public class ContractService(
 
 		if (p.Tags.Contains(TagContract.SingleInvoice)) {
 			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
+				Id = Guid.CreateVersion7(),
+				CreatedAt = DateTime.UtcNow,
+				UpdatedAt = DateTime.UtcNow,
 				Tags = [TagInvoice.NotPaid],
 				DebtAmount = e.Deposit + e.Rent,
 				CreditorAmount = 0,
@@ -60,6 +65,9 @@ public class ContractService(
 
 		if (e.Deposit >= 1)
 			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
+				Id = Guid.CreateVersion7(),
+				CreatedAt = DateTime.UtcNow,
+				UpdatedAt = DateTime.UtcNow,
 				Tags = [TagInvoice.NotPaid, TagInvoice.Deposit],
 				DebtAmount = product.Deposit ?? 0,
 				CreditorAmount = 0,
@@ -82,6 +90,9 @@ public class ContractService(
 		if (endDate.Day < startDate.Day) totalMonths--;
 
 		await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
 			Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
 			DebtAmount = rent,
 			CreditorAmount = 0,
@@ -101,6 +112,9 @@ public class ContractService(
 			decimal proportionalPrice = remainingDaysInFirstMonth / (decimal)totalDaysInFirstMonth * rent;
 
 			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
+				Id = Guid.CreateVersion7(),
+				CreatedAt = DateTime.UtcNow,
+				UpdatedAt = DateTime.UtcNow,
 				Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
 				DebtAmount = Math.Round(proportionalPrice, 2),
 				CreditorAmount = 0,
@@ -119,6 +133,9 @@ public class ContractService(
 			PersianDateTime firstOfMonth = startDate.AddMonths(i).StartOfMonth;
 
 			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
+				Id = Guid.CreateVersion7(),
+				CreatedAt = DateTime.UtcNow,
+				UpdatedAt = DateTime.UtcNow,
 				Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
 				DebtAmount = rent,
 				CreditorAmount = 0,
@@ -160,8 +177,16 @@ public class ContractService(
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		ContractEntity e = (await db.Set<ContractEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
-		e = p.MapToEntity(e);
-		db.Update(e);
+		
+		e.UpdatedAt = DateTime.UtcNow;
+		if (p.Deposit.HasValue) e.Deposit = p.Deposit.Value;
+		if (p.Rent.HasValue) e.Rent = p.Rent.Value;
+		if (p.StartDate.HasValue) e.StartDate = p.StartDate.Value;
+		if (p.EndDate.HasValue) e.EndDate = p.EndDate.Value;
+		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
+		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
+		if (p.Tags.IsNotNullOrEmpty()) e.Tags = p.Tags;
+		db.Set<ContractEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();

@@ -25,7 +25,26 @@ public class CategoryService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		CategoryEntity e = p.MapToEntity();
+
+		CategoryEntity e = new CategoryEntity {
+			Id = p.Id ?? Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
+			JsonData = new CategoryJson {
+				Subtitle = p.Subtitle,
+				Link = p.Link,
+				Location = p.Location,
+				Type = p.Type,
+				Address = p.Address,
+				PhoneNumber = p.PhoneNumber,
+				RelatedProducts = p.RelatedProducts
+			},
+			Tags = p.Tags,
+			Title = p.Title,
+			Order = p.Order,
+			Code = p.Code,
+			ParentId = p.ParentId,
+		};
 		await db.Set<CategoryEntity>().AddAsync(e, ct);
 
 		if (p.Children.IsNotNullOrEmpty()) await AddChildrenRecursively(p.Children, e.Id, ct);
@@ -80,7 +99,18 @@ public class CategoryService(
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("CategoryNotFound"));
 
 		e.UpdatedAt = DateTime.UtcNow;
-		e = p.MapToEntity(e);
+		if (p.Title != null) e.Title = p.Title;
+		if (p.Subtitle != null) e.JsonData.Subtitle = p.Subtitle;
+		if (p.Link != null) e.JsonData.Link = p.Link;
+		if (p.Location != null) e.JsonData.Location = p.Location;
+		if (p.Type != null) e.JsonData.Type = p.Type;
+		if (p.Address != null) e.JsonData.Address = p.Address;
+		if (p.PhoneNumber != null) e.JsonData.PhoneNumber = p.PhoneNumber;
+		if (p.Code != null) e.Code = p.Code;
+		if (p.Order != null) e.Order = p.Order;
+		if (p.ParentId != null) e.ParentId = p.ParentId;
+		if (p.RelatedProducts != null) e.JsonData.RelatedProducts = p.RelatedProducts;
+		if (p.Tags != null) e.Tags = p.Tags;
 
 		if (p.ProductDeposit.IsNotNull())
 			await db.Set<ProductEntity>()
@@ -147,26 +177,25 @@ public class CategoryService(
 		}
 	}
 
-	private static CategoryEntity FillData(CategoryCreateParams p, Guid? parentId = null) {
-		CategoryEntity e = new() {
-			Id = p.Id ?? Guid.CreateVersion7(),
-			Title = p.Title,
-			Code = p.Code,
-			JsonData = new CategoryJson {
-				Subtitle = p.Subtitle,
-				Link = p.Link,
-				Location = p.Location,
-				Type = p.Type,
-				Address = p.Address,
-				PhoneNumber = p.PhoneNumber,
-				RelatedProducts = p.RelatedProducts
-			},
-			Tags = p.Tags,
-			Order = p.Order,
-			ParentId = parentId ?? p.ParentId
-		};
-		return e;
-	}
+	private static CategoryEntity FillData(CategoryCreateParams p, Guid? parentId = null) => new() {
+		Id = p.Id ?? Guid.CreateVersion7(),
+		CreatedAt = DateTime.UtcNow,
+		UpdatedAt = DateTime.UtcNow,
+		Title = p.Title,
+		Code = p.Code,
+		JsonData = new CategoryJson {
+			Subtitle = p.Subtitle,
+			Link = p.Link,
+			Location = p.Location,
+			Type = p.Type,
+			Address = p.Address,
+			PhoneNumber = p.PhoneNumber,
+			RelatedProducts = p.RelatedProducts
+		},
+		Tags = p.Tags,
+		Order = p.Order,
+		ParentId = parentId ?? p.ParentId
+	};
 
 	private async Task AddMedia(Guid id, ICollection<Guid> ids, CancellationToken ct) {
 		if (ids.IsNullOrEmpty()) return;

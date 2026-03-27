@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Params;
 
-public sealed class UserCreateParams : BaseParams {
+public sealed class UserCreateParams : BaseCreateParams<TagUser> {
 	[UValidationRequired("UserNameRequired"), UValidationStringLength(2, 100, "UserNameMinLenght")]
 	public required string UserName { get; set; }
 
@@ -35,43 +35,7 @@ public sealed class UserCreateParams : BaseParams {
 	public ICollection<string>? DrugAllergies { get; set; }
 	public ICollection<string>? Sickness { get; set; }
 
-	[UValidationMinCollectionLength(1, "TagsRequired")]
-	public required List<TagUser> Tags { get; set; }
-
 	public IEnumerable<Guid>? Categories { get; set; }
-
-	public UserEntity MapToEntity() {
-		Guid id = Guid.CreateVersion7();
-		return new UserEntity {
-			Id = id,
-			UserName = UserName,
-			Password = UPasswordHasher.Hash(Password),
-			RefreshToken = "",
-			PhoneNumber = PhoneNumber,
-			Email = Email,
-			FirstName = FirstName,
-			LastName = LastName,
-			Bio = Bio,
-			Country = Country,
-			State = State,
-			City = City,
-			NationalCode = NationalCode,
-			Birthdate = Birthdate,
-			Tags = Tags,
-			JsonData = new UserJson {
-				Weight = Weight,
-				Height = Height,
-				Address = Address,
-				FatherName = FatherName,
-				FcmToken = FcmToken
-			},
-			Extra = {
-				JsonData = new UserExtraJson(),
-				Tags = [],
-				UserId = id
-			}
-		};
-	}
 }
 
 public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {

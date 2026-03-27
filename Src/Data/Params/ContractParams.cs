@@ -22,18 +22,6 @@ public sealed class ContractUpdateParams : BaseUpdateParams<TagContract> {
 	public DateTime? EndDate { get; set; }
 	public decimal? Deposit { get; set; }
 	public decimal? Rent { get; set; }
-
-	public ContractEntity MapToEntity(ContractEntity e) {
-		e.UpdatedAt = DateTime.UtcNow;
-		if (Deposit.HasValue) e.Deposit = Deposit.Value;
-		if (Rent.HasValue) e.Rent = Rent.Value;
-		if (StartDate.HasValue) e.StartDate = StartDate.Value;
-		if (EndDate.HasValue) e.EndDate = EndDate.Value;
-		if (AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(AddTags);
-		if (RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => RemoveTags.Contains(x));
-		if (Tags.IsNotNullOrEmpty()) e.Tags = Tags;
-		return e;
-	}
 }
 
 public sealed class ContractReadParams : BaseReadParams<TagContract> {

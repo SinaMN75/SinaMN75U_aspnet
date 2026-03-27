@@ -77,9 +77,11 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<ITicketService, TicketService>();
 		builder.Services.AddScoped<IVehicleService, VehicleService>();
 		builder.Services.AddScoped<IParkingService, ParkingService>();
-		builder.Services.AddScoped<InquiryService, InquiryService>();
+		builder.Services.AddScoped<IInquiryService, InquiryService>();
 		builder.Services.AddScoped<IAddressService, AddressService>();
 		builder.Services.AddScoped<IWalletService, WalletService>();
+		builder.Services.AddScoped<ITerminalService, TerminalService>();
+		builder.Services.AddScoped<IBankAccountService, BankAccountService>();
 	}
 
 	public static void UseUServices(this WebApplication app) {
@@ -112,6 +114,8 @@ public static partial class AspNetConfig {
 		app.MapInquiryRoutes(RouteTags.Inquiry);
 		app.MapAddressRoutes(RouteTags.Address);
 		app.MapWalletRoutes(RouteTags.Wallet);
+		app.MapTerminalRoutes(RouteTags.Terminal);
+		app.MapBankAccountRoutes(RouteTags.BankAccount);
 	}
 
 	private static string CleanAndFormatSql(string sql) {

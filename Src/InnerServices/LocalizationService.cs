@@ -5,86 +5,18 @@ public interface ILocalizationService {
 }
 
 public class LocalizationService : ILocalizationService {
-	private readonly Dictionary<string, string> _ar = new() {
-		{ "Required", "مطلوب" },
-		{ "InvalidCredentials", "معلومات تسجيل الدخول خاطئة" },
-		{ "PhoneNumberNotValid", "رقم الهاتف غير صالح." },
-		{ "PhoneNumberRequired", "رقم الهاتف مطلوب." },
-		{ "CommentRequired", "التعليق مطلوب." },
-		{ "CommentNotFound", "لم يتم العثور على التعليق." },
-		{ "ContentNotFound", "المحتوى غير موجود." },
-		{ "ExamNotFound", "لم يتم العثور على الاختبار." },
-		{ "EmailRequired", "البريد الإلكتروني مطلوب." },
-		{ "UserNameRequired", "اسم المستخدم مطلوب." },
-		{ "UserNameMinLenght", "اسم المستخدم غير صالح." },
-		{ "TagsRequired", "العلامات مطلوبة" },
-		{ "IdRequired", "المعرف مطلوب" },
-		{ "OtpRequired", "رمز التحقق مطلوب" },
-		{ "TitleRequired", "العنوان مطلوب" },
-		{ "DescriptionRequired", "الوصف مطلوب" },
-		{ "SubTitleRequired", "العنوان الفرعي مطلوب" },
-		{ "FirstNameRequired", "الاسم الأول مطلوب" },
-		{ "LastNameRequired", "اسم العائلة مطلوب" },
-		{ "NationalCodeRequired", "الرمز الوطني مطلوب" },
-		{ "StartDateRequired", "تاريخ البدء مطلوب" },
-		{ "EndDateRequired", "تاريخ الانتهاء مطلوب" },
-		{ "DateRequired", "التاريخ مطلوب" },
-		{ "PriceRequired", "السعر مطلوب" },
-		{ "UserIdRequired", "المستخدم مطلوب" },
-		{ "ContractIdRequired", "العقد مطلوب" },
-		{ "UserNotFound", "لم يتم العثور على الحساب. يرجى التحقق من التفاصيل الخاصة بك." },
-		{ "EmailInvalid", "الرجاء إدخال بريد إلكتروني صالح." },
-		{ "UserNameInvalid", "اسم المستخدم غير صالح. يرجى تجربة اسم آخر." },
-		{ "FirstNameInvalid", "الاسم الأول غير صالح" },
-		{ "LastNameInvalid", "اسم العائلة غير صالح" },
-		{ "NationalCodeInvalid", "الرمز الوطني غير صالح" },
-		{ "NationalCodeNotMatchWithPhoneNumberOwner", "الرمز الوطني لا يتطابق مع مالك رقم الهاتف." },
-		{ "PasswordMinLength", "يجب أن تكون كلمة المرور 6 أحرف على الأقل." },
-		{ "PasswordRequired", "الرجاء إدخال كلمة مرور." },
-		{ "PasswordInvalid", "يجب أن تكون كلمة المرور من 6 إلى 100 حرف." },
-		{ "UserAlreadyExist", "الحساب موجود بالفعل. هل ترغب في تسجيل الدخول؟" },
-		{ "CategoryNotFound", "لم يتم العثور على الفئة. يرجى تجربة أخرى." },
-		{ "InvoiceNotFound", "لم يتم العثور على الفاتورة. يرجى تجربة أخرى." },
-		{ "ProductNotFound", "المنتج غير موجود. يرجى التحقق من التفاصيل." },
-		{ "ProductDeleted", "تم حذف المنتج بنجاح." },
-		{ "ProductDeleteFailed", "لم نتمكن من حذف المنتج. يرجى المحاولة لاحقًا." },
-		{ "PhoneNumberInvalid", "الرجاء إدخال رقم هاتف صالح." },
-		{ "AuthorizationRequired", "الرجاء تسجيل الدخول للمتابعة." },
-		{ "MaxOtpReached", "تمت محاولة طلب رمز التحقق مرات عديدة. يرجى الانتظار والمحاولة مرة أخرى." },
-		{ "UserDeleted", "تم حذف الحساب بنجاح." },
-		{ "AtLeastOneUserRequired", "مستخدم واحد على الأقل مطلوب" },
-		{ "CannotFollowYourself", "لا يمكنك متابعة نفسك" },
-		{ "AlreadyFollowingUser", "تقوم بمتابعة هذا المستخدم بالفعل" },
-		{ "AlreadyBookmarked", "تم وضع علامة مرجعية بالفعل" },
-		{ "FollowSuccess", "أنت تتابع الآن، " },
-		{ "FollowRelationshipNotFound", "خطأ في العثور على العلاقة" },
-		{ "FutureDateSelected", "تم تحديد تاريخ مستقبلي" },
-		{ "BeforeDateSelected", "تم تحديد تاريخ خاطئ" },
-		{ "UnfollowSuccess", "لم تعد تتابع، " },
-		{ "ProductHasActiveContract", "المنتج لديه عقد نشط." },
-		{ "ShahkarIsNotAvailableAtThisTime", "شاهكار غير متاح في هذا الوقت، يرجى المحاولة مرة أخرى لاحقًا." },
-		{ "TokenExpired", "انتهت صلاحية رمز المصادقة." },
-		{ "InvalidAPIKey", "مفتاح API غير صالح" },
-		{ "InvalidJsonBody", "هيكل JSON غير صالح" },
-		{ "InvalidBase64RequestBody", "هيكل طلب base64 غير صالح" },
-		{ "RequestTooLarge", "الطلب كبير جدًا" },
-		{ "InvalidRequestFormat", "تنسيق الطلب غير صالح" },
-		{ "InternalServerError", "خطأ داخلي في الخادم" },
-		{ "YourDetailSubmittedSuccessfully", "تم تقديم تفاصيلك بنجاح." },
-		{ "SystemError", "خطأ في النظام" },
-		{ "ZipCodeMustBe10CharactersLong", "يجب أن يكون الرمز البريدي 10 أحرف." },
-		{ "AddressWithThisZipCodeAlreadyExists", "العنوان بهذا الرمز البريدي موجود بالفعل." },
-		{ "BalanceIsLow", "رصيدك غير كافٍ." },
-		{ "SenderWalletNotFound", "لم يتم العثور على محفظة المرسل" },
-		{ "ReceiverWalletNotFound", "لم يتم العثور على محفظة المستلم" },
-		{ "TransferMoneyDone", "تمت عملية تحويل الأموال بنجاح" },
-		{ "WalletForThisUserAlreadyExists", "المستخدم لديه محفظة بالفعل." },
-		{ "AddressNotFound", "العنوان غير موجود" },
-		{ "AddressUpdatedSuccessfully", "تم تحديث العنوان بنجاح" },
-		{ "AddressDeletedSuccessfully", "تم حذف العنوان بنجاح" }
-	};
-
 	private readonly Dictionary<string, string> _en = new() {
+		{ "IdIsDuplicated", "This Id is already exist." },
+		{ "SlugIsDuplicated", "This Slug is already exist." },
+		{ "CodeIsDuplicated", "This Code is already exist." },
+		{ "SimCardNumberIsDuplicated", "This Sim Card Number is already exist." },
+		{ "SimCardSerialIsDuplicated", "This Sim Card Serial is already exist." },
+		{ "ImeiIsDuplicated", "This Imei is already exist." },
+		{ "TrackingNumberIsDuplicated", "This Tracking Number is already exist." },
+		{ "EmailIsDuplicated", "This Email is already exist." },
+		{ "UserNameIsDuplicated", "This UserName is already exist." },
+		{ "PhoneNumberIsDuplicated", "This Phone Number is already exist." },
+		{ "NationalCodeIsDuplicated", "This National Code is already exist." },
 		{ "Required", "Required" },
 		{ "InvalidCredentials", "Login Information is Wrong" },
 		{ "PhoneNumberNotValid", "Phone number is not valid." },
@@ -160,10 +92,22 @@ public class LocalizationService : ILocalizationService {
 		{ "WalletForThisUserAlreadyExists", "User Already has Wallet." },
 		{ "AddressNotFound", "Address Not Found" },
 		{ "AddressUpdatedSuccessfully", "Address Updated Successfully" },
-		{ "AddressDeletedSuccessfully", "Address Deleted Successfully" }
+		{ "AddressDeletedSuccessfully", "Address Deleted Successfully" },
+		{ "TerminalNotFound", "Terminal Not Found" }
 	};
 
 	private readonly Dictionary<string, string> _fa = new() {
+		{ "IdIsDuplicated", "آیدی تکراری است." },
+		{ "SlugIsDuplicated", "اسلاگ تکراری است." },
+		{ "CodeIsDuplicated", "کد تکراری است." },
+		{ "SimCardNumberIsDuplicated", "شماره سیمکارت تکراری است." },
+		{ "SimCardSerialIsDuplicated", "سریال سیمکارت تکراری است." },
+		{ "ImeiIsDuplicated", "IMEI تکراری است." },
+		{ "TrackingNumberIsDuplicated", "کد رهگیری تکراری است." },
+		{ "EmailIsDuplicated", "ایمیل تکراری است." },
+		{ "UserNameIsDuplicated", "نام کاربری تکراری است." },
+		{ "PhoneNumberIsDuplicated", "شماره موبایل تکراری است." },
+		{ "NationalCodeIsDuplicated", "کد ملی تکراری است." },
 		{ "Required", "مورد نیاز" },
 		{ "InvalidCredentials", "اطلاعات ورود اشتباه است" },
 		{ "PhoneNumberNotValid", "شماره تلفن معتبر نیست." },
@@ -239,13 +183,13 @@ public class LocalizationService : ILocalizationService {
 		{ "WalletForThisUserAlreadyExists", "کاربر از قبل کیف پول دارد." },
 		{ "AddressNotFound", "آدرس یافت نشد" },
 		{ "AddressUpdatedSuccessfully", "آدرس با موفقیت به روز شد" },
-		{ "AddressDeletedSuccessfully", "آدرس با موفقیت حذف شد" }
+		{ "AddressDeletedSuccessfully", "آدرس با موفقیت حذف شد" },
+		{ "TerminalNotFound", "ترمینال یافت نشد." }
 	};
 
 	public string Get(string key, string locale = "en") {
 		try {
 			if (locale == "fa") return _fa[key];
-			if (locale == "ar") return _ar[key];
 			return _en[key];
 		}
 		catch (Exception) {

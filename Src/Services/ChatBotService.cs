@@ -43,6 +43,9 @@ public class ChatBotService(
 			);
 			string responseValue = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct)).RootElement.GetProperty("response").GetString()!;
 			EntityEntry<ChatBotEntity> newE = await db.Set<ChatBotEntity>().AddAsync(new ChatBotEntity {
+				Id = Guid.CreateVersion7(),
+				CreatedAt = DateTime.UtcNow,
+				UpdatedAt = DateTime.UtcNow,
 				CreatorId = userData.Id,
 				JsonData = new ChatBotJsonData {
 					History = [

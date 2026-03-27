@@ -51,8 +51,16 @@ public class VehicleService(
 
 		VehicleEntity? e = await db.Set<VehicleEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("VehicleNotFound"));
-		p.MapToEntity(e);
-		db.Update(p.MapToEntity(e));
+		
+		e.UpdatedAt = DateTime.UtcNow;
+		if (p.NumberPlate.IsNotNull()) e.NumberPlate = p.NumberPlate;
+		if (p.Title.IsNotNull()) e.Title = p.Title;
+		if (p.Brand.IsNotNull()) e.Brand = p.Brand;
+		if (p.Color.IsNotNull()) e.Color = p.Color;
+		if (p.Tags.IsNotNull()) e.Tags = p.Tags;
+		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
+		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
+		db.Update(e);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}

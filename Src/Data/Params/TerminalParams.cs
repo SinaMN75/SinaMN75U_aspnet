@@ -16,5 +16,7 @@ public class TerminalReadParams : BaseReadParams<TagTerminal> {
 	public string? SimCardNumber { get; set; }
 	public string? SimCardSerial { get; set; }
 	public string? Imei { get; set; }
-}
+	public Guid? CreatorId { get; set; }
 
+	public TerminalSelectorArgs SelectorArgs { get; set; } = new();
+}

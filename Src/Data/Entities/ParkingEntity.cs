@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Entities;
 
-[Table("Parkings")]
+[Table("Parking")]
 public class ParkingEntity : BaseEntity<TagParking, ParkingJson> {
 	[Required]
 	[MaxLength(100)]
@@ -16,18 +16,16 @@ public class ParkingEntity : BaseEntity<TagParking, ParkingJson> {
 	public decimal HourlyPrice { get; set; }
 	public decimal DailyPrice { get; set; }
 
-	public ParkingResponse MapToResponse() {
-		return new ParkingResponse {
-			Id = Id,
-			CreatedAt = CreatedAt,
-			UpdatedAt = UpdatedAt,
-			DeletedAt = DeletedAt,
-			JsonData = JsonData,
-			Tags = Tags,
-			Title = Title,
-			CreatorId = CreatorId
-		};
-	}
+	public ParkingResponse MapToResponse() => new() {
+		Id = Id,
+		CreatedAt = CreatedAt,
+		UpdatedAt = UpdatedAt,
+		DeletedAt = DeletedAt,
+		JsonData = JsonData,
+		Tags = Tags,
+		Title = Title,
+		CreatorId = CreatorId
+	};
 }
 
 public class ParkingJson {
@@ -50,22 +48,20 @@ public class ParkingReportEntity : BaseEntity<TagParkingReport, ParkingReportJso
 	public required Guid ParkingId { get; set; }
 	public ParkingEntity Parking { get; set; } = null!;
 
-	public ParkingReportResponse MapToResponse() {
-		return new ParkingReportResponse {
-			Id = Id,
-			CreatedAt = CreatedAt,
-			UpdatedAt = UpdatedAt,
-			DeletedAt = DeletedAt,
-			JsonData = JsonData,
-			Tags = Tags,
-			CreatorId = CreatorId,
-			StartDate = StartDate,
-			VehicleId = VehicleId,
-			ParkingId = ParkingId,
-			Amount = Amount,
-			EndDate = EndDate
-		};
-	}
+	public ParkingReportResponse MapToResponse() => new() {
+		Id = Id,
+		CreatedAt = CreatedAt,
+		UpdatedAt = UpdatedAt,
+		DeletedAt = DeletedAt,
+		JsonData = JsonData,
+		Tags = Tags,
+		CreatorId = CreatorId,
+		StartDate = StartDate,
+		VehicleId = VehicleId,
+		ParkingId = ParkingId,
+		Amount = Amount,
+		EndDate = EndDate
+	};
 }
 
 public class ParkingReportJson {

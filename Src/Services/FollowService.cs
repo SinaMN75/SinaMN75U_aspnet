@@ -48,6 +48,9 @@ public class FollowService(
 		}
 
 		FollowEntity userFollower = new() {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
 			CreatorId = p.CreatorId.Value,
 			UserId = p.UserId,
 			ProductId = p.ProductId,
@@ -136,15 +139,13 @@ public class FollowService(
 		return new UResponse<IEnumerable<CategoryEntity>>(following);
 	}
 
-	public async Task<UResponse<FollowerFollowingCountResponse>> ReadFollowerFollowingCount(IdParams p, CancellationToken ct) {
-		return new UResponse<FollowerFollowingCountResponse>(
-			new FollowerFollowingCountResponse {
-				Followers = await db.Set<FollowEntity>().CountAsync(x => x.UserId == p.Id, ct),
-				FollowedUsers = await db.Set<FollowEntity>().CountAsync(x => x.CreatorId == p.Id, ct),
-				FollowedProducts = await db.Set<FollowEntity>().CountAsync(x => x.CreatorId == p.Id && x.ProductId != null, ct),
-				FollowedCategories = await db.Set<FollowEntity>().CountAsync(x => x.CreatorId == p.Id && x.CategoryId != null, ct)
-			});
-	}
+	public async Task<UResponse<FollowerFollowingCountResponse>> ReadFollowerFollowingCount(IdParams p, CancellationToken ct) => new(
+		new FollowerFollowingCountResponse {
+			Followers = await db.Set<FollowEntity>().CountAsync(x => x.UserId == p.Id, ct),
+			FollowedUsers = await db.Set<FollowEntity>().CountAsync(x => x.CreatorId == p.Id, ct),
+			FollowedProducts = await db.Set<FollowEntity>().CountAsync(x => x.CreatorId == p.Id && x.ProductId != null, ct),
+			FollowedCategories = await db.Set<FollowEntity>().CountAsync(x => x.CreatorId == p.Id && x.CategoryId != null, ct)
+		});
 
 	public async Task<UResponse<bool?>> IsFollowingUser(FollowParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
@@ -165,8 +166,7 @@ public class FollowService(
 	public async Task<UResponse<bool?>> IsFollowingCategory(FollowParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<bool?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		p.CreatorId ??= userData.Id;
-		bool isFollowing = await db.Set<FollowEntity>().AnyAsync(x => x.CreatorId == p.CreatorId && x.CategoryId == p.CategoryId, ct);
+		bool isFollowing = await db.Set<FollowEntity>().AnyAsync(x => x.CreatorId == (p.CreatorId ?? userData.Id) && x.CategoryId == p.CategoryId, ct);
 		return new UResponse<bool?>(isFollowing);
 	}
 }

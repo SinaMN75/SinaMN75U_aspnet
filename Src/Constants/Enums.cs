@@ -218,3 +218,6 @@ public enum TagTerminal {
 	WallCashless = 102,
 	DeskCashless = 103
 }
+public enum TagBankAccount {
+	Verified = 101
+}

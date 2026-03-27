@@ -68,27 +68,27 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 	public ICollection<AddressEntity> Addresses { get; set; } = [];
 
 	public ICollection<WalletEntity> Wallets { get; set; } = [];
+	
+	public ICollection<TerminalEntity> Terminals { get; set; } = [];
 
-	public UserResponse MapToResponse() {
-		return new UserResponse {
-			Id = Id,
-			CreatedAt = CreatedAt,
-			UpdatedAt = UpdatedAt,
-			DeletedAt = DeletedAt,
-			JsonData = JsonData,
-			Tags = Tags,
-			UserName = UserName,
-			PhoneNumber = PhoneNumber,
-			Email = Email,
-			FirstName = FirstName,
-			LastName = LastName,
-			Bio = Bio,
-			Country = Country,
-			State = State,
-			City = City,
-			Birthdate = Birthdate
-		};
-	}
+	public UserResponse MapToResponse() => new() {
+		Id = Id,
+		CreatedAt = CreatedAt,
+		UpdatedAt = UpdatedAt,
+		DeletedAt = DeletedAt,
+		JsonData = JsonData,
+		Tags = Tags,
+		UserName = UserName,
+		PhoneNumber = PhoneNumber,
+		Email = Email,
+		FirstName = FirstName,
+		LastName = LastName,
+		Bio = Bio,
+		Country = Country,
+		State = State,
+		City = City,
+		Birthdate = Birthdate
+	};
 }
 
 public class UserJson {

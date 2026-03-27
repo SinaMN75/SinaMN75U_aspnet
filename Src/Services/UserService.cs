@@ -22,8 +22,36 @@ public class UserService(
 	public async Task<UResponse<Guid?>> Create(UserCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		UserEntity e = p.MapToEntity();
 
+		Guid userId = p.Id ?? Guid.CreateVersion7();
+		UserEntity e = new() {
+			Id = userId,
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
+			JsonData = new UserJson {
+				FcmToken = p.FcmToken,
+				Address = p.Address,
+				FatherName = p.FatherName,
+				Weight = p.Weight,
+				Height = p.Height,
+				VisitCounts = []
+			},
+			Tags = p.Tags,
+			UserName = p.UserName,
+			Password = p.Password,
+			RefreshToken = UPasswordHasher.Hash(p.Password),
+			PhoneNumber = p.PhoneNumber,
+			NationalCode = p.NationalCode,
+			Email = p.Email,
+			FirstName = p.FirstName,
+			LastName = p.LastName,
+			Bio = p.Bio,
+			Country = p.Country,
+			State = p.State,
+			City = p.City,
+			Birthdate = p.Birthdate
+		};
+		
 		if (p.Categories.IsNotNullOrEmpty()) {
 			List<CategoryEntity> list = [];
 			foreach (Guid item in p.Categories!) {
@@ -119,12 +147,12 @@ public class UserService(
 
 		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound);
-		
+
 		if (p.Categories.IsNotNullOrEmpty()) {
 			List<CategoryEntity> list = await db.Set<CategoryEntity>().AsTracking().Where(x => p.Categories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct);
 			e.Categories.AddRangeIfNotExist(list);
 		}
-		
+
 		e.UpdatedAt = DateTime.UtcNow;
 		db.Set<UserEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
@@ -163,8 +191,10 @@ public class UserService(
 
 	public async Task<UResponse> CreateExtra(Guid userId, CancellationToken ct) {
 		await db.Set<UserExtraEntity>().AddAsync(new UserExtraEntity {
-			UserId = userId,
 			Id = userId,
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
+			UserId = userId,
 			JsonData = new UserExtraJson(),
 			Tags = []
 		}, ct);

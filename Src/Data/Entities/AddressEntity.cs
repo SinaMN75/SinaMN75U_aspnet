@@ -1,5 +1,6 @@
 namespace SinaMN75U.Data.Entities;
 
+[Table("Addresses")]
 public sealed class AddressEntity : BaseEntity<TagAddress, AddressJson> {
 	public required string Title { get; set; }
 	public string? ZipCode { get; set; }

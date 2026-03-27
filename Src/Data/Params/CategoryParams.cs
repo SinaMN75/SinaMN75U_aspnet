@@ -22,26 +22,6 @@ public sealed class CategoryCreateParams : BaseParams {
 	public List<Guid> RelatedProducts { get; set; } = [];
 	public IEnumerable<CategoryCreateParams> Children { get; set; } = [];
 	public ICollection<Guid> Media { get; set; } = [];
-
-	public CategoryEntity MapToEntity() {
-		return new CategoryEntity {
-			Id = Id ?? Guid.CreateVersion7(),
-			Title = Title,
-			ParentId = ParentId,
-			Order = Order,
-			Code = Code,
-			Tags = Tags,
-			JsonData = new CategoryJson {
-				Subtitle = Subtitle,
-				Location = Location,
-				Type = Type,
-				Link = Link,
-				Address = Address,
-				PhoneNumber = PhoneNumber,
-				RelatedProducts = RelatedProducts
-			}
-		};
-	}
 }
 
 public sealed class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
@@ -63,22 +43,6 @@ public sealed class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
 	public decimal? ProductDeposit { get; set; }
 	public decimal? ProductRent { get; set; }
 	public bool UpdateInvoicesRent { get; set; }
-
-	public CategoryEntity MapToEntity(CategoryEntity e) {
-		if (Title != null) e.Title = Title;
-		if (Subtitle != null) e.JsonData.Subtitle = Subtitle;
-		if (Link != null) e.JsonData.Link = Link;
-		if (Location != null) e.JsonData.Location = Location;
-		if (Type != null) e.JsonData.Type = Type;
-		if (Address != null) e.JsonData.Address = Address;
-		if (PhoneNumber != null) e.JsonData.PhoneNumber = PhoneNumber;
-		if (Code != null) e.Code = Code;
-		if (Order != null) e.Order = Order;
-		if (ParentId != null) e.ParentId = ParentId;
-		if (RelatedProducts != null) e.JsonData.RelatedProducts = RelatedProducts;
-		if (Tags != null) e.Tags = Tags;
-		return e;
-	}
 }
 
 public sealed class CategoryReadParams : BaseReadParams<TagCategory> {

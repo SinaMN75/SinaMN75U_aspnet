@@ -53,8 +53,16 @@ public class ParkingService(
 
 		ParkingEntity? e = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ParkingNotFound"));
-		p.MapToEntity(e);
-		db.Update(p.MapToEntity(e));
+		
+		e.UpdatedAt = DateTime.UtcNow;
+		if (p.Title.IsNotNull()) e.JsonData.Title = p.Title;
+		if (p.EntrancePrice.IsNotNull()) e.EntrancePrice = p.EntrancePrice.Value;
+		if (p.HourlyPrice.IsNotNull()) e.HourlyPrice = p.HourlyPrice.Value;
+		if (p.DailyPrice.IsNotNull()) e.DailyPrice = p.DailyPrice.Value;
+		if (p.Tags.IsNotNull()) e.Tags = p.Tags;
+		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
+		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
+		db.Update(e);
 		await db.SaveChangesAsync(ct);
 		return new UResponse<ParkingResponse?>(e.MapToResponse());
 	}
@@ -83,6 +91,9 @@ public class ParkingService(
 		VehicleEntity? vehicle = await db.Set<VehicleEntity>().FirstOrDefaultAsync(x => x.NumberPlate == p.NumberPlate, ct);
 		if (vehicle == null) {
 			EntityEntry<VehicleEntity> vEntity = await db.Set<VehicleEntity>().AddAsync(new VehicleEntity {
+				Id = p.Id ?? Guid.CreateVersion7(),
+				CreatedAt = DateTime.UtcNow,
+				UpdatedAt = DateTime.UtcNow,
 				JsonData = new VehicleJson(),
 				Tags = [TagVehicle.Test],
 				NumberPlate = p.NumberPlate
@@ -91,6 +102,9 @@ public class ParkingService(
 		}
 
 		ParkingReportEntity e = new() {
+			Id = p.Id ?? Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
 			StartDate = p.StartDate,
 			CreatorId = p.CreatorId ?? userData.Id,
 			VehicleId = vehicle.Id,
@@ -115,8 +129,19 @@ public class ParkingService(
 
 		ParkingReportEntity? e = await db.Set<ParkingReportEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ParkingReportNotFound"));
-		p.MapToEntity(e);
-		db.Update(p.MapToEntity(e));
+		
+		e.UpdatedAt = DateTime.UtcNow;
+		if (p.CreatorId.IsNotNull()) e.CreatorId = p.CreatorId.Value;
+		if (p.VehicleId.IsNotNull()) e.VehicleId = p.VehicleId.Value;
+		if (p.ParkingId.IsNotNull()) e.ParkingId = p.ParkingId.Value;
+		if (p.StartDate != null) e.StartDate = p.StartDate.Value;
+		if (p.EndDate != null) e.EndDate = p.EndDate;
+		if (p.Amount.IsNotNull()) e.Amount = p.Amount.Value;
+		if (p.Title.IsNotNull()) e.JsonData.Title = p.Title;
+		if (p.Tags.IsNotNull()) e.Tags = p.Tags;
+		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
+		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
+		db.Update(e);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}

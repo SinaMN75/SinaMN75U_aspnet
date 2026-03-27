@@ -1,8 +1,8 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Products")]
-[Index(nameof(Slug), IsUnique = true)]
-[Index(nameof(Code), IsUnique = true)]
+[Index(nameof(Slug), IsUnique = true, Name = "IX_Products_Slug")]
+[Index(nameof(Code), IsUnique = true, Name = "IX_Products_Code")]
 [Index(nameof(CreatorId))]
 public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	[Required]

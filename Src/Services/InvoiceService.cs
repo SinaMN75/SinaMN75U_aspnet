@@ -20,6 +20,9 @@ public class InvoiceService(
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		EntityEntry<InvoiceEntity> e = await db.AddAsync(new InvoiceEntity {
+			Id = p.Id ?? Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
 			Tags = p.Tags,
 			DebtAmount = p.DebtAmount,
 			CreditorAmount = p.CreditorAmount,

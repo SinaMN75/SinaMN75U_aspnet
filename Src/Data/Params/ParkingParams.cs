@@ -18,18 +18,6 @@ public sealed class ParkingUpdateParams : BaseUpdateParams<TagParking> {
 	public IEnumerable<Guid> AddUsers { get; set; } = [];
 	public IEnumerable<Guid> RemoveUsers { get; set; } = [];
 	public IEnumerable<Guid> Users { get; set; } = [];
-
-	public ParkingEntity MapToEntity(ParkingEntity e) {
-		e.UpdatedAt = DateTime.UtcNow;
-		if (Title.IsNotNull()) e.JsonData.Title = Title;
-		if (EntrancePrice.IsNotNull()) e.EntrancePrice = EntrancePrice.Value;
-		if (HourlyPrice.IsNotNull()) e.HourlyPrice = HourlyPrice.Value;
-		if (DailyPrice.IsNotNull()) e.DailyPrice = DailyPrice.Value;
-		if (Tags.IsNotNull()) e.Tags = Tags;
-		if (AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(AddTags);
-		if (RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(tag => RemoveTags.Contains(tag));
-		return e;
-	}
 }
 
 public sealed class ParkingReadParams : BaseReadParams<TagParking> {
@@ -41,7 +29,6 @@ public sealed class ParkingReadParams : BaseReadParams<TagParking> {
 }
 
 public sealed class ParkingReportCreateParams : BaseCreateParams<TagParkingReport> {
-	public Guid? CreatorId { get; set; }
 	public required Guid ParkingId { get; set; }
 	public required DateTime StartDate { get; set; }
 	public DateTime? EndDate { get; set; }
@@ -58,21 +45,6 @@ public sealed class ParkingReportUpdateParams : BaseUpdateParams<TagParkingRepor
 	public DateTime? EndDate { get; set; }
 	public decimal? Amount { get; set; }
 	public string? Title { get; set; }
-
-	public ParkingReportEntity MapToEntity(ParkingReportEntity e) {
-		e.UpdatedAt = DateTime.UtcNow;
-		if (CreatorId.IsNotNull()) e.CreatorId = CreatorId.Value;
-		if (VehicleId.IsNotNull()) e.VehicleId = VehicleId.Value;
-		if (ParkingId.IsNotNull()) e.ParkingId = ParkingId.Value;
-		if (StartDate != null) e.StartDate = StartDate.Value;
-		if (EndDate != null) e.EndDate = EndDate;
-		if (Amount.IsNotNull()) e.Amount = Amount.Value;
-		if (Title.IsNotNull()) e.JsonData.Title = Title;
-		if (Tags.IsNotNull()) e.Tags = Tags;
-		if (AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(AddTags);
-		if (RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(tag => RemoveTags.Contains(tag));
-		return e;
-	}
 }
 
 public sealed class ParkingReportReadParams : BaseReadParams<TagParking> {
