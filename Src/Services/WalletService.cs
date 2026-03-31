@@ -79,7 +79,7 @@ public class WalletService(
 		decimal receiverBalance = receiverWallet.Balance + p.Amount;
 
 		senderWallet.Balance = senderBalance;
-		receiverWallet.Balance = senderBalance;
+		receiverWallet.Balance = receiverBalance;
 
 		await db.Set<WalletTxnEntity>().AddAsync(new WalletTxnEntity {
 			Id = Guid.CreateVersion7(),
@@ -87,17 +87,7 @@ public class WalletService(
 			UpdatedAt = DateTime.UtcNow,
 			SenderId = senderId,
 			ReceiverId = p.ReceiverId,
-			Amount = senderBalance,
-			JsonData = new WalletTxnJson(),
-			Tags = []
-		}, ct);
-		await db.Set<WalletTxnEntity>().AddAsync(new WalletTxnEntity {
-			Id = Guid.CreateVersion7(),
-			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
-			SenderId = senderId,
-			ReceiverId = p.ReceiverId,
-			Amount = receiverBalance,
+			Amount = p.Amount,
 			JsonData = new WalletTxnJson(),
 			Tags = []
 		}, ct);

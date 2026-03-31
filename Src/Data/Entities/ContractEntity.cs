@@ -13,15 +13,12 @@ public class ContractEntity : BaseEntity<TagContract, ContractJson> {
 	[Column(TypeName = "decimal(24,2)")]
 	public required decimal Rent { get; set; }
 
-	[ForeignKey("FK_Contracts_UserId")]
 	public required Guid UserId { get; set; }
 	public UserEntity User { get; set; } = null!;
 
-	[ForeignKey("FK_Contracts_CreatorId")]
 	public required Guid CreatorId { get; set; }
 	public UserEntity Creator { get; set; } = null!;
 
-	[ForeignKey("FK_Contracts_ProductId")]
 	public required Guid ProductId { get; set; }
 	public ProductEntity Product { get; set; } = null!;
 

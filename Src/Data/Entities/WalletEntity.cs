@@ -3,7 +3,6 @@ namespace SinaMN75U.Data.Entities;
 [Table("Wallets")]
 public class WalletEntity : BaseEntity<TagWallet, WalletJson> {
 	
-	[ForeignKey("FK_Wallets_UserId")]
 	public required Guid UserId { get; set; }
 	public UserEntity User { get; set; } = null!;
 

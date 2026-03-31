@@ -5,9 +5,7 @@ public sealed class AddressEntity : BaseEntity<TagAddress, AddressJson> {
 	public required string Title { get; set; }
 	public string? ZipCode { get; set; }
 
-	[ForeignKey("FK_Addresses_CreatorId")]
 	public required Guid CreatorId { get; set; }
-
 	public UserEntity Creator { get; set; } = null!;
 
 	public AddressResponse MapToResponse() => new() {

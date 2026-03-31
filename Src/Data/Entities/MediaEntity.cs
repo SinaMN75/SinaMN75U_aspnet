@@ -12,27 +12,21 @@ public class MediaEntity : BaseEntity<TagMedia, MediaJson> {
 	[MaxLength(200)]
 	public required string Path { get; set; }
 
-	[ForeignKey("FK_Media_UserId")]
 	public Guid? UserId { get; set; }
 	public UserEntity? User { get; set; }
 
-	[ForeignKey("FK_Media_ContentId")]
 	public Guid? ContentId { get; set; }
 	public ContentEntity? Content { get; set; }
 
-	[ForeignKey("FK_Media_CategoryId")]
 	public Guid? CategoryId { get; set; }
 	public CategoryEntity? Category { get; set; }
 
-	[ForeignKey("FK_Media_CommentId")]
 	public Guid? CommentId { get; set; }
 	public CommentEntity? Comment { get; set; }
 
-	[ForeignKey("FK_Media_ProductId")]
 	public Guid? ProductId { get; set; }
 	public ProductEntity? Product { get; set; }
 
-	[ForeignKey("FK_Media_TicketId")]
 	public Guid? TicketId { get; set; }
 	public TicketEntity? Ticket { get; set; }
 

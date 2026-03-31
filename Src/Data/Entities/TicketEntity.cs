@@ -2,7 +2,6 @@ namespace SinaMN75U.Data.Entities;
 
 [Table("Tickets")]
 public class TicketEntity : BaseEntity<TagTicket, TicketJson> {
-	[ForeignKey("FK_Tickets_CreatorId")]
 	public required Guid CreatorId { get; set; }
 	public UserEntity Creator { get; set; } = null!;
 

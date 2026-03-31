@@ -174,6 +174,7 @@ public enum TagTxn {
 	Paid = 202,
 	Failed = 203,
 	Refunded = 204,
+	ChargeWallet = 301,
 	Test = 999
 }
 
@@ -205,6 +206,7 @@ public enum TagWallet {
 }
 
 public enum TagWalletTxn {
+	Charge = 101,
 	Test = 999
 }
 
@@ -218,6 +220,15 @@ public enum TagTerminal {
 	WallCashless = 102,
 	DeskCashless = 103
 }
+
 public enum TagBankAccount {
 	Verified = 101
+}
+
+public enum TagIpg {
+	Pn = 101
+}
+
+public enum TagPayment {
+	ChargeWallet = 101
 }

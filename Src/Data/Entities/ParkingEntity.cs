@@ -6,7 +6,6 @@ public class ParkingEntity : BaseEntity<TagParking, ParkingJson> {
 	[MaxLength(100)]
 	public required string Title { get; set; }
 
-	[ForeignKey("FK_Parking_CreatorId")]
 	public required Guid CreatorId { get; set; }
 	public UserEntity Creator { get; set; } = null!;
 
@@ -39,15 +38,12 @@ public class ParkingReportEntity : BaseEntity<TagParkingReport, ParkingReportJso
 
 	public decimal? Amount { get; set; }
 
-	[ForeignKey("FK_ParkingReport_CreatorId")]
 	public required Guid CreatorId { get; set; }
 	public UserEntity Creator { get; set; } = null!;
 
-	[ForeignKey("FK_ParkingReport_VehicleId")]
 	public required Guid VehicleId { get; set; }
 	public VehicleEntity Vehicle { get; set; } = null!;
 
-	[ForeignKey("FK_ParkingReport_ParkingId")]
 	public required Guid ParkingId { get; set; }
 	public ParkingEntity Parking { get; set; } = null!;
 

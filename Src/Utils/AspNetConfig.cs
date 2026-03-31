@@ -82,6 +82,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IWalletService, WalletService>();
 		builder.Services.AddScoped<ITerminalService, TerminalService>();
 		builder.Services.AddScoped<IBankAccountService, BankAccountService>();
+		builder.Services.AddScoped<IIpgService, IpgService>();
 	}
 
 	public static void UseUServices(this WebApplication app) {
@@ -116,6 +117,7 @@ public static partial class AspNetConfig {
 		app.MapWalletRoutes(RouteTags.Wallet);
 		app.MapTerminalRoutes(RouteTags.Terminal);
 		app.MapBankAccountRoutes(RouteTags.BankAccount);
+		app.MapIpgRoutes(RouteTags.Ipg);
 	}
 
 	private static string CleanAndFormatSql(string sql) {

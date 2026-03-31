@@ -17,7 +17,6 @@ public class BankAccountEntity : BaseEntity<TagBankAccount, BankAccountJson> {
 	[MaxLength(100)]
 	public string? OwnerName { get; set; }
 
-	[ForeignKey("FK_BankAccounts_UserId")]
 	public required Guid UserId { get; set; }
 	public UserEntity User { get; set; } = null!;
 }

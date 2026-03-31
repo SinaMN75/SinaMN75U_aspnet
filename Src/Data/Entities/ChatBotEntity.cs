@@ -2,9 +2,7 @@ namespace SinaMN75U.Data.Entities;
 
 [Table("ChatBots")]
 public class ChatBotEntity : BaseEntity<TagChatBot, ChatBotJsonData> {
-	[ForeignKey("FK_ChatBots_CreatorId")]
 	public required Guid CreatorId { get; set; }
-
 	public UserEntity Creator { get; set; } = null!;
 
 	public ChatBotResponse MapToResponse() => new() {

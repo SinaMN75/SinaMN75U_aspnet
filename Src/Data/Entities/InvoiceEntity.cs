@@ -9,7 +9,6 @@ public class InvoiceEntity : BaseEntity<TagInvoice, InvoiceJson> {
 
 	public required DateTime DueDate { get; set; }
 
-	[ForeignKey("FK_Invoices_InvoicesId")]
 	public required Guid? ContractId { get; set; }
 	public ContractEntity Contract { get; set; } = null!;
 

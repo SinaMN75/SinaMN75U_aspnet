@@ -22,4 +22,5 @@ public static class RouteTags {
 	public const string Wallet = "api/wallet/";
 	public const string Terminal = "api/terminal/";
 	public const string BankAccount = "api/bankAccount/";
+	public const string Ipg = "api/Ipg/";
 }

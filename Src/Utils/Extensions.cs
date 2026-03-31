@@ -14,14 +14,11 @@ public static class UExtensions {
 	public static bool IsNotNull<T>([NotNullWhen(true)] this T? obj) where T : class => obj != null;
 	public static bool IsGuid(this string s) => Guid.TryParse(s, out Guid _);
 	public static string ToJson<T>(this T obj) => JsonSerializer.Serialize(obj, Core.Default);
+	public static int ToInt(this string s) => int.Parse(s);
 	public static T FromJson<T>(this string json) => JsonSerializer.Deserialize<T>(json, Core.Default)!;
 
 	public static IEnumerable<IdTitleParams> GetValues<T>() where T : Enum =>
-		Enum.GetValues(typeof(T)).Cast<int>()
-			.Select(item => new IdTitleParams {
-				Title = Enum.GetName(typeof(T), item),
-				Id = item
-			}).ToList();
+		Enum.GetValues(typeof(T)).Cast<int>().Select(item => new IdTitleParams { Title = Enum.GetName(typeof(T), item), Id = item }).ToList();
 
 	public static void AddRangeIfNotExist<T>(this ICollection<T>? collection, IEnumerable<T>? items) {
 		if (collection == null || items == null) return;
@@ -37,27 +34,16 @@ public static class UExtensions {
 				collection.Add(item);
 	}
 
-	extension<T>(IEnumerable<T>? enumerable) {
-		public void RemoveRangeIfExist(IEnumerable<T> itemsToRemove) {
-			HashSet<T> itemsToRemoveSet = new(itemsToRemove);
-			enumerable.RemoveAll(item => itemsToRemoveSet.Contains(item));
-		}
+	public static void RemoveRangeIfExist<T>(this IEnumerable<T>? enumerable, IEnumerable<T> itemsToRemove) => enumerable.RemoveAll(item => new HashSet<T>(itemsToRemove).Contains((T)item));
 
-		public IEnumerable<T> RemoveAll(Func<T, bool> predicate) {
-			ArgumentNullException.ThrowIfNull(enumerable);
-			ArgumentNullException.ThrowIfNull(predicate);
-			return enumerable.Where(item => !predicate(item));
-		}
+	public static IEnumerable<T> RemoveAll<T>(this IEnumerable<T>? enumerable, Func<T, bool> predicate) => enumerable.Where(item => !predicate(item));
 
-		public bool ContainsSafe(T item) {
-			return enumerable != null && enumerable.Contains(item);
-		}
+	public static bool ContainsSafe<T>(this IEnumerable<T>? enumerable, T item) => enumerable != null && enumerable.Contains(item);
 
-		public IEnumerable<T> AddSafe(T item) {
-			List<T> list = enumerable?.ToList() ?? [];
-			list.Add(item);
-			return list;
-		}
+	public static IEnumerable<T> AddSafe<T>(this IEnumerable<T>? enumerable, T item) {
+		List<T> list = enumerable?.ToList() ?? [];
+		list.Add(item);
+		return list;
 	}
 
 	public static string? GetStringOrNull(this JsonElement element, string propertyName) {
