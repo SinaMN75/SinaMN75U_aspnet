@@ -13,11 +13,11 @@ public class DbExceptionMiddleware(RequestDelegate next, ILocalizationService ls
 	}
 
 	private async Task HandleDbUpdateExceptionAsync(HttpContext context, DbUpdateException ex) {
-		if (ex.InnerException is PostgresException { SqlState: "23505" } pgEx) {
+		if (ex.InnerException is PostgresException { SqlState: "23505" } unique) {
 			context.Response.StatusCode = StatusCodes.Status400BadRequest;
 			await context.Response.WriteAsJsonAsync(new UResponse(
 					status: Usc.Conflict,
-					message: pgEx.ConstraintName switch {
+					message: unique.ConstraintName switch {
 						"IX_Id" => ls.Get("IdIsDuplicated"),
 						"IX_Products_Slug" => ls.Get("SlugIsDuplicated"),
 						"IX_Products_Code" => ls.Get("CodeIsDuplicated"),
@@ -37,7 +37,22 @@ public class DbExceptionMiddleware(RequestDelegate next, ILocalizationService ls
 			return;
 		}
 
-		context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-		await context.Response.WriteAsJsonAsync(new UResponse { Message = ls.Get("SystemErrorAccorded") });
+		if (ex.InnerException is PostgresException { SqlState: "23503" } pgEx) {
+			context.Response.StatusCode = StatusCodes.Status400BadRequest;
+			await context.Response.WriteAsJsonAsync(new UResponse(
+					status: Usc.Conflict,
+					message: pgEx.ConstraintName switch {
+						"FK_Comments_Products_ProductId" => ls.Get("ProductNotFound"),
+						_ => "A unique constraint violation occurred."
+					}
+				)
+			);
+			return;
+		}
+
+		throw ex;
+
+		// context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+		// await context.Response.WriteAsJsonAsync(new UResponse { Message = ls.Get("SystemErrorAccorded") });
 	}
 }

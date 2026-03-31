@@ -99,9 +99,17 @@ public static class Projections {
 				FirstName = x.Creator.FirstName,
 				LastName = x.Creator.LastName,
 				NationalCode = x.Creator.NationalCode,
-				Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
-				Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
-			}
+				Media = args.Creator.Media == null
+					? null
+					: x.Creator.Media.AsQueryable()
+						.Select(MediaSelector())
+						.ToList(),
+				Categories = args.Creator.Category == null
+					? null
+					: x.Creator.Categories.AsQueryable()
+						.Select(CategorySelector(args.Creator.Category))
+						.ToList()
+			},
 	};
 
 	public static Expression<Func<WalletTxnEntity, WalletTxnResponse>> WalletTxnSelector(WalletTxnSelectorArgs args) => x => new WalletTxnResponse {

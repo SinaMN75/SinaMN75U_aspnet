@@ -9,15 +9,19 @@ public class CommentEntity : BaseEntity<TagComment, CommentJson> {
 	[MaxLength(2000)]
 	public required string Description { get; set; }
 
+	[ForeignKey("FK_Comments_CreatorId")]
 	public required Guid CreatorId { get; set; }
 	public UserEntity Creator { get; set; } = null!;
 
+	[ForeignKey("FK_Comments_UserId")]
 	public Guid? UserId { get; set; }
 	public UserEntity? User { get; set; }
 
+	[ForeignKey("FK_Comments_ProductId")]
 	public Guid? ProductId { get; set; }
 	public ProductEntity? Product { get; set; }
 
+	[ForeignKey("FK_Comments_ParentId")]
 	public Guid? ParentId { get; set; }
 	public CommentEntity? Parent { get; set; }
 

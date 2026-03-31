@@ -10,6 +10,7 @@ public class CategoryEntity : BaseEntity<TagCategory, CategoryJson> {
 	[MaxLength(100)]
 	public string? Code { get; set; }
 
+	[ForeignKey("FK_Categories_ParentId")]
 	public Guid? ParentId { get; set; }
 	public CategoryEntity? Parent { get; set; }
 

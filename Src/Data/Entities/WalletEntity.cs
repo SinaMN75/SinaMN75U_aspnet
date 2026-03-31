@@ -2,8 +2,10 @@ namespace SinaMN75U.Data.Entities;
 
 [Table("Wallets")]
 public class WalletEntity : BaseEntity<TagWallet, WalletJson> {
-	public UserEntity User { get; set; } = null!;
+	
+	[ForeignKey("FK_Wallets_UserId")]
 	public required Guid UserId { get; set; }
+	public UserEntity User { get; set; } = null!;
 
 	public required decimal Balance { get; set; }
 

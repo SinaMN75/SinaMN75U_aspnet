@@ -35,12 +35,12 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	public int Point { get; set; }
 	public int Order { get; set; }
 
-	public ProductEntity? Parent { get; set; }
+	[ForeignKey("FK_Products_ParentId")]
 	public Guid? ParentId { get; set; }
+	public ProductEntity? Parent { get; set; }
 
-	[Required]
-	public Guid CreatorId { get; set; }
-
+	[Required, ForeignKey("FK_Products_CreatorId")]
+	public required Guid CreatorId { get; set; }
 	public UserEntity Creator { get; set; } = null!;
 
 	[InverseProperty("Parent")]

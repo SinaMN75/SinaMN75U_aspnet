@@ -12,9 +12,11 @@ public class TxnEntity : BaseEntity<TagTxn, TxnJson> {
 	[MaxLength(100)]
 	public required string TrackingNumber { get; set; }
 
+	[ForeignKey("FK_Txn_InvoiceId")]
 	public required Guid InvoiceId { get; set; }
 	public InvoiceEntity Invoice { get; set; } = null!;
 
+	[ForeignKey("FK_Txn_UserId")]
 	public required Guid UserId { get; set; }
 	public UserEntity User { get; set; } = null!;
 

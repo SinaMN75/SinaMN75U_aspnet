@@ -2,7 +2,7 @@ namespace SinaMN75U.Services;
 
 public interface IInquiryService {
 	Task<UResponse<bool?>> Shahkar(ITHubShahkarParams p, CancellationToken ct);
-	Task<UResponse<ItHubPostalCodeToAddressDetailBaseResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct);
+	Task<UResponse<PostalCodeToAddressDetailResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct);
 }
 
 public class InquiryService(
@@ -10,38 +10,56 @@ public class InquiryService(
 	ILocalizationService ls
 ) : IInquiryService {
 	public async Task<UResponse<bool?>> Shahkar(ITHubShahkarParams p, CancellationToken ct) {
-		ITHubGetAccessTokenBaseResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.Data?.AccessToken == null) return new UResponse<bool?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
+		if (tokenResponse?.AccessToken == null) return new UResponse<bool?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
 		HttpResponseMessage response = await httpClient.Post(
 			"https://gateway.itsaaz.ir/hub/api/v1/Shahkar/MixVerifyMobile",
 			new { nationalCode = p.NationalCode, mobile = p.Mobile },
-			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.Data?.AccessToken}" } }
+			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" } }
 		);
 
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
-		return new UResponse<bool?>(responseBody.FromJson<ITHubShahkarBaseResponse>().Data);
+		return new UResponse<bool?>(JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetBoolean());
 	}
 
-	public async Task<UResponse<ItHubPostalCodeToAddressDetailBaseResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct) {
-		ITHubGetAccessTokenBaseResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.Data?.AccessToken == null) return new UResponse<ItHubPostalCodeToAddressDetailBaseResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+	public async Task<UResponse<PostalCodeToAddressDetailResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct) {
+		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
+		if (tokenResponse?.AccessToken == null) return new UResponse<PostalCodeToAddressDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
 		HttpResponseMessage response = await httpClient.Post(
 			"https://gateway.itsaaz.ir/hub/api/v1/Address/DetailsTypeA",
 			new { postcode = p.PostCode, orderId = p.OrderId },
 			new Dictionary<string, string> {
-				{ "Authorization", $"Bearer {tokenResponse.Data.AccessToken}" },
+				{ "Authorization", $"Bearer {tokenResponse.AccessToken}" },
 				{ "Accept", "application/json" }
 			}
 		);
 
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
+		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data");
 
-		return new UResponse<ItHubPostalCodeToAddressDetailBaseResponse?>(responseBody.FromJson<ItHubPostalCodeToAddressDetailBaseResponse>());
+		return new UResponse<PostalCodeToAddressDetailResponse?>(new PostalCodeToAddressDetailResponse {
+			BuildingName = data.GetStringOrNull("BuildingName"),
+			Description = data.GetStringOrNull("description"),
+			Floor = data.GetStringOrNull("floor"),
+			HouseNumber = data.GetStringOrNull("houseNumber"),
+			LocalityName = data.GetStringOrNull("localityName"),
+			LocalityType = data.GetStringOrNull("localityType"),
+			ZipCode = data.GetStringOrNull("zipCode"),
+			Province = data.GetStringOrNull("province"),
+			SideFloor = data.GetStringOrNull("sideFloor"),
+			Street = data.GetStringOrNull("street"),
+			Street2 = data.GetStringOrNull("street2"),
+			SubLocality = data.GetStringOrNull("subLocality"),
+			TownShip = data.GetStringOrNull("townShip"),
+			TraceId = data.GetStringOrNull("traceId"),
+			Village = data.GetStringOrNull("village"),
+			LocalityCode = data.GetIntOrNull("localityCode")
+		});
 	}
 
-	private async Task<ITHubGetAccessTokenBaseResponse?> GetAccessToken(CancellationToken ct) {
+	private async Task<GetAccessTokenResponse?> GetAccessToken(CancellationToken ct) {
 		ItHub itHub = Core.App.ItHub;
 		HttpResponseMessage response = await httpClient.PostForm(
 			"https://gateway.itsaaz.ir/sts/connect/token",
@@ -55,7 +73,11 @@ public class InquiryService(
 		);
 
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
+		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody);
 
-		return JsonSerializer.Deserialize<ITHubGetAccessTokenBaseResponse>(responseBody);
+		return new GetAccessTokenResponse {
+			AccessToken = data.GetStringOrNull("access_token"),
+			ExpiresIn = data.GetIntOrNull("expires_in")
+		};
 	}
 }

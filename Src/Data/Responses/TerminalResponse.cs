@@ -6,4 +6,5 @@ public class TerminalResponse : BaseResponse<TagTerminal, TerminalJson> {
 	public string? Imei { get; set; }
 
 	public UserResponse? Creator { get; set; }
-	public required Guid CreatorId { get; set; }}
+	public required Guid CreatorId { get; set; }
+}

@@ -9,8 +9,9 @@ public class InvoiceEntity : BaseEntity<TagInvoice, InvoiceJson> {
 
 	public required DateTime DueDate { get; set; }
 
-	public ContractEntity Contract { get; set; } = null!;
+	[ForeignKey("FK_Invoices_InvoicesId")]
 	public required Guid? ContractId { get; set; }
+	public ContractEntity Contract { get; set; } = null!;
 
 	public InvoiceResponse MapToResponse() => new() {
 		Id = Id,

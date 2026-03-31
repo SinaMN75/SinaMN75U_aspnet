@@ -14,8 +14,9 @@ public class TerminalEntity : BaseEntity<TagTerminal, TerminalJson> {
 	[MaxLength(40)]
 	public string? Imei { get; set; }
 
-	public UserEntity Creator { get; set; } = null!;
+	[ForeignKey("FK_Terminals_CreatorId")]
 	public required Guid CreatorId { get; set; }
+	public UserEntity Creator { get; set; } = null!;
 }
 
 public class TerminalJson { }
