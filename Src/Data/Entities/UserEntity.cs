@@ -5,7 +5,7 @@ namespace SinaMN75U.Data.Entities;
 [Index(nameof(UserName), Name = "IX_Users_UserName", IsUnique = true)]
 [Index(nameof(PhoneNumber), Name = "IX_Users_PhoneNumber", IsUnique = true)]
 [Index(nameof(NationalCode), Name = "IX_Users_NationalCode", IsUnique = true)]
-public class UserEntity : BaseEntity<TagUser, UserJson> {
+public sealed class UserEntity : BaseEntity<TagUser, UserJson> {
 	[Required]
 	[MaxLength(100)]
 	public string UserName { get; set; } = null!;
@@ -72,6 +72,8 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 	public ICollection<TerminalEntity> Terminals { get; set; } = [];
 	
 	public ICollection<BankAccountEntity> BankAccounts { get; set; } = [];
+	
+	public ICollection<SimCardEntity> SimCards { get; set; } = [];
 
 	public UserResponse MapToResponse() => new() {
 		Id = Id,
@@ -82,6 +84,7 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 		Tags = Tags,
 		UserName = UserName,
 		PhoneNumber = PhoneNumber,
+		NationalCode = NationalCode,
 		Email = Email,
 		FirstName = FirstName,
 		LastName = LastName,
@@ -93,7 +96,7 @@ public class UserEntity : BaseEntity<TagUser, UserJson> {
 	};
 }
 
-public class UserJson {
+public sealed class UserJson {
 	public string? FcmToken { get; set; }
 	public string? Address { get; set; }
 	public string? FatherName { get; set; }
@@ -103,7 +106,7 @@ public class UserJson {
 }
 
 [Table("UserExtras")]
-public class UserExtraEntity : BaseEntity<TagUserExtra, UserExtraJson> {
+public sealed class UserExtraEntity : BaseEntity<TagUserExtra, UserExtraJson> {
 	public string? NationalCardFront { get; set; }
 	public string? NationalCardBack { get; set; }
 	public string? BirthCertificateFirst { get; set; }
@@ -120,6 +123,6 @@ public class UserExtraEntity : BaseEntity<TagUserExtra, UserExtraJson> {
 	public required Guid UserId { get; set; }
 }
 
-public class UserExtraJson {
+public sealed class UserExtraJson {
 	public string? Description { get; set; }
 }

@@ -1,7 +1,7 @@
 ﻿namespace SinaMN75U.Data.Entities;
 
 [Table("Comments")]
-public class CommentEntity : BaseEntity<TagComment, CommentJson> {
+public sealed class CommentEntity : BaseEntity<TagComment, CommentJson> {
 	[Required]
 	[Column(TypeName = "decimal(4,2)")]
 	public required decimal Score { get; set; }
@@ -42,11 +42,11 @@ public class CommentEntity : BaseEntity<TagComment, CommentJson> {
 	};
 }
 
-public class CommentJson {
+public sealed class CommentJson {
 	public ICollection<CommentReacts> Reacts { get; set; } = [];
 }
 
-public class CommentReacts {
+public sealed class CommentReacts {
 	public required TagReaction Tag { get; set; }
 	public required Guid UserId { get; set; }
 }

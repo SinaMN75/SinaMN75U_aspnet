@@ -13,11 +13,12 @@ public class InquiryService(
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null) return new UResponse<bool?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
-		HttpResponseMessage response = await httpClient.Post(
+		HttpResponseMessage? response = await httpClient.Post(
 			"https://gateway.itsaaz.ir/hub/api/v1/Shahkar/MixVerifyMobile",
 			new { nationalCode = p.NationalCode, mobile = p.Mobile },
 			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" } }
 		);
+		if (response == null) return new UResponse<bool?>(null);
 
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
 		return new UResponse<bool?>(JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetBoolean());
@@ -27,7 +28,7 @@ public class InquiryService(
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null) return new UResponse<PostalCodeToAddressDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
-		HttpResponseMessage response = await httpClient.Post(
+		HttpResponseMessage? response = await httpClient.Post(
 			"https://gateway.itsaaz.ir/hub/api/v1/Address/DetailsTypeA",
 			new { postcode = p.PostCode, orderId = p.OrderId },
 			new Dictionary<string, string> {
@@ -35,6 +36,7 @@ public class InquiryService(
 				{ "Accept", "application/json" }
 			}
 		);
+		if (response == null) return new UResponse<PostalCodeToAddressDetailResponse?>(null);
 
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data");
@@ -61,7 +63,7 @@ public class InquiryService(
 
 	private async Task<GetAccessTokenResponse?> GetAccessToken(CancellationToken ct) {
 		ItHub itHub = Core.App.ItHub;
-		HttpResponseMessage response = await httpClient.PostForm(
+		HttpResponseMessage? response = await httpClient.PostForm(
 			"https://gateway.itsaaz.ir/sts/connect/token",
 			new Dictionary<string, string> {
 				{ "grant_type", "password" },
@@ -71,6 +73,7 @@ public class InquiryService(
 				{ "password", itHub.Password }
 			}
 		);
+		if (response == null) return null;
 
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody);

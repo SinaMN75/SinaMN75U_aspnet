@@ -16,27 +16,32 @@ public class SmsNotificationService(
 		string? param2 = null,
 		string? param3 = null
 	) {
-		SmsPanel sms = Core.App.SmsPanel;
-		switch (sms.Tag) {
-			case TagSmsPanel.Ghasedak: {
-				await http.Post("https://api.ghasedak.me/v2/verification/send/simple", new {
-						receptor = mobileNumber,
-						type = 1,
-						template = sms.Pattern,
-						param1,
-						param2,
-						param3
-					},
-					new Dictionary<string, string> { { "apikey", sms.ApiKey } }
-				);
-				break;
+		try {
+			SmsPanel sms = Core.App.SmsPanel;
+			switch (sms.Tag) {
+				case TagSmsPanel.Ghasedak: {
+					await http.Post("https://api.ghasedak.me/v2/verification/send/simple", new {
+							receptor = mobileNumber,
+							type = 1,
+							template = sms.Pattern,
+							param1,
+							param2,
+							param3
+						},
+						new Dictionary<string, string> { { "apikey", sms.ApiKey } }
+					);
+					break;
+				}
+				case TagSmsPanel.Kavenegar: {
+					await http.Post($"https://api.kavenegar.com/v1/{sms.ApiKey}/verify/lookup.json?receptor={mobileNumber}&token={param1}&template={template}", new { });
+					break;
+				}
+				case TagSmsPanel.NikSms:
+				default: break;
 			}
-			case TagSmsPanel.Kavenegar: {
-				await http.Post($"https://api.kavenegar.com/v1/{sms.ApiKey}/verify/lookup.json?receptor={mobileNumber}&token={param1}&template={template}", new { });
-				break;
-			}
-			case TagSmsPanel.NikSms:
-			default: break;
+		}
+		catch (Exception e) {
+			Console.WriteLine(e);
 		}
 	}
 

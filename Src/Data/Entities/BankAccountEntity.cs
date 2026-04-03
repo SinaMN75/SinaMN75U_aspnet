@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("BankAccounts")]
-public class BankAccountEntity : BaseEntity<TagBankAccount, BankAccountJson> {
+public sealed class BankAccountEntity : BaseEntity<TagBankAccount, BankAccountJson> {
 	[MaxLength(20), MinLength(15)]
 	public string? CardNumber { get; set; }
 
@@ -21,6 +21,6 @@ public class BankAccountEntity : BaseEntity<TagBankAccount, BankAccountJson> {
 	public UserEntity User { get; set; } = null!;
 }
 
-public class BankAccountJson {
+public sealed class BankAccountJson {
 	public string? Description { get; set; }
 }

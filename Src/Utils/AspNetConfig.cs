@@ -83,6 +83,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<ITerminalService, TerminalService>();
 		builder.Services.AddScoped<IBankAccountService, BankAccountService>();
 		builder.Services.AddScoped<IIpgService, IpgService>();
+		builder.Services.AddScoped<ISimCardService, SimCardService>();
 	}
 
 	public static void UseUServices(this WebApplication app) {
@@ -93,7 +94,9 @@ public static partial class AspNetConfig {
 		app.UseUSwagger();
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
-		if (app.Environment.IsProduction()) app.UseMiddleware<UMiddleware>();
+		if (app.Environment.IsProduction()) {
+			app.UseMiddleware<UMiddleware>();
+		}
 		app.UseMiddleware<DbExceptionMiddleware>();
 
 		app.MapAuthRoutes(RouteTags.Auth);
@@ -118,6 +121,7 @@ public static partial class AspNetConfig {
 		app.MapTerminalRoutes(RouteTags.Terminal);
 		app.MapBankAccountRoutes(RouteTags.BankAccount);
 		app.MapIpgRoutes(RouteTags.Ipg);
+		app.MapIpgRoutes(RouteTags.SimCard);
 	}
 
 	private static string CleanAndFormatSql(string sql) {

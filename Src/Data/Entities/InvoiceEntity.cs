@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Invoices")]
-public class InvoiceEntity : BaseEntity<TagInvoice, InvoiceJson> {
+public sealed class InvoiceEntity : BaseEntity<TagInvoice, InvoiceJson> {
 	public required decimal DebtAmount { get; set; }
 	public required decimal CreditorAmount { get; set; }
 	public required decimal PaidAmount { get; set; }
@@ -27,7 +27,7 @@ public class InvoiceEntity : BaseEntity<TagInvoice, InvoiceJson> {
 	};
 }
 
-public class InvoiceJson {
+public sealed class InvoiceJson {
 	public string Description { get; set; } = "";
 	public int PenaltyPrecentEveryDate { get; set; }
 }

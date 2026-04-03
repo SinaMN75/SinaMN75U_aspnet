@@ -4,7 +4,7 @@ namespace SinaMN75U.Data.Entities;
 [Index(nameof(Slug), IsUnique = true, Name = "IX_Products_Slug")]
 [Index(nameof(Code), IsUnique = true, Name = "IX_Products_Code")]
 [Index(nameof(CreatorId))]
-public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
+public sealed class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	[Required]
 	[MaxLength(100)]
 	public required string Title { get; set; }
@@ -77,7 +77,7 @@ public class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	};
 }
 
-public class ProductJson {
+public sealed class ProductJson {
 	public string? ActionType { get; set; }
 	public string? ActionTitle { get; set; }
 	public string? ActionUri { get; set; }
@@ -89,7 +89,7 @@ public class ProductJson {
 	public ICollection<Guid> RelatedProducts { get; set; } = [];
 }
 
-public class PointCount {
+public sealed class PointCount {
 	public required Guid UserId { get; set; }
 	public required int Point { get; set; }
 }

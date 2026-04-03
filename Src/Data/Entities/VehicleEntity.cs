@@ -2,7 +2,7 @@ namespace SinaMN75U.Data.Entities;
 
 [Table("Vehicles")]
 [Index(nameof(NumberPlate), Name = "IX_Vehicles_NumberPlate", IsUnique = true)]
-public class VehicleEntity : BaseEntity<TagVehicle, VehicleJson> {
+public sealed class VehicleEntity : BaseEntity<TagVehicle, VehicleJson> {
 	[Required]
 	[MinLength(6)]
 	[MaxLength(10)]
@@ -31,6 +31,6 @@ public class VehicleEntity : BaseEntity<TagVehicle, VehicleJson> {
 	};
 }
 
-public class VehicleJson {
+public sealed class VehicleJson {
 	public string? Title { get; set; }
 }

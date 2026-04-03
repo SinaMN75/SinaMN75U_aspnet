@@ -7,7 +7,7 @@ namespace SinaMN75U.Data.Entities;
 [Index(nameof(CommentId), Name = "IX_Media_CommentId")]
 [Index(nameof(ProductId), Name = "IX_Media_ProductId")]
 [Index(nameof(TicketId), Name = "IX_Media_TicketId")]
-public class MediaEntity : BaseEntity<TagMedia, MediaJson> {
+public sealed class MediaEntity : BaseEntity<TagMedia, MediaJson> {
 	[Required]
 	[MaxLength(200)]
 	public required string Path { get; set; }
@@ -38,7 +38,7 @@ public class MediaEntity : BaseEntity<TagMedia, MediaJson> {
 	};
 }
 
-public class MediaJson {
+public sealed class MediaJson {
 	public string? Title { get; set; }
 	public string? Description { get; set; }
 }

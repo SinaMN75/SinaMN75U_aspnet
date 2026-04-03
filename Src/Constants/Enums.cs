@@ -232,3 +232,7 @@ public enum TagIpg {
 public enum TagPayment {
 	ChargeWallet = 101
 }
+
+public enum TagSimCard {
+	IranCell = 101
+}

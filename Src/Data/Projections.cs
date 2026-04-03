@@ -22,6 +22,10 @@ public sealed class BankAccountSelectorArgs {
 	public UserSelectorArgs? User { get; set; }
 }
 
+public sealed class SimCardSelectorArgs {
+	public UserSelectorArgs? User { get; set; }
+}
+
 public sealed class TerminalSelectorArgs {
 	public UserSelectorArgs? Creator { get; set; }
 }
@@ -176,6 +180,41 @@ public static class Projections {
 		OwnerName = x.OwnerName,
 		UserId = x.UserId,
 		JsonData = x.JsonData,
+		User = args.User == null
+			? null
+			: new UserResponse {
+				Id = x.User.Id,
+				JsonData = x.User.JsonData,
+				Tags = x.User.Tags,
+				UserName = x.User.UserName,
+				PhoneNumber = x.User.PhoneNumber,
+				Email = x.User.Email,
+				FirstName = x.User.FirstName,
+				LastName = x.User.LastName,
+				NationalCode = x.User.NationalCode,
+				Media = args.User.Media == null
+					? null
+					: x.User.Media.AsQueryable()
+						.Select(MediaSelector())
+						.ToList(),
+				Categories = args.User.Category == null
+					? null
+					: x.User.Categories.AsQueryable()
+						.Select(CategorySelector(args.User.Category))
+						.ToList()
+			},
+	};
+	
+	public static Expression<Func<SimCardEntity, SimCardResponse>> SimCardSelector(SimCardSelectorArgs args) => x => new SimCardResponse {
+		Id = x.Id,
+		CreatedAt = x.CreatedAt,
+		UpdatedAt = x.UpdatedAt,
+		DeletedAt = x.DeletedAt,
+		UserId = x.UserId,
+		JsonData = x.JsonData,
+		Serial =  x.Serial,
+		Number = x.Number,
+		Tags =  x.Tags,
 		User = args.User == null
 			? null
 			: new UserResponse {

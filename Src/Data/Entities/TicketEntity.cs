@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Tickets")]
-public class TicketEntity : BaseEntity<TagTicket, TicketJson> {
+public sealed class TicketEntity : BaseEntity<TagTicket, TicketJson> {
 	public required Guid CreatorId { get; set; }
 	public UserEntity Creator { get; set; } = null!;
 
@@ -18,7 +18,7 @@ public class TicketEntity : BaseEntity<TagTicket, TicketJson> {
 	};
 }
 
-public class TicketJson {
+public sealed class TicketJson {
 	public string? Title { get; set; }
 	public string? Description { get; set; }
 	public string? Instagram { get; set; }

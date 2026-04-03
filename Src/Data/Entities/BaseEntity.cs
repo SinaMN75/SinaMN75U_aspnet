@@ -21,7 +21,7 @@ public class BaseEntity<T, TJ> where T : Enum where TJ : class {
 	public required ICollection<T> Tags { get; set; }
 }
 
-public class VisitCount {
+public sealed class VisitCount {
 	public required Guid UserId { get; set; }
 	public required int Count { get; set; } = 1;
 }

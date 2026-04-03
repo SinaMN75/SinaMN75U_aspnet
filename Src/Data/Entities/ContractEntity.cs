@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Contracts")]
-public class ContractEntity : BaseEntity<TagContract, ContractJson> {
+public sealed class ContractEntity : BaseEntity<TagContract, ContractJson> {
 	public required DateTime StartDate { get; set; }
 	public required DateTime EndDate { get; set; }
 
@@ -41,6 +41,6 @@ public class ContractEntity : BaseEntity<TagContract, ContractJson> {
 	};
 }
 
-public class ContractJson {
+public sealed class ContractJson {
 	public string? Description { get; set; }
 }

@@ -3,7 +3,7 @@ namespace SinaMN75U.Data.Entities;
 [Table("Txn")]
 [Index(nameof(TrackingNumber), IsUnique = true, Name = "IX_Txn_TrackingNumber")]
 [Index(nameof(UserId), Name = "IX_Txn_UserId")]
-public class TxnEntity : BaseEntity<TagTxn, TxnJson> {
+public sealed class TxnEntity : BaseEntity<TagTxn, TxnJson> {
 	[Required]
 	[Column(TypeName = "decimal(18,2)")]
 	public required decimal Amount { get; set; }
@@ -31,6 +31,6 @@ public class TxnEntity : BaseEntity<TagTxn, TxnJson> {
 	};
 }
 
-public class TxnJson {
+public sealed class TxnJson {
 	public string? GatewayName { get; set; }
 }

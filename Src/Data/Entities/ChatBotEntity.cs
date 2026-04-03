@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("ChatBots")]
-public class ChatBotEntity : BaseEntity<TagChatBot, ChatBotJsonData> {
+public sealed class ChatBotEntity : BaseEntity<TagChatBot, ChatBotJsonData> {
 	public required Guid CreatorId { get; set; }
 	public UserEntity Creator { get; set; } = null!;
 
@@ -16,11 +16,11 @@ public class ChatBotEntity : BaseEntity<TagChatBot, ChatBotJsonData> {
 	};
 }
 
-public class ChatBotJsonData {
+public sealed class ChatBotJsonData {
 	public ICollection<ChatBotHistoryItem> History { get; set; } = [];
 }
 
-public class ChatBotHistoryItem {
+public sealed class ChatBotHistoryItem {
 	public required string User { get; set; }
 	public required string Bot { get; set; }
 }

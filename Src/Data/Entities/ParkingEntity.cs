@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Parking")]
-public class ParkingEntity : BaseEntity<TagParking, ParkingJson> {
+public sealed class ParkingEntity : BaseEntity<TagParking, ParkingJson> {
 	[Required]
 	[MaxLength(100)]
 	public required string Title { get; set; }
@@ -27,12 +27,12 @@ public class ParkingEntity : BaseEntity<TagParking, ParkingJson> {
 	};
 }
 
-public class ParkingJson {
+public sealed class ParkingJson {
 	public string? Title { get; set; }
 }
 
 [Table("ParkingReport")]
-public class ParkingReportEntity : BaseEntity<TagParkingReport, ParkingReportJson> {
+public sealed class ParkingReportEntity : BaseEntity<TagParkingReport, ParkingReportJson> {
 	public required DateTime StartDate { get; set; }
 	public DateTime? EndDate { get; set; }
 
@@ -63,6 +63,6 @@ public class ParkingReportEntity : BaseEntity<TagParkingReport, ParkingReportJso
 	};
 }
 
-public class ParkingReportJson {
+public sealed class ParkingReportJson {
 	public string? Title { get; set; }
 }

@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Wallets")]
-public class WalletEntity : BaseEntity<TagWallet, WalletJson> {
+public sealed class WalletEntity : BaseEntity<TagWallet, WalletJson> {
 	
 	public required Guid UserId { get; set; }
 	public UserEntity User { get; set; } = null!;
@@ -21,11 +21,11 @@ public class WalletEntity : BaseEntity<TagWallet, WalletJson> {
 	};
 }
 
-public class WalletJson {
+public sealed class WalletJson {
 	public string? Description { get; set; }
 }
 
-public class WalletTxnEntity : BaseEntity<TagWalletTxn, WalletTxnJson> {
+public sealed class WalletTxnEntity : BaseEntity<TagWalletTxn, WalletTxnJson> {
 	public UserEntity Sender { get; set; } = null!;
 	public required Guid SenderId { get; set; }
 
@@ -35,6 +35,6 @@ public class WalletTxnEntity : BaseEntity<TagWalletTxn, WalletTxnJson> {
 	public required decimal Amount { get; set; }
 }
 
-public class WalletTxnJson {
+public sealed class WalletTxnJson {
 	public string? Description { get; set; }
 }
