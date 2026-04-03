@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Responses;
 
 public sealed class WalletResponse : BaseResponse<TagWallet, WalletJson> {
-	public UserResponse User { get; set; } = null!;
+	public UserResponse? User { get; set; }
 	public required Guid UserId { get; set; }
 
 	public required decimal Balance { get; set; }

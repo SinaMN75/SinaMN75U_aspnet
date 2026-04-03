@@ -18,3 +18,9 @@ public sealed class WalletTxnReadParams : BaseReadParams<TagWalletTxn> {
 
 	public WalletTxnSelectorArgs SelectorArgs { get; set; } = new();
 }
+
+public sealed class WalletReadParams : BaseReadParams<TagWalletTxn> {
+	public required Guid UserId { get; set; }
+	
+	public WalletSelectorArgs SelectorArgs { get; set; } = new();
+}

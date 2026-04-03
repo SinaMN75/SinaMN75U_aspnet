@@ -1,6 +1,7 @@
 namespace SinaMN75U.Services;
 
 public interface IWalletService {
+	Task<UResponse<IEnumerable<WalletResponse>?>> ReadByUserId(WalletReadParams p, CancellationToken ct);
 	Task<UResponse> Transfer(WalletTransferParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<WalletTxnResponse>?>> ReadTxn(WalletTxnReadParams p, CancellationToken ct);
 	Task<UResponse> Create(Guid userId, CancellationToken ct);
@@ -61,6 +62,13 @@ public class WalletService(
 			}, ct),
 			_ => throw new Exception()
 		};
+	}
+
+	public async Task<UResponse<IEnumerable<WalletResponse>?>> ReadByUserId(WalletReadParams p, CancellationToken ct) {
+		IQueryable<WalletResponse> q = db.Set<WalletEntity>()
+			.Where(x => x.UserId == p.UserId)
+			.Select(Projections.WalletSelector(p.SelectorArgs));
+		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse> Transfer(WalletTransferParams p, CancellationToken ct) {

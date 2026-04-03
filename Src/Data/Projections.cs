@@ -39,6 +39,10 @@ public sealed class WalletTxnSelectorArgs {
 	public UserSelectorArgs Receiver { get; set; } = new();
 }
 
+public sealed class WalletSelectorArgs {
+	public UserSelectorArgs? User { get; set; }
+}
+
 public sealed class TicketSelectorArgs {
 	public MediaSelectorArgs? Media { get; set; }
 	public UserSelectorArgs? User { get; set; }
@@ -167,6 +171,37 @@ public static class Projections {
 		}
 	};
 
+	public static Expression<Func<WalletEntity, WalletResponse>> WalletSelector(WalletSelectorArgs args) => x => new WalletResponse {
+		Id = x.Id,
+		Tags = x.Tags,
+		JsonData = x.JsonData,
+		Balance = x.Balance,
+		UserId = x.UserId,
+		User = args.User == null
+			? null
+			: new UserResponse {
+				Id = x.User.Id,
+				JsonData = x.User.JsonData,
+				Tags = x.User.Tags,
+				UserName = x.User.UserName,
+				PhoneNumber = x.User.PhoneNumber,
+				Email = x.User.Email,
+				FirstName = x.User.FirstName,
+				LastName = x.User.LastName,
+				NationalCode = x.User.NationalCode,
+				Media = args.User.Media == null
+					? null
+					: x.User.Media.AsQueryable()
+						.Select(MediaSelector())
+						.ToList(),
+				Categories = args.User.Category == null
+					? null
+					: x.User.Categories.AsQueryable()
+						.Select(CategorySelector(args.User.Category))
+						.ToList()
+			}
+	};
+
 	public static Expression<Func<BankAccountEntity, BankAccountResponse>> BankAccountSelector(BankAccountSelectorArgs args) => x => new BankAccountResponse {
 		Id = x.Id,
 		CreatedAt = x.CreatedAt,
@@ -204,7 +239,7 @@ public static class Projections {
 						.ToList()
 			},
 	};
-	
+
 	public static Expression<Func<SimCardEntity, SimCardResponse>> SimCardSelector(SimCardSelectorArgs args) => x => new SimCardResponse {
 		Id = x.Id,
 		CreatedAt = x.CreatedAt,
@@ -212,9 +247,9 @@ public static class Projections {
 		DeletedAt = x.DeletedAt,
 		UserId = x.UserId,
 		JsonData = x.JsonData,
-		Serial =  x.Serial,
+		Serial = x.Serial,
 		Number = x.Number,
-		Tags =  x.Tags,
+		Tags = x.Tags,
 		User = args.User == null
 			? null
 			: new UserResponse {
