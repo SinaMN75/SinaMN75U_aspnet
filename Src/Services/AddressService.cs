@@ -29,7 +29,12 @@ public class AddressService(
 				LocalityName = p.LocalityName,
 				HouseNumber = p.HouseNumber,
 				Floor = p.Floor,
-				Description = p.Description
+				Description = p.Description,
+				BuildingName = p.BuildingName,
+				LocalityType = p.LocalityType,
+				SideFloor = p.SideFloor,
+				SubLocality = p.SubLocality,
+				Village = p.Village
 			},
 			Tags = p.Tags,
 			Title = p.Title,
@@ -43,7 +48,7 @@ public class AddressService(
 	}
 
 	public async Task<UResponse<IEnumerable<AddressResponse>?>> Read(AddressReadParams p, CancellationToken ct) {
-		IQueryable<AddressResponse> q = db.Set<AddressEntity>().Select(Projections.AddressSelector(p.SelectorArgs));
+		IQueryable<AddressEntity> q = db.Set<AddressEntity>();
 
 		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
 		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
@@ -54,7 +59,8 @@ public class AddressService(
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => p.Tags.All(tag => x.Tags.Contains(tag)));
 		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
 
-		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		IQueryable<AddressResponse> projected = q.Select(Projections.AddressSelector(p.SelectorArgs));
+		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse> Update(AddressUpdateParams p, CancellationToken ct) {
@@ -74,6 +80,11 @@ public class AddressService(
 		if (p.HouseNumber != null) e.JsonData.HouseNumber = p.HouseNumber;
 		if (p.Floor != null) e.JsonData.Floor = p.Floor;
 		if (p.Description != null) e.JsonData.Description = p.Description;
+		if (p.BuildingName != null) e.JsonData.BuildingName = p.BuildingName;
+		if (p.LocalityType != null) e.JsonData.LocalityType = p.LocalityType;
+		if (p.SideFloor != null) e.JsonData.SideFloor = p.SideFloor;
+		if (p.SubLocality != null) e.JsonData.SubLocality = p.SubLocality;
+		if (p.Village != null) e.JsonData.Village = p.Village;
 		if (p.Tags != null) e.Tags = p.Tags;
 
 		db.Update(e);

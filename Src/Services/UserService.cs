@@ -224,15 +224,15 @@ public class UserService(
 		UserExtraEntity? e = await db.Set<UserExtraEntity>().FirstOrDefaultAsync(x => x.UserId == p.Id, ct);
 		if (e == null) return new UResponse<UserExtraResponse?>(null, Usc.NotFound);
 
-		e.NationalCardFront = p.NationalCardFront;
-		e.NationalCardBack = p.NationalCardBack;
-		e.BirthCertificateFirst = p.BirthCertificateFirst;
-		e.BirthCertificateSecond = p.BirthCertificateSecond;
-		e.BirthCertificateThird = p.BirthCertificateThird;
-		e.BirthCertificateForth = p.BirthCertificateForth;
-		e.BirthCertificateFifth = p.BirthCertificateFifth;
-		e.VisualAuthentication = p.VisualAuthentication;
-		e.ESignature = p.ESignature;
+		if (p.BirthCertificateFifth.IsNotNullOrEmpty()) e.NationalCardFront = p.NationalCardFront;
+		if (p.NationalCardBack.IsNotNullOrEmpty()) e.NationalCardBack = p.NationalCardBack;
+		if (p.BirthCertificateFirst.IsNotNullOrEmpty()) e.BirthCertificateFirst = p.BirthCertificateFirst;
+		if (p.BirthCertificateSecond.IsNotNullOrEmpty()) e.BirthCertificateSecond = p.BirthCertificateSecond;
+		if (p.BirthCertificateThird.IsNotNullOrEmpty()) e.BirthCertificateThird = p.BirthCertificateThird;
+		if (p.BirthCertificateForth.IsNotNullOrEmpty()) e.BirthCertificateForth = p.BirthCertificateForth;
+		if (p.BirthCertificateFifth.IsNotNullOrEmpty()) e.BirthCertificateFifth = p.BirthCertificateFifth;
+		if (p.VisualAuthentication.IsNotNullOrEmpty()) e.VisualAuthentication = p.VisualAuthentication;
+		if (p.ESignature.IsNotNullOrEmpty()) e.ESignature = p.ESignature;
 
 		db.Set<UserExtraEntity>().Update(e);
 		await db.SaveChangesAsync(ct);

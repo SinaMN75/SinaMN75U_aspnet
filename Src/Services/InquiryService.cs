@@ -30,7 +30,7 @@ public class InquiryService(
 
 		HttpResponseMessage? response = await httpClient.Post(
 			"https://gateway.itsaaz.ir/hub/api/v1/Address/DetailsTypeA",
-			new { postcode = p.PostCode, orderId = p.OrderId },
+			new { postcode = p.ZipCode, orderId = 1 },
 			new Dictionary<string, string> {
 				{ "Authorization", $"Bearer {tokenResponse.AccessToken}" },
 				{ "Accept", "application/json" }

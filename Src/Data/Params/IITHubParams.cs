@@ -15,6 +15,5 @@ public sealed class ITHubShahkarParams : BaseParams {
 }
 
 public sealed class PostalCodeToAddressDetailParams {
-	public required string PostCode { get; set; }
-	public required string OrderId { get; set; }
+	public required string ZipCode { get; set; }
 }

@@ -13,6 +13,11 @@ public sealed class AddressCreateParams : BaseCreateParams<TagAddress> {
 	public string? Floor { get; set; }
 	public string? ZipCode { get; set; }
 	public string? Description { get; set; }
+	public string? BuildingName { get; set; }
+	public string? LocalityType { get; set; }
+	public string? SideFloor { get; set; }
+	public string? SubLocality { get; set; }
+	public string? Village { get; set; }
 }
 
 public sealed class AddressUpdateParams : BaseUpdateParams<TagAddress> {
@@ -26,6 +31,11 @@ public sealed class AddressUpdateParams : BaseUpdateParams<TagAddress> {
 	public string? Floor { get; set; }
 	public string? ZipCode { get; set; }
 	public string? Description { get; set; }
+	public string? BuildingName { get; set; }
+	public string? LocalityType { get; set; }
+	public string? SideFloor { get; set; }
+	public string? SubLocality { get; set; }
+	public string? Village { get; set; }
 }
 
 public sealed class AddressReadParams : BaseReadParams<TagAddress> {

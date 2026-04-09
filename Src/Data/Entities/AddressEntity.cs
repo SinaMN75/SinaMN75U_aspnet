@@ -30,4 +30,9 @@ public sealed class AddressJson {
 	public string? HouseNumber { get; set; }
 	public string? Floor { get; set; }
 	public string? Description { get; set; }
+	public string? BuildingName { get; set; }
+	public string? LocalityType { get; set; }
+	public string? SideFloor { get; set; }
+	public string? SubLocality { get; set; }
+	public string? Village { get; set; }
 }
