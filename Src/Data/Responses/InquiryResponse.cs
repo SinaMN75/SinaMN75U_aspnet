@@ -23,3 +23,35 @@ public sealed class PostalCodeToAddressDetailResponse {
 	public string? Village { get; set; }
 	public int? LocalityCode { get; set; }
 }
+
+public sealed class VehicleViolationDetailResponse {
+	public string? PlateDictation { get; set; }
+	public string? PlateChar { get; set; }
+	public string? ComplaintStatus { get; set; }
+	public string? Complaint { get; set; }
+	public string? DateTime { get; set; }
+	public string? PriceStatus { get; set; }
+	public string? TraceId { get; set; }
+	public string? PaperId { get; set; }
+	public string? PaymentId { get; set; }
+	public string? WarningPrice { get; set; }
+	public string? InquirePrice { get; set; }
+	public string? EjrInquireNo { get; set; }
+	public string? WarningId { get; set; }
+	public string? InquirePriceDictation { get; set; }
+	public ICollection<VehicleViolationDetailItem> Items { get; set; } = [];
+}
+
+public sealed class VehicleViolationDetailItem {
+	public string? SerialNo { get; set; }
+	public string? ViolationOccureDate { get; set; }
+	public string? Type { get; set; }
+	public string? Address { get; set; }
+	public string? ViolationType { get; set; }
+	public string? FinalPrice { get; set; }
+	public string? PaperId { get; set; }
+	public string? PaymentId { get; set; }
+	public string? WarningId { get; set; }
+	public string? InvestigationAbility { get; set; }
+	public bool? HasImage { get; set; }
+}
