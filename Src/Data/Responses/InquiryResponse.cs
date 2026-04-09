@@ -24,6 +24,21 @@ public sealed class PostalCodeToAddressDetailResponse {
 	public int? LocalityCode { get; set; }
 }
 
+public sealed class DrivingLicenceStatusResponse {
+	public string? NationalCode { get; set; }
+	public string? FirstName { get; set; }
+	public string? LastName { get; set; }
+	public string? RequestDate { get; set; }
+	public string? Title { get; set; }
+	public string? ConfirmDate { get; set; }
+	public string? RahvarStatus { get; set; }
+	public string? PacketNo { get; set; }
+	public string? Barcode { get; set; }
+	public string? PrintNnumber { get; set; }
+	public string? PrintDate { get; set; }
+	public string? ValidYears { get; set; }
+}
+
 public sealed class VehicleViolationDetailResponse {
 	public string? PlateDictation { get; set; }
 	public string? PlateChar { get; set; }

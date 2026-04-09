@@ -4,6 +4,7 @@ public interface IInquiryService {
 	Task<UResponse<bool?>> Shahkar(ITHubShahkarParams p, CancellationToken ct);
 	Task<UResponse<PostalCodeToAddressDetailResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct);
 	Task<UResponse<VehicleViolationDetailResponse?>> GetVehicleViolationsDetail(VehicleViolationDetailParams p, CancellationToken ct);
+	Task<UResponse<DrivingLicenceStatusResponse?>> GetDrivingLicenceStatus(DrivingLicenceStatusParams p, CancellationToken ct);
 }
 
 public class InquiryService(
@@ -124,6 +125,37 @@ public class InquiryService(
 					HasImage = x.GetStringOrNull("hasImage") == "1"
 				})
 				.ToList()
+		});
+	}
+
+	public async Task<UResponse<DrivingLicenceStatusResponse?>> GetDrivingLicenceStatus(DrivingLicenceStatusParams p, CancellationToken ct) {
+		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
+		if (tokenResponse?.AccessToken == null) return new UResponse<DrivingLicenceStatusResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+
+		HttpResponseMessage? response = await httpClient.Post(
+			"https://gateway.itsaaz.ir/hub/api/v1/CarServices/GavahinameStatusInquiry",
+			new { nationalCode = p.NationalCode, cellphone = p.PhoneNumber },
+			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
+		);
+		if (response == null) return new UResponse<DrivingLicenceStatusResponse?>(null);
+
+		string responseBody = await response.Content.ReadAsStringAsync(ct);
+
+		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetProperty("body").EnumerateArray().First();
+
+		return new UResponse<DrivingLicenceStatusResponse?>(new DrivingLicenceStatusResponse {
+			NationalCode = data.GetStringOrNull("nationalNo"),
+			FirstName = data.GetStringOrNull("firstName"),
+			LastName = data.GetStringOrNull("lastName"),
+			RequestDate = data.GetStringOrNull("requestDate"),
+			Title = data.GetStringOrNull("title"),
+			ConfirmDate = data.GetStringOrNull("printConfirmDate"),
+			RahvarStatus = data.GetStringOrNull("rahvarStatus"),
+			PacketNo = data.GetStringOrNull("packetNo"),
+			Barcode = data.GetStringOrNull("barcode"),
+			PrintNnumber = data.GetStringOrNull("printNum"),
+			PrintDate = data.GetStringOrNull("printLicDate"),
+			ValidYears = data.GetStringOrNull("validYears"),
 		});
 	}
 
