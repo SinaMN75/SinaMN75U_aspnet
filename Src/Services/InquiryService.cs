@@ -5,6 +5,8 @@ public interface IInquiryService {
 	Task<UResponse<PostalCodeToAddressDetailResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct);
 	Task<UResponse<VehicleViolationDetailResponse?>> GetVehicleViolationsDetail(VehicleViolationDetailParams p, CancellationToken ct);
 	Task<UResponse<DrivingLicenceStatusResponse?>> GetDrivingLicenceStatus(DrivingLicenceStatusParams p, CancellationToken ct);
+	Task<UResponse<LicencePlateInquiryResponse?>> InquiryLicencePlate(LicencePlateInquiryParams p, CancellationToken ct);
+	Task<UResponse<DrivingLicenceNegativePointResponse?>> DrivingLicenceNegativePoint(DrivingLicenceNegativePointParams p, CancellationToken ct);
 }
 
 public class InquiryService(
@@ -78,7 +80,6 @@ public class InquiryService(
 				plk2 = p.LicencePlate.Substring(2, 1),
 				plk3 = p.LicencePlate.Substring(3, 3),
 				plkSrl = p.LicencePlate.Substring(6, 2),
-				orderId = 1
 			},
 			new Dictionary<string, string> {
 				{ "Authorization", $"Bearer {tokenResponse.AccessToken}" },
@@ -124,7 +125,6 @@ public class InquiryService(
 					InvestigationAbility = x.GetStringOrNull("investigationAbility"),
 					HasImage = x.GetStringOrNull("hasImage") == "1"
 				})
-				.ToList()
 		});
 	}
 
@@ -156,6 +156,68 @@ public class InquiryService(
 			PrintNnumber = data.GetStringOrNull("printNum"),
 			PrintDate = data.GetStringOrNull("printLicDate"),
 			ValidYears = data.GetStringOrNull("validYears"),
+		});
+	}
+
+	public async Task<UResponse<LicencePlateInquiryResponse?>> InquiryLicencePlate(LicencePlateInquiryParams p, CancellationToken ct) {
+		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
+		if (tokenResponse?.AccessToken == null) return new UResponse<LicencePlateInquiryResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+
+		HttpResponseMessage? response = await httpClient.Post(
+			"https://api-ithub.itsaaz.ir/api/v1/CarServices/PlateHistoryInquiry",
+			new {
+				nationalCode = p.NationalCode,
+				plk1 = p.LicencePlate.Substring(0, 2),
+				plk2 = p.LicencePlate.Substring(2, 1),
+				plk3 = p.LicencePlate.Substring(3, 3),
+				plkSrl = p.LicencePlate.Substring(6, 2),
+			},
+			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
+		);
+		if (response == null) return new UResponse<LicencePlateInquiryResponse?>(null);
+
+		string responseBody = await response.Content.ReadAsStringAsync(ct);
+
+		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetProperty("body");
+
+		return new UResponse<LicencePlateInquiryResponse?>(new LicencePlateInquiryResponse {
+			Status = data.GetStringOrNull("plateStatus"),
+			TracePlate = data.GetStringOrNull("tracePlate"),
+			Items = data.GetProperty("historyPlate")
+				.EnumerateArray().Select(x => new LicencePlateHistoryItem {
+						Type = x.GetStringOrNull("type"),
+						InstallDate = x.GetStringOrNull("installDate"),
+						Model = x.GetStringOrNull("model"),
+						System = x.GetStringOrNull("system"),
+					}
+				)
+		});
+	}
+
+	public async Task<UResponse<DrivingLicenceNegativePointResponse?>> DrivingLicenceNegativePoint(DrivingLicenceNegativePointParams p, CancellationToken ct) {
+		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
+		if (tokenResponse?.AccessToken == null) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+
+		HttpResponseMessage? response = await httpClient.Post(
+			"https://api-ithub.itsaaz.ir/api/v1/CarServices/DriversLicensePointsInquiry",
+			new {
+				licenseNo = p.DrivingLicenceNumber,
+				nationalCode = p.NationalCode,
+				cellphone = p.PhoneNumber
+			},
+			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
+		);
+		if (response == null) return new UResponse<DrivingLicenceNegativePointResponse?>(null);
+
+		string responseBody = await response.Content.ReadAsStringAsync(ct);
+
+		Console.WriteLine(responseBody);
+		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetProperty("body");
+
+		return new UResponse<DrivingLicenceNegativePointResponse?>(new DrivingLicenceNegativePointResponse {
+			Allowable = data.GetStringOrNull("allowable") == "1",
+			Point = data.GetStringOrNull("negPoint"),
+			RuleId = data.GetStringOrNull("ruleId")
 		});
 	}
 

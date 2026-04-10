@@ -19,3 +19,14 @@ public sealed class DrivingLicenceStatusParams {
 	public required string NationalCode { get; set; }
 	public required string PhoneNumber { get; set; }
 }
+
+public sealed class LicencePlateInquiryParams {
+	public required string NationalCode { get; set; }
+	public required string LicencePlate { get; set; }
+}
+
+public sealed class DrivingLicenceNegativePointParams {
+	public required string NationalCode { get; set; }
+	public required string PhoneNumber { get; set; }
+	public required string DrivingLicenceNumber { get; set; }
+}

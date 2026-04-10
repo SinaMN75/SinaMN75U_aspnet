@@ -54,7 +54,7 @@ public sealed class VehicleViolationDetailResponse {
 	public string? EjrInquireNo { get; set; }
 	public string? WarningId { get; set; }
 	public string? InquirePriceDictation { get; set; }
-	public ICollection<VehicleViolationDetailItem> Items { get; set; } = [];
+	public IEnumerable<VehicleViolationDetailItem> Items { get; set; } = [];
 }
 
 public sealed class VehicleViolationDetailItem {
@@ -69,4 +69,23 @@ public sealed class VehicleViolationDetailItem {
 	public string? WarningId { get; set; }
 	public string? InvestigationAbility { get; set; }
 	public bool? HasImage { get; set; }
+}
+
+public sealed class LicencePlateInquiryResponse {
+	public string? Status { get; set; }
+	public string? TracePlate { get; set; }
+	public IEnumerable<LicencePlateHistoryItem> Items { get; set; } = [];
+}
+
+public sealed class LicencePlateHistoryItem {
+	public string? System { get; set; }
+	public string? Type { get; set; }
+	public string? InstallDate { get; set; }
+	public string? Model { get; set; }
+}
+
+public sealed class DrivingLicenceNegativePointResponse {
+	public string? Point { get; set; }
+	public bool? Allowable { get; set; }
+	public string? RuleId { get; set; }
 }
