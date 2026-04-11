@@ -21,7 +21,7 @@ public class TerminalService(
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
-			JsonData = new TerminalJson(),
+			JsonData = new GeneralJsonData(),
 			Tags = p.Tags,
 			CreatorId = p.CreatorId ?? userData.Id,
 			SimCardNumber = p.SimCardNumber,

@@ -55,7 +55,7 @@ public static partial class AspNetConfig {
 			x.MultipartBodyLengthLimit = int.MaxValue;
 			x.MultipartHeadersLengthLimit = int.MaxValue;
 		});
-		
+
 		builder.Services.AddScoped<IMediaService, MediaService>();
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
 		builder.Services.AddSingleton<IHttpClientService, HttpClientService>();
@@ -97,6 +97,7 @@ public static partial class AspNetConfig {
 		if (app.Environment.IsProduction()) {
 			app.UseMiddleware<UMiddleware>();
 		}
+
 		app.UseMiddleware<DbExceptionMiddleware>();
 
 		app.MapAuthRoutes(RouteTags.Auth);

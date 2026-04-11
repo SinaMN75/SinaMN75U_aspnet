@@ -117,7 +117,7 @@ public static class Projections {
 					: x.Creator.Categories.AsQueryable()
 						.Select(CategorySelector(args.Creator.Category))
 						.ToList()
-			},
+			}
 	};
 
 	public static Expression<Func<WalletTxnEntity, WalletTxnResponse>> WalletTxnSelector(WalletTxnSelectorArgs args) => x => new WalletTxnResponse {
@@ -237,7 +237,7 @@ public static class Projections {
 					: x.User.Categories.AsQueryable()
 						.Select(CategorySelector(args.User.Category))
 						.ToList()
-			},
+			}
 	};
 
 	public static Expression<Func<SimCardEntity, SimCardResponse>> SimCardSelector(SimCardSelectorArgs args) => x => new SimCardResponse {
@@ -272,7 +272,7 @@ public static class Projections {
 					: x.User.Categories.AsQueryable()
 						.Select(CategorySelector(args.User.Category))
 						.ToList()
-			},
+			}
 	};
 
 	public static Expression<Func<MediaEntity, MediaResponse>> MediaSelector() => x => new MediaResponse {
@@ -298,7 +298,7 @@ public static class Projections {
 		Birthdate = x.Birthdate,
 		NationalCode = x.NationalCode,
 		Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
-		Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
+		Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList()
 	};
 
 	public static Expression<Func<ParkingEntity, ParkingResponse>> ParkingSelector(ParkingSelectorArgs args) => x => new ParkingResponse {
@@ -401,7 +401,7 @@ public static class Projections {
 			childSelector = CategorySelector(new CategorySelectorArgs {
 					Media = args.Media,
 					Children = args.Children,
-					ChildrenDebt = args.ChildrenDebt - 1,
+					ChildrenDebt = args.ChildrenDebt - 1
 				}
 			);
 		return x => new CategoryResponse {
@@ -431,7 +431,7 @@ public static class Projections {
 		CreatorId = x.CreatorId,
 		Creator = args.Creator == null
 			? null
-			: x.Creator.MapToResponse(),
+			: x.Creator.MapToResponse()
 	};
 
 	public static Expression<Func<TxnEntity, TxnResponse>> TxnSelector(TxnSelectorArgs args) => x => new TxnResponse {

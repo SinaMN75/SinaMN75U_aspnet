@@ -4,7 +4,7 @@ namespace SinaMN75U.Data.Entities;
 [Index(nameof(SimCardNumber), IsUnique = true, Name = "IX_Terminal_SimCardNumber")]
 [Index(nameof(SimCardSerial), IsUnique = true, Name = "IX_Terminal_SimCardSerial")]
 [Index(nameof(Imei), IsUnique = true, Name = "IX_Terminal_Imei")]
-public sealed class TerminalEntity : BaseEntity<TagTerminal, TerminalJson> {
+public sealed class TerminalEntity : BaseEntity<TagTerminal, GeneralJsonData> {
 	[MaxLength(40)]
 	public string? SimCardNumber { get; set; }
 
@@ -16,8 +16,4 @@ public sealed class TerminalEntity : BaseEntity<TagTerminal, TerminalJson> {
 
 	public required Guid CreatorId { get; set; }
 	public UserEntity Creator { get; set; } = null!;
-}
-
-public sealed class TerminalJson {
-	public string? Description { get; set; }
 }

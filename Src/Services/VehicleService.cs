@@ -21,9 +21,7 @@ public class VehicleService(
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
-			JsonData = new VehicleJson {
-				Title = p.Title
-			},
+			JsonData = new GeneralJsonData() { Title = p.Title ?? "" },
 			Tags = p.Tags,
 			NumberPlate = p.NumberPlate,
 			Title = p.Title,

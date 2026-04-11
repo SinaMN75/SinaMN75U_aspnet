@@ -10,12 +10,16 @@ public interface IInquiryService {
 }
 
 public class InquiryService(
+	DbContext db,
 	IHttpClientService httpClient,
 	ILocalizationService ls
 ) : IInquiryService {
 	private readonly ItHub _itHub = Core.App.ItHub;
 
 	public async Task<UResponse<bool?>> Shahkar(ITHubShahkarParams p, CancellationToken ct) {
+		bool? isRecordExist = await ReadShahkarHistory(p.NationalCode, p.Mobile, ct);
+		if (isRecordExist != null) return new UResponse<bool?>(isRecordExist);
+
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null) return new UResponse<bool?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
@@ -27,68 +31,78 @@ public class InquiryService(
 		if (response == null) return new UResponse<bool?>(null);
 
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
-		return new UResponse<bool?>(JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetBoolean());
+		bool data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetBoolean();
+
+		await CreateShahkarHistory(p.NationalCode, p.Mobile, data, ct);
+
+		return new UResponse<bool?>(data);
 	}
 
 	public async Task<UResponse<PostalCodeToAddressDetailResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct) {
-		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.AccessToken == null) return new UResponse<PostalCodeToAddressDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		string? responseBody = await ReadZipCodeToAddressHistory(p, ct);
 
-		HttpResponseMessage? response = await httpClient.Post(
-			"https://gateway.itsaaz.ir/hub/api/v1/Address/DetailsTypeA",
-			new { postcode = p.ZipCode, orderId = 1 },
-			new Dictionary<string, string> {
-				{ "Authorization", $"Bearer {tokenResponse.AccessToken}" },
-				{ "Accept", "application/json" }
-			}
-		);
-		if (response == null) return new UResponse<PostalCodeToAddressDetailResponse?>(null);
+		if (responseBody == null) {
+			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
+			if (tokenResponse?.AccessToken == null) return new UResponse<PostalCodeToAddressDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+			HttpResponseMessage? response = await httpClient.Post(
+				"https://gateway.itsaaz.ir/hub/api/v1/Address/DetailsTypeA",
+				new { postcode = p.ZipCode, orderId = 1 },
+				new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
+			);
+			if (response == null) return new UResponse<PostalCodeToAddressDetailResponse?>(null);
 
-		string responseBody = await response.Content.ReadAsStringAsync(ct);
-		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data");
+			responseBody = await response.Content.ReadAsStringAsync(ct);
+			await CreateZipCodeToAddressHistory(responseBody, p, ct);
+		}
 
-		return new UResponse<PostalCodeToAddressDetailResponse?>(new PostalCodeToAddressDetailResponse {
-			BuildingName = data.GetStringOrNull("BuildingName"),
-			Description = data.GetStringOrNull("description"),
-			Floor = data.GetStringOrNull("floor"),
-			HouseNumber = data.GetStringOrNull("houseNumber"),
-			LocalityName = data.GetStringOrNull("localityName"),
-			LocalityType = data.GetStringOrNull("localityType"),
-			ZipCode = data.GetStringOrNull("zipCode"),
-			Province = data.GetStringOrNull("province"),
-			SideFloor = data.GetStringOrNull("sideFloor"),
-			Street = data.GetStringOrNull("street"),
-			Street2 = data.GetStringOrNull("street2"),
-			SubLocality = data.GetStringOrNull("subLocality"),
-			TownShip = data.GetStringOrNull("townShip"),
-			TraceId = data.GetStringOrNull("traceId"),
-			Village = data.GetStringOrNull("village"),
-			LocalityCode = data.GetIntOrNull("localityCode")
-		});
+		JsonElement json = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data");
+
+		PostalCodeToAddressDetailResponse data = new() {
+			BuildingName = json.GetStringOrNull("BuildingName"),
+			Description = json.GetStringOrNull("description"),
+			Floor = json.GetStringOrNull("floor"),
+			HouseNumber = json.GetStringOrNull("houseNumber"),
+			LocalityName = json.GetStringOrNull("localityName"),
+			LocalityType = json.GetStringOrNull("localityType"),
+			ZipCode = json.GetStringOrNull("zipCode"),
+			Province = json.GetStringOrNull("province"),
+			SideFloor = json.GetStringOrNull("sideFloor"),
+			Street = json.GetStringOrNull("street"),
+			Street2 = json.GetStringOrNull("street2"),
+			SubLocality = json.GetStringOrNull("subLocality"),
+			TownShip = json.GetStringOrNull("townShip"),
+			TraceId = json.GetStringOrNull("traceId"),
+			Village = json.GetStringOrNull("village")
+		};
+
+		return new UResponse<PostalCodeToAddressDetailResponse?>(data);
 	}
 
 	public async Task<UResponse<VehicleViolationDetailResponse?>> GetVehicleViolationsDetail(VehicleViolationDetailParams p, CancellationToken ct) {
-		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.AccessToken == null) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		string? responseBody = await ReadVehicleViolationsDetailHistory(p, ct);
 
-		HttpResponseMessage? response = await httpClient.Post(
-			"https://api-ithub.itsaaz.ir/api/v1/CarServices/VehicleviolationsDetails",
-			new {
-				nationalCode = p.NationalCode,
-				cellPhone = p.PhoneNumber,
-				plk1 = p.LicencePlate.Substring(0, 2),
-				plk2 = p.LicencePlate.Substring(2, 1),
-				plk3 = p.LicencePlate.Substring(3, 3),
-				plkSrl = p.LicencePlate.Substring(6, 2),
-			},
-			new Dictionary<string, string> {
-				{ "Authorization", $"Bearer {tokenResponse.AccessToken}" },
-				{ "Accept", "application/json" }
-			}
-		);
-		if (response == null) return new UResponse<VehicleViolationDetailResponse?>(null);
+		if (responseBody == null) {
+			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
+			if (tokenResponse?.AccessToken == null) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
-		string responseBody = await response.Content.ReadAsStringAsync(ct);
+			HttpResponseMessage? response = await httpClient.Post(
+				"https://api-ithub.itsaaz.ir/api/v1/CarServices/VehicleviolationsDetails",
+				new {
+					nationalCode = p.NationalCode,
+					cellPhone = p.PhoneNumber,
+					plk1 = p.LicencePlate.Substring(0, 2),
+					plk2 = p.LicencePlate.Substring(2, 1),
+					plk3 = p.LicencePlate.Substring(3, 3),
+					plkSrl = p.LicencePlate.Substring(6, 2)
+				},
+				new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
+			);
+			if (response == null) return new UResponse<VehicleViolationDetailResponse?>(null);
+
+			responseBody = await response.Content.ReadAsStringAsync(ct);
+			await CreateVehicleViolationsDetailHistory(responseBody, p, ct);
+		}
+
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data");
 
 		return new UResponse<VehicleViolationDetailResponse?>(new VehicleViolationDetailResponse {
@@ -111,11 +125,11 @@ public class InquiryService(
 				.Select(x => new VehicleViolationDetailItem {
 					SerialNo = x.GetStringOrNull("serialNo"),
 					ViolationOccureDate = x.GetStringOrNull("violationOccureDate"),
-					Type = x.TryGetProperty("violationDeliveryType", out var vdt)
+					Type = x.TryGetProperty("violationDeliveryType", out JsonElement vdt)
 						? vdt.GetStringOrNull("violationDeliveryType")
 						: null,
 					Address = x.GetStringOrNull("violatoinAddress"),
-					ViolationType = x.TryGetProperty("violationTypeDTO", out var vtd)
+					ViolationType = x.TryGetProperty("violationTypeDTO", out JsonElement vtd)
 						? vtd.GetStringOrNull("violationType")
 						: null,
 					FinalPrice = x.GetStringOrNull("finalPrice"),
@@ -129,17 +143,22 @@ public class InquiryService(
 	}
 
 	public async Task<UResponse<DrivingLicenceStatusResponse?>> GetDrivingLicenceStatus(DrivingLicenceStatusParams p, CancellationToken ct) {
-		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.AccessToken == null) return new UResponse<DrivingLicenceStatusResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		string? responseBody = await ReadDrivingLicenceStatusHistory(p, ct);
 
-		HttpResponseMessage? response = await httpClient.Post(
-			"https://gateway.itsaaz.ir/hub/api/v1/CarServices/GavahinameStatusInquiry",
-			new { nationalCode = p.NationalCode, cellphone = p.PhoneNumber },
-			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
-		);
-		if (response == null) return new UResponse<DrivingLicenceStatusResponse?>(null);
+		if (responseBody == null) {
+			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
+			if (tokenResponse?.AccessToken == null) return new UResponse<DrivingLicenceStatusResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
-		string responseBody = await response.Content.ReadAsStringAsync(ct);
+			HttpResponseMessage? response = await httpClient.Post(
+				"https://gateway.itsaaz.ir/hub/api/v1/CarServices/GavahinameStatusInquiry",
+				new { nationalCode = p.NationalCode, cellphone = p.PhoneNumber },
+				new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
+			);
+			if (response == null) return new UResponse<DrivingLicenceStatusResponse?>(null);
+
+			responseBody = await response.Content.ReadAsStringAsync(ct);
+			await CreateDrivingLicenceStatusHistory(responseBody, p, ct);
+		}
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetProperty("body").EnumerateArray().First();
 
@@ -155,28 +174,33 @@ public class InquiryService(
 			Barcode = data.GetStringOrNull("barcode"),
 			PrintNnumber = data.GetStringOrNull("printNum"),
 			PrintDate = data.GetStringOrNull("printLicDate"),
-			ValidYears = data.GetStringOrNull("validYears"),
+			ValidYears = data.GetStringOrNull("validYears")
 		});
 	}
 
 	public async Task<UResponse<LicencePlateInquiryResponse?>> InquiryLicencePlate(LicencePlateInquiryParams p, CancellationToken ct) {
-		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.AccessToken == null) return new UResponse<LicencePlateInquiryResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		string? responseBody = await ReadLicencePlateStatusHistory(p, ct);
 
-		HttpResponseMessage? response = await httpClient.Post(
-			"https://api-ithub.itsaaz.ir/api/v1/CarServices/PlateHistoryInquiry",
-			new {
-				nationalCode = p.NationalCode,
-				plk1 = p.LicencePlate.Substring(0, 2),
-				plk2 = p.LicencePlate.Substring(2, 1),
-				plk3 = p.LicencePlate.Substring(3, 3),
-				plkSrl = p.LicencePlate.Substring(6, 2),
-			},
-			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
-		);
-		if (response == null) return new UResponse<LicencePlateInquiryResponse?>(null);
+		if (responseBody == null) {
+			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
+			if (tokenResponse?.AccessToken == null) return new UResponse<LicencePlateInquiryResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
-		string responseBody = await response.Content.ReadAsStringAsync(ct);
+			HttpResponseMessage? response = await httpClient.Post(
+				"https://api-ithub.itsaaz.ir/api/v1/CarServices/PlateHistoryInquiry",
+				new {
+					nationalCode = p.NationalCode,
+					plk1 = p.LicencePlate.Substring(0, 2),
+					plk2 = p.LicencePlate.Substring(2, 1),
+					plk3 = p.LicencePlate.Substring(3, 3),
+					plkSrl = p.LicencePlate.Substring(6, 2)
+				},
+				new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
+			);
+			if (response == null) return new UResponse<LicencePlateInquiryResponse?>(null);
+
+			responseBody = await response.Content.ReadAsStringAsync(ct);
+			await CreateLicencePlateStatusHistory(responseBody, p, ct);
+		}
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetProperty("body");
 
@@ -188,30 +212,34 @@ public class InquiryService(
 						Type = x.GetStringOrNull("type"),
 						InstallDate = x.GetStringOrNull("installDate"),
 						Model = x.GetStringOrNull("model"),
-						System = x.GetStringOrNull("system"),
+						System = x.GetStringOrNull("system")
 					}
 				)
 		});
 	}
 
 	public async Task<UResponse<DrivingLicenceNegativePointResponse?>> DrivingLicenceNegativePoint(DrivingLicenceNegativePointParams p, CancellationToken ct) {
-		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.AccessToken == null) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		string? responseBody = await ReadDrivingLicenceNegativePointHistory(p, ct);
 
-		HttpResponseMessage? response = await httpClient.Post(
-			"https://api-ithub.itsaaz.ir/api/v1/CarServices/DriversLicensePointsInquiry",
-			new {
-				licenseNo = p.DrivingLicenceNumber,
-				nationalCode = p.NationalCode,
-				cellphone = p.PhoneNumber
-			},
-			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
-		);
-		if (response == null) return new UResponse<DrivingLicenceNegativePointResponse?>(null);
+		if (responseBody == null) {
+			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
+			if (tokenResponse?.AccessToken == null) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
-		string responseBody = await response.Content.ReadAsStringAsync(ct);
+			HttpResponseMessage? response = await httpClient.Post(
+				"https://api-ithub.itsaaz.ir/api/v1/CarServices/DriversLicensePointsInquiry",
+				new {
+					licenseNo = p.DrivingLicenceNumber,
+					nationalCode = p.NationalCode,
+					cellphone = p.PhoneNumber
+				},
+				new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
+			);
+			if (response == null) return new UResponse<DrivingLicenceNegativePointResponse?>(null);
 
-		Console.WriteLine(responseBody);
+			responseBody = await response.Content.ReadAsStringAsync(ct);
+			await CreateDrivingLicenceNegativePointHistory(responseBody, p, ct);
+		}
+
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetProperty("body");
 
 		return new UResponse<DrivingLicenceNegativePointResponse?>(new DrivingLicenceNegativePointResponse {
@@ -241,5 +269,120 @@ public class InquiryService(
 			AccessToken = data.GetStringOrNull("access_token"),
 			ExpiresIn = data.GetIntOrNull("expires_in")
 		};
+	}
+
+	private async Task CreateShahkarHistory(string nationalCode, string phoneNumber, bool isVerified, CancellationToken ct) {
+		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
+			JsonData = new GeneralJsonData { Description = "" },
+			Tags = isVerified ? [TagInquiryHistory.ValidateNationalCodeAndPhoneNumber, TagInquiryHistory.Verified] : [TagInquiryHistory.ValidateNationalCodeAndPhoneNumber, TagInquiryHistory.NotVerified],
+			NationalCode = nationalCode,
+			PhoneNumber = phoneNumber,
+			Response = ""
+		}, ct);
+		await db.SaveChangesAsync(ct);
+	}
+
+	private async Task<bool?> ReadShahkarHistory(string nationalCode, string phoneNumber, CancellationToken ct) {
+		InquiryHistoryEntity? e = await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.NationalCode == nationalCode && x.PhoneNumber == phoneNumber, ct);
+		return e?.Tags.Contains(TagInquiryHistory.Verified);
+	}
+
+	private async Task CreateZipCodeToAddressHistory(string responseBody, PostalCodeToAddressDetailParams p, CancellationToken ct) {
+		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
+			JsonData = new GeneralJsonData { Description = "" },
+			Tags = [TagInquiryHistory.ItHub, TagInquiryHistory.ZipCodeToAddressDetail, TagInquiryHistory.Verified],
+			ZipCode = p.ZipCode,
+			Response = responseBody
+		}, ct);
+		await db.SaveChangesAsync(ct);
+	}
+
+	private async Task<string?> ReadZipCodeToAddressHistory(PostalCodeToAddressDetailParams p, CancellationToken ct) {
+		InquiryHistoryEntity? e = await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.ZipCode == p.ZipCode && x.Tags.Contains(TagInquiryHistory.ZipCodeToAddressDetail), ct);
+		return e?.Response;
+	}
+
+	private async Task CreateVehicleViolationsDetailHistory(string responseBody, VehicleViolationDetailParams p, CancellationToken ct) {
+		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
+			JsonData = new GeneralJsonData { Description = "" },
+			Tags = [TagInquiryHistory.ItHub, TagInquiryHistory.VehicleViolationsDetail],
+			PhoneNumber = p.PhoneNumber,
+			LicencePlate = p.LicencePlate,
+			NationalCode = p.NationalCode,
+			Response = responseBody
+		}, ct);
+		await db.SaveChangesAsync(ct);
+	}
+
+	private async Task<string?> ReadVehicleViolationsDetailHistory(VehicleViolationDetailParams p, CancellationToken ct) {
+		InquiryHistoryEntity? e = await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber && x.LicencePlate == p.LicencePlate && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.VehicleViolationsDetail), ct);
+		return e?.Response;
+	}
+
+	private async Task CreateDrivingLicenceStatusHistory(string responseBody, DrivingLicenceStatusParams p, CancellationToken ct) {
+		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
+			JsonData = new GeneralJsonData { Description = "" },
+			Tags = [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceStatus],
+			PhoneNumber = p.PhoneNumber,
+			NationalCode = p.NationalCode,
+			Response = responseBody
+		}, ct);
+		await db.SaveChangesAsync(ct);
+	}
+
+	private async Task<string?> ReadDrivingLicenceStatusHistory(DrivingLicenceStatusParams p, CancellationToken ct) {
+		InquiryHistoryEntity? e = await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.LicencePlateStatus), ct);
+		return e?.Response;
+	}
+
+	private async Task CreateLicencePlateStatusHistory(string responseBody, LicencePlateInquiryParams p, CancellationToken ct) {
+		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
+			JsonData = new GeneralJsonData { Description = "" },
+			Tags = [TagInquiryHistory.ItHub, TagInquiryHistory.LicencePlateStatus],
+			LicencePlate = p.LicencePlate,
+			NationalCode = p.NationalCode,
+			Response = responseBody
+		}, ct);
+		await db.SaveChangesAsync(ct);
+	}
+
+	private async Task<string?> ReadLicencePlateStatusHistory(LicencePlateInquiryParams p, CancellationToken ct) {
+		InquiryHistoryEntity? e = await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.LicencePlate == p.LicencePlate && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.LicencePlateStatus), ct);
+		return e?.Response;
+	}
+
+	private async Task CreateDrivingLicenceNegativePointHistory(string responseBody, DrivingLicenceNegativePointParams p, CancellationToken ct) {
+		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow,
+			JsonData = new GeneralJsonData { Description = "" },
+			Tags = [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceNegativePoint],
+			NationalCode = p.NationalCode,
+			PhoneNumber = p.PhoneNumber,
+			DrivingLicenceNumber = p.DrivingLicenceNumber,
+			Response = responseBody
+		}, ct);
+		await db.SaveChangesAsync(ct);
+	}
+
+	private async Task<string?> ReadDrivingLicenceNegativePointHistory(DrivingLicenceNegativePointParams p, CancellationToken ct) {
+		InquiryHistoryEntity? e = await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.DrivingLicenceNumber == p.DrivingLicenceNumber && x.NationalCode == p.NationalCode && x.PhoneNumber == p.PhoneNumber && x.Tags.Contains(TagInquiryHistory.DrivingLicenceNegativePoint), ct);
+		return e?.Response;
 	}
 }

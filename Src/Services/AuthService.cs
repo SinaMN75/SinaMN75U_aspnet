@@ -172,7 +172,7 @@ public class AuthService(
 				CreatedAt = DateTime.UtcNow,
 				UpdatedAt = DateTime.UtcNow,
 				UserId = userId,
-				JsonData = new UserExtraJson(),
+				JsonData = new GeneralJsonData(),
 				Tags = []
 			}
 		};

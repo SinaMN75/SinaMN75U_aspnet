@@ -43,7 +43,7 @@ public class CategoryService(
 			Title = p.Title,
 			Order = p.Order,
 			Code = p.Code,
-			ParentId = p.ParentId,
+			ParentId = p.ParentId
 		};
 		await db.Set<CategoryEntity>().AddAsync(e, ct);
 

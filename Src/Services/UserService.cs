@@ -195,7 +195,7 @@ public class UserService(
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
 			UserId = userId,
-			JsonData = new UserExtraJson(),
+			JsonData = new GeneralJsonData(),
 			Tags = []
 		}, ct);
 		await db.SaveChangesAsync(ct);

@@ -27,9 +27,7 @@ public class ParkingService(
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
-			JsonData = new ParkingJson {
-				Title = p.Title
-			},
+			JsonData = new GeneralJsonData { Title = p.Title },
 			Tags = p.Tags,
 			Title = p.Title,
 			CreatorId = p.CreatorId,
@@ -94,7 +92,7 @@ public class ParkingService(
 				Id = p.Id ?? Guid.CreateVersion7(),
 				CreatedAt = DateTime.UtcNow,
 				UpdatedAt = DateTime.UtcNow,
-				JsonData = new VehicleJson(),
+				JsonData = new GeneralJsonData(),
 				Tags = [TagVehicle.Test],
 				NumberPlate = p.NumberPlate
 			}, ct);
@@ -109,7 +107,7 @@ public class ParkingService(
 			CreatorId = p.CreatorId ?? userData.Id,
 			VehicleId = vehicle.Id,
 			ParkingId = p.ParkingId,
-			JsonData = new ParkingReportJson(),
+			JsonData = new GeneralJsonData(),
 			Tags = [TagParkingReport.Test]
 		};
 		await db.Set<ParkingReportEntity>().AddAsync(e, ct);

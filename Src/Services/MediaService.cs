@@ -53,9 +53,9 @@ public class MediaService(
 			CommentId = p.CommentId,
 			ProductId = p.ProductId,
 			Tags = tags,
-			JsonData = new MediaJson {
-				Title = p.Title,
-				Description = p.Description
+			JsonData = new GeneralJsonData {
+				Title = p.Title ?? "",
+				Description = p.Description ?? ""
 			}
 		};
 		await SaveMedia(p.File, name);

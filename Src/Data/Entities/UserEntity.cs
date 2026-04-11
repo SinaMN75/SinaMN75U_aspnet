@@ -106,7 +106,7 @@ public sealed class UserJson {
 }
 
 [Table("UserExtras")]
-public sealed class UserExtraEntity : BaseEntity<TagUserExtra, UserExtraJson> {
+public sealed class UserExtraEntity : BaseEntity<TagUserExtra, GeneralJsonData> {
 	public string? NationalCardFront { get; set; }
 	public string? NationalCardBack { get; set; }
 	public string? BirthCertificateFirst { get; set; }
@@ -121,8 +121,4 @@ public sealed class UserExtraEntity : BaseEntity<TagUserExtra, UserExtraJson> {
 
 	public UserEntity User { get; set; } = null!;
 	public required Guid UserId { get; set; }
-}
-
-public sealed class UserExtraJson {
-	public string? Description { get; set; }
 }

@@ -36,7 +36,7 @@ public class ContractService(
 			UserId = user.Id,
 			CreatorId = p.CreatorId ?? userData.Id,
 			ProductId = product.Id,
-			JsonData = new ContractJson { Description = p.Description },
+			JsonData = new GeneralJsonData { Description = p.Description ?? ""},
 			Tags = p.Tags
 		};
 		await db.Set<ContractEntity>().AddAsync(e, ct);

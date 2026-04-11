@@ -25,18 +25,21 @@ public enum Usc {
 	EmptyList = 701,
 
 	MediaTypeNotEntered = 801,
-	MediaTypeNotSupported = 802
+	MediaTypeNotSupported = 802,
+	Test = 999
 }
 
 public enum TagPurchase {
 	MobileAndNationalCodeVerification = 101,
-	ZipCodeToAddressDetail = 102
+	ZipCodeToAddressDetail = 102,
+	Test = 999
 }
 
 public enum TagSmsPanel {
 	NikSms = 101,
 	Ghasedak = 102,
-	Kavenegar = 103
+	Kavenegar = 103,
+	Test = 999
 }
 
 public enum TagUser {
@@ -51,7 +54,8 @@ public enum TagUser {
 	BirthCertificate4Verified = 305,
 	NationalCardFrontVerified = 306,
 	NationalCardBackVerified = 307,
-	VisualAuthenticationVerified = 308
+	VisualAuthenticationVerified = 308,
+	Test = 999
 }
 
 public enum TagCategory {
@@ -65,7 +69,8 @@ public enum TagCategory {
 	Bed = 107,
 	Enabled = 201,
 	Disabled = 202,
-	Hidden = 203
+	Hidden = 203,
+	Test = 999
 }
 
 public enum TagMedia {
@@ -100,19 +105,22 @@ public enum TagProduct {
 	Room7 = 407,
 	Room8 = 408,
 	Room9 = 409,
-	Room10 = 410
+	Room10 = 410,
+	Test = 999
 }
 
 public enum TagComment {
 	Released = 100,
 	InQueue = 101,
 	Rejected = 102,
-	Private = 501
+	Private = 501,
+	Test = 999
 }
 
 public enum TagReaction {
 	Like = 101,
-	DisLike = 102
+	DisLike = 102,
+	Test = 999
 }
 
 public enum TagExam {
@@ -122,13 +130,15 @@ public enum TagExam {
 public enum TagFollow {
 	User = 101,
 	Product = 102,
-	Category = 103
+	Category = 103,
+	Test = 999
 }
 
 public enum TagContent {
 	AboutUs = 101,
 	Terms = 102,
-	HomeSlider1 = 103
+	HomeSlider1 = 103,
+	Test = 999
 }
 
 public enum TagBadge {
@@ -218,21 +228,39 @@ public enum TagUserExtra {
 public enum TagTerminal {
 	Atm = 101,
 	WallCashless = 102,
-	DeskCashless = 103
+	DeskCashless = 103,
+	Test = 999
 }
 
 public enum TagBankAccount {
-	Verified = 101
+	Verified = 101,
+	Test = 999
 }
 
 public enum TagIpg {
-	Pn = 101
+	Pn = 101,
+	Test = 999
 }
 
 public enum TagPayment {
-	ChargeWallet = 101
+	ChargeWallet = 101,
+	Test = 999
 }
 
 public enum TagSimCard {
-	IranCell = 101
+	IranCell = 101,
+	Test = 999
+}
+
+public enum TagInquiryHistory {
+	ValidateNationalCodeAndPhoneNumber = 101,
+	ZipCodeToAddressDetail = 102,
+	VehicleViolationsDetail = 103,
+	DrivingLicenceStatus = 104,
+	LicencePlateStatus = 105,
+	DrivingLicenceNegativePoint = 106,
+	Verified = 201,
+	NotVerified = 202,
+	ItHub = 301,
+	Test = 999
 }

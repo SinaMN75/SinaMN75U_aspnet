@@ -22,7 +22,7 @@ public class WalletService(
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
 			UserId = userId,
-			JsonData = new WalletJson(),
+			JsonData = new GeneralJsonData(),
 			Tags = [],
 			Balance = 0
 		};
@@ -96,7 +96,7 @@ public class WalletService(
 			SenderId = senderId,
 			ReceiverId = p.ReceiverId,
 			Amount = p.Amount,
-			JsonData = new WalletTxnJson(),
+			JsonData = new GeneralJsonData(),
 			Tags = []
 		}, ct);
 

@@ -21,9 +21,7 @@ public class SimCardService(
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
-			JsonData = new SimCardJson {
-				Description = p.Description
-			},
+			JsonData = new GeneralJsonData { Description = p.Description ?? "" },
 			Tags = p.Tags,
 			UserId = p.CreatorId ?? userData.Id,
 			Number = p.Number,

@@ -21,16 +21,14 @@ public class BankAccountService(
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
-			JsonData = new BankAccountJson {
-				Description = p.Description,
-			},
+			JsonData = new GeneralJsonData { Description = p.Description ?? "" },
 			Tags = p.Tags,
 			CardNumber = p.CardNumber,
 			AccountNumber = p.AccountNumber,
 			IBanNumber = p.IBanNumber,
 			BankName = p.BankName,
 			OwnerName = p.OwnerName,
-			UserId = p.UserId ?? userData.Id,
+			UserId = p.UserId ?? userData.Id
 		};
 
 		await db.AddAsync(e, ct);

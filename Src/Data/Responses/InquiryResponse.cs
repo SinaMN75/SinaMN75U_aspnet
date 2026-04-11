@@ -21,7 +21,6 @@ public sealed class PostalCodeToAddressDetailResponse {
 	public string? TownShip { get; set; }
 	public string? TraceId { get; set; }
 	public string? Village { get; set; }
-	public int? LocalityCode { get; set; }
 }
 
 public sealed class DrivingLicenceStatusResponse {

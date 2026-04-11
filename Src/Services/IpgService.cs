@@ -46,7 +46,7 @@ public class IpgService(IHttpClientService http, DbContext db) : IIpgService {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
-			JsonData = new WalletTxnJson { Description = "شارژ کیف پول" },
+			JsonData = new GeneralJsonData { Description = "شارژ کیف پول" },
 			Tags = [TagWalletTxn.Charge],
 			SenderId = Core.App.Ipg.IpgUserId,
 			ReceiverId = Guid.Parse(data.UserId),

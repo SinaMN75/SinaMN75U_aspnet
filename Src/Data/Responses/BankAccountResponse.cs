@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Responses;
 
-public sealed class BankAccountResponse : BaseResponse<TagBankAccount, BankAccountJson> {
+public sealed class BankAccountResponse : BaseResponse<TagBankAccount, GeneralJsonData> {
 	public string? CardNumber { get; set; }
 	public string? AccountNumber { get; set; }
 	public string? IBanNumber { get; set; }
