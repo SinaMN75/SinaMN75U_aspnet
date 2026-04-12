@@ -6,7 +6,7 @@ namespace SinaMN75U.Data.Entities;
 [Index(nameof(Imei), IsUnique = true, Name = "IX_Terminal_Imei")]
 public sealed class TerminalEntity : BaseEntity<TagTerminal, GeneralJsonData> {
 	[MaxLength(40)]
-	public required string serial { get; set; }	
+	public required string Serial { get; set; }	
 	
 	[MaxLength(40)]
 	public string? SimCardNumber { get; set; }

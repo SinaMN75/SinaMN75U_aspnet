@@ -444,7 +444,7 @@ public static class Projections {
 	public static Expression<Func<TerminalEntity, TerminalResponse>> TerminalSelector(TerminalSelectorArgs args) => x => new TerminalResponse {
 		Id = x.Id,
 		Tags = x.Tags,
-		serial = x.serial,
+		Serial = x.Serial,
 		JsonData = x.JsonData,
 		CreatorId = x.CreatorId,
 		Creator = args.Creator == null

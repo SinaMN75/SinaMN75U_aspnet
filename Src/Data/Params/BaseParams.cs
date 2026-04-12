@@ -9,6 +9,11 @@ public sealed class IdParams : BaseParams {
 	public required Guid Id { get; set; }
 }
 
+public sealed class IdParams<T> : BaseParams where T : new() {
+	public required Guid Id { get; set; }
+	public T SelectorArgs { get; set; } = new T();
+}
+
 public sealed class SoftDeleteParams : BaseParams {
 	public required Guid? Id { get; set; }
 	public required DateTime? DateTime { get; set; }

@@ -19,7 +19,7 @@ public class TerminalService(
 
 		TerminalEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
-			serial = p.serial,
+			Serial = p.Serial,
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
 			JsonData = new GeneralJsonData(),
@@ -38,7 +38,7 @@ public class TerminalService(
 	public async Task<UResponse<IEnumerable<TerminalResponse>?>> Read(TerminalReadParams p, CancellationToken ct) {
 		IQueryable<TerminalResponse> q = db.Set<TerminalEntity>().Select(Projections.TerminalSelector(p.SelectorArgs));
 
-		if (p.serial.IsNotNullOrEmpty()) q = q.Where(x => x.serial == p.serial);
+		if (p.Serial.IsNotNullOrEmpty()) q = q.Where(x => x.Serial == p.Serial);
 		
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
