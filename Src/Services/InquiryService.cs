@@ -1,7 +1,7 @@
 namespace SinaMN75U.Services;
 
 public interface IInquiryService {
-	Task<UResponse<bool?>> Shahkar(ITHubShahkarParams p, CancellationToken ct);
+	Task<UResponse<bool?>> Shahkar(VerifyNationalCodeAndPhoneNumber p, CancellationToken ct);
 	Task<UResponse<PostalCodeToAddressDetailResponse?>> PostalCodeToAddressDetail(PostalCodeToAddressDetailParams p, CancellationToken ct);
 	Task<UResponse<VehicleViolationDetailResponse?>> GetVehicleViolationsDetail(VehicleViolationDetailParams p, CancellationToken ct);
 	Task<UResponse<DrivingLicenceStatusResponse?>> GetDrivingLicenceStatus(DrivingLicenceStatusParams p, CancellationToken ct);
@@ -16,7 +16,7 @@ public class InquiryService(
 ) : IInquiryService {
 	private readonly ItHub _itHub = Core.App.ItHub;
 
-	public async Task<UResponse<bool?>> Shahkar(ITHubShahkarParams p, CancellationToken ct) {
+	public async Task<UResponse<bool?>> Shahkar(VerifyNationalCodeAndPhoneNumber p, CancellationToken ct) {
 		bool? isRecordExist = await ReadShahkarHistory(p.NationalCode, p.Mobile, ct);
 		if (isRecordExist != null) return new UResponse<bool?>(isRecordExist);
 
@@ -100,10 +100,12 @@ public class InquiryService(
 			if (response == null) return new UResponse<VehicleViolationDetailResponse?>(null);
 
 			responseBody = await response.Content.ReadAsStringAsync(ct);
+			Console.WriteLine("NNNNNNNNN");
+			Console.WriteLine(responseBody);
 			await CreateVehicleViolationsDetailHistory(responseBody, p, ct);
 		}
 
-		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data");
+		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetProperty("body");
 
 		return new UResponse<VehicleViolationDetailResponse?>(new VehicleViolationDetailResponse {
 			PlateDictation = data.GetStringOrNull("plateDictation"),
@@ -124,7 +126,7 @@ public class InquiryService(
 				.EnumerateArray()
 				.Select(x => new VehicleViolationDetailItem {
 					SerialNo = x.GetStringOrNull("serialNo"),
-					ViolationOccureDate = x.GetStringOrNull("violationOccureDate"),
+					Date = x.GetStringOrNull("violationOccureDate"),
 					Type = x.TryGetProperty("violationDeliveryType", out JsonElement vdt)
 						? vdt.GetStringOrNull("violationDeliveryType")
 						: null,

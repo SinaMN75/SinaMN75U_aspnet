@@ -163,7 +163,7 @@ public class CategoryService(
 
 	public async Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		await db.Set<CategoryEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
 
 		return new UResponse();

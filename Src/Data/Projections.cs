@@ -6,7 +6,9 @@ public sealed class ParkingSelectorArgs;
 
 public sealed class ParkingReportSelectorArgs;
 
-public sealed class VehicleSelectorArgs;
+public sealed class VehicleSelectorArgs {
+	public UserSelectorArgs? Creator { get; set; }
+};
 
 public sealed class CategorySelectorArgs {
 	public MediaSelectorArgs? Media { get; set; }
@@ -57,7 +59,7 @@ public sealed class ProductSelectorArgs {
 	public Guid? UserId { get; set; }
 	public ProductSelectorArgs? Children { get; set; }
 	public CategorySelectorArgs? Category { get; set; }
-	public UserSelectorArgs? User { get; set; }
+	public UserSelectorArgs? Creator { get; set; }
 	public MediaSelectorArgs? Media { get; set; }
 	public bool ChildrenCount { get; set; }
 	public bool CommentsCount { get; set; }
@@ -93,7 +95,6 @@ public static class Projections {
 		Id = x.Id,
 		Tags = x.Tags,
 		JsonData = x.JsonData,
-		Title = x.Title,
 		CreatorId = x.CreatorId,
 		Creator = args.Creator == null
 			? null
@@ -334,7 +335,23 @@ public static class Projections {
 		DeletedAt = x.DeletedAt,
 		Tags = x.Tags,
 		JsonData = x.JsonData,
-		NumberPlate = x.NumberPlate
+		LicencePlate = x.LicencePlate,
+		CreatorId = x.CreatorId,
+		Creator = args.Creator == null
+			? null
+			: new UserResponse {
+				Id = x.Creator.Id,
+				JsonData = x.Creator.JsonData,
+				Tags = x.Creator.Tags,
+				UserName = x.Creator.UserName,
+				PhoneNumber = x.Creator.PhoneNumber,
+				Email = x.Creator.Email,
+				FirstName = x.Creator.FirstName,
+				LastName = x.Creator.LastName,
+				NationalCode = x.Creator.NationalCode,
+				Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
+				Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
+			}
 	};
 
 	public static Expression<Func<ProductEntity, ProductResponse>> ProductSelector(ProductSelectorArgs args) {
@@ -348,7 +365,7 @@ public static class Projections {
 				IsFollowing = args.IsFollowing,
 				Children = args.Children,
 				Category = args.Category,
-				User = args.User,
+				Creator = args.Creator,
 				ChildrenDebt = args.ChildrenDebt - 1
 			});
 		return x => new ProductResponse {
@@ -377,7 +394,7 @@ public static class Projections {
 			CommentCount = args.CommentsCount ? x.Comments.Count : null,
 			ChildrenCount = args.ChildrenCount ? x.Children.Count : null,
 			IsFollowing = args.IsFollowing && args.UserId != null ? x.Followers.Any(f => f.CreatorId == args.UserId) : null,
-			Creator = args.User == null
+			Creator = args.Creator == null
 				? null
 				: new UserResponse {
 					Id = x.Creator.Id,
@@ -389,8 +406,8 @@ public static class Projections {
 					FirstName = x.Creator.FirstName,
 					LastName = x.Creator.LastName,
 					NationalCode = x.Creator.NationalCode,
-					Media = args.User.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
-					Categories = args.User.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList()
+					Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
+					Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
 				}
 		};
 	}
@@ -427,6 +444,7 @@ public static class Projections {
 	public static Expression<Func<TerminalEntity, TerminalResponse>> TerminalSelector(TerminalSelectorArgs args) => x => new TerminalResponse {
 		Id = x.Id,
 		Tags = x.Tags,
+		serial = x.serial,
 		JsonData = x.JsonData,
 		CreatorId = x.CreatorId,
 		Creator = args.Creator == null

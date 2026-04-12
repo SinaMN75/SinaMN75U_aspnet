@@ -15,7 +15,7 @@ public class BankAccountService(
 ) : IBankAccountService {
 	public async Task<UResponse<Guid?>> Create(BankAccountCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		BankAccountEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -43,7 +43,7 @@ public class BankAccountService(
 
 	public async Task<UResponse> Update(BankAccountUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		BankAccountEntity? e = await db.Set<BankAccountEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("BankAccountNotFound"));
@@ -66,7 +66,7 @@ public class BankAccountService(
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<BankAccountEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 		return new UResponse();
@@ -74,7 +74,7 @@ public class BankAccountService(
 
 	public async Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<BankAccountEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
 		return new UResponse();

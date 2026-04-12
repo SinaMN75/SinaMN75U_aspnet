@@ -2,7 +2,6 @@ namespace SinaMN75U.Data.Entities;
 
 [Table("Addresses")]
 public sealed class AddressEntity : BaseEntity<TagAddress, AddressJson> {
-	public required string Title { get; set; }
 	public string? ZipCode { get; set; }
 
 	public required Guid CreatorId { get; set; }
@@ -15,13 +14,13 @@ public sealed class AddressEntity : BaseEntity<TagAddress, AddressJson> {
 		DeletedAt = DeletedAt,
 		JsonData = JsonData,
 		Tags = Tags,
-		Title = Title,
 		ZipCode = ZipCode,
 		CreatorId = CreatorId
 	};
 }
 
 public sealed class AddressJson {
+	public string? Title { get; set; }
 	public string? Province { get; set; }
 	public string? Township { get; set; }
 	public string? Street { get; set; }

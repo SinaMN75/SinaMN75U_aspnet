@@ -58,7 +58,7 @@ public sealed class VehicleViolationDetailResponse {
 
 public sealed class VehicleViolationDetailItem {
 	public string? SerialNo { get; set; }
-	public string? ViolationOccureDate { get; set; }
+	public string? Date { get; set; }
 	public string? Type { get; set; }
 	public string? Address { get; set; }
 	public string? ViolationType { get; set; }

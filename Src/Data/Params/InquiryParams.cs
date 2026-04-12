@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Params;
 
-public sealed class ITHubShahkarParams : BaseParams {
+public sealed class VerifyNationalCodeAndPhoneNumber : BaseParams {
 	public required string NationalCode { get; set; }
 	public required string Mobile { get; set; }
 }

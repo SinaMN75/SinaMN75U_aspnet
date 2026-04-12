@@ -21,7 +21,7 @@ public class ParkingService(
 ) : IParkingService {
 	public async Task<UResponse<Guid?>> CreateParking(ParkingCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		ParkingEntity e = new() {
 			Id = Guid.CreateVersion7(),
@@ -47,7 +47,7 @@ public class ParkingService(
 
 	public async Task<UResponse> UpdateParking(ParkingUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		ParkingEntity? e = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ParkingNotFound"));
@@ -67,7 +67,7 @@ public class ParkingService(
 
 	public async Task<UResponse> DeleteParking(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<ParkingEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
@@ -76,7 +76,7 @@ public class ParkingService(
 
 	public async Task<UResponse> SoftDeleteParking(SoftDeleteParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<ParkingEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
 		return new UResponse();
@@ -84,9 +84,9 @@ public class ParkingService(
 
 	public async Task<UResponse<Guid?>> CreateParkingReport(ParkingReportCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		VehicleEntity? vehicle = await db.Set<VehicleEntity>().FirstOrDefaultAsync(x => x.NumberPlate == p.NumberPlate, ct);
+		VehicleEntity? vehicle = await db.Set<VehicleEntity>().FirstOrDefaultAsync(x => x.LicencePlate == p.NumberPlate, ct);
 		if (vehicle == null) {
 			EntityEntry<VehicleEntity> vEntity = await db.Set<VehicleEntity>().AddAsync(new VehicleEntity {
 				Id = p.Id ?? Guid.CreateVersion7(),
@@ -94,7 +94,8 @@ public class ParkingService(
 				UpdatedAt = DateTime.UtcNow,
 				JsonData = new GeneralJsonData(),
 				Tags = [TagVehicle.Test],
-				NumberPlate = p.NumberPlate
+				LicencePlate = p.NumberPlate,
+				CreatorId = p.CreatorId ?? userData.Id,
 			}, ct);
 			vehicle = vEntity.Entity;
 		}
@@ -123,7 +124,7 @@ public class ParkingService(
 
 	public async Task<UResponse> UpdateParkingReport(ParkingReportUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		ParkingReportEntity? e = await db.Set<ParkingReportEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ParkingReportNotFound"));
@@ -146,7 +147,7 @@ public class ParkingService(
 
 	public async Task<UResponse> DeleteParkingReport(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<ParkingReportEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
@@ -155,7 +156,7 @@ public class ParkingService(
 
 	public async Task<UResponse> SoftDeleteParkingReport(SoftDeleteParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<ParkingReportEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
 		return new UResponse();

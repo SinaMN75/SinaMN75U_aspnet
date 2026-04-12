@@ -15,7 +15,7 @@ public class ContentService(
 ) : IContentService {
 	public async Task<UResponse<Guid?>> Create(ContentCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		ContentEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -45,7 +45,7 @@ public class ContentService(
 
 	public async Task<UResponse> Update(ContentUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		ContentEntity? e = await db.Set<ContentEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ContentNotFound"));
@@ -69,7 +69,7 @@ public class ContentService(
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<ContentEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
@@ -78,7 +78,7 @@ public class ContentService(
 
 	public async Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<ContentEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
 		return new UResponse();

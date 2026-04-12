@@ -2,7 +2,7 @@
 
 public interface ISmsNotificationService {
 	Task SendSms(string mobileNumber, string template, string param1, string? param2 = null, string? param3 = null);
-	Task<bool> SendOtpSms(UserEntity user);
+	Task<bool> SendOtpSms(UserResponse user);
 }
 
 public class SmsNotificationService(
@@ -45,7 +45,7 @@ public class SmsNotificationService(
 		}
 	}
 
-	public async Task<bool> SendOtpSms(UserEntity user) {
+	public async Task<bool> SendOtpSms(UserResponse user) {
 		if (cache.Get($"otp_{user.Id}") != null) return false;
 		int length = Core.App.BasicSettings.VerificationCodeLenght;
 

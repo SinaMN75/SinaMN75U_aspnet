@@ -15,7 +15,7 @@ public class SimCardService(
 ) : ISimCardService {
 	public async Task<UResponse<Guid?>> Create(SimCardCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		SimCardEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -50,7 +50,7 @@ public class SimCardService(
 
 	public async Task<UResponse> Update(SimCardUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		SimCardEntity? e = await db.Set<SimCardEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("SimCardNotFound"));
@@ -67,7 +67,7 @@ public class SimCardService(
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<SimCardEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 		return new UResponse();
@@ -75,7 +75,7 @@ public class SimCardService(
 
 	public async Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<SimCardEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
 		return new UResponse();

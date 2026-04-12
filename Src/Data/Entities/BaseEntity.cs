@@ -1,7 +1,5 @@
 namespace SinaMN75U.Data.Entities;
 
-[Index(nameof(Id), IsUnique = true, Name = "IX_Id")]
-[Index(nameof(Tags), Name = "IX_Tags")]
 public class BaseEntity<T, TJ> where T : Enum where TJ : class {
 	[Key]
 	public required Guid Id { get; set; }

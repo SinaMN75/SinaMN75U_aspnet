@@ -1,10 +1,10 @@
 namespace SinaMN75U.InnerServices;
 
 public interface ILocalizationService {
-	string Get(string key, string locale = "en");
+	string Get(string key, string? locale = null);
 }
 
-public class LocalizationService : ILocalizationService {
+public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizationService {
 	private readonly Dictionary<string, string> _en = new() {
 		{ "IdIsDuplicated", "This Id is already exist." },
 		{ "SlugIsDuplicated", "This Slug is already exist." },
@@ -93,6 +93,7 @@ public class LocalizationService : ILocalizationService {
 		{ "AddressNotFound", "Address Not Found" },
 		{ "AddressUpdatedSuccessfully", "Address Updated Successfully" },
 		{ "AddressDeletedSuccessfully", "Address Deleted Successfully" },
+		{ "LicencePlateMinMaxLenght", "Licence Plate can't be more than 10 Characters." },
 		{ "TerminalNotFound", "Terminal Not Found" }
 	};
 
@@ -184,12 +185,14 @@ public class LocalizationService : ILocalizationService {
 		{ "AddressNotFound", "آدرس یافت نشد" },
 		{ "AddressUpdatedSuccessfully", "آدرس با موفقیت به روز شد" },
 		{ "AddressDeletedSuccessfully", "آدرس با موفقیت حذف شد" },
+		{ "LicencePlateMinMaxLenght", "طول پلاک خودرو نمیتواند بیشتر از ۱۰ کاراکتر باشد." },
 		{ "TerminalNotFound", "ترمینال یافت نشد." }
 	};
 
-	public string Get(string key, string locale = "en") {
+	public string Get(string key, string? locale = null) {
+		string l = locale ?? httpContext.HttpContext?.Request.Headers["Locale"].FirstOrDefault() ?? "en";
 		try {
-			if (locale == "fa") return _fa[key];
+			if (l == "fa") return _fa[key];
 			return _en[key];
 		}
 		catch (Exception) {

@@ -229,6 +229,8 @@ public enum TagTerminal {
 	Atm = 101,
 	WallCashless = 102,
 	DeskCashless = 103,
+	Verified = 104,
+	Suspended = 105,
 	Test = 999
 }
 

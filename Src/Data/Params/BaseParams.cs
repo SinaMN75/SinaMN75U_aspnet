@@ -3,7 +3,6 @@ namespace SinaMN75U.Data.Params;
 public class BaseParams {
 	public string ApiKey { get; set; } = null!;
 	public string Token { get; set; } = null!;
-	public string Locale { get; set; } = "en";
 }
 
 public sealed class IdParams : BaseParams {

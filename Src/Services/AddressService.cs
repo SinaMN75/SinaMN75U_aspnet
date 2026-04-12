@@ -15,13 +15,14 @@ public class AddressService(
 ) : IAddressService {
 	public async Task<UResponse<Guid?>> Create(AddressCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		AddressEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
 			JsonData = new AddressJson {
+				Title = p.Title,
 				Province = p.Province,
 				Township = p.Township,
 				Street = p.Street,
@@ -37,7 +38,6 @@ public class AddressService(
 				Village = p.Village
 			},
 			Tags = p.Tags,
-			Title = p.Title,
 			ZipCode = p.ZipCode,
 			CreatorId = p.CreatorId ?? userData.Id
 		};
@@ -65,13 +65,13 @@ public class AddressService(
 
 	public async Task<UResponse> Update(AddressUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		AddressEntity? e = await db.Set<AddressEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("AddressNotFound"));
 
-		if (p.Title != null) e.Title = p.Title;
 		if (p.ZipCode != null) e.ZipCode = p.ZipCode;
+		if (p.Title != null) e.JsonData.Title = p.Title;
 		if (p.Province != null) e.JsonData.Province = p.Province;
 		if (p.Township != null) e.JsonData.Township = p.Township;
 		if (p.Street != null) e.JsonData.Street = p.Street;
@@ -94,7 +94,7 @@ public class AddressService(
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<AddressEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 		return new UResponse();
@@ -102,7 +102,7 @@ public class AddressService(
 
 	public async Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<AddressEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
 		return new UResponse();

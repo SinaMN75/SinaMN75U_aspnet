@@ -63,7 +63,7 @@ public class AuthService(
 		if (e.Extra.NotVerifiedNationalCodes.ContainsSafe(p.NationalCode))
 			return new UResponse(Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
 
-		UResponse<bool?> shahkarResponse = await inquiryService.Shahkar(new ITHubShahkarParams {
+		UResponse<bool?> shahkarResponse = await inquiryService.Shahkar(new VerifyNationalCodeAndPhoneNumber {
 			NationalCode = p.NationalCode,
 			Mobile = e.PhoneNumber!
 		}, ct);
@@ -136,22 +136,18 @@ public class AuthService(
 	}
 
 	public async Task<UResponse> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct) {
-		UserEntity? existingUser = await db.Set<UserEntity>().Select(x => new UserEntity {
+		UserResponse? existingUser = await db.Set<UserEntity>().Select(x => new UserResponse {
 			Id = x.Id,
 			UserName = x.UserName,
 			PhoneNumber = x.PhoneNumber,
 			Email = x.Email,
 			JsonData = x.JsonData,
-			Tags = x.Tags,
-			Password = "",
-			RefreshToken = "",
-			CreatedAt = x.CreatedAt,
-			UpdatedAt = x.UpdatedAt
-		}).AsNoTracking().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
+			Tags = x.Tags
+		}).FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
 
 		if (existingUser != null) {
 			if (!await smsNotificationService.SendOtpSms(existingUser)) return new UResponse(Usc.MaximumLimitReached, ls.Get("MaxOtpReached"));
-			return new UResponse();
+			return new UResponse(message: ls.Get("OtpSent"));
 		}
 
 		Guid userId = Guid.CreateVersion7();
@@ -181,7 +177,7 @@ public class AuthService(
 		await userService.CreateExtra(e.Id, ct);
 		await walletService.Create(e.Id, ct);
 		await db.SaveChangesAsync(ct);
-		if (!await smsNotificationService.SendOtpSms(e)) return new UResponse(Usc.MaximumLimitReached, ls.Get("MaxOtpReached"));
+		if (!await smsNotificationService.SendOtpSms(e.MapToResponse())) return new UResponse(Usc.MaximumLimitReached, ls.Get("MaxOtpReached"));
 
 		return new UResponse();
 	}

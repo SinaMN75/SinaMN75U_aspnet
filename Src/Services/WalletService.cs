@@ -33,7 +33,7 @@ public class WalletService(
 
 	public async Task<UResponse> Purchase(WalletPurchaseParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		UserEntity receiver = (await db.Set<UserEntity>().Select(x => new UserEntity {
 			Id = x.Id,
 			CreatedAt = DateTime.UtcNow,
@@ -45,7 +45,6 @@ public class WalletService(
 			TagPurchase.MobileAndNationalCodeVerification => await Transfer(new WalletTransferParams {
 				ApiKey = p.ApiKey,
 				Token = p.Token,
-				Locale = p.Locale,
 				SenderId = userData.Id,
 				ReceiverId = receiver.Id,
 				Amount = Core.App.ItHub.ShahkarVerifyNationalCodeAndMobilePrice,
@@ -54,7 +53,6 @@ public class WalletService(
 			TagPurchase.ZipCodeToAddressDetail => await Transfer(new WalletTransferParams {
 				ApiKey = p.ApiKey,
 				Token = p.Token,
-				Locale = p.Locale,
 				SenderId = userData.Id,
 				ReceiverId = receiver.Id,
 				Amount = Core.App.ItHub.ShahkarVerifyNationalCodeAndMobilePrice,
@@ -73,7 +71,7 @@ public class WalletService(
 
 	public async Task<UResponse> Transfer(WalletTransferParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		Guid senderId = p.SenderId ?? userData.Id;
 

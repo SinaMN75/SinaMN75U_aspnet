@@ -14,7 +14,7 @@ public class TxnService(
 ) : ITxnService {
 	public async Task<UResponse<Guid?>> Create(TxnCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		TxnEntity e = new() {
 			Id = Guid.CreateVersion7(),
@@ -42,7 +42,7 @@ public class TxnService(
 
 	public async Task<UResponse> Update(TxnUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		TxnEntity e = (await db.Set<TxnEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
 		e.UpdatedAt = DateTime.UtcNow;
@@ -58,7 +58,7 @@ public class TxnService(
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<TxnEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 

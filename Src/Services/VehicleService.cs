@@ -15,7 +15,7 @@ public class VehicleService(
 ) : IVehicleService {
 	public async Task<UResponse<Guid?>> Create(VehicleCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		VehicleEntity e = new() {
 			Id = Guid.CreateVersion7(),
@@ -23,36 +23,34 @@ public class VehicleService(
 			UpdatedAt = DateTime.UtcNow,
 			JsonData = new GeneralJsonData() { Title = p.Title ?? "" },
 			Tags = p.Tags,
-			NumberPlate = p.NumberPlate,
-			Title = p.Title,
+			LicencePlate = p.LicencePlate,
 			Brand = p.Brand,
-			Color = p.Color
+			Color = p.Color,
+			CreatorId = p.CreatorId ?? userData.Id
 		};
 		
 		await db.Set<VehicleEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
-		return new UResponse<Guid?>(e.Id);
+		return new UResponse<Guid?>(e.Id, message: ls.Get("VehicleCreated"));
 	}
 
 	public async Task<UResponse<IEnumerable<VehicleResponse>?>> Read(VehicleReadParams p, CancellationToken ct) {
 		IQueryable<VehicleResponse> q = db.Set<VehicleEntity>().Select(Projections.VehicleSelector(p.SelectorArgs));
 		if (p.Brand.IsNotNullOrEmpty()) q = q.Where(x => x.Brand == p.Brand);
-		if (p.NumberPlate.IsNotNullOrEmpty()) q = q.Where(x => x.NumberPlate == p.NumberPlate);
-		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title == p.Title);
+		if (p.LicencePlate.IsNotNullOrEmpty()) q = q.Where(x => x.LicencePlate == p.LicencePlate);
 		if (p.Color.IsNotNullOrEmpty()) q = q.Where(x => x.Color == p.Color);
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse> Update(VehicleUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		VehicleEntity? e = await db.Set<VehicleEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("VehicleNotFound"));
 		
 		e.UpdatedAt = DateTime.UtcNow;
-		if (p.NumberPlate.IsNotNull()) e.NumberPlate = p.NumberPlate;
-		if (p.Title.IsNotNull()) e.Title = p.Title;
+		if (p.LicencePlate.IsNotNull()) e.LicencePlate = p.LicencePlate;
 		if (p.Brand.IsNotNull()) e.Brand = p.Brand;
 		if (p.Color.IsNotNull()) e.Color = p.Color;
 		if (p.Tags.IsNotNull()) e.Tags = p.Tags;
@@ -65,7 +63,7 @@ public class VehicleService(
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<VehicleEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
@@ -74,7 +72,7 @@ public class VehicleService(
 
 	public async Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<VehicleEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
 		return new UResponse();

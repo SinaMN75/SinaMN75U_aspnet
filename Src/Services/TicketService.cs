@@ -14,7 +14,7 @@ public class TicketService(
 ) : ITicketService {
 	public async Task<UResponse<Guid?>> Create(TicketCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		TicketEntity e = new() {
 			Id = Guid.CreateVersion7(),
@@ -45,7 +45,7 @@ public class TicketService(
 
 	public async Task<UResponse> Update(TicketUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		TicketEntity e = (await db.Set<TicketEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
 		e.UpdatedAt = DateTime.UtcNow;
@@ -67,7 +67,7 @@ public class TicketService(
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired", p.Locale));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<TicketEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
