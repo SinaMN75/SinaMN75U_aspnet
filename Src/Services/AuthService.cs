@@ -60,21 +60,13 @@ public class AuthService(
 		UserEntity? e = await db.Set<UserEntity>().Include(x => x.Extra).AsTracking().FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound);
 
-		if (e.Extra.NotVerifiedNationalCodes.ContainsSafe(p.NationalCode))
-			return new UResponse(Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
-
 		UResponse<bool?> shahkarResponse = await inquiryService.Shahkar(new VerifyNationalCodeAndPhoneNumber {
 			NationalCode = p.NationalCode,
 			Mobile = e.PhoneNumber!
 		}, ct);
 
 		if (shahkarResponse.Result == null) return new UResponse(Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
-		if (shahkarResponse.Result == false) {
-			e.Extra.NotVerifiedNationalCodes.Add(p.NationalCode);
-			db.Set<UserEntity>().Update(e);
-			await db.SaveChangesAsync(ct);
-			return new UResponse(Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
-		}
+		if (shahkarResponse.Result == false) return new UResponse(Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
 
 		e.UpdatedAt = DateTime.UtcNow;
 		e.NationalCode = p.NationalCode;

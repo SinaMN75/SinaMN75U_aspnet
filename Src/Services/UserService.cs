@@ -5,6 +5,7 @@ public interface IUserService {
 	public Task<UResponse> BulkCreate(UserBulkCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<UserResponse>?>> Read(UserReadParams p, CancellationToken ct);
 	public Task<UResponse<UserResponse?>> ReadById(IdParams p, CancellationToken ct);
+	public Task<UResponse<UserResponse?>> ReadById(IdParams<UserSelectorArgs> p, CancellationToken ct);
 	public Task<UResponse> Update(UserUpdateParams p, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
 
@@ -51,7 +52,7 @@ public class UserService(
 			City = p.City,
 			Birthdate = p.Birthdate
 		};
-		
+
 		if (p.Categories.IsNotNullOrEmpty()) {
 			List<CategoryEntity> list = [];
 			foreach (Guid item in p.Categories!) {
@@ -141,6 +142,14 @@ public class UserService(
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
+	public async Task<UResponse<UserResponse?>> ReadById(IdParams<UserSelectorArgs> p, CancellationToken ct) {
+		UserResponse? e = await db.Set<UserEntity>()
+			.Select(Projections.UserSelector(p.SelectorArgs))
+			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+
+		return e == null ? new UResponse<UserResponse?>(null, Usc.NotFound, ls.Get("UserNotFound")) : new UResponse<UserResponse?>(e);
+	}
+
 	public async Task<UResponse> Update(UserUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
@@ -215,7 +224,6 @@ public class UserService(
 			BirthCertificateForth = e.BirthCertificateForth,
 			BirthCertificateFifth = e.BirthCertificateFifth,
 			VisualAuthentication = e.VisualAuthentication,
-			NotVerifiedNationalCodes = e.NotVerifiedNationalCodes,
 			ESignature = e.ESignature
 		});
 	}

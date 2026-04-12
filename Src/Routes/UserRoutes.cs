@@ -6,7 +6,7 @@ public static class UserRoutes {
 		r.MapPost("Create", async (UserCreateParams p, IUserService s, CancellationToken c) => (await s.Create(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("BulkCreate", async (UserBulkCreateParams d, IUserService s, CancellationToken c) => (await s.BulkCreate(d, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("Read", async (UserReadParams d, IUserService s, CancellationToken c) => (await s.Read(d, c)).ToResult()).Produces<UResponse<IEnumerable<UserResponse>>>();
-		r.MapPost("ReadById", async (IdParams d, IUserService s, CancellationToken c) => (await s.ReadById(d, c)).ToResult()).Produces<UResponse<UserResponse>>();
+		r.MapPost("ReadById", async (IdParams<UserSelectorArgs> d, IUserService s, CancellationToken c) => (await s.ReadById(d, c)).ToResult()).Produces<UResponse<UserResponse>>();
 		r.MapPost("Update", async (UserUpdateParams d, IUserService s, CancellationToken c) => (await s.Update(d, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("Delete", async (IdParams d, IUserService s, CancellationToken c) => (await s.Delete(d, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("ReadExtraById", async (IdParams d, IUserService s, CancellationToken c) => (await s.ReadExtraById(d, c)).ToResult()).Produces<UResponse<UserExtraResponse>>();

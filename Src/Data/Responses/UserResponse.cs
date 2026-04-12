@@ -12,9 +12,17 @@ public sealed class UserResponse : BaseResponse<TagUser, UserJson> {
 	public string? City { get; set; }
 	public string? NationalCode { get; set; }
 	public DateTime? Birthdate { get; set; }
-
+	
+	public UserExtraResponse? Extra { get; set; }
 	public ICollection<CategoryResponse>? Categories { get; set; }
 	public ICollection<MediaResponse>? Media { get; set; }
+	public ICollection<InvoiceResponse>? Invoices { get; set; }
+	public ICollection<TxnResponse>? Txns { get; set; }
+	public ICollection<AddressResponse>? Addresses { get; set; }
+	public ICollection<WalletResponse>? Wallets { get; set; }
+	public ICollection<TerminalResponse>? Terminals { get; set; }
+	public ICollection<BankAccountResponse>? BankAccounts { get; set; }
+	public ICollection<SimCardResponse>? SimCards { get; set; }
 }
 
 public sealed class LoginResponse {
@@ -34,6 +42,4 @@ public sealed class UserExtraResponse {
 	public string? BirthCertificateFifth { get; set; }
 	public string? VisualAuthentication { get; set; }
 	public string? ESignature { get; set; }
-
-	public ICollection<string> NotVerifiedNationalCodes { get; set; } = [];
 }

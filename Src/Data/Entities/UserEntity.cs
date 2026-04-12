@@ -116,9 +116,7 @@ public sealed class UserExtraEntity : BaseEntity<TagUserExtra, GeneralJsonData> 
 	public string? BirthCertificateFifth { get; set; }
 	public string? VisualAuthentication { get; set; }
 	public string? ESignature { get; set; }
-
-	public ICollection<string> NotVerifiedNationalCodes { get; set; } = [];
-
+	
 	public UserEntity User { get; set; } = null!;
 	public required Guid UserId { get; set; }
 }

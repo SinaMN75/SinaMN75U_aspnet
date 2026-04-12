@@ -53,6 +53,14 @@ public sealed class TicketSelectorArgs {
 public sealed class UserSelectorArgs {
 	public CategorySelectorArgs? Category { get; set; }
 	public MediaSelectorArgs? Media { get; set; }
+	public InvoiceSelectorArgs? Invoice { get; set; }
+	public TxnSelectorArgs? Txns { get; set; }
+	public AddressSelectorArgs? Address { get; set; }
+	public WalletSelectorArgs? Wallet { get; set; }
+	public TerminalSelectorArgs? Terminal { get; set; }
+	public BankAccountSelectorArgs? BankAccount { get; set; }
+	public SimCardSelectorArgs? SimCard { get; set; }
+	public bool Extra { get; set; }
 }
 
 public sealed class ProductSelectorArgs {
@@ -298,8 +306,30 @@ public static class Projections {
 		City = x.City,
 		Birthdate = x.Birthdate,
 		NationalCode = x.NationalCode,
+		CreatedAt = x.CreatedAt,
+		UpdatedAt = x.UpdatedAt,
 		Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
-		Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList()
+		Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
+		Addresses = args.Address == null ? null : x.Addresses.AsQueryable().Select(AddressSelector(args.Address)).ToList(),
+		BankAccounts = args.BankAccount == null ? null : x.BankAccounts.AsQueryable().Select(BankAccountSelector(args.BankAccount)).ToList(),
+		Invoices = args.Invoice == null ? null : x.Invoices.AsQueryable().Select(InvoiceSelector(args.Invoice)).ToList(),
+		SimCards = args.SimCard == null ? null : x.SimCards.AsQueryable().Select(SimCardSelector(args.SimCard)).ToList(),
+		Terminals = args.Terminal == null ? null : x.Terminals.AsQueryable().Select(TerminalSelector(args.Terminal)).ToList(),
+		Txns = args.Txns == null ? null : x.Txns.AsQueryable().Select(TxnSelector(args.Txns)).ToList(),
+		Wallets = args.Wallet == null ? null : x.Wallets.AsQueryable().Select(WalletSelector(args.Wallet)).ToList(),
+		Extra = args.Extra
+			? new UserExtraResponse {
+				NationalCardFront = x.Extra.NationalCardFront,
+				NationalCardBack = x.Extra.NationalCardBack,
+				BirthCertificateFirst = x.Extra.BirthCertificateFirst,
+				BirthCertificateSecond = x.Extra.BirthCertificateSecond,
+				BirthCertificateThird = x.Extra.BirthCertificateThird,
+				BirthCertificateForth = x.Extra.BirthCertificateForth,
+				BirthCertificateFifth = x.Extra.BirthCertificateFifth,
+				VisualAuthentication = x.Extra.VisualAuthentication,
+				ESignature = x.Extra.ESignature,
+			}
+			: null
 	};
 
 	public static Expression<Func<ParkingEntity, ParkingResponse>> ParkingSelector(ParkingSelectorArgs args) => x => new ParkingResponse {
