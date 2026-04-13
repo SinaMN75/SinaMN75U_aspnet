@@ -232,7 +232,7 @@ public class UserService(
 		UserExtraEntity? e = await db.Set<UserExtraEntity>().FirstOrDefaultAsync(x => x.UserId == p.Id, ct);
 		if (e == null) return new UResponse<UserExtraResponse?>(null, Usc.NotFound);
 
-		if (p.BirthCertificateFifth.IsNotNullOrEmpty()) e.NationalCardFront = p.NationalCardFront;
+		if (p.NationalCardFront.IsNotNullOrEmpty()) e.NationalCardFront = p.NationalCardFront;
 		if (p.NationalCardBack.IsNotNullOrEmpty()) e.NationalCardBack = p.NationalCardBack;
 		if (p.BirthCertificateFirst.IsNotNullOrEmpty()) e.BirthCertificateFirst = p.BirthCertificateFirst;
 		if (p.BirthCertificateSecond.IsNotNullOrEmpty()) e.BirthCertificateSecond = p.BirthCertificateSecond;
