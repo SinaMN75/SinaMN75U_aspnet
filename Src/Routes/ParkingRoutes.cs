@@ -7,12 +7,10 @@ public static class ParkingRoutes {
 		r.MapPost("ReadParking", async (ParkingReadParams p, IParkingService s, CancellationToken c) => (await s.ReadParking(p, c)).ToResult()).Produces<UResponse<IEnumerable<ParkingResponse>>>();
 		r.MapPost("UpdateParking", async (ParkingUpdateParams d, IParkingService s, CancellationToken c) => (await s.UpdateParking(d, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("DeleteParking", async (IdParams d, IParkingService s, CancellationToken c) => (await s.DeleteParking(d, c)).ToResult()).Produces<UResponse>();
-		r.MapPost("SoftDeleteParking", async (SoftDeleteParams d, IParkingService s, CancellationToken c) => (await s.SoftDeleteParking(d, c)).ToResult()).Produces<UResponse>();
 
 		r.MapPost("CreateParkingReport", async (ParkingReportCreateParams d, IParkingService s, CancellationToken c) => (await s.CreateParkingReport(d, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("ReadParkingReport", async (ParkingReportReadParams p, IParkingService s, CancellationToken c) => (await s.ReadParkingReport(p, c)).ToResult()).Produces<UResponse<IEnumerable<ParkingReportResponse>>>();
 		r.MapPost("UpdateParkingReport", async (ParkingReportUpdateParams d, IParkingService s, CancellationToken c) => (await s.UpdateParkingReport(d, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("DeleteParkingReport", async (IdParams d, IParkingService s, CancellationToken c) => (await s.DeleteParkingReport(d, c)).ToResult()).Produces<UResponse>();
-		r.MapPost("SoftDeleteParkingReport", async (SoftDeleteParams d, IParkingService s, CancellationToken c) => (await s.SoftDeleteParkingReport(d, c)).ToResult()).Produces<UResponse>();
 	}
 }

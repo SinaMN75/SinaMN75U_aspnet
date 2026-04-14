@@ -7,8 +7,6 @@ public class BaseEntity<T, TJ> where T : Enum where TJ : class {
 	[Required]
 	public required DateTime CreatedAt { get; set; }
 	
-	public DateTime? DeletedAt { get; set; }
-
 	[Required]
 	public required TJ JsonData { get; set; }
 

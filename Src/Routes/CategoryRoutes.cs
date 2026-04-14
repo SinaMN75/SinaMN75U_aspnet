@@ -9,6 +9,5 @@ public static class CategoryRoutes {
 		r.MapPost("ReadById", async (IdParams p, ICategoryService s, CancellationToken c) => (await s.ReadById(p, c)).ToResult()).Produces<UResponse<CategoryResponse>>();
 		r.MapPost("Update", async (CategoryUpdateParams p, ICategoryService s, CancellationToken c) => (await s.Update(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("Delete", async (IdParams p, ICategoryService s, CancellationToken c) => (await s.Delete(p, c)).ToResult()).Produces<UResponse>();
-		r.MapPost("SoftDelete", async (SoftDeleteParams p, ICategoryService s, CancellationToken c) => (await s.SoftDelete(p, c)).ToResult()).Produces<UResponse>();
 	}
 }

@@ -29,7 +29,6 @@ public sealed class CommentEntity : BaseEntity<TagComment, CommentJson> {
 	public CommentResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
-		DeletedAt = DeletedAt,
 		JsonData = JsonData,
 		Tags = Tags,
 		Score = Score,

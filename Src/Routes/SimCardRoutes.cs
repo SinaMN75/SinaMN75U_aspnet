@@ -7,6 +7,5 @@ public static class SimCardRoutes {
 		r.MapPost("Read", async (SimCardReadParams p, ISimCardService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Produces<UResponse<IEnumerable<SimCardResponse>>>();
 		r.MapPost("Update", async (SimCardUpdateParams p, ISimCardService s, CancellationToken c) => (await s.Update(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("Delete", async (IdParams p, ISimCardService s, CancellationToken c) => (await s.Delete(p, c)).ToResult()).Produces<UResponse>();
-		r.MapPost("SoftDelete", async (SoftDeleteParams p, ISimCardService s, CancellationToken c) => (await s.SoftDelete(p, c)).ToResult()).Produces<UResponse>();
 	}
 }

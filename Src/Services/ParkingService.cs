@@ -5,13 +5,11 @@ public interface IParkingService {
 	Task<UResponse<IEnumerable<ParkingResponse>?>> ReadParking(ParkingReadParams p, CancellationToken ct);
 	Task<UResponse> UpdateParking(ParkingUpdateParams p, CancellationToken ct);
 	Task<UResponse> DeleteParking(IdParams p, CancellationToken ct);
-	Task<UResponse> SoftDeleteParking(SoftDeleteParams p, CancellationToken ct);
 
 	Task<UResponse<Guid?>> CreateParkingReport(ParkingReportCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<ParkingReportResponse>?>> ReadParkingReport(ParkingReportReadParams p, CancellationToken ct);
 	Task<UResponse> UpdateParkingReport(ParkingReportUpdateParams p, CancellationToken ct);
 	Task<UResponse> DeleteParkingReport(IdParams p, CancellationToken ct);
-	Task<UResponse> SoftDeleteParkingReport(SoftDeleteParams p, CancellationToken ct);
 }
 
 public class ParkingService(
@@ -71,15 +69,7 @@ public class ParkingService(
 
 		return new UResponse();
 	}
-
-	public async Task<UResponse> SoftDeleteParking(SoftDeleteParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-
-		await db.Set<ParkingEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
-		return new UResponse();
-	}
-
+	
 	public async Task<UResponse<Guid?>> CreateParkingReport(ParkingReportCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
@@ -146,14 +136,6 @@ public class ParkingService(
 
 		await db.Set<ParkingReportEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
-		return new UResponse();
-	}
-
-	public async Task<UResponse> SoftDeleteParkingReport(SoftDeleteParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-
-		await db.Set<ParkingReportEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
 		return new UResponse();
 	}
 }

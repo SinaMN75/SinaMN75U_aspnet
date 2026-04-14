@@ -7,6 +7,5 @@ public static class VehicleRoutes {
 		r.MapPost("Read", async (VehicleReadParams p, IVehicleService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Produces<UResponse<IEnumerable<VehicleResponse>>>();
 		r.MapPost("Update", async (VehicleUpdateParams d, IVehicleService s, CancellationToken c) => (await s.Update(d, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("Delete", async (IdParams d, IVehicleService s, CancellationToken c) => (await s.Delete(d, c)).ToResult()).Produces<UResponse>();
-		r.MapPost("SoftDelete", async (SoftDeleteParams d, IVehicleService s, CancellationToken c) => (await s.SoftDelete(d, c)).ToResult()).Produces<UResponse>();
 	}
 }

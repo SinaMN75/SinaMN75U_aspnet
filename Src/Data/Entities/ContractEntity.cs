@@ -27,7 +27,6 @@ public sealed class ContractEntity : BaseEntity<TagContract, GeneralJsonData> {
 	public ContractResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
-		DeletedAt = DeletedAt,
 		JsonData = JsonData,
 		Tags = Tags,
 		StartDate = StartDate,

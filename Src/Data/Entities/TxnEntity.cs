@@ -21,7 +21,6 @@ public sealed class TxnEntity : BaseEntity<TagTxn, GeneralJsonData> {
 	public TxnResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
-		DeletedAt = DeletedAt,
 		JsonData = JsonData,
 		Tags = Tags,
 		Amount = Amount,

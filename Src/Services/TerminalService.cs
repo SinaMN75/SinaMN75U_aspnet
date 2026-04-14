@@ -5,7 +5,6 @@ public interface ITerminalService {
 	Task<UResponse<IEnumerable<TerminalResponse>?>> Read(TerminalReadParams p, CancellationToken ct);
 	Task<UResponse> Update(TerminalUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
-	Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct);
 }
 
 public class TerminalService(
@@ -73,14 +72,6 @@ public class TerminalService(
 
 		await db.Set<TerminalEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
-		return new UResponse();
-	}
-
-	public async Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-
-		await db.Set<TerminalEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
 		return new UResponse();
 	}
 }

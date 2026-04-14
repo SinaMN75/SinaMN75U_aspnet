@@ -7,6 +7,5 @@ public static class ContentRoutes {
 		r.MapPost("Read", async (ContentReadParams p, IContentService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Produces<UResponse<IEnumerable<ContentResponse>>>();
 		r.MapPost("Update", async (ContentUpdateParams d, IContentService s, CancellationToken c) => (await s.Update(d, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("Delete", async (IdParams d, IContentService s, CancellationToken c) => (await s.Delete(d, c)).ToResult()).Produces<UResponse>();
-		r.MapPost("SoftDelete", async (SoftDeleteParams d, IContentService s, CancellationToken c) => (await s.SoftDelete(d, c)).ToResult()).Produces<UResponse>();
 	}
 }

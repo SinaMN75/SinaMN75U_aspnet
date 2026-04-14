@@ -5,7 +5,6 @@ public interface ICategoryService {
 	Task<UResponse<Guid?>> Create(CategoryCreateParams p, CancellationToken ct);
 	Task<UResponse> Update(CategoryUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
-	Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct);
 	Task<UResponse<CategoryResponse?>> ReadById(IdParams p, CancellationToken ct);
 }
@@ -154,14 +153,6 @@ public class CategoryService(
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		await db.Set<CategoryEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
-
-		return new UResponse();
-	}
-
-	public async Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		await db.Set<CategoryEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
 
 		return new UResponse();
 	}

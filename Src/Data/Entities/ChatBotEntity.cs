@@ -8,7 +8,6 @@ public sealed class ChatBotEntity : BaseEntity<TagChatBot, ChatBotJsonData> {
 	public ChatBotResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
-		DeletedAt = DeletedAt,
 		JsonData = JsonData,
 		Tags = Tags,
 		CreatorId = CreatorId

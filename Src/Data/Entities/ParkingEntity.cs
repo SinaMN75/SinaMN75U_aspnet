@@ -18,7 +18,6 @@ public sealed class ParkingEntity : BaseEntity<TagParking, GeneralJsonData> {
 	public ParkingResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
-		DeletedAt = DeletedAt,
 		JsonData = JsonData,
 		Tags = Tags,
 		Title = Title,
@@ -45,7 +44,6 @@ public sealed class ParkingReportEntity : BaseEntity<TagParkingReport, GeneralJs
 	public ParkingReportResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
-		DeletedAt = DeletedAt,
 		JsonData = JsonData,
 		Tags = Tags,
 		CreatorId = CreatorId,

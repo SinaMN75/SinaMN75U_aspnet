@@ -20,7 +20,6 @@ public sealed class VehicleEntity : BaseEntity<TagVehicle, GeneralJsonData> {
 	public VehicleResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
-		DeletedAt = DeletedAt,
 		JsonData = JsonData,
 		Tags = Tags,
 		LicencePlate = LicencePlate,

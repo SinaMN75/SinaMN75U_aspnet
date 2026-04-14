@@ -10,7 +10,6 @@ public sealed class AddressEntity : BaseEntity<TagAddress, AddressJson> {
 	public AddressResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
-		DeletedAt = DeletedAt,
 		JsonData = JsonData,
 		Tags = Tags,
 		ZipCode = ZipCode,

@@ -10,7 +10,6 @@ public sealed class AgreementEntity : BaseEntity<TagAgreement, GeneralJsonData> 
 	public AgreementResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
-		DeletedAt = DeletedAt,
 		JsonData = JsonData,
 		Tags = Tags,
 		TerminalId = TerminalId,

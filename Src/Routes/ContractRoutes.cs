@@ -7,6 +7,5 @@ public static class ContractRoutes {
 		r.MapPost("Read", async (ContractReadParams p, IContractService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Produces<UResponse<IEnumerable<ContractResponse>>>();
 		r.MapPost("Update", async (ContractUpdateParams d, IContractService s, CancellationToken c) => (await s.Update(d, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("Delete", async (IdParams d, IContractService s, CancellationToken c) => (await s.Delete(d, c)).ToResult()).Produces<UResponse>();
-		r.MapPost("SoftDelete", async (SoftDeleteParams d, IContractService s, CancellationToken c) => (await s.SoftDelete(d, c)).ToResult()).Produces<UResponse>();
 	}
 }

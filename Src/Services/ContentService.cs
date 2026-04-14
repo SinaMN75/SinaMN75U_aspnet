@@ -5,7 +5,6 @@ public interface IContentService {
 	Task<UResponse<IEnumerable<ContentResponse>?>> Read(ContentReadParams p, CancellationToken ct);
 	Task<UResponse> Update(ContentUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
-	Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct);
 }
 
 public class ContentService(
@@ -71,14 +70,6 @@ public class ContentService(
 
 		await db.Set<ContentEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
-		return new UResponse();
-	}
-
-	public async Task<UResponse> SoftDelete(SoftDeleteParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-
-		await db.Set<ContentEntity>().Where(x => p.Id == x.Id).ExecuteUpdateAsync(x => x.SetProperty(y => y.DeletedAt, p.DateTime ?? DateTime.UtcNow), ct);
 		return new UResponse();
 	}
 }

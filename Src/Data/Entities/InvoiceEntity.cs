@@ -15,7 +15,6 @@ public sealed class InvoiceEntity : BaseEntity<TagInvoice, InvoiceJson> {
 	public InvoiceResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
-		DeletedAt = DeletedAt,
 		JsonData = JsonData,
 		Tags = Tags,
 		DebtAmount = DebtAmount,
