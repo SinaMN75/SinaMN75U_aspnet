@@ -17,6 +17,14 @@ public sealed class TerminalEntity : BaseEntity<TagTerminal, GeneralJsonData> {
 	[MaxLength(40)]
 	public string? Imei { get; set; }
 
+	[MaxLength(40)]
+	public string? MerchantId { get; set; }
+	
+	[MaxLength(40)]
+	public string? TerminalId { get; set; }
+
 	public required Guid CreatorId { get; set; }
 	public UserEntity Creator { get; set; } = null!;
+
+	public ICollection<AgreementEntity> Agreements { get; set; } = [];
 }

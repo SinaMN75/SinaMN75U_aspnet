@@ -95,7 +95,7 @@ public class ParkingService(
 				JsonData = new GeneralJsonData(),
 				Tags = [TagVehicle.Test],
 				LicencePlate = p.NumberPlate,
-				CreatorId = p.CreatorId ?? userData.Id,
+				CreatorId = p.CreatorId ?? userData.Id
 			}, ct);
 			vehicle = vEntity.Entity;
 		}

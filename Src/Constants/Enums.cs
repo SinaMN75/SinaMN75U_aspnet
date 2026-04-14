@@ -266,3 +266,10 @@ public enum TagInquiryHistory {
 	ItHub = 301,
 	Test = 999
 }
+
+public enum TagAgreement {
+	TerminalRequest = 101,
+	Signed = 201,
+	Verified = 202,
+	Test = 999
+}

@@ -98,6 +98,10 @@ public sealed class TxnSelectorArgs {
 	public InvoiceSelectorArgs? Invoice { get; set; }
 }
 
+public sealed class AgreementSelectorArgs {
+	public TerminalSelectorArgs? Terminal { get; set; }
+}
+
 public static class Projections {
 	public static Expression<Func<AddressEntity, AddressResponse>> AddressSelector(AddressSelectorArgs args) => x => new AddressResponse {
 		Id = x.Id,
@@ -327,7 +331,7 @@ public static class Projections {
 				BirthCertificateForth = x.Extra.BirthCertificateForth,
 				BirthCertificateFifth = x.Extra.BirthCertificateFifth,
 				VisualAuthentication = x.Extra.VisualAuthentication,
-				ESignature = x.Extra.ESignature,
+				ESignature = x.Extra.ESignature
 			}
 			: null
 	};
@@ -381,6 +385,54 @@ public static class Projections {
 				NationalCode = x.Creator.NationalCode,
 				Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
 				Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
+			}
+	};
+
+	public static Expression<Func<AgreementEntity, AgreementResponse>> VehicleSelector(AgreementSelectorArgs args) => x => new AgreementResponse {
+		Id = x.Id,
+		CreatedAt = x.CreatedAt,
+		UpdatedAt = x.UpdatedAt,
+		DeletedAt = x.DeletedAt,
+		Tags = x.Tags,
+		JsonData = x.JsonData,
+		TerminalId = x.TerminalId,
+		Agreement = x.Agreement,
+		Terminal = args.Terminal == null
+			? null
+			: new TerminalResponse {
+				Id = x.Terminal.Id,
+				CreatedAt = x.Terminal.CreatedAt,
+				UpdatedAt = x.Terminal.UpdatedAt,
+				DeletedAt = x.Terminal.DeletedAt,
+				JsonData = x.Terminal.JsonData,
+				Tags = x.Terminal.Tags,
+				Serial = x.Terminal.Serial,
+				SimCardNumber = x.Terminal.SimCardNumber,
+				SimCardSerial = x.Terminal.SimCardSerial,
+				Imei = x.Terminal.Imei,
+				CreatorId = x.Terminal.CreatorId,
+				TerminalId = x.Terminal.TerminalId,
+				MerchantId =  x.Terminal.MerchantId,
+				Creator = args.Terminal.Creator == null ? null : new UserResponse {
+					Id = x.Terminal.Creator.Id,
+					JsonData = x.Terminal.Creator.JsonData,
+					Tags = x.Terminal.Creator.Tags,
+					UserName = x.Terminal.Creator.UserName,
+					PhoneNumber = x.Terminal.Creator.PhoneNumber,
+					Email = x.Terminal.Creator.Email,
+					FirstName = x.Terminal.Creator.FirstName,
+					LastName = x.Terminal.Creator.LastName,
+					NationalCode = x.Terminal.Creator.NationalCode,
+					Media = args.Terminal.Creator.Media == null ? null : x.Terminal.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
+					Categories = args.Terminal.Creator.Category == null ? null : x.Terminal.Creator.Categories.AsQueryable().Select(CategorySelector(args.Terminal.Creator.Category)).ToList(),
+					Addresses = args.Terminal.Creator.Address == null ? null : x.Terminal.Creator.Addresses.AsQueryable().Select(AddressSelector(args.Terminal.Creator.Address)).ToList(),
+					BankAccounts = args.Terminal.Creator.BankAccount == null ? null : x.Terminal.Creator.BankAccounts.AsQueryable().Select(BankAccountSelector(args.Terminal.Creator.BankAccount)).ToList(),
+					Terminals = args.Terminal.Creator.Terminal == null ? null : x.Terminal.Creator.Terminals.AsQueryable().Select(TerminalSelector(args.Terminal.Creator.Terminal)).ToList(),
+					Invoices = args.Terminal.Creator.Invoice == null ? null : x.Terminal.Creator.Invoices.AsQueryable().Select(InvoiceSelector(args.Terminal.Creator.Invoice)).ToList(),
+					Txns = args.Terminal.Creator.Txns == null ? null : x.Terminal.Creator.Txns.AsQueryable().Select(TxnSelector(args.Terminal.Creator.Txns)).ToList(),
+					SimCards = args.Terminal.Creator.SimCard == null ? null : x.Terminal.Creator.SimCards.AsQueryable().Select(SimCardSelector(args.Terminal.Creator.SimCard)).ToList(),
+					Wallets = args.Terminal.Creator.Wallet == null ? null : x.Terminal.Creator.Wallets.AsQueryable().Select(WalletSelector(args.Terminal.Creator.Wallet)).ToList()
+				},
 			}
 	};
 
@@ -477,9 +529,26 @@ public static class Projections {
 		Serial = x.Serial,
 		JsonData = x.JsonData,
 		CreatorId = x.CreatorId,
+		TerminalId = x.TerminalId,
+		MerchantId =  x.MerchantId,
+		SimCardSerial =  x.SimCardSerial,
+		SimCardNumber =  x.SimCardNumber,
+		Imei = x.Imei,
 		Creator = args.Creator == null
 			? null
-			: x.Creator.MapToResponse()
+			: new UserResponse {
+				Id = x.Creator.Id,
+				JsonData = x.Creator.JsonData,
+				Tags = x.Creator.Tags,
+				UserName = x.Creator.UserName,
+				PhoneNumber = x.Creator.PhoneNumber,
+				Email = x.Creator.Email,
+				FirstName = x.Creator.FirstName,
+				LastName = x.Creator.LastName,
+				NationalCode = x.Creator.NationalCode,
+				Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList(),
+				Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList()
+			}
 	};
 
 	public static Expression<Func<TxnEntity, TxnResponse>> TxnSelector(TxnSelectorArgs args) => x => new TxnResponse {

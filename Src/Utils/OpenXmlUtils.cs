@@ -1,19 +1,16 @@
+using Syncfusion.DocIO;
+using Syncfusion.DocIO.DLS;
+
 namespace SinaMN75U.Utils;
 
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
-using Syncfusion.DocIO;
-using Syncfusion.DocIO.DLS;
-using Syncfusion.DocIORenderer;
 
-public class WordPdfGeneratorService {
-	// =========================
-	// 1. TEXT ONLY
-	// =========================
-	public async Task<string> GenerateWithTextsAsync(
+public class WordPdfGenerator {
+	public static async Task<string> GenerateWithTextsAsync(
 		Dictionary<string, string> texts,
 		string templatePath) {
-		var (docx, pdf) = CreateTempFiles(templatePath);
+		(string docx, string pdf) = CreateTempFiles(templatePath);
 
 		FillTexts(docx, texts);
 		ConvertToPdf(docx, pdf);
@@ -21,13 +18,10 @@ public class WordPdfGeneratorService {
 		return await ToBase64AndCleanup(docx, pdf);
 	}
 
-	// =========================
-	// 2. IMAGE ONLY
-	// =========================
-	public async Task<string> GenerateWithImagesAsync(
+	public static async Task<string> GenerateWithImagesAsync(
 		Dictionary<string, string> imagesBase64,
 		string templatePath) {
-		var (docx, pdf) = CreateTempFiles(templatePath);
+		(string docx, string pdf) = CreateTempFiles(templatePath);
 
 		InsertImages(docx, imagesBase64);
 		ConvertToPdf(docx, pdf);
@@ -35,14 +29,11 @@ public class WordPdfGeneratorService {
 		return await ToBase64AndCleanup(docx, pdf);
 	}
 
-	// =========================
-	// 3. TEXT + IMAGE
-	// =========================
-	public async Task<string> GenerateWithTextsAndImagesAsync(
+	public static async Task<string> GenerateWithTextsAndImagesAsync(
 		Dictionary<string, string> texts,
 		Dictionary<string, string> imagesBase64,
 		string templatePath) {
-		var (docx, pdf) = CreateTempFiles(templatePath);
+		(string docx, string pdf) = CreateTempFiles(templatePath);
 
 		FillTexts(docx, texts);
 		InsertImages(docx, imagesBase64);
@@ -51,47 +42,40 @@ public class WordPdfGeneratorService {
 
 		return await ToBase64AndCleanup(docx, pdf);
 	}
-
-	// =========================
-	// INTERNALS
-	// =========================
-
-	private (string docx, string pdf) CreateTempFiles(string templatePath) {
-		var tempDocx = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.docx");
-		var tempPdf = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.pdf");
+	
+	private static (string docx, string pdf) CreateTempFiles(string templatePath) {
+		string tempDocx = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.docx");
+		string tempPdf = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.pdf");
 
 		File.Copy(templatePath, tempDocx, true);
 
 		return (tempDocx, tempPdf);
 	}
 
-	private async Task<string> ToBase64AndCleanup(string docx, string pdf) {
-		var bytes = await File.ReadAllBytesAsync(pdf);
-		var base64 = Convert.ToBase64String(bytes);
+	private static async Task<string> ToBase64AndCleanup(string docx, string pdf) {
+		byte[] bytes = await File.ReadAllBytesAsync(pdf);
+		string base64 = Convert.ToBase64String(bytes);
 
 		File.Delete(docx);
 		File.Delete(pdf);
 
 		return base64;
 	}
+	
+	private static void FillTexts(string filePath, Dictionary<string, string> values) {
+		using WordprocessingDocument doc = WordprocessingDocument.Open(filePath, true);
 
-	// =========================
-	// TEXT (SDT)
-	// =========================
-	private void FillTexts(string filePath, Dictionary<string, string> values) {
-		using var doc = WordprocessingDocument.Open(filePath, true);
-
-		var sdtElements = doc.MainDocumentPart.Document
+		IEnumerable<SdtElement> sdtElements = doc.MainDocumentPart.Document
 			.Descendants<SdtElement>();
 
-		foreach (var sdt in sdtElements) {
-			var tag = sdt.SdtProperties?
+		foreach (SdtElement sdt in sdtElements) {
+			string? tag = sdt.SdtProperties?
 				.GetFirstChild<Tag>()?.Val?.Value;
 
 			if (tag == null || !values.ContainsKey(tag))
 				continue;
 
-			var textElement = sdt.Descendants<Text>().FirstOrDefault();
+			Text? textElement = sdt.Descendants<Text>().FirstOrDefault();
 			if (textElement != null) {
 				textElement.Text = values[tag];
 			}
@@ -99,32 +83,29 @@ public class WordPdfGeneratorService {
 
 		doc.MainDocumentPart.Document.Save();
 	}
+	
+	private static void InsertImages(string filePath, Dictionary<string, string> images) {
+		using WordprocessingDocument doc = WordprocessingDocument.Open(filePath, true);
+		MainDocumentPart? mainPart = doc.MainDocumentPart;
 
-	// =========================
-	// IMAGE (SDT)
-	// =========================
-	private void InsertImages(string filePath, Dictionary<string, string> images) {
-		using var doc = WordprocessingDocument.Open(filePath, true);
-		var mainPart = doc.MainDocumentPart;
+		foreach (KeyValuePair<string, string> pair in images) {
+			string tagName = pair.Key;
+			string base64 = pair.Value;
 
-		foreach (var pair in images) {
-			var tagName = pair.Key;
-			var base64 = pair.Value;
-
-			var sdt = doc.MainDocumentPart.Document
+			SdtElement? sdt = doc.MainDocumentPart.Document
 				.Descendants<SdtElement>()
 				.FirstOrDefault(s =>
 					s.SdtProperties?.GetFirstChild<Tag>()?.Val == tagName);
 
 			if (sdt == null) continue;
 
-			var imageBytes = Convert.FromBase64String(base64);
+			byte[] imageBytes = Convert.FromBase64String(base64);
 
-			var imagePart = mainPart.AddImagePart(ImagePartType.Png);
-			using var stream = new MemoryStream(imageBytes);
+			ImagePart imagePart = mainPart.AddImagePart(ImagePartType.Png);
+			using MemoryStream stream = new MemoryStream(imageBytes);
 			imagePart.FeedData(stream);
 
-			var drawing = CreateImage(mainPart.GetIdOfPart(imagePart));
+			Drawing drawing = CreateImage(mainPart.GetIdOfPart(imagePart));
 
 			sdt.RemoveAllChildren<SdtContentRun>();
 			sdt.AppendChild(new SdtContentRun(new Run(drawing)));
@@ -133,7 +114,7 @@ public class WordPdfGeneratorService {
 		doc.MainDocumentPart.Document.Save();
 	}
 
-	private Drawing CreateImage(string relId) {
+	private static Drawing CreateImage(string relId) {
 		return new Drawing(
 			new DocumentFormat.OpenXml.Drawing.Wordprocessing.Inline(
 				new DocumentFormat.OpenXml.Drawing.Wordprocessing.Extent()
@@ -153,18 +134,13 @@ public class WordPdfGeneratorService {
 			)
 		);
 	}
-
-	// =========================
-	// PDF
-	// =========================
-	private void ConvertToPdf(string inputDocx, string outputPdf) {
-		using var wordDoc = new WordDocument(inputDocx, FormatType.Docx);
-		using var renderer = new DocIORenderer();
-
-		var pdf = renderer.ConvertToPDF(wordDoc);
-
-		using var stream = new FileStream(outputPdf, FileMode.Create);
-		pdf.Save(stream);
-		pdf.Close(true);
+	
+	private static void ConvertToPdf(string inputDocx, string outputPdf) {
+		using WordDocument wordDoc = new WordDocument(inputDocx, FormatType.Docx);
+		// using var renderer = new DocIORenderer();
+		// var pdf = renderer.ConvertToPDF(wordDoc);
+		using FileStream stream = new FileStream(outputPdf, FileMode.Create);
+		// pdf.Save(stream);
+		// pdf.Close(true);
 	}
 }
