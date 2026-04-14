@@ -28,7 +28,6 @@ public class AuthService(
 		UserEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			UserName = p.UserName,
 			Email = p.Email,
 			PhoneNumber = p.PhoneNumber,
@@ -68,7 +67,6 @@ public class AuthService(
 		if (shahkarResponse.Result == null) return new UResponse(Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 		if (shahkarResponse.Result == false) return new UResponse(Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
 
-		e.UpdatedAt = DateTime.UtcNow;
 		e.NationalCode = p.NationalCode;
 		e.FirstName = p.FirstName;
 		e.LastName = p.LastName;
@@ -147,7 +145,6 @@ public class AuthService(
 		UserEntity e = new() {
 			Id = userId,
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			UserName = p.PhoneNumber,
 			Password = "SinaMN75",
 			RefreshToken = "SinaMN75",
@@ -158,7 +155,6 @@ public class AuthService(
 			Extra = new UserExtraEntity {
 				Id = Guid.CreateVersion7(),
 				CreatedAt = DateTime.UtcNow,
-				UpdatedAt = DateTime.UtcNow,
 				UserId = userId,
 				JsonData = new GeneralJsonData(),
 				Tags = []

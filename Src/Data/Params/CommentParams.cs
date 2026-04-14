@@ -18,7 +18,6 @@ public sealed class CommentUpdateParams : BaseUpdateParams<TagComment> {
 }
 
 public sealed class CommentReadParams : BaseReadParams<TagComment> {
-	public Guid? CreatorId { get; set; }
 	public Guid? ProductId { get; set; }
 	public Guid? UserId { get; set; }
 	public CommentSelectorArgs SelectorArgs { get; set; } = new();

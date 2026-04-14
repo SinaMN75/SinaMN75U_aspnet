@@ -29,7 +29,6 @@ public class CategoryService(
 		CategoryEntity e = new CategoryEntity {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			JsonData = new CategoryJson {
 				Subtitle = p.Subtitle,
 				Link = p.Link,
@@ -84,7 +83,6 @@ public class CategoryService(
 			}).ToList(),
 			Id = x.Id,
 			CreatedAt = x.CreatedAt,
-			UpdatedAt = x.UpdatedAt,
 			Tags = x.Tags,
 			JsonData = x.JsonData
 		}).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
@@ -98,7 +96,6 @@ public class CategoryService(
 		CategoryEntity? e = await db.Set<CategoryEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("CategoryNotFound"));
 
-		e.UpdatedAt = DateTime.UtcNow;
 		if (p.Title != null) e.Title = p.Title;
 		if (p.Subtitle != null) e.JsonData.Subtitle = p.Subtitle;
 		if (p.Link != null) e.JsonData.Link = p.Link;
@@ -180,7 +177,6 @@ public class CategoryService(
 	private static CategoryEntity FillData(CategoryCreateParams p, Guid? parentId = null) => new() {
 		Id = p.Id ?? Guid.CreateVersion7(),
 		CreatedAt = DateTime.UtcNow,
-		UpdatedAt = DateTime.UtcNow,
 		Title = p.Title,
 		Code = p.Code,
 		JsonData = new CategoryJson {

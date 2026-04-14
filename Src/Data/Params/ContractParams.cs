@@ -27,7 +27,6 @@ public sealed class ContractUpdateParams : BaseUpdateParams<TagContract> {
 public sealed class ContractReadParams : BaseReadParams<TagContract> {
 	public Guid? UserId { get; set; }
 	public string? UserName { get; set; }
-	public Guid? CreatorId { get; set; }
 	public Guid? ProductId { get; set; }
 	public DateTime? StartDate { get; set; }
 	public DateTime? EndDate { get; set; }

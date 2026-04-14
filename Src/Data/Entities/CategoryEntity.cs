@@ -23,7 +23,6 @@ public sealed class CategoryEntity : BaseEntity<TagCategory, CategoryJson> {
 	public CategoryResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
-		UpdatedAt = UpdatedAt,
 		DeletedAt = DeletedAt,
 		JsonData = JsonData,
 		Tags = Tags,

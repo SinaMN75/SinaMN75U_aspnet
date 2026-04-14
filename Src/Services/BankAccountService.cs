@@ -20,7 +20,6 @@ public class BankAccountService(
 		BankAccountEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			JsonData = new GeneralJsonData { Description = p.Description ?? "" },
 			Tags = p.Tags,
 			CardNumber = p.CardNumber,
@@ -58,7 +57,6 @@ public class BankAccountService(
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
 
-		e.UpdatedAt = DateTime.UtcNow;
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();

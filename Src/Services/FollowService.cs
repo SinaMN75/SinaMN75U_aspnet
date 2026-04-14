@@ -50,7 +50,6 @@ public class FollowService(
 		FollowEntity userFollower = new() {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			CreatorId = p.CreatorId.Value,
 			UserId = p.UserId,
 			ProductId = p.ProductId,

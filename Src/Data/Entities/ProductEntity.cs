@@ -54,7 +54,6 @@ public sealed class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	public ProductResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
-		UpdatedAt = UpdatedAt,
 		DeletedAt = DeletedAt,
 		JsonData = JsonData,
 		Tags = Tags,

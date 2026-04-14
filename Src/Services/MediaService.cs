@@ -45,7 +45,6 @@ public class MediaService(
 		MediaEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			Path = name,
 			UserId = p.UserId,
 			CategoryId = p.CategoryId,

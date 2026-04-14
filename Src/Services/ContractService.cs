@@ -28,7 +28,6 @@ public class ContractService(
 		ContractEntity e = new() {
 			Id = contractId,
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			StartDate = p.StartDate,
 			EndDate = p.EndDate,
 			Deposit = p.Deposit ?? product.Deposit ?? 0,
@@ -45,7 +44,6 @@ public class ContractService(
 			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 				Id = Guid.CreateVersion7(),
 				CreatedAt = DateTime.UtcNow,
-				UpdatedAt = DateTime.UtcNow,
 				Tags = [TagInvoice.NotPaid],
 				DebtAmount = e.Deposit + e.Rent,
 				CreditorAmount = 0,
@@ -67,7 +65,6 @@ public class ContractService(
 			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 				Id = Guid.CreateVersion7(),
 				CreatedAt = DateTime.UtcNow,
-				UpdatedAt = DateTime.UtcNow,
 				Tags = [TagInvoice.NotPaid, TagInvoice.Deposit],
 				DebtAmount = product.Deposit ?? 0,
 				CreditorAmount = 0,
@@ -92,7 +89,6 @@ public class ContractService(
 		await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
 			DebtAmount = rent,
 			CreditorAmount = 0,
@@ -114,7 +110,6 @@ public class ContractService(
 			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 				Id = Guid.CreateVersion7(),
 				CreatedAt = DateTime.UtcNow,
-				UpdatedAt = DateTime.UtcNow,
 				Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
 				DebtAmount = Math.Round(proportionalPrice, 2),
 				CreditorAmount = 0,
@@ -135,7 +130,6 @@ public class ContractService(
 			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 				Id = Guid.CreateVersion7(),
 				CreatedAt = DateTime.UtcNow,
-				UpdatedAt = DateTime.UtcNow,
 				Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
 				DebtAmount = rent,
 				CreditorAmount = 0,
@@ -178,7 +172,6 @@ public class ContractService(
 
 		ContractEntity e = (await db.Set<ContractEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
 		
-		e.UpdatedAt = DateTime.UtcNow;
 		if (p.Deposit.HasValue) e.Deposit = p.Deposit.Value;
 		if (p.Rent.HasValue) e.Rent = p.Rent.Value;
 		if (p.StartDate.HasValue) e.StartDate = p.StartDate.Value;

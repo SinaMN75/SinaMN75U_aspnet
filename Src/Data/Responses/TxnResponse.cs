@@ -1,9 +1,8 @@
 namespace SinaMN75U.Data.Responses;
 
-public sealed class TxnResponse : BaseResponse<TagTxn, TxnJson> {
+public sealed class TxnResponse : BaseResponse<TagTxn, GeneralJsonData> {
 	public decimal Amount { get; set; }
 	public string? TrackingNumber { get; set; }
-	public DateTime? PaidAt { get; set; }
 
 	public Guid? InvoiceId { get; set; }
 	public InvoiceResponse? Invoice { get; set; }

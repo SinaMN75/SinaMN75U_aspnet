@@ -28,10 +28,10 @@ public class AgreementService(
 		
 		string agreement = await WordPdfGenerator.GenerateWithTextsAndImagesAsync(
 			texts: new Dictionary<string, string> {
-				{ "nationalCode", user.NationalCode! },
+				{ "nationalCode", user.NationalCode! }
 			},
 			imagesBase64: new Dictionary<string, string> {
-				{ "customerSignature", user.Extra.ESignature! },
+				{ "customerSignature", user.Extra.ESignature! }
 			},
 			templatePath: Path.Combine(Directory.GetCurrentDirectory(), "Templates", "atmAgreement.docx")
 		);
@@ -39,7 +39,6 @@ public class AgreementService(
 		EntityEntry<AgreementEntity> e = await db.Set<AgreementEntity>().AddAsync(new AgreementEntity {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			JsonData = new GeneralJsonData(),
 			Tags = [TagAgreement.TerminalRequest, TagAgreement.Signed],
 			TerminalId = terminal.Id,

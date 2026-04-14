@@ -100,7 +100,6 @@ public class ProductService(
 		ProductEntity? e = await db.Set<ProductEntity>().AsTracking().Include(x => x.Categories).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ProductNotFound"));
 
-		e.UpdatedAt = DateTime.UtcNow;
 		if (p.Title.IsNotNull()) e.Title = p.Title;
 		if (p.Code.IsNotNull()) e.Code = p.Code;
 		if (p.Subtitle.IsNotNull()) e.Subtitle = p.Subtitle;
@@ -219,7 +218,6 @@ public class ProductService(
 		ProductEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			Title = p.Title,
 			Code = p.Code == "" ? null : p.Code,
 			Subtitle = p.Subtitle,

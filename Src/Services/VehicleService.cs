@@ -20,7 +20,6 @@ public class VehicleService(
 		VehicleEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			JsonData = new GeneralJsonData() { Title = p.Title ?? "" },
 			Tags = p.Tags,
 			LicencePlate = p.LicencePlate,
@@ -49,7 +48,6 @@ public class VehicleService(
 		VehicleEntity? e = await db.Set<VehicleEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("VehicleNotFound"));
 		
-		e.UpdatedAt = DateTime.UtcNow;
 		if (p.LicencePlate.IsNotNull()) e.LicencePlate = p.LicencePlate;
 		if (p.Brand.IsNotNull()) e.Brand = p.Brand;
 		if (p.Color.IsNotNull()) e.Color = p.Color;

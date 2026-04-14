@@ -19,7 +19,6 @@ public class TicketService(
 		TicketEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			JsonData = new TicketJson {
 				Title = p.Title,
 				Description = p.Description,
@@ -48,7 +47,6 @@ public class TicketService(
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		TicketEntity e = (await db.Set<TicketEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
-		e.UpdatedAt = DateTime.UtcNow;
 		if (p.Title.IsNotNullOrEmpty()) e.JsonData.Title = p.Title;
 		if (p.Description.IsNotNullOrEmpty()) e.JsonData.Description = p.Description;
 		if (p.Instagram.IsNotNullOrEmpty()) e.JsonData.Instagram = p.Instagram;

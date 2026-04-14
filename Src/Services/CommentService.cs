@@ -22,7 +22,6 @@ public class CommentService(
 		CommentEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			JsonData = new CommentJson(),
 			Tags = p.Tags,
 			Score = p.Score,

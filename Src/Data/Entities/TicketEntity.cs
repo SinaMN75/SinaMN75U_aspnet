@@ -10,7 +10,6 @@ public sealed class TicketEntity : BaseEntity<TagTicket, TicketJson> {
 	public TicketResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
-		UpdatedAt = UpdatedAt,
 		DeletedAt = DeletedAt,
 		JsonData = JsonData,
 		Tags = Tags,

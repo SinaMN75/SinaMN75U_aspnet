@@ -34,8 +34,7 @@ public class IpgService(IHttpClientService http, DbContext db) : IIpgService {
 		await db.Set<TxnEntity>().AddAsync(new TxnEntity {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
-			JsonData = new TxnJson { GatewayName = data.GatewayName },
+			JsonData = new GeneralJsonData(),
 			Tags = [TagTxn.ChargeWallet, TagTxn.Paid],
 			Amount = data.Amount,
 			TrackingNumber = data.TrackingNumber,
@@ -45,7 +44,6 @@ public class IpgService(IHttpClientService http, DbContext db) : IIpgService {
 		await db.Set<WalletTxnEntity>().AddAsync(new WalletTxnEntity {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			JsonData = new GeneralJsonData { Description = "شارژ کیف پول" },
 			Tags = [TagWalletTxn.Charge],
 			SenderId = Core.App.Ipg.IpgUserId,

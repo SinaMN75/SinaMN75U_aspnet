@@ -26,11 +26,10 @@ public class ParkingService(
 		ParkingEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			JsonData = new GeneralJsonData { Title = p.Title },
 			Tags = p.Tags,
 			Title = p.Title,
-			CreatorId = p.CreatorId,
+			CreatorId = p.CreatorId ?? userData.Id,
 			EntrancePrice = p.EntrancePrice,
 			HourlyPrice = p.HourlyPrice,
 			DailyPrice = p.DailyPrice
@@ -52,7 +51,6 @@ public class ParkingService(
 		ParkingEntity? e = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ParkingNotFound"));
 		
-		e.UpdatedAt = DateTime.UtcNow;
 		if (p.Title.IsNotNull()) e.JsonData.Title = p.Title;
 		if (p.EntrancePrice.IsNotNull()) e.EntrancePrice = p.EntrancePrice.Value;
 		if (p.HourlyPrice.IsNotNull()) e.HourlyPrice = p.HourlyPrice.Value;
@@ -91,7 +89,6 @@ public class ParkingService(
 			EntityEntry<VehicleEntity> vEntity = await db.Set<VehicleEntity>().AddAsync(new VehicleEntity {
 				Id = p.Id ?? Guid.CreateVersion7(),
 				CreatedAt = DateTime.UtcNow,
-				UpdatedAt = DateTime.UtcNow,
 				JsonData = new GeneralJsonData(),
 				Tags = [TagVehicle.Test],
 				LicencePlate = p.NumberPlate,
@@ -103,7 +100,6 @@ public class ParkingService(
 		ParkingReportEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			StartDate = p.StartDate,
 			CreatorId = p.CreatorId ?? userData.Id,
 			VehicleId = vehicle.Id,
@@ -129,7 +125,6 @@ public class ParkingService(
 		ParkingReportEntity? e = await db.Set<ParkingReportEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ParkingReportNotFound"));
 		
-		e.UpdatedAt = DateTime.UtcNow;
 		if (p.CreatorId.IsNotNull()) e.CreatorId = p.CreatorId.Value;
 		if (p.VehicleId.IsNotNull()) e.VehicleId = p.VehicleId.Value;
 		if (p.ParkingId.IsNotNull()) e.ParkingId = p.ParkingId.Value;

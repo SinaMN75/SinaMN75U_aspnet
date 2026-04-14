@@ -277,7 +277,6 @@ public class InquiryService(
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			JsonData = new GeneralJsonData { Description = "" },
 			Tags = isVerified ? [TagInquiryHistory.ValidateNationalCodeAndPhoneNumber, TagInquiryHistory.Verified] : [TagInquiryHistory.ValidateNationalCodeAndPhoneNumber, TagInquiryHistory.NotVerified],
 			NationalCode = nationalCode,
@@ -296,7 +295,6 @@ public class InquiryService(
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			JsonData = new GeneralJsonData { Description = "" },
 			Tags = [TagInquiryHistory.ItHub, TagInquiryHistory.ZipCodeToAddressDetail, TagInquiryHistory.Verified],
 			ZipCode = p.ZipCode,
@@ -314,7 +312,6 @@ public class InquiryService(
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			JsonData = new GeneralJsonData { Description = "" },
 			Tags = [TagInquiryHistory.ItHub, TagInquiryHistory.VehicleViolationsDetail],
 			PhoneNumber = p.PhoneNumber,
@@ -334,7 +331,6 @@ public class InquiryService(
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			JsonData = new GeneralJsonData { Description = "" },
 			Tags = [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceStatus],
 			PhoneNumber = p.PhoneNumber,
@@ -353,7 +349,6 @@ public class InquiryService(
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			JsonData = new GeneralJsonData { Description = "" },
 			Tags = [TagInquiryHistory.ItHub, TagInquiryHistory.LicencePlateStatus],
 			LicencePlate = p.LicencePlate,
@@ -372,7 +367,6 @@ public class InquiryService(
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			JsonData = new GeneralJsonData { Description = "" },
 			Tags = [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceNegativePoint],
 			NationalCode = p.NationalCode,

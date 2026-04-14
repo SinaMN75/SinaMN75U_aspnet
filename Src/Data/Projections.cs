@@ -218,7 +218,6 @@ public static class Projections {
 	public static Expression<Func<BankAccountEntity, BankAccountResponse>> BankAccountSelector(BankAccountSelectorArgs args) => x => new BankAccountResponse {
 		Id = x.Id,
 		CreatedAt = x.CreatedAt,
-		UpdatedAt = x.UpdatedAt,
 		DeletedAt = x.DeletedAt,
 		Tags = x.Tags,
 		CardNumber = x.CardNumber,
@@ -256,7 +255,6 @@ public static class Projections {
 	public static Expression<Func<SimCardEntity, SimCardResponse>> SimCardSelector(SimCardSelectorArgs args) => x => new SimCardResponse {
 		Id = x.Id,
 		CreatedAt = x.CreatedAt,
-		UpdatedAt = x.UpdatedAt,
 		DeletedAt = x.DeletedAt,
 		UserId = x.UserId,
 		JsonData = x.JsonData,
@@ -311,7 +309,6 @@ public static class Projections {
 		Birthdate = x.Birthdate,
 		NationalCode = x.NationalCode,
 		CreatedAt = x.CreatedAt,
-		UpdatedAt = x.UpdatedAt,
 		Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
 		Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 		Addresses = args.Address == null ? null : x.Addresses.AsQueryable().Select(AddressSelector(args.Address)).ToList(),
@@ -339,7 +336,6 @@ public static class Projections {
 	public static Expression<Func<ParkingEntity, ParkingResponse>> ParkingSelector(ParkingSelectorArgs args) => x => new ParkingResponse {
 		Id = x.Id,
 		CreatedAt = x.CreatedAt,
-		UpdatedAt = x.UpdatedAt,
 		DeletedAt = x.DeletedAt,
 		Tags = x.Tags,
 		JsonData = x.JsonData,
@@ -350,7 +346,6 @@ public static class Projections {
 	public static Expression<Func<ParkingReportEntity, ParkingReportResponse>> ParkingReportSelector(ParkingReportSelectorArgs args) => x => new ParkingReportResponse {
 		Id = x.Id,
 		CreatedAt = x.CreatedAt,
-		UpdatedAt = x.UpdatedAt,
 		DeletedAt = x.DeletedAt,
 		Tags = x.Tags,
 		JsonData = x.JsonData,
@@ -365,7 +360,6 @@ public static class Projections {
 	public static Expression<Func<VehicleEntity, VehicleResponse>> VehicleSelector(VehicleSelectorArgs args) => x => new VehicleResponse {
 		Id = x.Id,
 		CreatedAt = x.CreatedAt,
-		UpdatedAt = x.UpdatedAt,
 		DeletedAt = x.DeletedAt,
 		Tags = x.Tags,
 		JsonData = x.JsonData,
@@ -391,7 +385,6 @@ public static class Projections {
 	public static Expression<Func<AgreementEntity, AgreementResponse>> VehicleSelector(AgreementSelectorArgs args) => x => new AgreementResponse {
 		Id = x.Id,
 		CreatedAt = x.CreatedAt,
-		UpdatedAt = x.UpdatedAt,
 		DeletedAt = x.DeletedAt,
 		Tags = x.Tags,
 		JsonData = x.JsonData,
@@ -402,7 +395,6 @@ public static class Projections {
 			: new TerminalResponse {
 				Id = x.Terminal.Id,
 				CreatedAt = x.Terminal.CreatedAt,
-				UpdatedAt = x.Terminal.UpdatedAt,
 				DeletedAt = x.Terminal.DeletedAt,
 				JsonData = x.Terminal.JsonData,
 				Tags = x.Terminal.Tags,
@@ -432,7 +424,7 @@ public static class Projections {
 					Txns = args.Terminal.Creator.Txns == null ? null : x.Terminal.Creator.Txns.AsQueryable().Select(TxnSelector(args.Terminal.Creator.Txns)).ToList(),
 					SimCards = args.Terminal.Creator.SimCard == null ? null : x.Terminal.Creator.SimCards.AsQueryable().Select(SimCardSelector(args.Terminal.Creator.SimCard)).ToList(),
 					Wallets = args.Terminal.Creator.Wallet == null ? null : x.Terminal.Creator.Wallets.AsQueryable().Select(WalletSelector(args.Terminal.Creator.Wallet)).ToList()
-				},
+				}
 			}
 	};
 
@@ -554,7 +546,6 @@ public static class Projections {
 	public static Expression<Func<TxnEntity, TxnResponse>> TxnSelector(TxnSelectorArgs args) => x => new TxnResponse {
 		Id = x.Id,
 		CreatedAt = x.CreatedAt,
-		UpdatedAt = x.UpdatedAt,
 		DeletedAt = x.DeletedAt,
 		Tags = x.Tags,
 		Amount = x.Amount,

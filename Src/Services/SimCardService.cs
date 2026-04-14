@@ -20,7 +20,6 @@ public class SimCardService(
 		SimCardEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			JsonData = new GeneralJsonData { Description = p.Description ?? "" },
 			Tags = p.Tags,
 			UserId = p.CreatorId ?? userData.Id,
@@ -38,8 +37,6 @@ public class SimCardService(
 
 		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
 		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
-		if (p.OrderByUpdatedAt) q = q.OrderBy(x => x.UpdatedAt);
-		if (p.OrderByUpdatedAtDesc) q = q.OrderByDescending(x => x.UpdatedAt);
 		if (p.CreatorId != null) q = q.Where(x => x.UserId == p.CreatorId);
 
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => p.Tags.All(tag => x.Tags.Contains(tag)));

@@ -2,7 +2,6 @@ namespace SinaMN75U.Data.Params;
 
 public sealed class ParkingCreateParams : BaseCreateParams<TagParking> {
 	public required string Title { get; set; }
-	public required Guid CreatorId { get; set; }
 	public required decimal EntrancePrice { get; set; }
 	public required decimal HourlyPrice { get; set; }
 	public required decimal DailyPrice { get; set; }
@@ -22,7 +21,6 @@ public sealed class ParkingUpdateParams : BaseUpdateParams<TagParking> {
 
 public sealed class ParkingReadParams : BaseReadParams<TagParking> {
 	public string? Title { get; set; }
-	public Guid? CreatorId { get; set; }
 	public IEnumerable<Guid> Users { get; set; } = [];
 
 	public required ParkingSelectorArgs SelectorArgs { get; set; }
@@ -48,7 +46,6 @@ public sealed class ParkingReportUpdateParams : BaseUpdateParams<TagParkingRepor
 }
 
 public sealed class ParkingReportReadParams : BaseReadParams<TagParking> {
-	public Guid? CreatorId { get; set; }
 	public Guid? VehicleId { get; set; }
 	public Guid? ParkingId { get; set; }
 	public DateTime? StartDate { get; set; }

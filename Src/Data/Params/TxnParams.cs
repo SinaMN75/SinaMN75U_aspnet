@@ -1,11 +1,9 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class TxnCreateParams : BaseCreateParams<TagTxn> {
-	public required Guid ReservationId { get; set; }
 	public required decimal Amount { get; set; }
 	public required string TrackingNumber { get; set; }
 	public required Guid InvoiceId { get; set; }
-	public string? GatewayName { get; set; }
 }
 
 public sealed class TxnUpdateParams : BaseUpdateParams<TagTxn> {

@@ -6,10 +6,7 @@ public class BaseEntity<T, TJ> where T : Enum where TJ : class {
 
 	[Required]
 	public required DateTime CreatedAt { get; set; }
-
-	[Required]
-	public required DateTime UpdatedAt { get; set; }
-
+	
 	public DateTime? DeletedAt { get; set; }
 
 	[Required]

@@ -11,7 +11,6 @@ public sealed class WalletEntity : BaseEntity<TagWallet, GeneralJsonData> {
 	public WalletResponse MapToResponse() => new() {
 		Id = Id,
 		CreatedAt = CreatedAt,
-		UpdatedAt = UpdatedAt,
 		DeletedAt = DeletedAt,
 		JsonData = JsonData,
 		Tags = Tags,

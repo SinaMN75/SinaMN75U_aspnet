@@ -19,10 +19,7 @@ public class TxnService(
 		TxnEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
-			JsonData = new TxnJson {
-				GatewayName = p.GatewayName
-			},
+			JsonData = new GeneralJsonData(),
 			Tags = p.Tags,
 			Amount = p.Amount,
 			TrackingNumber = p.TrackingNumber,
@@ -45,7 +42,6 @@ public class TxnService(
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		TxnEntity e = (await db.Set<TxnEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
-		e.UpdatedAt = DateTime.UtcNow;
 
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));

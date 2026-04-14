@@ -20,7 +20,6 @@ public class WalletService(
 		WalletEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			UserId = userId,
 			JsonData = new GeneralJsonData(),
 			Tags = [],
@@ -37,7 +36,6 @@ public class WalletService(
 		UserEntity receiver = (await db.Set<UserEntity>().Select(x => new UserEntity {
 			Id = x.Id,
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			JsonData = x.JsonData,
 			Tags = x.Tags
 		}).FirstOrDefaultAsync(x => x.UserName == Core.App.ItHub.WalletOwnerUserName, ct))!;
@@ -90,7 +88,6 @@ public class WalletService(
 		await db.Set<WalletTxnEntity>().AddAsync(new WalletTxnEntity {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			SenderId = senderId,
 			ReceiverId = p.ReceiverId,
 			Amount = p.Amount,

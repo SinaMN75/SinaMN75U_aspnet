@@ -34,9 +34,9 @@ public static class UExtensions {
 				collection.Add(item);
 	}
 
-	public static void RemoveRangeIfExist<T>(this IEnumerable<T>? enumerable, IEnumerable<T> itemsToRemove) => enumerable.RemoveAll(item => new HashSet<T>(itemsToRemove).Contains((T)item));
+	public static void RemoveRangeIfExist<T>(this IEnumerable<T>? enumerable, IEnumerable<T> itemsToRemove) => enumerable.RemoveAll(item => new HashSet<T>(itemsToRemove).Contains(item));
 
-	public static IEnumerable<T> RemoveAll<T>(this IEnumerable<T>? enumerable, Func<T, bool> predicate) => enumerable.Where(item => !predicate(item));
+	public static IEnumerable<T> RemoveAll<T>(this IEnumerable<T>? enumerable, Func<T, bool> predicate) => enumerable?.Where(item => !predicate(item)) ?? [];
 
 	public static bool ContainsSafe<T>(this IEnumerable<T>? enumerable, T item) => enumerable != null && enumerable.Contains(item);
 

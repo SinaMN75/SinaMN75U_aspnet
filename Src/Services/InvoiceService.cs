@@ -22,7 +22,6 @@ public class InvoiceService(
 		EntityEntry<InvoiceEntity> e = await db.AddAsync(new InvoiceEntity {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			Tags = p.Tags,
 			DebtAmount = p.DebtAmount,
 			CreditorAmount = p.CreditorAmount,
@@ -51,8 +50,6 @@ public class InvoiceService(
 
 		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
 		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
-		if (p.OrderByUpdatedAt) q = q.OrderBy(x => x.UpdatedAt);
-		if (p.OrderByUpdatedAtDesc) q = q.OrderByDescending(x => x.UpdatedAt);
 
 		UResponse<IEnumerable<InvoiceResponse>?> response = await q.Select(Projections.InvoiceSelector(p.SelectorArgs)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 		List<Guid> ids = response.Result!.Select(x => x.Id).ToList();
@@ -88,7 +85,6 @@ public class InvoiceService(
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		InvoiceEntity e = (await db.Set<InvoiceEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
-		e.UpdatedAt = DateTime.UtcNow;
 		if (p.CreditorAmount.IsNotNull()) e.CreditorAmount = p.CreditorAmount.Value;
 		if (p.DebtAmount.IsNotNull()) e.DebtAmount = p.DebtAmount.Value;
 		if (p.PenaltyAmount.IsNotNull()) e.PenaltyAmount = p.PenaltyAmount.Value;

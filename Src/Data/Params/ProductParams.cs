@@ -75,7 +75,6 @@ public sealed class ProductReadParams : BaseReadParams<TagProduct> {
 	public string? Code { get; set; }
 	public string? Slug { get; set; }
 	public Guid? ParentId { get; set; }
-	public Guid? CreatorId { get; set; }
 	public int? MinStock { get; set; }
 	public int? MaxStock { get; set; }
 	public decimal? MinDeposit { get; set; }

@@ -1,9 +1,7 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class AddressCreateParams : BaseCreateParams<TagAddress> {
-	[UValidationRequired("TitleRequired")]
-	public required string Title { get; set; }
-
+	public string? Title { get; set; }
 	public string? Province { get; set; }
 	public string? Township { get; set; }
 	public string? Street { get; set; }

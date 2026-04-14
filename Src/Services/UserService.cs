@@ -28,7 +28,6 @@ public class UserService(
 		UserEntity e = new() {
 			Id = userId,
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			JsonData = new UserJson {
 				FcmToken = p.FcmToken,
 				Address = p.Address,
@@ -106,7 +105,6 @@ public class UserService(
 			},
 			Tags = userParam.Tags,
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			Categories = categories.Where(c => userParam.Categories?.Contains(c.Id) ?? false).ToList()
 		}));
 
@@ -132,8 +130,6 @@ public class UserService(
 
 		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
 		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
-		if (p.OrderByUpdatedAt) q = q.OrderBy(x => x.UpdatedAt);
-		if (p.OrderByUpdatedAtDesc) q = q.OrderByDescending(x => x.UpdatedAt);
 		if (p.OrderByLastName) q = q.OrderBy(x => x.LastName);
 		if (p.OrderByLastNameDesc) q = q.OrderByDescending(x => x.LastName);
 
@@ -162,7 +158,6 @@ public class UserService(
 			e.Categories.AddRangeIfNotExist(list);
 		}
 
-		e.UpdatedAt = DateTime.UtcNow;
 		db.Set<UserEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
 
@@ -202,7 +197,6 @@ public class UserService(
 		await db.Set<UserExtraEntity>().AddAsync(new UserExtraEntity {
 			Id = userId,
 			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
 			UserId = userId,
 			JsonData = new GeneralJsonData(),
 			Tags = []
