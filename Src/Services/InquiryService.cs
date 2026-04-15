@@ -7,6 +7,7 @@ public interface IInquiryService {
 	Task<UResponse<DrivingLicenceStatusResponse?>> GetDrivingLicenceStatus(DrivingLicenceStatusParams p, CancellationToken ct);
 	Task<UResponse<LicencePlateInquiryResponse?>> InquiryLicencePlate(LicencePlateInquiryParams p, CancellationToken ct);
 	Task<UResponse<DrivingLicenceNegativePointResponse?>> DrivingLicenceNegativePoint(DrivingLicenceNegativePointParams p, CancellationToken ct);
+	Task<UResponse<IBanToBankAccountDetailResponse?>> IBanToBankAccountDetail(IBanToBankAccountDetailParams p, CancellationToken ct);
 }
 
 public class InquiryService(
@@ -251,6 +252,37 @@ public class InquiryService(
 		});
 	}
 
+	public async Task<UResponse<IBanToBankAccountDetailResponse?>> IBanToBankAccountDetail(IBanToBankAccountDetailParams p, CancellationToken ct) {
+		string? responseBody = await ReadIBanToBankAccountDetailHistory(p, ct);
+
+		if (responseBody == null) {
+			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
+			if (tokenResponse?.AccessToken == null) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+
+			HttpResponseMessage? response = await httpClient.Post(
+				"https://api-ithub.itsaaz.ir/api/v1/CarServices/DriversLicensePointsInquiry",
+				new {
+					iban = p.IBan
+				},
+				new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
+			);
+			if (response == null) return new UResponse<IBanToBankAccountDetailResponse?>(null);
+
+			responseBody = await response.Content.ReadAsStringAsync(ct);
+			await CreateIBanToBankAccountDetailHistory(responseBody, p, ct);
+		}
+
+		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data");
+
+		return new UResponse<IBanToBankAccountDetailResponse?>(new IBanToBankAccountDetailResponse {
+			DepositNumber = data.GetStringOrNull("depositNumber"),
+			IBanType = data.GetStringOrNull("iBanType"),
+			BankCode = data.GetStringOrNull("bankCode"),
+			BankName = data.GetStringOrNull("bankName"),
+			OwnerName = data.GetProperty("ownersInfo").EnumerateArray().Select(x => $"{x.GetStringOrNull("firstName")} {x.GetStringOrNull("lastName")}").First()
+		});
+	}
+
 	private async Task<GetAccessTokenResponse?> GetAccessToken(CancellationToken ct) {
 		HttpResponseMessage? response = await httpClient.PostForm(
 			"https://gateway.itsaaz.ir/sts/connect/token",
@@ -379,6 +411,23 @@ public class InquiryService(
 
 	private async Task<string?> ReadDrivingLicenceNegativePointHistory(DrivingLicenceNegativePointParams p, CancellationToken ct) {
 		InquiryHistoryEntity? e = await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.DrivingLicenceNumber == p.DrivingLicenceNumber && x.NationalCode == p.NationalCode && x.PhoneNumber == p.PhoneNumber && x.Tags.Contains(TagInquiryHistory.DrivingLicenceNegativePoint), ct);
+		return e?.Response;
+	}
+	
+	private async Task CreateIBanToBankAccountDetailHistory(string responseBody, IBanToBankAccountDetailParams p, CancellationToken ct) {
+		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			JsonData = new GeneralJsonData { Description = "" },
+			Tags = [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceNegativePoint],
+			IBan = p.IBan,
+			Response = responseBody
+		}, ct);
+		await db.SaveChangesAsync(ct);
+	}
+
+	private async Task<string?> ReadIBanToBankAccountDetailHistory(IBanToBankAccountDetailParams p, CancellationToken ct) {
+		InquiryHistoryEntity? e = await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.IBan == p.IBan && x.Tags.Contains(TagInquiryHistory.IBanToBankAccountDetail), ct);
 		return e?.Response;
 	}
 }

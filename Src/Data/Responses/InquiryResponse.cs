@@ -88,3 +88,11 @@ public sealed class DrivingLicenceNegativePointResponse {
 	public bool? Allowable { get; set; }
 	public string? RuleId { get; set; }
 }
+
+public sealed class IBanToBankAccountDetailResponse {
+	public string? DepositNumber { get; set; }
+	public string? IBanType { get; set; }
+	public string? BankCode { get; set; }
+	public string? BankName { get; set; }
+	public string? OwnerName { get; set; }
+}

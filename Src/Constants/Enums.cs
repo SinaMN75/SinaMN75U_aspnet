@@ -261,6 +261,7 @@ public enum TagInquiryHistory {
 	DrivingLicenceStatus = 104,
 	LicencePlateStatus = 105,
 	DrivingLicenceNegativePoint = 106,
+	IBanToBankAccountDetail = 107,
 	Verified = 201,
 	NotVerified = 202,
 	ItHub = 301,

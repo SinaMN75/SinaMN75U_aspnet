@@ -30,3 +30,8 @@ public sealed class DrivingLicenceNegativePointParams {
 	public required string PhoneNumber { get; set; }
 	public required string DrivingLicenceNumber { get; set; }
 }
+
+public sealed class IBanToBankAccountDetailParams {
+	public required string IBan { get; set; }
+}
+
