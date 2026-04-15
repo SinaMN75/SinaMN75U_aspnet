@@ -26,7 +26,7 @@ public class BankAccountService(
 			IBanNumber = p.IBanNumber,
 			BankName = p.BankName,
 			OwnerName = p.OwnerName,
-			UserId = p.UserId ?? userData.Id
+			CreatorId = p.CreatorId ?? userData.Id
 		};
 
 		await db.AddAsync(e, ct);

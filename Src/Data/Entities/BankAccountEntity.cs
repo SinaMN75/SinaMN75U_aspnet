@@ -17,6 +17,6 @@ public sealed class BankAccountEntity : BaseEntity<TagBankAccount, GeneralJsonDa
 	[MaxLength(100)]
 	public string? OwnerName { get; set; }
 
-	public required Guid UserId { get; set; }
-	public UserEntity User { get; set; } = null!;
+	public required Guid CreatorId { get; set; }
+	public UserEntity Creator { get; set; } = null!;
 }

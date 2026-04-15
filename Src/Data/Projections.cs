@@ -21,7 +21,7 @@ public sealed class ContentSelectorArgs {
 }
 
 public sealed class BankAccountSelectorArgs {
-	public UserSelectorArgs? User { get; set; }
+	public UserSelectorArgs? Creator { get; set; }
 }
 
 public sealed class SimCardSelectorArgs {
@@ -224,29 +224,29 @@ public static class Projections {
 		IBanNumber = x.IBanNumber,
 		BankName = x.BankName,
 		OwnerName = x.OwnerName,
-		UserId = x.UserId,
+		CreatorId = x.CreatorId,
 		JsonData = x.JsonData,
-		User = args.User == null
+		Creator = args.Creator == null
 			? null
 			: new UserResponse {
-				Id = x.User.Id,
-				JsonData = x.User.JsonData,
-				Tags = x.User.Tags,
-				UserName = x.User.UserName,
-				PhoneNumber = x.User.PhoneNumber,
-				Email = x.User.Email,
-				FirstName = x.User.FirstName,
-				LastName = x.User.LastName,
-				NationalCode = x.User.NationalCode,
-				Media = args.User.Media == null
+				Id = x.Creator.Id,
+				JsonData = x.Creator.JsonData,
+				Tags = x.Creator.Tags,
+				UserName = x.Creator.UserName,
+				PhoneNumber = x.Creator.PhoneNumber,
+				Email = x.Creator.Email,
+				FirstName = x.Creator.FirstName,
+				LastName = x.Creator.LastName,
+				NationalCode = x.Creator.NationalCode,
+				Media = args.Creator.Media == null
 					? null
-					: x.User.Media.AsQueryable()
+					: x.Creator.Media.AsQueryable()
 						.Select(MediaSelector())
 						.ToList(),
-				Categories = args.User.Category == null
+				Categories = args.Creator.Category == null
 					? null
-					: x.User.Categories.AsQueryable()
-						.Select(CategorySelector(args.User.Category))
+					: x.Creator.Categories.AsQueryable()
+						.Select(CategorySelector(args.Creator.Category))
 						.ToList()
 			}
 	};

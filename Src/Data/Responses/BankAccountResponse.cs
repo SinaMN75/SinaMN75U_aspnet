@@ -7,6 +7,6 @@ public sealed class BankAccountResponse : BaseResponse<TagBankAccount, GeneralJs
 	public string? BankName { get; set; }
 	public string? OwnerName { get; set; }
 
-	public Guid? UserId { get; set; }
-	public UserResponse? User { get; set; }
+	public Guid? CreatorId { get; set; }
+	public UserResponse? Creator { get; set; }
 }
