@@ -20,10 +20,6 @@ public sealed class UserCreateParams : BaseCreateParams<TagUser> {
 	public string? LastName { get; set; }
 	public string? NationalCode { get; set; }
 	public string? Bio { get; set; }
-	public string? Country { get; set; }
-	public string? State { get; set; }
-	public string? City { get; set; }
-	public string? Address { get; set; }
 	public string? FatherName { get; set; }
 	public string? FcmToken { get; set; }
 	public decimal? Weight { get; set; }
@@ -42,16 +38,12 @@ public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {
 	public string? Password { get; set; }
 	public string? FirstName { get; set; }
 	public string? LastName { get; set; }
-	public string? Country { get; set; }
-	public string? State { get; set; }
-	public string? City { get; set; }
 	public string? UserName { get; set; }
 	public string? PhoneNumber { get; set; }
 	public string? Email { get; set; }
 	public string? Bio { get; set; }
 	public DateTime? Birthdate { get; set; }
 	public string? FcmToken { get; set; }
-	public string? Address { get; set; }
 	public string? FatherName { get; set; }
 	public string? NationalCode { get; set; }
 	public decimal? Weight { get; set; }

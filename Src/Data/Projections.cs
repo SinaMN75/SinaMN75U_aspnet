@@ -301,9 +301,6 @@ public static class Projections {
 		FirstName = x.FirstName,
 		LastName = x.LastName,
 		Bio = x.Bio,
-		Country = x.Country,
-		State = x.State,
-		City = x.City,
 		Birthdate = x.Birthdate,
 		NationalCode = x.NationalCode,
 		CreatedAt = x.CreatedAt,
@@ -548,7 +545,7 @@ public static class Projections {
 		Invoice = args.Invoice == null
 			? null
 			: new InvoiceResponse {
-				DebtAmount = x.Invoice.DebtAmount,
+				DebtAmount = x.Invoice!.DebtAmount,
 				CreditorAmount = x.Invoice.CreditorAmount,
 				PaidAmount = x.Invoice.PaidAmount,
 				PenaltyAmount = x.Invoice.PenaltyAmount,

@@ -37,15 +37,6 @@ public sealed class UserEntity : BaseEntity<TagUser, UserJson> {
 	[MaxLength(1000)]
 	public string? Bio { get; set; }
 
-	[MaxLength(100)]
-	public string? Country { get; set; }
-
-	[MaxLength(100)]
-	public string? State { get; set; }
-
-	[MaxLength(100)]
-	public string? City { get; set; }
-
 	public DateTime? Birthdate { get; set; }
 
 	[Required]
@@ -87,16 +78,12 @@ public sealed class UserEntity : BaseEntity<TagUser, UserJson> {
 		FirstName = FirstName,
 		LastName = LastName,
 		Bio = Bio,
-		Country = Country,
-		State = State,
-		City = City,
 		Birthdate = Birthdate
 	};
 }
 
 public sealed class UserJson {
 	public string? FcmToken { get; set; }
-	public string? Address { get; set; }
 	public string? FatherName { get; set; }
 	public decimal? Weight { get; set; }
 	public decimal? Height { get; set; }

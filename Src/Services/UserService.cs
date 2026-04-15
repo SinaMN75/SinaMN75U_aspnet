@@ -30,7 +30,6 @@ public class UserService(
 			CreatedAt = DateTime.UtcNow,
 			JsonData = new UserJson {
 				FcmToken = p.FcmToken,
-				Address = p.Address,
 				FatherName = p.FatherName,
 				Weight = p.Weight,
 				Height = p.Height,
@@ -46,9 +45,6 @@ public class UserService(
 			FirstName = p.FirstName,
 			LastName = p.LastName,
 			Bio = p.Bio,
-			Country = p.Country,
-			State = p.State,
-			City = p.City,
 			Birthdate = p.Birthdate
 		};
 
@@ -91,16 +87,12 @@ public class UserService(
 			FirstName = userParam.FirstName,
 			LastName = userParam.LastName,
 			Bio = userParam.Bio,
-			Country = userParam.Country,
-			State = userParam.State,
-			City = userParam.City,
 			Birthdate = userParam.Birthdate,
 			NationalCode = userParam.NationalCode,
 			JsonData = new UserJson {
 				FcmToken = userParam.FcmToken,
 				Weight = userParam.Weight,
 				Height = userParam.Height,
-				Address = userParam.Address,
 				FatherName = userParam.FatherName
 			},
 			Tags = userParam.Tags,

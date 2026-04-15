@@ -10,6 +10,9 @@ public sealed class AppSettings {
 	public required ItHub ItHub { get; init; }
 	public required BasicSettings BasicSettings { get; init; }
 	public required Ipg Ipg { get; init; }
+	public ICollection<UserEntity> DefaultUsers { get; set; } = [
+		
+	];
 }
 
 public sealed class ConnectionStrings {
