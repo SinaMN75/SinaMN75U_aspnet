@@ -17,8 +17,6 @@ public sealed class TicketCreateParams : BaseParams {
 }
 
 public sealed class TicketUpdateParams : BaseUpdateParams<TagTicket> {
-	public string? Title { get; set; }
-	public string? Description { get; set; }
 	public string? Instagram { get; set; }
 	public string? Telegram { get; set; }
 	public string? Whatsapp { get; set; }

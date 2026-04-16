@@ -23,8 +23,6 @@ public sealed class InvoiceCreateParams : BaseCreateParams<TagInvoice> {
 
 	[UValidationRequired("DateRequired")]
 	public DateTime DueDate { get; set; }
-
-	public required string Description { get; set; }
 }
 
 public sealed class InvoiceUpdateParams : BaseUpdateParams<TagInvoice> {
@@ -34,7 +32,6 @@ public sealed class InvoiceUpdateParams : BaseUpdateParams<TagInvoice> {
 	public decimal? PenaltyAmount { get; set; }
 	public int? PenaltyPrecentEveryDate { get; set; }
 	public DateTime? DueDate { get; set; }
-	public string? Description { get; set; }
 	public Guid? UserId { get; set; }
 	public Guid? ContractId { get; set; }
 }

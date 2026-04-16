@@ -84,6 +84,8 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IBankAccountService, BankAccountService>();
 		builder.Services.AddScoped<IIpgService, IpgService>();
 		builder.Services.AddScoped<ISimCardService, SimCardService>();
+		builder.Services.AddScoped<INotificationService, NotificationService>();
+		builder.Services.AddScoped<IDataSeedService, DataSeedService>();
 	}
 
 	public static void UseUServices(this WebApplication app) {
@@ -122,7 +124,9 @@ public static partial class AspNetConfig {
 		app.MapTerminalRoutes(RouteTags.Terminal);
 		app.MapBankAccountRoutes(RouteTags.BankAccount);
 		app.MapIpgRoutes(RouteTags.Ipg);
-		app.MapIpgRoutes(RouteTags.SimCard);
+		app.MapSimCardRoutes(RouteTags.SimCard);
+		app.MapNotificationRoutes(RouteTags.Notification);
+		app.MapDashboardRoutes(RouteTags.DataSeeder);
 	}
 
 	private static string CleanAndFormatSql(string sql) {

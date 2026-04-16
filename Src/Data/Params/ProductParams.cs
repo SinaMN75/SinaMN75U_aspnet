@@ -1,12 +1,8 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class ProductCreateParams : BaseCreateParams<TagProduct> {
-	[UValidationRequired("TitleRequired")]
-	public required string Title { get; set; }
-
 	public string? Code { get; set; }
 	public string? Subtitle { get; set; }
-	public string? Description { get; set; }
 	public string? ActionType { get; set; }
 	public string? ActionTitle { get; set; }
 	public string? ActionUri { get; set; }

@@ -41,6 +41,11 @@ public sealed class WalletTxnSelectorArgs {
 	public UserSelectorArgs Receiver { get; set; } = new();
 }
 
+public sealed class NotificationSelectorArgs {
+	public UserSelectorArgs Creator { get; set; } = new();
+	public UserSelectorArgs User { get; set; } = new();
+}
+
 public sealed class WalletSelectorArgs {
 	public UserSelectorArgs? User { get; set; }
 }
@@ -181,6 +186,40 @@ public static class Projections {
 				: x.Receiver.Categories.AsQueryable()
 					.Select(CategorySelector(args.Receiver.Category))
 					.ToList()
+		}
+	};
+
+	public static Expression<Func<NotificationEntity, NotificationResponse>> NotificationSelector(NotificationSelectorArgs args) => x => new NotificationResponse {
+		Id = x.Id,
+		Tags = x.Tags,
+		JsonData = x.JsonData,
+		CreatorId = x.CreatorId,
+		UserId = x.Userd,
+		Creator = new UserResponse {
+			Id = x.Creator.Id,
+			JsonData = x.Creator.JsonData,
+			Tags = x.Creator.Tags,
+			UserName = x.Creator.UserName,
+			PhoneNumber = x.Creator.PhoneNumber,
+			Email = x.Creator.Email,
+			FirstName = x.Creator.FirstName,
+			LastName = x.Creator.LastName,
+			NationalCode = x.Creator.NationalCode,
+			Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
+			Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
+		},
+		User = new UserResponse {
+			Id = x.User.Id,
+			JsonData = x.User.JsonData,
+			Tags = x.User.Tags,
+			UserName = x.User.UserName,
+			PhoneNumber = x.User.PhoneNumber,
+			Email = x.User.Email,
+			FirstName = x.User.FirstName,
+			LastName = x.User.LastName,
+			NationalCode = x.User.NationalCode,
+			Media = args.User.Media == null ? null : x.User.Media.AsQueryable().Select(MediaSelector()).ToList(),
+			Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList()
 		}
 	};
 
@@ -394,27 +433,29 @@ public static class Projections {
 				Imei = x.Terminal.Imei,
 				CreatorId = x.Terminal.CreatorId,
 				TerminalId = x.Terminal.TerminalId,
-				MerchantId =  x.Terminal.MerchantId,
-				Creator = args.Terminal.Creator == null ? null : new UserResponse {
-					Id = x.Terminal.Creator.Id,
-					JsonData = x.Terminal.Creator.JsonData,
-					Tags = x.Terminal.Creator.Tags,
-					UserName = x.Terminal.Creator.UserName,
-					PhoneNumber = x.Terminal.Creator.PhoneNumber,
-					Email = x.Terminal.Creator.Email,
-					FirstName = x.Terminal.Creator.FirstName,
-					LastName = x.Terminal.Creator.LastName,
-					NationalCode = x.Terminal.Creator.NationalCode,
-					Media = args.Terminal.Creator.Media == null ? null : x.Terminal.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
-					Categories = args.Terminal.Creator.Category == null ? null : x.Terminal.Creator.Categories.AsQueryable().Select(CategorySelector(args.Terminal.Creator.Category)).ToList(),
-					Addresses = args.Terminal.Creator.Address == null ? null : x.Terminal.Creator.Addresses.AsQueryable().Select(AddressSelector(args.Terminal.Creator.Address)).ToList(),
-					BankAccounts = args.Terminal.Creator.BankAccount == null ? null : x.Terminal.Creator.BankAccounts.AsQueryable().Select(BankAccountSelector(args.Terminal.Creator.BankAccount)).ToList(),
-					Terminals = args.Terminal.Creator.Terminal == null ? null : x.Terminal.Creator.Terminals.AsQueryable().Select(TerminalSelector(args.Terminal.Creator.Terminal)).ToList(),
-					Invoices = args.Terminal.Creator.Invoice == null ? null : x.Terminal.Creator.Invoices.AsQueryable().Select(InvoiceSelector(args.Terminal.Creator.Invoice)).ToList(),
-					Txns = args.Terminal.Creator.Txns == null ? null : x.Terminal.Creator.Txns.AsQueryable().Select(TxnSelector(args.Terminal.Creator.Txns)).ToList(),
-					SimCards = args.Terminal.Creator.SimCard == null ? null : x.Terminal.Creator.SimCards.AsQueryable().Select(SimCardSelector(args.Terminal.Creator.SimCard)).ToList(),
-					Wallets = args.Terminal.Creator.Wallet == null ? null : x.Terminal.Creator.Wallets.AsQueryable().Select(WalletSelector(args.Terminal.Creator.Wallet)).ToList()
-				}
+				MerchantId = x.Terminal.MerchantId,
+				Creator = args.Terminal.Creator == null
+					? null
+					: new UserResponse {
+						Id = x.Terminal.Creator.Id,
+						JsonData = x.Terminal.Creator.JsonData,
+						Tags = x.Terminal.Creator.Tags,
+						UserName = x.Terminal.Creator.UserName,
+						PhoneNumber = x.Terminal.Creator.PhoneNumber,
+						Email = x.Terminal.Creator.Email,
+						FirstName = x.Terminal.Creator.FirstName,
+						LastName = x.Terminal.Creator.LastName,
+						NationalCode = x.Terminal.Creator.NationalCode,
+						Media = args.Terminal.Creator.Media == null ? null : x.Terminal.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
+						Categories = args.Terminal.Creator.Category == null ? null : x.Terminal.Creator.Categories.AsQueryable().Select(CategorySelector(args.Terminal.Creator.Category)).ToList(),
+						Addresses = args.Terminal.Creator.Address == null ? null : x.Terminal.Creator.Addresses.AsQueryable().Select(AddressSelector(args.Terminal.Creator.Address)).ToList(),
+						BankAccounts = args.Terminal.Creator.BankAccount == null ? null : x.Terminal.Creator.BankAccounts.AsQueryable().Select(BankAccountSelector(args.Terminal.Creator.BankAccount)).ToList(),
+						Terminals = args.Terminal.Creator.Terminal == null ? null : x.Terminal.Creator.Terminals.AsQueryable().Select(TerminalSelector(args.Terminal.Creator.Terminal)).ToList(),
+						Invoices = args.Terminal.Creator.Invoice == null ? null : x.Terminal.Creator.Invoices.AsQueryable().Select(InvoiceSelector(args.Terminal.Creator.Invoice)).ToList(),
+						Txns = args.Terminal.Creator.Txns == null ? null : x.Terminal.Creator.Txns.AsQueryable().Select(TxnSelector(args.Terminal.Creator.Txns)).ToList(),
+						SimCards = args.Terminal.Creator.SimCard == null ? null : x.Terminal.Creator.SimCards.AsQueryable().Select(SimCardSelector(args.Terminal.Creator.SimCard)).ToList(),
+						Wallets = args.Terminal.Creator.Wallet == null ? null : x.Terminal.Creator.Wallets.AsQueryable().Select(WalletSelector(args.Terminal.Creator.Wallet)).ToList()
+					}
 			}
 	};
 
@@ -512,9 +553,9 @@ public static class Projections {
 		JsonData = x.JsonData,
 		CreatorId = x.CreatorId,
 		TerminalId = x.TerminalId,
-		MerchantId =  x.MerchantId,
-		SimCardSerial =  x.SimCardSerial,
-		SimCardNumber =  x.SimCardNumber,
+		MerchantId = x.MerchantId,
+		SimCardSerial = x.SimCardSerial,
+		SimCardNumber = x.SimCardNumber,
 		Imei = x.Imei,
 		Creator = args.Creator == null
 			? null

@@ -25,7 +25,6 @@ public sealed class CategoryCreateParams : BaseParams {
 }
 
 public sealed class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
-	public string? Title { get; set; }
 	public string? Subtitle { get; set; }
 	public string? Link { get; set; }
 	public string? Location { get; set; }

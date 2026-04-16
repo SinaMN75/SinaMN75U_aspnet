@@ -10,9 +10,63 @@ public sealed class AppSettings {
 	public required ItHub ItHub { get; init; }
 	public required BasicSettings BasicSettings { get; init; }
 	public required Ipg Ipg { get; init; }
-	public ICollection<UserEntity> DefaultUsers { get; set; } = [
-		
-	];
+
+	public DefaultUsers Users { get; init; } = new() {
+		SystemAdmin = new UserEntity {
+			Id = UConstants.SystemAdminId,
+			CreatedAt = DateTime.UtcNow,
+			UserName = "SinaMN75",
+			Password = "SinaMN75",
+			RefreshToken = "",
+			PhoneNumber = "+989351902721",
+			NationalCode = "0019246935",
+			Email = "sinamn75@gmail.com",
+			FirstName = "Sina",
+			LastName = "MohammadZadeh",
+			Bio = "SinaMN75",
+			Birthdate = new DateTime(1996, 7, 21),
+			Tags = [TagUser.Male, TagUser.SystemAdmin],
+			JsonData = new UserJson { FcmToken = "", FatherName = "Davoud", Weight = 180, Height = 90 },
+			Extra = new UserExtraEntity { UserId = UConstants.SystemAdminId, Id = UConstants.SystemAdminId, CreatedAt = DateTime.UtcNow, JsonData = new GeneralJsonData(), Tags = [] },
+			Wallets = [new WalletEntity { UserId = UConstants.SystemAdminId, Id = UConstants.SystemAdminId, CreatedAt = DateTime.UtcNow, JsonData = new GeneralJsonData(), Tags = [TagWallet.Primary], Balance = 0 }]
+		},
+		ITHub = new UserEntity {
+			Id = UConstants.ITHubUserId,
+			CreatedAt = DateTime.UtcNow,
+			UserName = "ITHub",
+			Password = "ITHub123!@#",
+			RefreshToken = "",
+			PhoneNumber = "+98123456789",
+			NationalCode = "123456789",
+			Email = "ithub@gmail.com",
+			FirstName = "ITHub",
+			LastName = "ITHub",
+			Bio = "SinaMN75",
+			Birthdate = DateTime.UtcNow,
+			Tags = [TagUser.Unspecified, TagUser.SystemUser],
+			JsonData = new UserJson(),
+			Extra = new UserExtraEntity { UserId = UConstants.ITHubUserId, Id = UConstants.ITHubUserId, CreatedAt = DateTime.UtcNow, JsonData = new GeneralJsonData(), Tags = [] },
+			Wallets = [new WalletEntity { UserId = UConstants.ITHubUserId, Id = UConstants.ITHubUserId, CreatedAt = DateTime.UtcNow, JsonData = new GeneralJsonData(), Tags = [TagWallet.Primary], Balance = 0 }]
+		},
+		AvaPlus = new UserEntity {
+			Id = UConstants.AvaPlus,
+			CreatedAt = DateTime.UtcNow,
+			UserName = "AvaPlus",
+			Password = "AvaPlus123!@#",
+			RefreshToken = "",
+			PhoneNumber = "+98123456789",
+			NationalCode = "987654321",
+			Email = "avaplus@gmail.com",
+			FirstName = "AvaPlus",
+			LastName = "AvaPlus",
+			Bio = "AvaPlus",
+			Birthdate = DateTime.UtcNow,
+			Tags = [TagUser.Unspecified, TagUser.SystemUser],
+			JsonData = new UserJson(),
+			Extra = new UserExtraEntity { UserId = UConstants.AvaPlus, Id = UConstants.AvaPlus, CreatedAt = DateTime.UtcNow, JsonData = new GeneralJsonData(), Tags = [] },
+			Wallets = [new WalletEntity { UserId = UConstants.AvaPlus, Id = UConstants.AvaPlus, CreatedAt = DateTime.UtcNow, JsonData = new GeneralJsonData(), Tags = [TagWallet.Primary], Balance = 0 }]
+		},
+	};
 }
 
 public sealed class ConnectionStrings {
@@ -61,4 +115,10 @@ public sealed class Ipg {
 	public required string Title { get; set; }
 	public required string Token { get; set; }
 	public required string CallBackUrl { get; set; }
+}
+
+public sealed class DefaultUsers {
+	public required UserEntity SystemAdmin { get; set; }
+	public required UserEntity ITHub { get; set; }
+	public required UserEntity AvaPlus { get; set; }
 }

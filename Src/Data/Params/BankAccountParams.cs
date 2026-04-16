@@ -6,7 +6,6 @@ public sealed class BankAccountCreateParams : BaseCreateParams<TagBankAccount> {
 	public string? IBanNumber { get; set; }
 	public string? BankName { get; set; }
 	public string? OwnerName { get; set; }
-	public string? Description { get; set; }
 }
 
 public sealed class BankAccountUpdateParams : BaseUpdateParams<TagBankAccount> {
@@ -15,7 +14,6 @@ public sealed class BankAccountUpdateParams : BaseUpdateParams<TagBankAccount> {
 	public string? IBanNumber { get; set; }
 	public string? BankName { get; set; }
 	public string? OwnerName { get; set; }
-	public string? Description { get; set; }
 }
 
 public sealed class BankAccountReadParams : BaseReadParams<TagBankAccount> {

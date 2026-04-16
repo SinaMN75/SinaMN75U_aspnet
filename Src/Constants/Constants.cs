@@ -24,4 +24,17 @@ public static class RouteTags {
 	public const string BankAccount = "api/bankAccount/";
 	public const string Ipg = "api/Ipg/";
 	public const string SimCard = "api/SimCard/";
+	public const string Notification = "api/Notification/";
+	public const string DataSeeder = "api/DataSeeder/";
+}
+
+public static class UConstants {
+	public static readonly Guid SystemAdminId = Guid.Parse("019d9545-4e5c-7b80-ab26-53e069c48a73");
+	public static readonly Guid ITHubUserId = Guid.Parse("019d9545-4e5c-7ae4-b99f-a2105f785c5b");
+	public static readonly Guid AvaPlus = Guid.Parse("019d9545-4e5c-719f-838d-fb27b9321279");
+	// public static Guid SystemUserId = Guid.Parse("019d9545-4e5c-7af5-b876-6869e95df563");
+	// public static Guid SystemUserId = Guid.Parse("019d9545-4e5c-7f3b-86b3-72296a518186");
+	// public static Guid SystemUserId = Guid.Parse("019d9545-4e5c-7b19-8a6f-491e87383406");
+	// public static Guid SystemUserId = Guid.Parse("019d9545-4e5c-7b8b-bae2-4589e5aed30c");
+	// public static Guid SystemUserId = Guid.Parse("019d9545-4e5c-7c70-8aab-9f4adc4b520e");
 }

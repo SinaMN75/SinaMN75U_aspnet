@@ -43,10 +43,13 @@ public enum TagSmsPanel {
 }
 
 public enum TagUser {
-	Male = 100,
-	Female = 101,
+	Male = 101,
+	Female = 102,
+	Unspecified = 103,
 	SuperAdmin = 201,
 	Guest = 202,
+	SystemAdmin = 203,
+	SystemUser = 204,
 	ESignatureVerified = 301,
 	BirthCertificate1Verified = 302,
 	BirthCertificate2Verified = 303,
@@ -59,14 +62,14 @@ public enum TagUser {
 }
 
 public enum TagCategory {
-	Category = 100,
-	Exam = 101,
-	User = 102,
-	Menu = 103,
-	Speciality = 104,
-	Dorm = 105,
-	Room = 106,
-	Bed = 107,
+	Category = 101,
+	Exam = 102,
+	User = 103,
+	Menu = 104,
+	Speciality = 105,
+	Dorm = 106,
+	Room = 107,
+	Bed = 108,
 	Enabled = 201,
 	Disabled = 202,
 	Hidden = 203,
@@ -74,8 +77,8 @@ public enum TagCategory {
 }
 
 public enum TagMedia {
-	Image = 100,
-	Profile = 101,
+	Image = 101,
+	Profile = 102,
 	Test = 999
 }
 
@@ -110,10 +113,10 @@ public enum TagProduct {
 }
 
 public enum TagComment {
-	Released = 100,
-	InQueue = 101,
-	Rejected = 102,
-	Private = 501,
+	Released = 101,
+	InQueue = 102,
+	Rejected = 103,
+	Private = 201,
 	Test = 999
 }
 
@@ -272,5 +275,10 @@ public enum TagAgreement {
 	TerminalRequest = 101,
 	Signed = 201,
 	Verified = 202,
+	Test = 999
+}
+
+public enum TagNotification {
+	
 	Test = 999
 }

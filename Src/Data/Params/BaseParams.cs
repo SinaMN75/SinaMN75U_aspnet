@@ -44,6 +44,9 @@ public class BaseReadParams<T> : BaseParams {
 public class BaseUpdateParams<T> : BaseParams {
 	[UValidationRequired("IdRequired")]
 	public required Guid Id { get; set; }
+	
+	public string? Title { get; set; }
+	public string? Description { get; set; }
 
 	public IEnumerable<T>? AddTags { get; set; }
 	public IEnumerable<T>? RemoveTags { get; set; }
@@ -51,11 +54,13 @@ public class BaseUpdateParams<T> : BaseParams {
 }
 
 public class BaseCreateParams<T> : BaseParams {
+	public string Title { get; set; } = "";
+	public string Description { get; set; } = "";
+	
 	[UValidationRequired("TagsRequired")]
 	[UValidationMinCollectionLength(1, "TagsRequired")]
 	public required ICollection<T> Tags { get; set; }
 
 	public Guid? Id { get; set; }
-
 	public Guid? CreatorId { get; set; }
 }
