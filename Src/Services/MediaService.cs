@@ -93,7 +93,12 @@ public class MediaService(
 
 		db.Update(e);
 		await db.SaveChangesAsync(ct);
-		return new UResponse<MediaResponse?>(e.MapToResponse());
+		return new UResponse<MediaResponse?>(new MediaResponse {
+			Id = e.Id,
+			JsonData = e.JsonData,
+			Tags =  e.Tags,
+			Path = e.Path
+		});
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {

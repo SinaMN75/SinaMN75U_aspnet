@@ -15,9 +15,7 @@ public sealed class CategoryEntity : BaseEntity<TagCategory, CategoryJson> {
 
 	[InverseProperty("Parent")]
 	public ICollection<CategoryEntity> Children { get; set; } = [];
-
-	public ICollection<ProductEntity> Products { get; set; } = [];
-	public ICollection<UserEntity> Users { get; set; } = [];
+	
 	public ICollection<MediaEntity> Media { get; set; } = [];
 }
 
