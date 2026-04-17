@@ -19,12 +19,13 @@ public class VehicleService(
 		VehicleEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new GeneralJsonData() { Title = p.Title ?? "" },
+			JsonData = new BaseJsonData { Detail1 = p.Detail1, Detail2 = p.Detail2 },
 			Tags = p.Tags,
 			LicencePlate = p.LicencePlate,
 			Brand = p.Brand,
 			Color = p.Color,
-			CreatorId = p.CreatorId ?? userData.Id
+			CreatorId = p.CreatorId ?? userData.Id,
+			Title = p.Title,
 		};
 		
 		await db.Set<VehicleEntity>().AddAsync(e, ct);
@@ -33,11 +34,13 @@ public class VehicleService(
 	}
 
 	public async Task<UResponse<IEnumerable<VehicleResponse>?>> Read(VehicleReadParams p, CancellationToken ct) {
-		IQueryable<VehicleResponse> q = db.Set<VehicleEntity>().Select(Projections.VehicleSelector(p.SelectorArgs));
+		IQueryable<VehicleEntity> q = db.Set<VehicleEntity>().ApplyReadParams<VehicleEntity, TagVehicle, BaseJsonData>(p);
 		if (p.Brand.IsNotNullOrEmpty()) q = q.Where(x => x.Brand == p.Brand);
 		if (p.LicencePlate.IsNotNullOrEmpty()) q = q.Where(x => x.LicencePlate == p.LicencePlate);
 		if (p.Color.IsNotNullOrEmpty()) q = q.Where(x => x.Color == p.Color);
-		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		
+		IQueryable<VehicleResponse> projected = q.Select(Projections.VehicleSelector(p.SelectorArgs));
+		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse> Update(VehicleUpdateParams p, CancellationToken ct) {
@@ -50,10 +53,8 @@ public class VehicleService(
 		if (p.LicencePlate.IsNotNull()) e.LicencePlate = p.LicencePlate;
 		if (p.Brand.IsNotNull()) e.Brand = p.Brand;
 		if (p.Color.IsNotNull()) e.Color = p.Color;
-		if (p.Tags.IsNotNull()) e.Tags = p.Tags;
-		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
-		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
-		db.Update(e);
+		
+		db.Set<VehicleEntity>().Update(e.ApplyUpdateParam<VehicleEntity,TagVehicle, BaseJsonData>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}

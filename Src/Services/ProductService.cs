@@ -4,7 +4,7 @@ public interface IProductService {
 	public Task<UResponse> BulkCreate(List<ProductCreateParams> p, CancellationToken ct);
 	public Task<UResponse<Guid?>> Create(ProductCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<ProductResponse>?>> Read(ProductReadParams p, CancellationToken ct);
-	public Task<UResponse<ProductResponse?>> ReadById(IdParams p, CancellationToken ct);
+	public Task<UResponse<ProductResponse?>> ReadById(IdParams<ProductSelectorArgs> p, CancellationToken ct);
 	public Task<UResponse> Update(ProductUpdateParams p, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	public Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct);
@@ -43,54 +43,32 @@ public class ProductService(
 	public async Task<UResponse<IEnumerable<ProductResponse>?>> Read(ProductReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		p.SelectorArgs.UserId = userData?.Id;
-		IQueryable<ProductEntity> q = db.Set<ProductEntity>().Where(x => x.ParentId == null);
+		IQueryable<ProductEntity> q = db.Set<ProductEntity>().Where(x => x.ParentId == null).ApplyReadParams<ProductEntity, TagProduct, ProductJson>(p);
 
 		if (p.Query.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Query!) || (x.Description ?? "").Contains(p.Query!) || (x.Subtitle ?? "").Contains(p.Query!));
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.Code.IsNotNullOrEmpty()) q = q.Where(x => (x.Code ?? "").Contains(p.Code!));
 		if (p.Slug.IsNotNullOrEmpty()) q = q.Where(x => (x.Slug ?? "") == p.Code!);
 		if (p.ParentId.HasValue) q = q.Where(x => x.ParentId == p.ParentId);
-		if (p.CreatorId.HasValue) q = q.Where(x => x.CreatorId == p.CreatorId);
 		if (p.MinStock.IsNotNull()) q = q.Where(x => x.Stock >= p.MinStock);
 		if (p.MaxStock.IsNotNull()) q = q.Where(x => x.Stock <= p.MaxStock);
 		if (p.MaxRent.IsNotNull()) q = q.Where(x => x.Deposit >= p.MaxRent);
 		if (p.MinDeposit.IsNotNull()) q = q.Where(x => x.Deposit <= p.MinDeposit);
 		if (p.Categories.IsNotNullOrEmpty()) q = q.Where(x => x.Categories.Any(y => p.Categories.Contains(y.Id)));
+		
+		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
+		else if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
 
 		if (p.HasActiveContract == true) q = q.Where(x => x.Contracts.Any(y => y.EndDate >= DateTime.UtcNow));
 		if (p.HasActiveContract == false) q = q.Where(x => x.Contracts.Any(y => y.EndDate <= DateTime.UtcNow));
-
-		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
-		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => p.Tags.All(tag => x.Tags.Contains(tag)));
-		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
-		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
-		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
-		if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
 
 		UResponse<IEnumerable<ProductResponse>?> list = await q.Select(Projections.ProductSelector(p.SelectorArgs)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 		return list;
 	}
 
-	public async Task<UResponse<ProductResponse?>> ReadById(IdParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-
-		ProductEntity? e = await db.Set<ProductEntity>().AsTracking()
-			.Include(x => x.Media)
-			.Include(x => x.Categories)
-			.Include(x => x.Creator)
-			.Include(x => x.Children)
-			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse<ProductResponse?>(null, Usc.NotFound, ls.Get("ProductNotFound"));
-
-		VisitCount? visitCount = e.JsonData.VisitCounts.FirstOrDefault(v => v.UserId == (userData?.Id ?? Guid.Empty));
-
-		if (visitCount != null) visitCount.Count++;
-		else e.JsonData.VisitCounts.Add(new VisitCount { UserId = userData?.Id ?? Guid.Empty, Count = 1 });
-
-		db.Set<ProductEntity>().Update(e);
-		await db.SaveChangesAsync(ct);
-
-		return new UResponse<ProductResponse?>(e.MapToResponse());
+	public async Task<UResponse<ProductResponse?>> ReadById(IdParams<ProductSelectorArgs> p, CancellationToken ct) {
+		ProductResponse? e = await db.Set<ProductEntity>().Select(Projections.ProductSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		return e == null ? new UResponse<ProductResponse?>(null, Usc.NotFound, ls.Get("ProductNotFound")) : new UResponse<ProductResponse?>(e);
 	}
 
 	public async Task<UResponse> Update(ProductUpdateParams p, CancellationToken ct) {
@@ -125,19 +103,12 @@ public class ProductService(
 		if (p.AddRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.AddRangeIfNotExist(p.AddRelatedProducts);
 		if (p.RemoveRelatedProducts.IsNotNullOrEmpty()) e.JsonData.RelatedProducts.RemoveRangeIfExist(p.RemoveRelatedProducts);
 
-		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
-		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
-		if (p.Tags.IsNotNullOrEmpty()) e.Tags = p.Tags;
-
-		if (p.AddCategories.IsNotNullOrEmpty())
-			e.Categories.AddRangeIfNotExist(await db.Set<CategoryEntity>().AsTracking().Where(x => p.AddCategories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct));
-
-		if (p.RemoveCategories.IsNotNullOrEmpty())
-			e.Categories.RemoveRangeIfExist(await db.Set<CategoryEntity>().AsTracking().Where(x => p.RemoveCategories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct));
+		if (p.AddCategories.IsNotNullOrEmpty()) e.Categories.AddRangeIfNotExist(await db.Set<CategoryEntity>().AsTracking().Where(x => p.AddCategories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct));
+		if (p.RemoveCategories.IsNotNullOrEmpty()) e.Categories.RemoveRangeIfExist(await db.Set<CategoryEntity>().AsTracking().Where(x => p.RemoveCategories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct));
 
 		if (p.Categories.IsNotNull()) {
 			if (p.Categories.Count == 0) e.Categories = [];
-			else e.Categories =await db.Set<CategoryEntity>().AsTracking().Where(x => p.Categories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct);
+			else e.Categories = await db.Set<CategoryEntity>().AsTracking().Where(x => p.Categories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct);
 		}
 
 		if (p is { UpdateInvoicesPrices: true, Rent: not null }) {
@@ -162,7 +133,7 @@ public class ProductService(
 				}
 		}
 
-		db.Set<ProductEntity>().Update(e);
+		db.Set<ProductEntity>().Update(e.ApplyUpdateParam<ProductEntity,TagProduct, ProductJson>(p));
 		await db.SaveChangesAsync(ct);
 		await AddMedia(p.Id, p.Media ?? [], ct);
 
@@ -181,6 +152,8 @@ public class ProductService(
 	public async Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		int count = await db.Set<ProductEntity>().WhereIn(u => u.Id, p.Ids).ExecuteDeleteAsync(ct);
 
@@ -243,7 +216,6 @@ public class ProductService(
 				ActionType = p.ActionType,
 				PhoneNumber = p.PhoneNumber,
 				Address = p.Address,
-				VisitCounts = [],
 				RelatedProducts = p.RelatedProducts?.ToList() ?? []
 			}
 		};

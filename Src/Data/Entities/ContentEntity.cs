@@ -5,7 +5,7 @@ public sealed class ContentEntity : BaseEntity<TagContent, ContentJson> {
 	public ICollection<MediaEntity> Media { get; set; } = [];
 }
 
-public sealed class ContentJson {
+public sealed class ContentJson : BaseJsonData {
 	public string? Title { get; set; }
 	public string? SubTitle { get; set; }
 	public string? Description { get; set; }

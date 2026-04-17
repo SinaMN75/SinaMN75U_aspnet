@@ -1,13 +1,10 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Parking")]
-public sealed class ParkingEntity : BaseEntity<TagParking, GeneralJsonData> {
+public sealed class ParkingEntity : BaseEntity<TagParking, BaseJsonData> {
 	[Required]
 	[MaxLength(100)]
 	public required string Title { get; set; }
-
-	public required Guid CreatorId { get; set; }
-	public UserEntity Creator { get; set; } = null!;
 
 	public ICollection<Guid> Users { get; set; } = [];
 
@@ -26,31 +23,15 @@ public sealed class ParkingEntity : BaseEntity<TagParking, GeneralJsonData> {
 }
 
 [Table("ParkingReport")]
-public sealed class ParkingReportEntity : BaseEntity<TagParkingReport, GeneralJsonData> {
+public sealed class ParkingReportEntity : BaseEntity<TagParkingReport, BaseJsonData> {
 	public required DateTime StartDate { get; set; }
 	public DateTime? EndDate { get; set; }
 
 	public decimal? Amount { get; set; }
-
-	public required Guid CreatorId { get; set; }
-	public UserEntity Creator { get; set; } = null!;
 
 	public required Guid VehicleId { get; set; }
 	public VehicleEntity Vehicle { get; set; } = null!;
 
 	public required Guid ParkingId { get; set; }
 	public ParkingEntity Parking { get; set; } = null!;
-
-	public ParkingReportResponse MapToResponse() => new() {
-		Id = Id,
-		CreatedAt = CreatedAt,
-		JsonData = JsonData,
-		Tags = Tags,
-		CreatorId = CreatorId,
-		StartDate = StartDate,
-		VehicleId = VehicleId,
-		ParkingId = ParkingId,
-		Amount = Amount,
-		EndDate = EndDate
-	};
 }

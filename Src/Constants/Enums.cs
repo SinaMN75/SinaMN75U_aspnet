@@ -20,13 +20,8 @@ public enum Usc {
 	ShahkarException = 605,
 	ShahkarError = 606,
 	BalanceIsLow = 607,
-	WalletAlreadyExists = 608,
-
-	EmptyList = 701,
-
-	MediaTypeNotEntered = 801,
-	MediaTypeNotSupported = 802,
-	Test = 999
+	
+	MediaTypeNotSupported = 802
 }
 
 public enum TagPurchase {

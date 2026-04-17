@@ -4,7 +4,6 @@ public interface IWalletService {
 	Task<UResponse<IEnumerable<WalletResponse>?>> ReadByUserId(WalletReadParams p, CancellationToken ct);
 	Task<UResponse> Transfer(WalletTransferParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<WalletTxnResponse>?>> ReadTxn(WalletTxnReadParams p, CancellationToken ct);
-	Task<UResponse> Create(Guid userId, CancellationToken ct);
 	Task<UResponse> Purchase(WalletPurchaseParams p, CancellationToken ct);
 }
 
@@ -13,28 +12,12 @@ public class WalletService(
 	ILocalizationService ls,
 	ITokenService ts
 ) : IWalletService {
-	public async Task<UResponse> Create(Guid userId, CancellationToken ct) {
-		WalletEntity? existingWallet = await db.Set<WalletEntity>().FirstOrDefaultAsync(x => x.UserId == userId, ct);
-		if (existingWallet != null) return new UResponse(Usc.WalletAlreadyExists, ls.Get("WalletForThisUserAlreadyExists"));
-
-		WalletEntity e = new() {
-			Id = Guid.CreateVersion7(),
-			CreatedAt = DateTime.UtcNow,
-			UserId = userId,
-			JsonData = new GeneralJsonData(),
-			Tags = [],
-			Balance = 0
-		};
-		await db.Set<WalletEntity>().AddAsync(e, ct);
-		await db.SaveChangesAsync(ct);
-		return new UResponse();
-	}
-
 	public async Task<UResponse> Purchase(WalletPurchaseParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		UserEntity receiver = (await db.Set<UserEntity>().Select(x => new UserEntity {
 			Id = x.Id,
+			CreatorId = userData.Id,
 			CreatedAt = DateTime.UtcNow,
 			JsonData = x.JsonData,
 			Tags = x.Tags
@@ -56,13 +39,14 @@ public class WalletService(
 				Amount = Core.App.ItHub.ShahkarVerifyNationalCodeAndMobilePrice,
 				Description = "سامانه شاهکار"
 			}, ct),
+			TagPurchase.Test => throw new Exception(),
 			_ => throw new Exception()
 		};
 	}
 
 	public async Task<UResponse<IEnumerable<WalletResponse>?>> ReadByUserId(WalletReadParams p, CancellationToken ct) {
 		IQueryable<WalletResponse> q = db.Set<WalletEntity>()
-			.Where(x => x.UserId == p.UserId)
+			.Where(x => x.CreatorId == p.UserId)
 			.Select(Projections.WalletSelector(p.SelectorArgs));
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
@@ -73,8 +57,8 @@ public class WalletService(
 
 		Guid senderId = p.SenderId ?? userData.Id;
 
-		WalletEntity? senderWallet = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.UserId == senderId, ct);
-		WalletEntity? receiverWallet = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.UserId == p.ReceiverId, ct);
+		WalletEntity? senderWallet = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == senderId, ct);
+		WalletEntity? receiverWallet = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == p.ReceiverId, ct);
 		if (senderWallet == null) return new UResponse(Usc.NotFound, ls.Get("SenderWalletNotFound"));
 		if (receiverWallet == null) return new UResponse(Usc.NotFound, ls.Get("ReceiverWalletNotFound"));
 		if (senderWallet.Balance < p.Amount) return new UResponse(Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
@@ -87,11 +71,12 @@ public class WalletService(
 
 		await db.Set<WalletTxnEntity>().AddAsync(new WalletTxnEntity {
 			Id = Guid.CreateVersion7(),
+			CreatorId = userData.Id,
 			CreatedAt = DateTime.UtcNow,
 			SenderId = senderId,
 			ReceiverId = p.ReceiverId,
 			Amount = p.Amount,
-			JsonData = new GeneralJsonData(),
+			JsonData = new BaseJsonData {Detail1 = p.Description ?? ""},
 			Tags = []
 		}, ct);
 

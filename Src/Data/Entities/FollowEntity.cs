@@ -1,10 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Follows")]
-public sealed class FollowEntity : BaseEntity<TagFollow, FollowJson> {
-	public required Guid CreatorId { get; set; }
-	public UserEntity? Creator { get; set; }
-
+public sealed class FollowEntity : BaseEntity<TagFollow, BaseJsonData> {
 	public Guid? UserId { get; set; }
 	public UserEntity? User { get; set; }
 
@@ -13,8 +10,4 @@ public sealed class FollowEntity : BaseEntity<TagFollow, FollowJson> {
 
 	public Guid? CategoryId { get; set; }
 	public CategoryEntity? Category { get; set; }
-}
-
-public sealed class FollowJson {
-	public string? Subtitle { get; set; }
 }

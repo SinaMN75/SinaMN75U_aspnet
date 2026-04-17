@@ -20,7 +20,7 @@ public class TerminalService(
 			Id = p.Id ?? Guid.CreateVersion7(),
 			Serial = p.Serial,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new GeneralJsonData(),
+			JsonData = new BaseJsonData(),
 			Tags = p.Tags,
 			CreatorId = p.CreatorId ?? userData.Id,
 			SimCardNumber = p.SimCardNumber,
@@ -36,7 +36,7 @@ public class TerminalService(
 	}
 
 	public async Task<UResponse<IEnumerable<TerminalResponse>?>> Read(TerminalReadParams p, CancellationToken ct) {
-		IQueryable<TerminalResponse> q = db.Set<TerminalEntity>().Select(Projections.TerminalSelector(p.SelectorArgs));
+		IQueryable<TerminalEntity> q = db.Set<TerminalEntity>().ApplyReadParams<TerminalEntity, TagTerminal, BaseJsonData>(p);
 
 		if (p.Serial.IsNotNullOrEmpty()) q = q.Where(x => x.Serial == p.Serial);
 		if (p.TerminalId.IsNotNullOrEmpty()) q = q.Where(x => x.TerminalId == p.TerminalId);
@@ -45,7 +45,8 @@ public class TerminalService(
 		if (p.SimCardNumber.IsNotNullOrEmpty()) q = q.Where(x => x.SimCardNumber == p.SimCardNumber);
 		if (p.SimCardSerial.IsNotNullOrEmpty()) q = q.Where(x => x.SimCardSerial == p.SimCardSerial);
 		
-		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		IQueryable<TerminalResponse> projected = q.Select(Projections.TerminalSelector(p.SelectorArgs));
+		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse> Update(TerminalUpdateParams p, CancellationToken ct) {
@@ -55,13 +56,14 @@ public class TerminalService(
 		TerminalEntity? e = await db.Set<TerminalEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("TerminalNotFound"));
 
-		if (p.Imei == null) e.Imei = p.Imei;
-		if (p.SimCardNumber == null) e.SimCardNumber = p.SimCardNumber;
-		if (p.SimCardSerial == null) e.SimCardSerial = p.SimCardSerial;
-		if (p.TerminalId == null) e.TerminalId = p.TerminalId;
-		if (p.MerchantId == null) e.MerchantId = p.MerchantId;
+		if (p.Serial.IsNotNullOrEmpty()) e.Serial = p.Serial;
+		if (p.Imei.IsNotNullOrEmpty()) e.Imei = p.Imei;
+		if (p.SimCardNumber.IsNotNullOrEmpty()) e.SimCardNumber = p.SimCardNumber;
+		if (p.SimCardSerial.IsNotNullOrEmpty()) e.SimCardSerial = p.SimCardSerial;
+		if (p.TerminalId.IsNotNullOrEmpty()) e.TerminalId = p.TerminalId;
+		if (p.MerchantId.IsNotNullOrEmpty()) e.MerchantId = p.MerchantId;
 
-		db.Update(e);
+		db.Set<TerminalEntity>().Update(e.ApplyUpdateParam<TerminalEntity,TagTerminal, BaseJsonData>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}

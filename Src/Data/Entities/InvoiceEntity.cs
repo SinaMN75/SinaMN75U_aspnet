@@ -11,21 +11,8 @@ public sealed class InvoiceEntity : BaseEntity<TagInvoice, InvoiceJson> {
 
 	public required Guid? ContractId { get; set; }
 	public ContractEntity Contract { get; set; } = null!;
-
-	public InvoiceResponse MapToResponse() => new() {
-		Id = Id,
-		CreatedAt = CreatedAt,
-		JsonData = JsonData,
-		Tags = Tags,
-		DebtAmount = DebtAmount,
-		CreditorAmount = CreditorAmount,
-		PaidAmount = PaidAmount,
-		PenaltyAmount = PenaltyAmount,
-		DueDate = DueDate
-	};
 }
 
-public sealed class InvoiceJson {
-	public string Description { get; set; } = "";
+public sealed class InvoiceJson : BaseJsonData {
 	public int PenaltyPrecentEveryDate { get; set; }
 }

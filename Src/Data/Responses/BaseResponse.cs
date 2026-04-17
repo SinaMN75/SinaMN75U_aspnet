@@ -5,6 +5,8 @@ public class BaseResponse<T, TJ> where T : Enum where TJ : class {
 	public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 	public required TJ JsonData { get; set; }
 	public required ICollection<T> Tags { get; set; }
+	public UserResponse? Creator { get; set; }
+	public Guid? CreatorId { get; set; }
 }
 
 public class UResponse<T> : UResponse {

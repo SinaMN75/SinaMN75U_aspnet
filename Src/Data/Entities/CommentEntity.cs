@@ -9,9 +9,6 @@ public sealed class CommentEntity : BaseEntity<TagComment, CommentJson> {
 	[MaxLength(2000)]
 	public required string Description { get; set; }
 
-	public required Guid CreatorId { get; set; }
-	public UserEntity Creator { get; set; } = null!;
-
 	public Guid? UserId { get; set; }
 	public UserEntity? User { get; set; }
 
@@ -25,22 +22,9 @@ public sealed class CommentEntity : BaseEntity<TagComment, CommentJson> {
 	public ICollection<CommentEntity> Children { get; set; } = [];
 
 	public ICollection<MediaEntity> Media { get; set; } = [];
-
-	public CommentResponse MapToResponse() => new() {
-		Id = Id,
-		CreatedAt = CreatedAt,
-		JsonData = JsonData,
-		Tags = Tags,
-		Score = Score,
-		Description = Description,
-		ParentId = ParentId,
-		CreatorId = CreatorId,
-		UserId = UserId,
-		ProductId = ProductId
-	};
 }
 
-public sealed class CommentJson {
+public sealed class CommentJson : BaseJsonData {
 	public ICollection<CommentReacts> Reacts { get; set; } = [];
 }
 

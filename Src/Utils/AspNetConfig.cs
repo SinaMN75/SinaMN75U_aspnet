@@ -72,7 +72,6 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IDashboardService, DashboardService>();
 		builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 		builder.Services.AddScoped<IContractService, ContractService>();
-		builder.Services.AddScoped<IChatBotService, ChatBotService>();
 		builder.Services.AddScoped<ITxnService, TxnService>();
 		builder.Services.AddScoped<ITicketService, TicketService>();
 		builder.Services.AddScoped<IVehicleService, VehicleService>();
@@ -86,6 +85,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<ISimCardService, SimCardService>();
 		builder.Services.AddScoped<INotificationService, NotificationService>();
 		builder.Services.AddScoped<IDataSeedService, DataSeedService>();
+		builder.Services.AddScoped<IAgreementService, AgreementService>();
 	}
 
 	public static void UseUServices(this WebApplication app) {
@@ -113,7 +113,6 @@ public static partial class AspNetConfig {
 		app.MapDashboardRoutes(RouteTags.Dashboard);
 		app.MapContractRoutes(RouteTags.Contract);
 		app.MapInvoiceRoutes(RouteTags.Invoice);
-		app.MapChatBotRoutes(RouteTags.ChatBot);
 		app.MapTicketRoutes(RouteTags.Ticket);
 		app.MapTxnRoutes(RouteTags.Txn);
 		app.MapParkingRoutes(RouteTags.Parking);
@@ -127,6 +126,7 @@ public static partial class AspNetConfig {
 		app.MapSimCardRoutes(RouteTags.SimCard);
 		app.MapNotificationRoutes(RouteTags.Notification);
 		app.MapDashboardRoutes(RouteTags.DataSeeder);
+		app.MapAgreementRoutes(RouteTags.Agreement);
 	}
 
 	private static string CleanAndFormatSql(string sql) {

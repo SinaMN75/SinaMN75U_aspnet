@@ -18,8 +18,9 @@ public class SimCardService(
 
 		SimCardEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
+			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new GeneralJsonData { Description = p.Description ?? "" },
+			JsonData = new BaseJsonData { Detail2 = p.Detail2, Detail1 = p.Detail1 },
 			Tags = p.Tags,
 			UserId = p.CreatorId ?? userData.Id,
 			Number = p.Number,
@@ -32,16 +33,9 @@ public class SimCardService(
 	}
 
 	public async Task<UResponse<IEnumerable<SimCardResponse>?>> Read(SimCardReadParams p, CancellationToken ct) {
-		IQueryable<SimCardResponse> q = db.Set<SimCardEntity>().Select(Projections.SimCardSelector(p.SelectorArgs));
-
-		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
-		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
-		if (p.CreatorId != null) q = q.Where(x => x.UserId == p.CreatorId);
-
-		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => p.Tags.All(tag => x.Tags.Contains(tag)));
-		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
-
-		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		IQueryable<SimCardEntity> q = db.Set<SimCardEntity>().ApplyReadParams<SimCardEntity, TagSimCard, BaseJsonData>(p);
+		IQueryable<SimCardResponse> projected = q.Select(Projections.SimCardSelector(p.SelectorArgs));
+		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse> Update(SimCardUpdateParams p, CancellationToken ct) {
@@ -53,10 +47,8 @@ public class SimCardService(
 
 		if (p.Number != null) e.Number = p.Number;
 		if (p.Serial != null) e.Serial = p.Serial;
-		if (p.Description != null) e.JsonData.Description = p.Description;
-		if (p.Tags != null) e.Tags = p.Tags;
 
-		db.Update(e);
+		db.Set<SimCardEntity>().Update(e.ApplyUpdateParam<SimCardEntity,TagSimCard, BaseJsonData>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}

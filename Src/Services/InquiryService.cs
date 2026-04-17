@@ -18,7 +18,7 @@ public class InquiryService(
 	private readonly ItHub _itHub = Core.App.ItHub;
 
 	public async Task<UResponse<bool?>> Shahkar(VerifyNationalCodeAndPhoneNumber p, CancellationToken ct) {
-		bool? isRecordExist = await ReadShahkarHistory(p.NationalCode, p.Mobile, ct);
+		bool? isRecordExist = await ReadShahkarHistory(p.NationalCode, p.PhoneNumber, ct);
 		if (isRecordExist != null) return new UResponse<bool?>(isRecordExist);
 
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
@@ -26,7 +26,7 @@ public class InquiryService(
 
 		HttpResponseMessage? response = await httpClient.Post(
 			"https://gateway.itsaaz.ir/hub/api/v1/Shahkar/MixVerifyMobile",
-			new { nationalCode = p.NationalCode, mobile = p.Mobile },
+			new { nationalCode = p.NationalCode, mobile = p.PhoneNumber },
 			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" } }
 		);
 		if (response == null) return new UResponse<bool?>(null);
@@ -34,7 +34,7 @@ public class InquiryService(
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
 		bool data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetBoolean();
 
-		await CreateShahkarHistory(p.NationalCode, p.Mobile, data, ct);
+		await CreateShahkarHistory(p.NationalCode, p.PhoneNumber, data, ct);
 
 		return new UResponse<bool?>(data);
 	}
@@ -91,7 +91,7 @@ public class InquiryService(
 				new {
 					nationalCode = p.NationalCode,
 					cellPhone = p.PhoneNumber,
-					plk1 = p.LicencePlate.Substring(0, 2),
+					plk1 = p.LicencePlate[..2],
 					plk2 = p.LicencePlate.Substring(2, 1),
 					plk3 = p.LicencePlate.Substring(3, 3),
 					plkSrl = p.LicencePlate.Substring(6, 2)
@@ -192,7 +192,7 @@ public class InquiryService(
 				"https://api-ithub.itsaaz.ir/api/v1/CarServices/PlateHistoryInquiry",
 				new {
 					nationalCode = p.NationalCode,
-					plk1 = p.LicencePlate.Substring(0, 2),
+					plk1 = p.LicencePlate[..2],
 					plk2 = p.LicencePlate.Substring(2, 1),
 					plk3 = p.LicencePlate.Substring(3, 3),
 					plkSrl = p.LicencePlate.Substring(6, 2)
@@ -308,8 +308,9 @@ public class InquiryService(
 	private async Task CreateShahkarHistory(string nationalCode, string phoneNumber, bool isVerified, CancellationToken ct) {
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
+			CreatorId = Core.App.Users.SystemAdmin.Id,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new GeneralJsonData { Description = "" },
+			JsonData = new BaseJsonData(),
 			Tags = isVerified ? [TagInquiryHistory.ValidateNationalCodeAndPhoneNumber, TagInquiryHistory.Verified] : [TagInquiryHistory.ValidateNationalCodeAndPhoneNumber, TagInquiryHistory.NotVerified],
 			NationalCode = nationalCode,
 			PhoneNumber = phoneNumber,
@@ -326,8 +327,9 @@ public class InquiryService(
 	private async Task CreateZipCodeToAddressHistory(string responseBody, PostalCodeToAddressDetailParams p, CancellationToken ct) {
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
+			CreatorId = Core.App.Users.SystemAdmin.Id,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new GeneralJsonData { Description = "" },
+			JsonData = new BaseJsonData(),
 			Tags = [TagInquiryHistory.ItHub, TagInquiryHistory.ZipCodeToAddressDetail, TagInquiryHistory.Verified],
 			ZipCode = p.ZipCode,
 			Response = responseBody
@@ -343,8 +345,9 @@ public class InquiryService(
 	private async Task CreateVehicleViolationsDetailHistory(string responseBody, VehicleViolationDetailParams p, CancellationToken ct) {
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
+			CreatorId = Core.App.Users.SystemAdmin.Id,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new GeneralJsonData { Description = "" },
+			JsonData = new BaseJsonData(),
 			Tags = [TagInquiryHistory.ItHub, TagInquiryHistory.VehicleViolationsDetail],
 			PhoneNumber = p.PhoneNumber,
 			LicencePlate = p.LicencePlate,
@@ -362,8 +365,9 @@ public class InquiryService(
 	private async Task CreateDrivingLicenceStatusHistory(string responseBody, DrivingLicenceStatusParams p, CancellationToken ct) {
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
+			CreatorId = Core.App.Users.SystemAdmin.Id,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new GeneralJsonData { Description = "" },
+			JsonData = new BaseJsonData(),
 			Tags = [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceStatus],
 			PhoneNumber = p.PhoneNumber,
 			NationalCode = p.NationalCode,
@@ -380,8 +384,9 @@ public class InquiryService(
 	private async Task CreateLicencePlateStatusHistory(string responseBody, LicencePlateInquiryParams p, CancellationToken ct) {
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
+			CreatorId = Core.App.Users.SystemAdmin.Id,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new GeneralJsonData { Description = "" },
+			JsonData = new BaseJsonData(),
 			Tags = [TagInquiryHistory.ItHub, TagInquiryHistory.LicencePlateStatus],
 			LicencePlate = p.LicencePlate,
 			NationalCode = p.NationalCode,
@@ -398,8 +403,9 @@ public class InquiryService(
 	private async Task CreateDrivingLicenceNegativePointHistory(string responseBody, DrivingLicenceNegativePointParams p, CancellationToken ct) {
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
+			CreatorId = Core.App.Users.SystemAdmin.Id,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new GeneralJsonData { Description = "" },
+			JsonData = new BaseJsonData(),
 			Tags = [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceNegativePoint],
 			NationalCode = p.NationalCode,
 			PhoneNumber = p.PhoneNumber,
@@ -417,8 +423,9 @@ public class InquiryService(
 	private async Task CreateIBanToBankAccountDetailHistory(string responseBody, IBanToBankAccountDetailParams p, CancellationToken ct) {
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
+			CreatorId = Core.App.Users.SystemAdmin.Id,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new GeneralJsonData { Description = "" },
+			JsonData = new BaseJsonData(),
 			Tags = [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceNegativePoint],
 			IBan = p.IBan,
 			Response = responseBody

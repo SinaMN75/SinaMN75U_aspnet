@@ -1,8 +1,9 @@
 namespace SinaMN75U.Data.Params;
 
-public sealed class MediaCreateParams {
-	public required IFormFile File { get; set; }
-	public required TagMedia Tag1 { get; set; }
+public sealed class MediaCreateParams: BaseParams {
+	public Guid? CreatorId { get; set; }
+	public IFormFile File { get; set; } = null!;
+	public TagMedia Tag1 { get; set; }
 	public TagMedia? Tag2 { get; set; }
 	public TagMedia? Tag3 { get; set; }
 	public Guid? UserId { get; set; }
@@ -14,10 +15,7 @@ public sealed class MediaCreateParams {
 	public string? Description { get; set; }
 }
 
-public sealed class MediaUpdateParams : BaseParams {
-	public required Guid Id { get; set; }
-	public IEnumerable<TagMedia>? AddTags { get; set; }
-	public IEnumerable<TagMedia>? RemoveTags { get; set; }
+public sealed class MediaUpdateParams : BaseUpdateParams<TagMedia> {
 	public string? Title { get; set; }
 	public string? Description { get; set; }
 	public Guid? UserId { get; set; }

@@ -1,7 +1,8 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class GenerateAgreementParams : BaseCreateParams<TagAgreement> {
-	public required Guid TerminalId { get; set; }
+	[UValidationRequired("IdRequired")]
+	public Guid TerminalId { get; set; }
 }
 
 public sealed class AgreementUpdateParams : BaseUpdateParams<TagAgreement> {

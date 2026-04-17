@@ -6,22 +6,20 @@ public class BaseParams {
 }
 
 public sealed class IdParams : BaseParams {
-	public required Guid Id { get; set; }
+	[UValidationRequired("IdRequired")]
+	public Guid Id { get; set; }
 }
 
 public sealed class IdParams<T> : BaseParams where T : new() {
-	public required Guid Id { get; set; }
-	public T SelectorArgs { get; set; } = new T();
-}
+	[UValidationRequired("IdRequired")]
+	public Guid Id { get; set; }
 
-public sealed class SoftDeleteParams : BaseParams {
-	public required Guid? Id { get; set; }
-	public required DateTime? DateTime { get; set; }
+	public T SelectorArgs { get; set; } = new();
 }
 
 public sealed class IdListParams : BaseParams {
-	[Required]
-	public required IEnumerable<Guid> Ids { get; set; }
+	[UValidationMinCollectionLength(1, "IdRequired")]
+	public IEnumerable<Guid> Ids { get; set; } = null!;
 }
 
 public sealed class IdTitleParams : BaseParams {
@@ -43,10 +41,10 @@ public class BaseReadParams<T> : BaseParams {
 
 public class BaseUpdateParams<T> : BaseParams {
 	[UValidationRequired("IdRequired")]
-	public required Guid Id { get; set; }
-	
-	public string? Title { get; set; }
-	public string? Description { get; set; }
+	public Guid Id { get; set; }
+
+	public string? Detail1 { get; set; }
+	public string? Detail2 { get; set; }
 
 	public IEnumerable<T>? AddTags { get; set; }
 	public IEnumerable<T>? RemoveTags { get; set; }
@@ -54,12 +52,11 @@ public class BaseUpdateParams<T> : BaseParams {
 }
 
 public class BaseCreateParams<T> : BaseParams {
-	public string Title { get; set; } = "";
-	public string Description { get; set; } = "";
+	public string Detail1 { get; set; } = "";
+	public string Detail2 { get; set; } = "";
 	
-	[UValidationRequired("TagsRequired")]
-	[UValidationMinCollectionLength(1, "TagsRequired")]
-	public required ICollection<T> Tags { get; set; }
+	[UValidationRequired("TagsRequired"), UValidationMinCollectionLength(1, "TagsRequired")]
+	public ICollection<T> Tags { get; set; } = [];
 
 	public Guid? Id { get; set; }
 	public Guid? CreatorId { get; set; }

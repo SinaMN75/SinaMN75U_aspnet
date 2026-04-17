@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("InquiryHistory")]
-public sealed class InquiryHistoryEntity : BaseEntity<TagInquiryHistory, GeneralJsonData> {
+public sealed class InquiryHistoryEntity : BaseEntity<TagInquiryHistory, BaseJsonData> {
 	[MaxLength(40)]
 	public string? NationalCode { get; set; }
 

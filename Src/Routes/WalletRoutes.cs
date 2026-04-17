@@ -6,5 +6,6 @@ public static class WalletRoutes {
 		r.MapPost("Transfer", async (WalletTransferParams p, IWalletService s, CancellationToken c) => (await s.Transfer(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("ReadTxn", async (WalletTxnReadParams p, IWalletService s, CancellationToken c) => (await s.ReadTxn(p, c)).ToResult()).Produces<UResponse<IEnumerable<WalletTxnResponse>?>>();
 		r.MapPost("ReadByUserId", async (WalletReadParams p, IWalletService s, CancellationToken c) => (await s.ReadByUserId(p, c)).ToResult()).Produces<UResponse<IEnumerable<WalletResponse>?>>();
+		r.MapPost("Purchase", async (WalletPurchaseParams p, IWalletService s, CancellationToken c) => (await s.Purchase(p, c)).ToResult()).Produces<UResponse>();
 	}
 }

@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Agreements")]
-public sealed class AgreementEntity : BaseEntity<TagAgreement, GeneralJsonData> {
+public sealed class AgreementEntity : BaseEntity<TagAgreement, BaseJsonData> {
 	public required string Agreement { get; set; }
 	
 	public required Guid TerminalId { get; set; }

@@ -18,7 +18,10 @@ public class AddressService(
 
 		AddressEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
+			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
+			Tags = p.Tags,
+			ZipCode = p.ZipCode,
 			JsonData = new AddressJson {
 				Title = p.Title,
 				Province = p.Province,
@@ -34,10 +37,7 @@ public class AddressService(
 				SideFloor = p.SideFloor,
 				SubLocality = p.SubLocality,
 				Village = p.Village
-			},
-			Tags = p.Tags,
-			ZipCode = p.ZipCode,
-			CreatorId = p.CreatorId ?? userData.Id
+			}
 		};
 
 		await db.AddAsync(e, ct);
@@ -46,14 +46,9 @@ public class AddressService(
 	}
 
 	public async Task<UResponse<IEnumerable<AddressResponse>?>> Read(AddressReadParams p, CancellationToken ct) {
-		IQueryable<AddressEntity> q = db.Set<AddressEntity>();
-
-		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
-		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
-		if (p.CreatorId != null) q = q.Where(x => x.CreatorId == p.CreatorId);
-
-		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => p.Tags.All(tag => x.Tags.Contains(tag)));
-		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
+		IQueryable<AddressEntity> q = db.Set<AddressEntity>().ApplyReadParams<AddressEntity, TagAddress, AddressJson>(p);
+		
+		if (p.ZipCode.IsNotNullOrEmpty()) q = q.Where(x => x.ZipCode == p.ZipCode);
 
 		IQueryable<AddressResponse> projected = q.Select(Projections.AddressSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
@@ -65,6 +60,8 @@ public class AddressService(
 
 		AddressEntity? e = await db.Set<AddressEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("AddressNotFound"));
+		
+		if (!userData.IsAdmin || userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		if (p.ZipCode != null) e.ZipCode = p.ZipCode;
 		if (p.Title != null) e.JsonData.Title = p.Title;
@@ -81,9 +78,8 @@ public class AddressService(
 		if (p.SideFloor != null) e.JsonData.SideFloor = p.SideFloor;
 		if (p.SubLocality != null) e.JsonData.SubLocality = p.SubLocality;
 		if (p.Village != null) e.JsonData.Village = p.Village;
-		if (p.Tags != null) e.Tags = p.Tags;
 
-		db.Update(e);
+		db.Update(e.ApplyUpdateParam<AddressEntity, TagAddress, AddressJson>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
@@ -91,8 +87,15 @@ public class AddressService(
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		
+		AddressEntity? e = await db.Set<AddressEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("AddressNotFound"));
 
-		await db.Set<AddressEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
-		return new UResponse();
+		if (!userData.IsAdmin || userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+
+		db.Set<AddressEntity>().Remove(e);
+		await db.SaveChangesAsync(ct);
+		
+		return new UResponse(Usc.Deleted, ls.Get("AddressDeletedSuccessfully"));
 	}
 }

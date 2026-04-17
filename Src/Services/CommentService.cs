@@ -22,14 +22,16 @@ public class CommentService(
 		CommentEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new CommentJson(),
+			JsonData = new CommentJson {
+				Reacts = [new CommentReacts { Tag = p.Reaction ?? TagReaction.Like, UserId = p.CreatorId ?? userData.Id }]
+			},
 			Tags = p.Tags,
 			Score = p.Score,
 			Description = p.Description,
 			CreatorId = p.CreatorId ?? userData.Id,
 			UserId = p.UserId,
 			ProductId = p.ProductId,
-			ParentId = p.ParentId
+			ParentId = p.ParentId,
 		};
 
 		await db.Set<CommentEntity>().AddAsync(e, ct);
@@ -38,16 +40,13 @@ public class CommentService(
 	}
 
 	public async Task<UResponse<IEnumerable<CommentResponse>?>> Read(CommentReadParams p, CancellationToken ct) {
-		IQueryable<CommentEntity> q = db.Set<CommentEntity>();
-
-		if (p.ProductId.IsNotNull()) q = q.Where(x => x.ProductId == p.ProductId);
-		if (p.CreatorId.IsNotNull()) q = q.Where(x => x.CreatorId == p.CreatorId);
+		IQueryable<CommentEntity> q = db.Set<CommentEntity>().ApplyReadParams<CommentEntity, TagComment, CommentJson>(p);
+		
 		if (p.UserId.IsNotNull()) q = q.Where(x => x.UserId == p.UserId);
-		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
-
-		IQueryable<CommentResponse> list = q.Select(Projections.CommentSelector(p.SelectorArgs));
-
-		return await list.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		if (p.ProductId.IsNotNull()) q = q.Where(x => x.ProductId == p.ProductId);
+		
+		IQueryable<CommentResponse> projected = q.Select(Projections.CommentSelector(p.SelectorArgs));
+		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse<CommentResponse?>> ReadById(IdParams p, CancellationToken ct) {
@@ -63,14 +62,11 @@ public class CommentService(
 
 		CommentEntity? e = await db.Set<CommentEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("CommentNotFound"));
-		
+
 		if (p.Score.IsNotNull()) e.Score = p.Score.Value;
 		if (p.Description.IsNotNullOrEmpty()) e.Description = p.Description;
-		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
-		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
-		if (p.Tags != null) e.Tags = p.Tags;
-		
-		db.Set<CommentEntity>().Update(e);
+
+		db.Set<CommentEntity>().Update(e.ApplyUpdateParam<CommentEntity, TagComment, CommentJson>(p));
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();

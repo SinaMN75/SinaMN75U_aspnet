@@ -5,16 +5,22 @@ public interface IMediaService {
 	Task<UResponse<IEnumerable<MediaResponse>?>> Read(BaseReadParams<TagMedia> p, CancellationToken ct);
 	Task<UResponse> Update(MediaUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
-	Task<UResponse> DeleteRange(IEnumerable<Guid> ids, CancellationToken ct);
+	Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct);
 
 	Task<List<MediaEntity>?> ReadEntity(BaseReadParams<TagMedia> p, CancellationToken ct);
 }
 
 public class MediaService(
 	IWebHostEnvironment env,
-	DbContext db
+	DbContext db,
+	ITokenService ts,
+	ILocalizationService ls
 ) : IMediaService {
 	public async Task<UResponse<Guid?>> Create(MediaCreateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		
 		IEnumerable<string> allowedExtensions = [".png", ".gif", ".jpg", ".jpeg", ".svg", ".webp", ".mp4", ".mov", ".mp3", ".pdf", ".aac", ".apk", ".zip", ".rar", ".mkv"];
 		if (!allowedExtensions.Contains(Path.GetExtension(p.File.FileName.ToLower())))
 			return new UResponse<Guid?>(null, Usc.MediaTypeNotSupported);
@@ -44,6 +50,7 @@ public class MediaService(
 		if (p.Tag3 != null) tags.Add(p.Tag3.Value);
 		MediaEntity e = new() {
 			Id = Guid.CreateVersion7(),
+			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
 			Path = name,
 			UserId = p.UserId,
@@ -52,9 +59,9 @@ public class MediaService(
 			CommentId = p.CommentId,
 			ProductId = p.ProductId,
 			Tags = tags,
-			JsonData = new GeneralJsonData {
-				Title = p.Title ?? "",
-				Description = p.Description ?? ""
+			JsonData = new BaseJsonData {
+				Detail1 = p.Title ?? "",
+				Detail2 = p.Description ?? ""
 			}
 		};
 		await SaveMedia(p.File, name);
@@ -64,7 +71,7 @@ public class MediaService(
 	}
 
 	public async Task<UResponse<IEnumerable<MediaResponse>?>> Read(BaseReadParams<TagMedia> p, CancellationToken ct) {
-		IQueryable<MediaEntity> q = db.Set<MediaEntity>().OrderByDescending(x => x.Id);
+		IQueryable<MediaEntity> q = db.Set<MediaEntity>().ApplyReadParams<MediaEntity, TagMedia, BaseJsonData>(p);
 
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
 
@@ -74,8 +81,8 @@ public class MediaService(
 	public async Task<UResponse> Update(MediaUpdateParams p, CancellationToken ct) {
 		MediaEntity? e = await db.Set<MediaEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.BadRequest);
-		if (p.Title != null) e.JsonData.Title = p.Title;
-		if (p.Description != null) e.JsonData.Description = p.Description;
+		if (p.Title != null) e.JsonData.Detail1 = p.Title;
+		if (p.Description != null) e.JsonData.Detail2 = p.Description;
 		if (p.CategoryId != null) e.CategoryId = p.CategoryId;
 		if (p.CommentId != null) e.CommentId = p.CommentId;
 		if (p.ContentId != null) e.ContentId = p.ContentId;
@@ -104,8 +111,8 @@ public class MediaService(
 		return new UResponse();
 	}
 
-	public async Task<UResponse> DeleteRange(IEnumerable<Guid> ids, CancellationToken ct) {
-		await db.Set<MediaEntity>().Where(x => ids.Contains(x.Id)).ExecuteDeleteAsync(ct);
+	public async Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct) {
+		await db.Set<MediaEntity>().Where(x => p.Ids.Contains(x.Id)).ExecuteDeleteAsync(ct);
 		return new UResponse();
 	}
 

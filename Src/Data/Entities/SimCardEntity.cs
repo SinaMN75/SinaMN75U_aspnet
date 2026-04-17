@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("SimCards")]
-public sealed class SimCardEntity : BaseEntity<TagSimCard, GeneralJsonData> {
+public sealed class SimCardEntity : BaseEntity<TagSimCard, BaseJsonData> {
 	[Required, MaxLength(20)]
 	public required string Number { get; set; }
 

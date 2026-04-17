@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Entities;
 
-public class BaseEntity<T, TJ> where T : Enum where TJ : class {
+public class BaseEntity<T, TJ> where T : Enum where TJ : BaseJsonData {
 	[Key]
 	public required Guid Id { get; set; }
 
@@ -12,14 +12,12 @@ public class BaseEntity<T, TJ> where T : Enum where TJ : class {
 
 	[Required]
 	public required ICollection<T> Tags { get; set; }
+	
+	public required Guid CreatorId { get; set; }
+	public UserEntity Creator { get; set; } = null!;
 }
 
-public sealed class VisitCount {
-	public required Guid UserId { get; set; }
-	public required int Count { get; set; } = 1;
-}
-
-public sealed class GeneralJsonData {
-	public string Title { get; set; } = "";
-	public string Description { get; set; } = "";
+public class BaseJsonData {
+	public string Detail1 { get; set; } = "";
+	public string Detail2 { get; set; } = "";
 }

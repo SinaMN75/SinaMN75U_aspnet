@@ -1,6 +1,7 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class CommentCreateParams : BaseCreateParams<TagComment> {
+	public string Description { get; set; } = null!;
 	public decimal Score { get; set; } = 0;
 	public TagReaction? Reaction { get; set; }
 
@@ -10,6 +11,7 @@ public sealed class CommentCreateParams : BaseCreateParams<TagComment> {
 }
 
 public sealed class CommentUpdateParams : BaseUpdateParams<TagComment> {
+	public string? Description { get; set; }
 	public decimal? Score { get; set; }
 }
 

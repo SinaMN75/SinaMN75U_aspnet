@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Responses;
 
-public sealed class ContractResponse : BaseResponse<TagContract, GeneralJsonData> {
+public sealed class ContractResponse : BaseResponse<TagContract, BaseJsonData> {
 	public required DateTime StartDate { get; set; }
 	public required DateTime EndDate { get; set; }
 	public required decimal Deposit { get; set; }
@@ -8,9 +8,6 @@ public sealed class ContractResponse : BaseResponse<TagContract, GeneralJsonData
 
 	public UserResponse? User { get; set; }
 	public required Guid UserId { get; set; }
-
-	public UserResponse? Creator { get; set; }
-	public required Guid CreatorId { get; set; }
 
 	public ProductResponse? Product { get; set; }
 	public required Guid ProductId { get; set; }

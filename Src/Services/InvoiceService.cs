@@ -21,6 +21,7 @@ public class InvoiceService(
 
 		EntityEntry<InvoiceEntity> e = await db.AddAsync(new InvoiceEntity {
 			Id = p.Id ?? Guid.CreateVersion7(),
+			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
 			Tags = p.Tags,
 			DebtAmount = p.DebtAmount,
@@ -30,7 +31,8 @@ public class InvoiceService(
 			ContractId = p.ContractId,
 			DueDate = p.DueDate,
 			JsonData = new InvoiceJson {
-				Description = p.Description,
+				Detail1 = p.Detail1,
+				Detail2 = p.Detail2,
 				PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
 			}
 		}, ct);
@@ -40,17 +42,11 @@ public class InvoiceService(
 	}
 
 	public async Task<UResponse<IEnumerable<InvoiceResponse>?>> Read(InvoiceReadParams p, CancellationToken ct) {
-		IQueryable<InvoiceEntity> q = db.Set<InvoiceEntity>().Include(x => x.Contract);
+		IQueryable<InvoiceEntity> q = db.Set<InvoiceEntity>().Include(x => x.Contract).ApplyReadParams<InvoiceEntity, TagInvoice, InvoiceJson>(p);
 
 		if (p.UserId.IsNotNull()) q = q.Where(x => x.Contract.UserId == p.UserId);
 		if (p.ContractId.IsNotNull()) q = q.Where(x => x.ContractId == p.ContractId);
-		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags.Contains(tag)));
-		if (p.FromCreatedAt.HasValue) q = q.Where(x => x.CreatedAt >= p.FromCreatedAt);
-		if (p.ToCreatedAt.HasValue) q = q.Where(x => x.CreatedAt <= p.ToCreatedAt);
-
-		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
-		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
-
+		
 		UResponse<IEnumerable<InvoiceResponse>?> response = await q.Select(Projections.InvoiceSelector(p.SelectorArgs)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 		List<Guid> ids = response.Result!.Select(x => x.Id).ToList();
 		List<InvoiceEntity> entities = await db.Set<InvoiceEntity>().Where(x => ids.Contains(x.Id)).ToListAsync(ct);
@@ -91,14 +87,9 @@ public class InvoiceService(
 		if (p.PaidAmount.IsNotNull()) e.PaidAmount = p.PaidAmount.Value;
 		if (p.DueDate.HasValue) e.DueDate = p.DueDate.Value;
 		if (p.ContractId.HasValue) e.ContractId = p.ContractId.Value;
-		if (p.Description.IsNotNullOrEmpty()) e.JsonData.Description = p.Description;
 		if (p.PenaltyPrecentEveryDate.IsNotNull()) e.JsonData.PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate.Value;
 
-		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
-		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
-		if (p.Tags.IsNotNullOrEmpty()) e.Tags = p.Tags;
-
-		db.Update(e);
+		db.Set<InvoiceEntity>().Update(e.ApplyUpdateParam<InvoiceEntity,TagInvoice, InvoiceJson>(p));
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();
@@ -130,6 +121,9 @@ public class InvoiceService(
 	}
 
 	public async Task<UResponse<IEnumerable<InvoiceChartResponse>?>> ReadChartData(BaseParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<InvoiceChartResponse>?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
 		var rawData = await db.Set<InvoiceEntity>()
 			.GroupBy(x => x.CreatedAt.Month)
 			.Select(g => new {

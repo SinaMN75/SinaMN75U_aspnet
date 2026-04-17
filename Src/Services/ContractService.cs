@@ -34,7 +34,7 @@ public class ContractService(
 			UserId = user.Id,
 			CreatorId = p.CreatorId ?? userData.Id,
 			ProductId = product.Id,
-			JsonData = new GeneralJsonData { Description = p.Description ?? ""},
+			JsonData = new BaseJsonData { Detail2 = p.Detail2},
 			Tags = p.Tags
 		};
 		await db.Set<ContractEntity>().AddAsync(e, ct);
@@ -42,6 +42,7 @@ public class ContractService(
 		if (p.Tags.Contains(TagContract.SingleInvoice)) {
 			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 				Id = Guid.CreateVersion7(),
+				CreatorId = p.CreatorId ?? userData.Id,
 				CreatedAt = DateTime.UtcNow,
 				Tags = [TagInvoice.NotPaid],
 				DebtAmount = e.Deposit + e.Rent,
@@ -51,7 +52,7 @@ public class ContractService(
 				ContractId = contractId,
 				DueDate = p.StartDate,
 				JsonData = new InvoiceJson {
-					Description = "",
+					Detail1 = "",
 					PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
 				}
 			}, ct);
@@ -63,6 +64,7 @@ public class ContractService(
 		if (e.Deposit >= 1)
 			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 				Id = Guid.CreateVersion7(),
+				CreatorId = p.CreatorId ?? userData.Id,
 				CreatedAt = DateTime.UtcNow,
 				Tags = [TagInvoice.NotPaid, TagInvoice.Deposit],
 				DebtAmount = product.Deposit ?? 0,
@@ -72,7 +74,7 @@ public class ContractService(
 				ContractId = contractId,
 				DueDate = p.StartDate,
 				JsonData = new InvoiceJson {
-					Description = "ودیعه",
+					Detail1 = "ودیعه",
 					PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
 				}
 			}, ct);
@@ -87,6 +89,7 @@ public class ContractService(
 
 		await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 			Id = Guid.CreateVersion7(),
+			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
 			Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
 			DebtAmount = rent,
@@ -96,7 +99,7 @@ public class ContractService(
 			ContractId = contractId,
 			DueDate = startDate.ToDateTime(),
 			JsonData = new InvoiceJson {
-				Description = "قسط اول - قیمت کامل",
+				Detail2 = "قسط اول - قیمت کامل",
 				PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
 			}
 		}, ct);
@@ -108,6 +111,7 @@ public class ContractService(
 
 			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 				Id = Guid.CreateVersion7(),
+				CreatorId = p.CreatorId ?? userData.Id,
 				CreatedAt = DateTime.UtcNow,
 				Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
 				DebtAmount = Math.Round(proportionalPrice, 2),
@@ -117,7 +121,7 @@ public class ContractService(
 				ContractId = contractId,
 				DueDate = startDate.AddMonths(1).ToDateTime(),
 				JsonData = new InvoiceJson {
-					Description = $"قسط دوم - قیمت متناسب ({remainingDaysInFirstMonth} روز از {totalDaysInFirstMonth} روز)",
+					Detail2 = $"قسط دوم - قیمت متناسب ({remainingDaysInFirstMonth} روز از {totalDaysInFirstMonth} روز)",
 					PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
 				}
 			}, ct);
@@ -128,6 +132,7 @@ public class ContractService(
 
 			await db.Set<InvoiceEntity>().AddAsync(new InvoiceEntity {
 				Id = Guid.CreateVersion7(),
+				CreatorId = p.CreatorId ?? userData.Id,
 				CreatedAt = DateTime.UtcNow,
 				Tags = [TagInvoice.NotPaid, TagInvoice.Rent],
 				DebtAmount = rent,
@@ -137,7 +142,7 @@ public class ContractService(
 				ContractId = contractId,
 				DueDate = firstOfMonth.ToDateTime(),
 				JsonData = new InvoiceJson {
-					Description = $"قسط {i + 1} - قیمت کامل",
+					Detail2 = $"قسط {i + 1} - قیمت کامل",
 					PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
 				}
 			}, ct);
@@ -148,17 +153,13 @@ public class ContractService(
 	}
 
 	public async Task<UResponse<IEnumerable<ContractResponse>?>> Read(ContractReadParams p, CancellationToken ct) {
-		IQueryable<ContractEntity> q = db.Set<ContractEntity>();
+		IQueryable<ContractEntity> q = db.Set<ContractEntity>().ApplyReadParams<ContractEntity, TagContract, BaseJsonData>(p);
 
-		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(u => u.Tags.Any(tag => p.Tags.Contains(tag)));
-		if (p.CreatorId.IsNotNull()) q = q.Where(u => u.CreatorId == p.CreatorId);
 		if (p.UserId.IsNotNull()) q = q.Where(u => u.UserId == p.UserId);
 		if (p.ProductId.IsNotNull()) q = q.Where(u => u.ProductId == p.ProductId);
 		if (p.UserName.IsNotNullOrEmpty()) q = q.Include(x => x.User).Where(x => x.User.UserName.Contains(p.UserName));
 		if (p.StartDate.HasValue) q = q.Where(u => u.StartDate <= p.StartDate);
 		if (p.EndDate.HasValue) q = q.Where(u => u.EndDate >= p.EndDate);
-		if (p.FromCreatedAt.HasValue) q = q.Where(u => u.CreatedAt >= p.FromCreatedAt);
-		if (p.ToCreatedAt.HasValue) q = q.Where(u => u.CreatedAt <= p.ToCreatedAt);
 
 		IQueryable<ContractResponse> list = q.Select(Projections.ContractSelector(p.SelectorArgs));
 
@@ -175,10 +176,7 @@ public class ContractService(
 		if (p.Rent.HasValue) e.Rent = p.Rent.Value;
 		if (p.StartDate.HasValue) e.StartDate = p.StartDate.Value;
 		if (p.EndDate.HasValue) e.EndDate = p.EndDate.Value;
-		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
-		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
-		if (p.Tags.IsNotNullOrEmpty()) e.Tags = p.Tags;
-		db.Set<ContractEntity>().Update(e);
+		db.Set<ContractEntity>().Update(e.ApplyUpdateParam<ContractEntity,TagContract, BaseJsonData>(p));
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();

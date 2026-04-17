@@ -38,8 +38,10 @@ public class TicketService(
 	}
 
 	public async Task<UResponse<IEnumerable<TicketResponse>?>> Read(TicketReadParams p, CancellationToken ct) {
-		IQueryable<TicketResponse> q = db.Set<TicketEntity>().Select(Projections.TicketSelector(p.SelectorArgs));
-		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		IQueryable<TicketEntity> q = db.Set<TicketEntity>().ApplyReadParams<TicketEntity, TagTicket, TicketJson>(p);
+		
+		IQueryable<TicketResponse> projected = q.Select(Projections.TicketSelector(p.SelectorArgs));
+		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse> Update(TicketUpdateParams p, CancellationToken ct) {
@@ -53,11 +55,8 @@ public class TicketService(
 		if (p.Phone.IsNotNullOrEmpty()) e.JsonData.Phone = p.Phone;
 		if (p.Telegram.IsNotNullOrEmpty()) e.JsonData.Telegram = p.Telegram;
 		if (p.Whatsapp.IsNotNullOrEmpty()) e.JsonData.Whatsapp = p.Whatsapp;
-
-		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
-		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
-
-		db.Update(e);
+		
+		db.Set<TicketEntity>().Update(e.ApplyUpdateParam<TicketEntity,TagTicket, TicketJson>(p));
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();

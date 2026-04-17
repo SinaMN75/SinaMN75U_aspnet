@@ -19,20 +19,9 @@ public sealed class CategoryEntity : BaseEntity<TagCategory, CategoryJson> {
 	public ICollection<ProductEntity> Products { get; set; } = [];
 	public ICollection<UserEntity> Users { get; set; } = [];
 	public ICollection<MediaEntity> Media { get; set; } = [];
-
-	public CategoryResponse MapToResponse() => new() {
-		Id = Id,
-		CreatedAt = CreatedAt,
-		JsonData = JsonData,
-		Tags = Tags,
-		Title = Title,
-		Order = Order,
-		Code = Code,
-		ParentId = ParentId
-	};
 }
 
-public sealed class CategoryJson {
+public sealed class CategoryJson : BaseJsonData {
 	public string? Subtitle { get; set; }
 	public string? Link { get; set; }
 	public string? Location { get; set; }

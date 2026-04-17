@@ -32,9 +32,10 @@ public class IpgService(IHttpClientService http, DbContext db) : IIpgService {
 		IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(Convert.FromBase64String(base64AdditionalData).ToString()!)!;
 
 		await db.Set<TxnEntity>().AddAsync(new TxnEntity {
+			CreatorId = Core.App.Users.SystemAdmin.Id,
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new GeneralJsonData(),
+			JsonData = new BaseJsonData(),
 			Tags = [TagTxn.ChargeWallet, TagTxn.Paid],
 			Amount = data.Amount,
 			TrackingNumber = data.TrackingNumber,
@@ -43,15 +44,16 @@ public class IpgService(IHttpClientService http, DbContext db) : IIpgService {
 
 		await db.Set<WalletTxnEntity>().AddAsync(new WalletTxnEntity {
 			Id = Guid.CreateVersion7(),
+			CreatorId = Core.App.Users.SystemAdmin.Id,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new GeneralJsonData { Description = "شارژ کیف پول" },
+			JsonData = new BaseJsonData { Detail2 = "شارژ کیف پول" },
 			Tags = [TagWalletTxn.Charge],
 			SenderId = Core.App.Ipg.IpgUserId,
 			ReceiverId = Guid.Parse(data.UserId),
 			Amount = data.Amount
 		}, ct);
 
-		WalletEntity wallet = (await db.Set<WalletEntity>().FirstOrDefaultAsync(x => x.UserId == Guid.Parse(data.UserId), ct))!;
+		WalletEntity wallet = (await db.Set<WalletEntity>().FirstOrDefaultAsync(x => x.CreatorId == Guid.Parse(data.UserId), ct))!;
 		wallet.Balance += data.Amount;
 		db.Update(wallet);
 

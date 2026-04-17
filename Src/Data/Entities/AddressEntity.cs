@@ -2,22 +2,11 @@ namespace SinaMN75U.Data.Entities;
 
 [Table("Addresses")]
 public sealed class AddressEntity : BaseEntity<TagAddress, AddressJson> {
+	[MaxLength(20)]
 	public string? ZipCode { get; set; }
-
-	public required Guid CreatorId { get; set; }
-	public UserEntity Creator { get; set; } = null!;
-
-	public AddressResponse MapToResponse() => new() {
-		Id = Id,
-		CreatedAt = CreatedAt,
-		JsonData = JsonData,
-		Tags = Tags,
-		ZipCode = ZipCode,
-		CreatorId = CreatorId
-	};
 }
 
-public sealed class AddressJson {
+public sealed class AddressJson: BaseJsonData {
 	public string? Title { get; set; }
 	public string? Province { get; set; }
 	public string? Township { get; set; }

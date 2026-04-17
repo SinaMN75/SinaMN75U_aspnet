@@ -7,6 +7,16 @@ public interface ILocalizationService {
 public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizationService {
 	private readonly Dictionary<string, string> _en = new() {
 		{ "IdIsDuplicated", "This Id is already exist." },
+		{ "RefreshTokenRequired", "Refresh Token Required." },
+		{ "ZipCodeRequired", "ZipCode Is Required." },
+		{ "LicencePlateRequired", "LicencePlate Is Required." },
+		{ "ProductRequired", "Product Is Required." },
+		{ "DrivingLicenceNumberRequired", "LicencePlate Is Required." },
+		{ "IBanRequired", "IBan Is Required." },
+		{ "ZipCodeInvalid", "ZipCode Is Invalid." },
+		{ "LicencePlateInvalid", "LicencePlate Is Invalid." },
+		{ "DrivingLicenceNumberInvalid", "LicencePlate Is Invalid." },
+		{ "IBanInvalid", "IBan Is Invalid." },
 		{ "SlugIsDuplicated", "This Slug is already exist." },
 		{ "CodeIsDuplicated", "This Code is already exist." },
 		{ "SimCardNumberIsDuplicated", "This Sim Card Number is already exist." },
@@ -91,14 +101,33 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "TransferMoneyDone", "Transfer Money Successful" },
 		{ "WalletForThisUserAlreadyExists", "User Already has Wallet." },
 		{ "AddressNotFound", "Address Not Found" },
+		{ "BankAccountNotFound", "Bank Account Not Found." },
 		{ "AddressUpdatedSuccessfully", "Address Updated Successfully" },
 		{ "AddressDeletedSuccessfully", "Address Deleted Successfully" },
 		{ "LicencePlateMinMaxLenght", "Licence Plate can't be more than 10 Characters." },
-		{ "TerminalNotFound", "Terminal Not Found" }
+		{ "TerminalNotFound", "Terminal Not Found." },
+		{ "EntrancePriceRequired", "Entrance Price Required." },
+		{ "HourlyPriceRequired", "Hourly Price Required." },
+		{ "DailyPriceRequired", "Daily Price Required." },
+		{ "AmountRequired", "Amount Required." },
+		{ "TrackingNumberRequired", "Tracking Number Required." },
+		{ "NumberRequired", "Number Required." },
+		{ "SerialRequired", "Serial Required." },
+		{ "YouDoNotHaveClearanceToDoThisAction", "You Do Not have Clearance to do this Action." }
 	};
 
 	private readonly Dictionary<string, string> _fa = new() {
 		{ "IdIsDuplicated", "آیدی تکراری است." },
+		{ "RefreshTokenRequired", "توکن الزامیست" },
+		{ "ZipCodeRequired", "کد پستی الزامی است." },
+		{ "LicencePlateRequired", "شماره پلاک الزامی است." },
+		{ "DrivingLicenceNumberRequired", "شماره گواهینامه الزامی است." },
+		{ "IBanRequired", "کد پستی اشتباه است." },
+		{ "ProductRequired", "محصول الزامی است." },
+		{ "ZipCodeInvalid", "کد پستی اشتباه است." },
+		{ "LicencePlateInvalid", "شماره پلاک اشتباه است." },
+		{ "DrivingLicenceNumberInvalid", "شماره گواهینامه اشتباه است." },
+		{ "IBanInvalid", "شماره شبا اشتباه است." },
 		{ "SlugIsDuplicated", "اسلاگ تکراری است." },
 		{ "CodeIsDuplicated", "کد تکراری است." },
 		{ "SimCardNumberIsDuplicated", "شماره سیمکارت تکراری است." },
@@ -183,10 +212,19 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "TransferMoneyDone", "انتقال پول با موفقیت انجام شد" },
 		{ "WalletForThisUserAlreadyExists", "کاربر از قبل کیف پول دارد." },
 		{ "AddressNotFound", "آدرس یافت نشد" },
+		{ "BankAccountNotFound", "حساب بانکی یافت نشد." },
 		{ "AddressUpdatedSuccessfully", "آدرس با موفقیت به روز شد" },
 		{ "AddressDeletedSuccessfully", "آدرس با موفقیت حذف شد" },
 		{ "LicencePlateMinMaxLenght", "طول پلاک خودرو نمیتواند بیشتر از ۱۰ کاراکتر باشد." },
-		{ "TerminalNotFound", "ترمینال یافت نشد." }
+		{ "TerminalNotFound", "ترمینال یافت نشد." },
+		{ "EntrancePriceRequired", "مبلغ ورودی الزامی است" },
+		{ "HourlyPriceRequired", "مبلغ ساعتی الزامی است" },
+		{ "DailyPriceRequired", "مبلغ روزانه الزامی است" },
+		{ "AmountRequired", "مبلغ الزامی است" },
+		{ "NumberRequired", "شماره الزامی است" },
+		{ "TrackingNumberRequired", "کد رهگیری الزامی است" },
+		{ "SerialRequired", "سریال الزامی است" },
+		{ "YouDoNotHaveClearanceToDoThisAction", "شما مجاز به انجام این عملیات نیستید." }
 	};
 
 	public string Get(string key, string? locale = null) {

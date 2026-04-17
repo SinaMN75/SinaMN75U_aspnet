@@ -8,5 +8,6 @@ public static class InquiryRoutes {
 		r.MapPost("DrivingLicenceStatus", async (DrivingLicenceStatusParams p, IInquiryService s, CancellationToken c) => (await s.GetDrivingLicenceStatus(p, c)).ToResult()).Produces<UResponse<PostalCodeToAddressDetailResponse>>();
 		r.MapPost("LicencePlateInquiry", async (LicencePlateInquiryParams p, IInquiryService s, CancellationToken c) => (await s.InquiryLicencePlate(p, c)).ToResult()).Produces<UResponse<LicencePlateInquiryResponse>>();
 		r.MapPost("DrivingLicenceNegativePoint", async (DrivingLicenceNegativePointParams p, IInquiryService s, CancellationToken c) => (await s.DrivingLicenceNegativePoint(p, c)).ToResult()).Produces<UResponse<DrivingLicenceNegativePointResponse>>();
+		r.MapPost("IBanToBankAccountDetail", async (IBanToBankAccountDetailParams p, IInquiryService s, CancellationToken c) => (await s.IBanToBankAccountDetail(p, c)).ToResult()).Produces<UResponse<IBanToBankAccountDetailResponse>>();
 	}
 }

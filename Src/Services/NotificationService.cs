@@ -19,7 +19,7 @@ public class NotificationService(
 		NotificationEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new GeneralJsonData { Title = p.Title, Description = p.Description, },
+			JsonData = new BaseJsonData { Detail1 = p.Detail1, Detail2 = p.Detail2 },
 			Tags = p.Tags,
 			CreatorId = p.CreatorId ?? userData.Id,
 			Userd = p.UserId
@@ -31,16 +31,10 @@ public class NotificationService(
 	}
 
 	public async Task<UResponse<IEnumerable<NotificationResponse>?>> Read(NotificationReadParams p, CancellationToken ct) {
-		IQueryable<NotificationEntity> q = db.Set<NotificationEntity>();
-
-		if (p.OrderByCreatedAt) q = q.OrderBy(x => x.CreatedAt);
-		if (p.OrderByCreatedAtDesc) q = q.OrderByDescending(x => x.CreatedAt);
-		if (p.CreatorId != null) q = q.Where(x => x.CreatorId == p.CreatorId);
-		if (p.UserId != null) q = q.Where(x => x.Userd == p.UserId);
-
-		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => p.Tags.All(tag => x.Tags.Contains(tag)));
-		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
-
+		IQueryable<NotificationEntity> q = db.Set<NotificationEntity>().ApplyReadParams<NotificationEntity, TagNotification, BaseJsonData>(p);
+		
+		if (p.UserId.IsNotNull()) q = q.Where(x => x.Userd == p.UserId);
+		
 		IQueryable<NotificationResponse> projected = q.Select(Projections.NotificationSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
@@ -52,11 +46,7 @@ public class NotificationService(
 		NotificationEntity? e = await db.Set<NotificationEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("NotificationNotFound"));
 
-		if (p.Title != null) e.JsonData.Title = p.Title;
-		if (p.Description != null) e.JsonData.Description = p.Description;
-		if (p.Tags != null) e.Tags = p.Tags;
-
-		db.Update(e);
+		db.Update(e.ApplyUpdateParam<NotificationEntity,TagNotification, BaseJsonData>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}

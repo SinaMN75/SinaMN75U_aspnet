@@ -54,7 +54,7 @@ public class FollowService(
 			UserId = p.UserId,
 			ProductId = p.ProductId,
 			CategoryId = p.CategoryId,
-			JsonData = new FollowJson(),
+			JsonData = new BaseJsonData(),
 			Tags = [TagFollow.User]
 		};
 
@@ -97,10 +97,10 @@ public class FollowService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IEnumerable<UserEntity>>([], Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		List<UserEntity> followers = (await db.Set<FollowEntity>()
+		List<UserEntity> followers = await db.Set<FollowEntity>()
 			.Where(x => x.UserId == p.Id)
 			.Select(x => x.Creator)
-			.ToListAsync(ct))!;
+			.ToListAsync(ct);
 
 		return new UResponse<IEnumerable<UserEntity>>(followers);
 	}

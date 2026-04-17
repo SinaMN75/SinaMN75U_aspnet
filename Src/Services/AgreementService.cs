@@ -39,10 +39,11 @@ public class AgreementService(
 		EntityEntry<AgreementEntity> e = await db.Set<AgreementEntity>().AddAsync(new AgreementEntity {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new GeneralJsonData(),
+			JsonData = new BaseJsonData(),
 			Tags = [TagAgreement.TerminalRequest, TagAgreement.Signed],
 			TerminalId = terminal.Id,
-			Agreement = agreement
+			Agreement = agreement,
+			CreatorId = p.CreatorId ?? userData.Id
 		}, ct);
 		
 		await db.SaveChangesAsync(ct);

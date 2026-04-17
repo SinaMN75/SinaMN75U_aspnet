@@ -25,23 +25,12 @@ public static class DbModelBuilder {
 		builder.Entity<SimCardEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<InquiryHistoryEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<NotificationEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
-		builder.Entity<UserEntity>().OwnsOne(e => e.JsonData, b => {
-			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
-			b.OwnsMany(i => i.VisitCounts);
-		});
+		builder.Entity<UserEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<UserExtraEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
-		builder.Entity<ProductEntity>().OwnsOne(e => e.JsonData, b => {
-			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
-			b.OwnsMany(i => i.VisitCounts);
-			b.OwnsMany(i => i.PointCounts);
-		});
+		builder.Entity<ProductEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<CommentEntity>().OwnsOne(e => e.JsonData, b => {
 			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
 			b.OwnsMany(i => i.Reacts);
-		});
-		builder.Entity<ChatBotEntity>().OwnsOne(e => e.JsonData, b => {
-			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
-			b.OwnsMany(i => i.History);
 		});
 	}
 }

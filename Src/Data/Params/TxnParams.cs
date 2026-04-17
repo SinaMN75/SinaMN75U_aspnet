@@ -1,9 +1,13 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class TxnCreateParams : BaseCreateParams<TagTxn> {
-	public required decimal Amount { get; set; }
-	public required string TrackingNumber { get; set; }
-	public required Guid InvoiceId { get; set; }
+	[UValidationRequired("AmountRequired")]
+	public decimal Amount { get; set; }
+
+	[UValidationRequired("TrackingNumberRequired")]
+	public string TrackingNumber { get; set; } = null!;
+
+	public Guid? InvoiceId { get; set; }
 }
 
 public sealed class TxnUpdateParams : BaseUpdateParams<TagTxn> {

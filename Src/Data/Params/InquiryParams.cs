@@ -1,37 +1,57 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class VerifyNationalCodeAndPhoneNumber : BaseParams {
-	public required string NationalCode { get; set; }
-	public required string Mobile { get; set; }
+	[UValidationRequired("NationalCodeRequired"), UValidationStringLength(10, 10, "NationalCodeInvalid")]
+	public string NationalCode { get; set; } = null!;
+
+	[UValidationRequired("PhoneNumberRequired"), UValidationStringLength(9, 15, "PhoneNumberInvalid")]
+	public string PhoneNumber { get; set; } = null!;
 }
 
 public sealed class PostalCodeToAddressDetailParams {
-	public required string ZipCode { get; set; }
+	[UValidationRequired("ZipCodeRequired"), UValidationStringLength(10, 10, "ZipCodeInvalid")]
+	public string ZipCode { get; set; } = null!;
 }
 
 public sealed class VehicleViolationDetailParams {
-	public required string NationalCode { get; set; }
-	public required string PhoneNumber { get; set; }
-	public required string LicencePlate { get; set; }
+	[UValidationRequired("NationalCodeRequired"), UValidationStringLength(10, 10, "NationalCodeInvalid")]
+	public string NationalCode { get; set; } = null!;
+
+	[UValidationRequired("PhoneNumberRequired"), UValidationStringLength(9, 15, "PhoneNumberInvalid")]
+	public string PhoneNumber { get; set; } = null!;
+
+	[UValidationRequired("LicencePlateRequired"), UValidationStringLength(4, 10, "LicencePlateInvalid")]
+	public string LicencePlate { get; set; } = null!;
 }
 
 public sealed class DrivingLicenceStatusParams {
-	public required string NationalCode { get; set; }
-	public required string PhoneNumber { get; set; }
+	[UValidationRequired("NationalCodeRequired"), UValidationStringLength(10, 10, "NationalCodeInvalid")]
+	public string NationalCode { get; set; } = null!;
+
+	[UValidationRequired("PhoneNumberRequired"), UValidationStringLength(9, 15, "PhoneNumberInvalid")]
+	public string PhoneNumber { get; set; } = null!;
 }
 
 public sealed class LicencePlateInquiryParams {
-	public required string NationalCode { get; set; }
-	public required string LicencePlate { get; set; }
+	[UValidationRequired("NationalCodeRequired"), UValidationStringLength(10, 10, "NationalCodeInvalid")]
+	public string NationalCode { get; set; } = null!;
+
+	[UValidationRequired("LicencePlateRequired"), UValidationStringLength(5, 15, "LicencePlateInvalid")]
+	public string LicencePlate { get; set; } = null!;
 }
 
 public sealed class DrivingLicenceNegativePointParams {
-	public required string NationalCode { get; set; }
-	public required string PhoneNumber { get; set; }
-	public required string DrivingLicenceNumber { get; set; }
+	[UValidationRequired("NationalCodeRequired"), UValidationStringLength(10, 10, "NationalCodeInvalid")]
+	public string NationalCode { get; set; } = null!;
+
+	[UValidationRequired("PhoneNumberRequired"), UValidationStringLength(9, 15, "PhoneNumberInvalid")]
+	public string PhoneNumber { get; set; } = null!;
+
+	[UValidationRequired("DrivingLicenceNumberRequired"), UValidationStringLength(5, 15, "DrivingLicenceNumberInvalid")]
+	public string DrivingLicenceNumber { get; set; } = null!;
 }
 
 public sealed class IBanToBankAccountDetailParams {
-	public required string IBan { get; set; }
+	[UValidationRequired("IBanRequired"), UValidationStringLength(20, 28, "IBanInvalid")]
+	public string IBan { get; set; } = null!;
 }
-

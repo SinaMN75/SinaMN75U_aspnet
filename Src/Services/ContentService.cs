@@ -18,6 +18,7 @@ public class ContentService(
 
 		ContentEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
+			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
 			JsonData = new ContentJson {
 				Title = p.Title,
@@ -37,8 +38,9 @@ public class ContentService(
 	}
 
 	public async Task<UResponse<IEnumerable<ContentResponse>?>> Read(ContentReadParams p, CancellationToken ct) {
-		IQueryable<ContentResponse> q = db.Set<ContentEntity>().Select(Projections.ContentSelector(p.SelectorArgs));
-		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		IQueryable<ContentEntity> q = db.Set<ContentEntity>().ApplyReadParams<ContentEntity, TagContent, ContentJson>(p);
+		IQueryable<ContentResponse> projected = q.Select(Projections.ContentSelector(p.SelectorArgs));
+		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse> Update(ContentUpdateParams p, CancellationToken ct) {
@@ -55,11 +57,8 @@ public class ContentService(
 		if (p.Telegram != null) e.JsonData.Telegram = p.Telegram;
 		if (p.Whatsapp != null) e.JsonData.Whatsapp = p.Whatsapp;
 		if (p.Phone != null) e.JsonData.Phone = p.Phone;
-		if (p.Tags != null) e.Tags = p.Tags;
-		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
-		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
 		
-		db.Update(e);
+		db.Set<ContentEntity>().Update(e.ApplyUpdateParam<ContentEntity,TagContent, ContentJson>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}

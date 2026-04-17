@@ -14,6 +14,7 @@ public sealed class AppSettings {
 	public DefaultUsers Users { get; init; } = new() {
 		SystemAdmin = new UserEntity {
 			Id = UConstants.SystemAdminId,
+			CreatorId = Core.App.Users.SystemAdmin.Id,
 			CreatedAt = DateTime.UtcNow,
 			UserName = "SinaMN75",
 			Password = "SinaMN75",
@@ -27,11 +28,12 @@ public sealed class AppSettings {
 			Birthdate = new DateTime(1996, 7, 21),
 			Tags = [TagUser.Male, TagUser.SystemAdmin],
 			JsonData = new UserJson { FcmToken = "", FatherName = "Davoud", Weight = 180, Height = 90 },
-			Extra = new UserExtraEntity { UserId = UConstants.SystemAdminId, Id = UConstants.SystemAdminId, CreatedAt = DateTime.UtcNow, JsonData = new GeneralJsonData(), Tags = [] },
-			Wallets = [new WalletEntity { UserId = UConstants.SystemAdminId, Id = UConstants.SystemAdminId, CreatedAt = DateTime.UtcNow, JsonData = new GeneralJsonData(), Tags = [TagWallet.Primary], Balance = 0 }]
+			Extra = new UserExtraEntity { CreatorId = Core.App.Users.SystemAdmin.Id, Id = UConstants.SystemAdminId, CreatedAt = DateTime.UtcNow, JsonData = new BaseJsonData(), Tags = [] },
+			Wallets = [new WalletEntity { CreatorId = Core.App.Users.SystemAdmin.Id, Id = UConstants.SystemAdminId, CreatedAt = DateTime.UtcNow, JsonData = new BaseJsonData(), Tags = [TagWallet.Primary], Balance = 0 }]
 		},
 		ITHub = new UserEntity {
 			Id = UConstants.ITHubUserId,
+			CreatorId = Core.App.Users.SystemAdmin.Id,
 			CreatedAt = DateTime.UtcNow,
 			UserName = "ITHub",
 			Password = "ITHub123!@#",
@@ -45,11 +47,12 @@ public sealed class AppSettings {
 			Birthdate = DateTime.UtcNow,
 			Tags = [TagUser.Unspecified, TagUser.SystemUser],
 			JsonData = new UserJson(),
-			Extra = new UserExtraEntity { UserId = UConstants.ITHubUserId, Id = UConstants.ITHubUserId, CreatedAt = DateTime.UtcNow, JsonData = new GeneralJsonData(), Tags = [] },
-			Wallets = [new WalletEntity { UserId = UConstants.ITHubUserId, Id = UConstants.ITHubUserId, CreatedAt = DateTime.UtcNow, JsonData = new GeneralJsonData(), Tags = [TagWallet.Primary], Balance = 0 }]
+			Extra = new UserExtraEntity { CreatorId = Core.App.Users.SystemAdmin.Id, Id = UConstants.ITHubUserId, CreatedAt = DateTime.UtcNow, JsonData = new BaseJsonData(), Tags = [] },
+			Wallets = [new WalletEntity { CreatorId = Core.App.Users.SystemAdmin.Id, Id = UConstants.ITHubUserId, CreatedAt = DateTime.UtcNow, JsonData = new BaseJsonData(), Tags = [TagWallet.Primary], Balance = 0 }]
 		},
 		AvaPlus = new UserEntity {
 			Id = UConstants.AvaPlus,
+			CreatorId = Core.App.Users.SystemAdmin.Id,
 			CreatedAt = DateTime.UtcNow,
 			UserName = "AvaPlus",
 			Password = "AvaPlus123!@#",
@@ -63,9 +66,9 @@ public sealed class AppSettings {
 			Birthdate = DateTime.UtcNow,
 			Tags = [TagUser.Unspecified, TagUser.SystemUser],
 			JsonData = new UserJson(),
-			Extra = new UserExtraEntity { UserId = UConstants.AvaPlus, Id = UConstants.AvaPlus, CreatedAt = DateTime.UtcNow, JsonData = new GeneralJsonData(), Tags = [] },
-			Wallets = [new WalletEntity { UserId = UConstants.AvaPlus, Id = UConstants.AvaPlus, CreatedAt = DateTime.UtcNow, JsonData = new GeneralJsonData(), Tags = [TagWallet.Primary], Balance = 0 }]
-		},
+			Extra = new UserExtraEntity { CreatorId = Core.App.Users.SystemAdmin.Id, Id = UConstants.AvaPlus, CreatedAt = DateTime.UtcNow, JsonData = new BaseJsonData(), Tags = [] },
+			Wallets = [new WalletEntity { CreatorId = Core.App.Users.SystemAdmin.Id, Id = UConstants.AvaPlus, CreatedAt = DateTime.UtcNow, JsonData = new BaseJsonData(), Tags = [TagWallet.Primary], Balance = 0 }]
+		}
 	};
 }
 

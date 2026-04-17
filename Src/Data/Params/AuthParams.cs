@@ -1,74 +1,54 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class RefreshTokenParams : BaseParams {
-	public required string RefreshToken { get; set; }
+	[UValidationRequired("IdRequired")]
+	public string RefreshToken { get; set; } = null!;
 }
 
 public sealed class GetMobileVerificationCodeForLoginParams : BaseParams {
-	[UValidationRequired("PhoneNumberRequired")]
-	[UValidationStringLength(9, 12, "PhoneNumberNotValid")]
-	public required string PhoneNumber { get; set; }
+	[UValidationRequired("PhoneNumberRequired"), UValidationStringLength(9, 12, "PhoneNumberNotValid")]
+	public string PhoneNumber { get; set; } = null!;
 }
 
-public sealed class LoginWithEmailPasswordParams : BaseParams {
-	[UValidationRequired("EmailRequired")]
-	[UValidationEmail("EmailInvalid")]
-	public required string Email { get; set; }
+public sealed class LoginParams : BaseParams {
+	public string? UserName { get; set; }
+	public string? Email { get; set; }
 
-	[UValidationRequired("PasswordRequired")]
-	[UValidationStringLength(4, 100, "PasswordMinLength")]
-	public required string Password { get; set; }
-}
-
-public sealed class LoginWithUserNamePasswordParams : BaseParams {
-	[UValidationRequired("UserNameRequired")]
-	[UValidationStringLength(2, 100, "UserNameMinLenght")]
-	public required string UserName { get; set; }
-
-	[UValidationRequired("PasswordRequired")]
-	[UValidationStringLength(4, 100, "PasswordMinLength")]
-	public required string Password { get; set; }
+	[UValidationRequired("PasswordRequired"), UValidationStringLength(4, 100, "PasswordMinLength")]
+	public string Password { get; set; } = null!;
 }
 
 public sealed class RegisterParams : BaseParams {
-	[UValidationRequired("UserNameRequired")]
-	[UValidationStringLength(2, 100, "UserNameMinLenght")]
-	public required string UserName { get; set; }
+	[UValidationRequired("UserNameRequired"), UValidationStringLength(2, 100, "UserNameMinLenght")]
+	public string UserName { get; set; } = null!;
 
-	public string? Email { get; set; }
-
-	public string? PhoneNumber { get; set; }
-
-	[UValidationRequired("PasswordRequired")]
-	[UValidationStringLength(4, 100, "PasswordMinLength")]
-	public required string Password { get; set; }
-
-	public string? FirstName { get; set; }
-	public string? LastName { get; set; }
+	[UValidationRequired("PasswordRequired"), UValidationStringLength(4, 100, "PasswordMinLength")]
+	public string Password { get; set; } = null!;
 
 	[UValidationMinCollectionLength(1, "TagsRequired")]
-	public required List<TagUser> Tags { get; set; }
+	public List<TagUser> Tags { get; set; } = null!;
+	
+	public string? Email { get; set; }
+	public string? PhoneNumber { get; set; }
+	public string? FirstName { get; set; }
+	public string? LastName { get; set; }
 }
 
 public sealed class VerifyMobileForLoginParams : BaseParams {
-	[UValidationRequired("PhoneNumberRequired")]
-	[UValidationStringLength(9, 12, "PhoneNumberNotValid")]
-	public required string PhoneNumber { get; set; }
+	[UValidationRequired("PhoneNumberRequired"), UValidationStringLength(9, 12, "PhoneNumberNotValid")]
+	public string PhoneNumber { get; set; } = null!;
 
 	[UValidationRequired("OtpRequired")]
-	public required string Otp { get; set; }
+	public string Otp { get; set; } = null!;
 }
 
 public sealed class AuthCompleteProfileParams : BaseParams {
-	[UValidationRequired("FirstNameRequired")]
-	[UValidationStringLength(2, 40, "FirstNameInvalid")]
-	public required string FirstName { get; set; }
+	[UValidationRequired("FirstNameRequired"), UValidationStringLength(2, 40, "FirstNameInvalid")]
+	public string FirstName { get; set; } = null!;
 
-	[UValidationRequired("LastNameRequired")]
-	[UValidationStringLength(2, 40, "LastNameInvalid")]
-	public required string LastName { get; set; }
+	[UValidationRequired("LastNameRequired"), UValidationStringLength(2, 40, "LastNameInvalid")]
+	public string LastName { get; set; } = null!;
 
-	[UValidationRequired("NationalCodeRequired")]
-	[UValidationStringLength(10, 10, "NationalCodeInvalid")]
-	public required string NationalCode { get; set; }
+	[UValidationRequired("NationalCodeRequired"), UValidationStringLength(10, 10, "NationalCodeInvalid")]
+	public string NationalCode { get; set; } = null!;
 }

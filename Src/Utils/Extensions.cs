@@ -11,6 +11,8 @@ public static class UExtensions {
 	public static bool IsNotNull([NotNullWhen(true)] this string? s) => s != null;
 	public static bool IsNotNull([NotNullWhen(true)] this int? s) => s != null;
 	public static bool IsNotNull([NotNullWhen(true)] this decimal? s) => s != null;
+	public static bool IsNotNull([NotNullWhen(true)] this double? s) => s != null;
+	public static bool IsNotNullOrZero([NotNullWhen(true)] this decimal? s) => s != null && s != 0;
 	public static bool IsNotNull<T>([NotNullWhen(true)] this T? obj) where T : class => obj != null;
 	public static bool IsGuid(this string s) => Guid.TryParse(s, out Guid _);
 	public static string ToJson<T>(this T obj) => JsonSerializer.Serialize(obj, Core.Default);

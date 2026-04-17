@@ -1,6 +1,8 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class AddressCreateParams : BaseCreateParams<TagAddress> {
+	public string? Title { get; set; }
+	public string? Description { get; set; }
 	public string? Province { get; set; }
 	public string? Township { get; set; }
 	public string? Street { get; set; }
@@ -17,6 +19,8 @@ public sealed class AddressCreateParams : BaseCreateParams<TagAddress> {
 }
 
 public sealed class AddressUpdateParams : BaseUpdateParams<TagAddress> {
+	public string? Title { get; set; }
+	public string? Description { get; set; }
 	public string? Province { get; set; }
 	public string? Township { get; set; }
 	public string? Street { get; set; }
@@ -33,5 +37,6 @@ public sealed class AddressUpdateParams : BaseUpdateParams<TagAddress> {
 }
 
 public sealed class AddressReadParams : BaseReadParams<TagAddress> {
+	public string? ZipCode { get; set; }
 	public AddressSelectorArgs SelectorArgs { get; set; } = new();
 }

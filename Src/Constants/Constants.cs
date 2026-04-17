@@ -1,6 +1,7 @@
 namespace SinaMN75U.Constants;
 
 public static class RouteTags {
+	public const string DataSeeder = "api/DataSeeder/";
 	public const string Auth = "api/auth/";
 	public const string User = "api/user/";
 	public const string Media = "api/media/";
@@ -12,7 +13,6 @@ public static class RouteTags {
 	public const string Dashboard = "api/dashboard/";
 	public const string Contract = "api/contract/";
 	public const string Invoice = "api/invoice/";
-	public const string ChatBot = "api/chatBot/";
 	public const string Ticket = "api/ticket/";
 	public const string Txn = "api/txn/";
 	public const string Parking = "api/parking/";
@@ -25,7 +25,7 @@ public static class RouteTags {
 	public const string Ipg = "api/Ipg/";
 	public const string SimCard = "api/SimCard/";
 	public const string Notification = "api/Notification/";
-	public const string DataSeeder = "api/DataSeeder/";
+	public const string Agreement = "api/Agreement/";
 }
 
 public static class UConstants {

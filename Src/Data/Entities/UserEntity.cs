@@ -82,16 +82,15 @@ public sealed class UserEntity : BaseEntity<TagUser, UserJson> {
 	};
 }
 
-public sealed class UserJson {
+public sealed class UserJson : BaseJsonData {
 	public string? FcmToken { get; set; }
 	public string? FatherName { get; set; }
 	public decimal? Weight { get; set; }
 	public decimal? Height { get; set; }
-	public ICollection<VisitCount> VisitCounts { get; set; } = [];
 }
 
 [Table("UserExtras")]
-public sealed class UserExtraEntity : BaseEntity<TagUserExtra, GeneralJsonData> {
+public sealed class UserExtraEntity : BaseEntity<TagUserExtra, BaseJsonData> {
 	public string? NationalCardFront { get; set; }
 	public string? NationalCardBack { get; set; }
 	public string? BirthCertificateFirst { get; set; }
@@ -101,7 +100,4 @@ public sealed class UserExtraEntity : BaseEntity<TagUserExtra, GeneralJsonData> 
 	public string? BirthCertificateFifth { get; set; }
 	public string? VisualAuthentication { get; set; }
 	public string? ESignature { get; set; }
-	
-	public UserEntity User { get; set; } = null!;
-	public required Guid UserId { get; set; }
 }

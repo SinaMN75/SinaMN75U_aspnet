@@ -232,19 +232,19 @@ public readonly partial struct PersianDateTime : IComparable<PersianDateTime>, I
 
 
 			if (format[i] == 'M') {
-				result.Append(Month.ToString());
+				result.Append(Month);
 				i++;
 				continue;
 			}
 
 			if (format[i] == 'd') {
-				result.Append(Day.ToString());
+				result.Append(Day);
 				i++;
 				continue;
 			}
 
 			if (format[i] == 'H') {
-				result.Append(Hour.ToString());
+				result.Append(Hour);
 				i++;
 				continue;
 			}
@@ -291,18 +291,18 @@ public readonly partial struct PersianDateTime : IComparable<PersianDateTime>, I
 		if (!int.TryParse(dateTokens[1], out int m)) return false;
 		if (!int.TryParse(dateTokens[2], out int d)) return false;
 
-		int hh = 0, mm = 0, ss = 0, fff = 0;
+		int hh = 0, mm = 0, ss = 0, ff = 0;
 		if (!string.IsNullOrEmpty(timePart)) {
 			string[] timeTokens = MyRegex1().Split(timePart);
-			if (timeTokens.Length >= 1 && !string.IsNullOrEmpty(timeTokens[0])) int.TryParse(timeTokens[0], out hh);
-			if (timeTokens.Length >= 2 && !string.IsNullOrEmpty(timeTokens[1])) int.TryParse(timeTokens[1], out mm);
-			if (timeTokens.Length >= 3 && !string.IsNullOrEmpty(timeTokens[2])) int.TryParse(timeTokens[2], out ss);
-			if (timeTokens.Length >= 4 && !string.IsNullOrEmpty(timeTokens[3])) int.TryParse(timeTokens[3], out fff);
+			if (timeTokens.Length >= 1 && !string.IsNullOrEmpty(timeTokens[0])) hh = int.Parse(timeTokens[0]);
+			if (timeTokens.Length >= 2 && !string.IsNullOrEmpty(timeTokens[1])) mm = int.Parse(timeTokens[1]);
+			if (timeTokens.Length >= 3 && !string.IsNullOrEmpty(timeTokens[2])) ss = int.Parse(timeTokens[2]);
+			if (timeTokens.Length >= 4 && !string.IsNullOrEmpty(timeTokens[3])) ff = int.Parse(timeTokens[3]);
 		}
 
 
 		try {
-			result = new PersianDateTime(y, m, d, hh, mm, ss, fff, kind);
+			result = new PersianDateTime(y, m, d, hh, mm, ss, ff, kind);
 			return true;
 		}
 		catch {
@@ -399,9 +399,7 @@ public readonly partial struct PersianDateTime : IComparable<PersianDateTime>, I
 
 	public static DateTime ToGregorianDateTime(int year, int month, int day, int hour = 0, int minute = 0, int second = 0, int millisecond = 0) => Pc.ToDateTime(year, month, day, hour, minute, second, millisecond);
 
-	[GeneratedRegex("[\u06F0-\u06F9]", RegexOptions.Compiled)]
-	private static partial Regex MyRegex();
-    [GeneratedRegex(@"\D+")]
+	[GeneratedRegex(@"\D+")]
     private static partial Regex MyRegex1();
 }
 

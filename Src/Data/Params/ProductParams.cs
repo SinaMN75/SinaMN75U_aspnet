@@ -1,6 +1,8 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class ProductCreateParams : BaseCreateParams<TagProduct> {
+	public string Title { get; set; } = null!;
+	public string? Description { get; set; }
 	public string? Code { get; set; }
 	public string? Subtitle { get; set; }
 	public string? ActionType { get; set; }
@@ -9,8 +11,8 @@ public sealed class ProductCreateParams : BaseCreateParams<TagProduct> {
 	public string? Slug { get; set; }
 	public string? Type { get; set; }
 	public string? Content { get; set; }
-	public decimal? Latitude { get; set; }
-	public decimal? Longitude { get; set; }
+	public double? Latitude { get; set; }
+	public double? Longitude { get; set; }
 	public int? Stock { get; set; }
 	public int? Point { get; set; }
 	public int? Order { get; set; }
@@ -32,14 +34,14 @@ public sealed class ProductCreateParams : BaseCreateParams<TagProduct> {
 
 public sealed class ProductUpdateParams : BaseUpdateParams<TagProduct> {
 	public string? Title { get; set; }
+	public string? Description { get; set; }
 	public string? Code { get; set; }
 	public string? Subtitle { get; set; }
-	public string? Description { get; set; }
 	public string? Slug { get; set; }
 	public string? Type { get; set; }
 	public string? Content { get; set; }
-	public decimal? Latitude { get; set; }
-	public decimal? Longitude { get; set; }
+	public double? Latitude { get; set; }
+	public double? Longitude { get; set; }
 	public int? Stock { get; set; }
 	public int? Point { get; set; }
 	public int? Order { get; set; }

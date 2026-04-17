@@ -24,9 +24,9 @@ public class CategoryService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-
-		CategoryEntity e = new CategoryEntity {
+		CategoryEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
+			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
 			JsonData = new CategoryJson {
 				Subtitle = p.Subtitle,
@@ -54,18 +54,12 @@ public class CategoryService(
 	}
 
 	public async Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct) {
-		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>()
-			.Where(x => x.ParentId == null)
-			.OrderBy(x => x.Id);
-
-		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => p.Tags.All(tag => x.Tags.Contains(tag)));
-		if (p.Ids.IsNotNullOrEmpty()) q = q.Where(x => p.Ids.Contains(x.Id));
-
+		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>().Where(x => x.ParentId == null).ApplyReadParams<CategoryEntity, TagCategory, CategoryJson>(p);
+		
 		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
-		if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
-
+		else if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
+		
 		IQueryable<CategoryResponse> projected = q.Select(Projections.CategorySelector(p.SelectorArgs));
-
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
@@ -106,7 +100,6 @@ public class CategoryService(
 		if (p.Order != null) e.Order = p.Order;
 		if (p.ParentId != null) e.ParentId = p.ParentId;
 		if (p.RelatedProducts != null) e.JsonData.RelatedProducts = p.RelatedProducts;
-		if (p.Tags != null) e.Tags = p.Tags;
 
 		if (p.ProductDeposit.IsNotNull())
 			await db.Set<ProductEntity>()
@@ -140,7 +133,7 @@ public class CategoryService(
 			}
 		}
 
-		db.Update(e);
+		db.Set<CategoryEntity>() .Update(e.ApplyUpdateParam<CategoryEntity,TagCategory, CategoryJson>(p));
 		await db.SaveChangesAsync(ct);
 		await AddMedia(e.Id, p.Media ?? [], ct);
 
@@ -167,6 +160,7 @@ public class CategoryService(
 
 	private static CategoryEntity FillData(CategoryCreateParams p, Guid? parentId = null) => new() {
 		Id = p.Id ?? Guid.CreateVersion7(),
+		CreatorId = Core.App.Users.SystemAdmin.Id,
 		CreatedAt = DateTime.UtcNow,
 		Title = p.Title,
 		Code = p.Code,

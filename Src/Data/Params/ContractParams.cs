@@ -2,16 +2,19 @@ namespace SinaMN75U.Data.Params;
 
 public sealed class ContractCreateParams : BaseCreateParams<TagContract> {
 	[UValidationRequired("StartDateRequired")]
-	public required DateTime StartDate { get; set; }
+	public DateTime StartDate { get; set; }
 
 	[UValidationRequired("EndDateRequired")]
-	public required DateTime EndDate { get; set; }
+	public DateTime EndDate { get; set; }
 
 	public decimal? Deposit { get; set; }
 	public decimal? Rent { get; set; }
 
-	public required Guid UserId { get; set; }
-	public required Guid ProductId { get; set; }
+	[UValidationRequired("UserIdRequired")]
+	public Guid UserId { get; set; }
+	
+	[UValidationRequired("ProductRequired")]
+	public Guid ProductId { get; set; }
 
 	public int PenaltyPrecentEveryDate { get; set; }
 }

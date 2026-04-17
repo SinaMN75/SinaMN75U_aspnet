@@ -1,7 +1,8 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class NotificationCreateParams : BaseCreateParams<TagNotification> {
-	public required Guid UserId { get; set; }
+	[UValidationRequired("UserIdRequired")]
+	public Guid UserId { get; set; }
 }
 
 public sealed class NotificationUpdateParams : BaseUpdateParams<TagNotification>;

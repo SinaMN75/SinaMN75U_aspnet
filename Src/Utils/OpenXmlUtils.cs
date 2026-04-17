@@ -65,7 +65,7 @@ public class WordPdfGenerator {
 	private static void FillTexts(string filePath, Dictionary<string, string> values) {
 		using WordprocessingDocument doc = WordprocessingDocument.Open(filePath, true);
 
-		IEnumerable<SdtElement> sdtElements = doc.MainDocumentPart.Document
+		IEnumerable<SdtElement> sdtElements = doc.MainDocumentPart!.Document!
 			.Descendants<SdtElement>();
 
 		foreach (SdtElement sdt in sdtElements) {
@@ -76,9 +76,7 @@ public class WordPdfGenerator {
 				continue;
 
 			Text? textElement = sdt.Descendants<Text>().FirstOrDefault();
-			if (textElement != null) {
-				textElement.Text = values[tag];
-			}
+			textElement?.Text = values[tag];
 		}
 
 		doc.MainDocumentPart.Document.Save();
@@ -89,43 +87,38 @@ public class WordPdfGenerator {
 		MainDocumentPart? mainPart = doc.MainDocumentPart;
 
 		foreach (KeyValuePair<string, string> pair in images) {
-			string tagName = pair.Key;
-			string base64 = pair.Value;
 
-			SdtElement? sdt = doc.MainDocumentPart.Document
-				.Descendants<SdtElement>()
-				.FirstOrDefault(s =>
-					s.SdtProperties?.GetFirstChild<Tag>()?.Val == tagName);
+			SdtElement? sdt = doc.MainDocumentPart!.Document!.Descendants<SdtElement>().FirstOrDefault(s => s.SdtProperties?.GetFirstChild<Tag>()?.Val == pair.Key);
 
 			if (sdt == null) continue;
 
-			byte[] imageBytes = Convert.FromBase64String(base64);
+			byte[] imageBytes = Convert.FromBase64String(pair.Value);
 
-			ImagePart imagePart = mainPart.AddImagePart(ImagePartType.Png);
-			using MemoryStream stream = new MemoryStream(imageBytes);
+			ImagePart imagePart = mainPart!.AddImagePart(ImagePartType.Png);
+			using MemoryStream stream = new(imageBytes);
 			imagePart.FeedData(stream);
 
-			Drawing drawing = CreateImage(mainPart.GetIdOfPart(imagePart));
+			Drawing drawing = CreateImage(mainPart!.GetIdOfPart(imagePart));
 
 			sdt.RemoveAllChildren<SdtContentRun>();
 			sdt.AppendChild(new SdtContentRun(new Run(drawing)));
 		}
 
-		doc.MainDocumentPart.Document.Save();
+		doc.MainDocumentPart!.Document!.Save();
 	}
 
 	private static Drawing CreateImage(string relId) {
 		return new Drawing(
 			new DocumentFormat.OpenXml.Drawing.Wordprocessing.Inline(
-				new DocumentFormat.OpenXml.Drawing.Wordprocessing.Extent()
+				new DocumentFormat.OpenXml.Drawing.Wordprocessing.Extent
 					{ Cx = 990000L, Cy = 792000L },
-				new DocumentFormat.OpenXml.Drawing.Wordprocessing.DocProperties()
+				new DocumentFormat.OpenXml.Drawing.Wordprocessing.DocProperties
 					{ Id = 1U, Name = "Image" },
 				new DocumentFormat.OpenXml.Drawing.Graphic(
 					new DocumentFormat.OpenXml.Drawing.GraphicData(
 						new DocumentFormat.OpenXml.Drawing.Pictures.Picture(
 							new DocumentFormat.OpenXml.Drawing.Pictures.BlipFill(
-								new DocumentFormat.OpenXml.Drawing.Blip()
+								new DocumentFormat.OpenXml.Drawing.Blip
 									{ Embed = relId }
 							)
 						)
@@ -136,10 +129,10 @@ public class WordPdfGenerator {
 	}
 	
 	private static void ConvertToPdf(string inputDocx, string outputPdf) {
-		using WordDocument wordDoc = new WordDocument(inputDocx, FormatType.Docx);
+		using WordDocument wordDoc = new(inputDocx, FormatType.Docx);
 		// using var renderer = new DocIORenderer();
 		// var pdf = renderer.ConvertToPDF(wordDoc);
-		using FileStream stream = new FileStream(outputPdf, FileMode.Create);
+		using FileStream stream = new(outputPdf, FileMode.Create);
 		// pdf.Save(stream);
 		// pdf.Close(true);
 	}

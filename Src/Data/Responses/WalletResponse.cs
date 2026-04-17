@@ -1,13 +1,10 @@
 namespace SinaMN75U.Data.Responses;
 
-public sealed class WalletResponse : BaseResponse<TagWallet, GeneralJsonData> {
-	public UserResponse? User { get; set; }
-	public required Guid UserId { get; set; }
-
+public sealed class WalletResponse : BaseResponse<TagWallet, BaseJsonData> {
 	public required decimal Balance { get; set; }
 }
 
-public sealed class WalletTxnResponse : BaseResponse<TagWalletTxn, GeneralJsonData> {
+public sealed class WalletTxnResponse : BaseResponse<TagWalletTxn, BaseJsonData> {
 	public required UserResponse Sender { get; set; }
 	public required Guid SenderId { get; set; }
 

@@ -18,8 +18,9 @@ public class TxnService(
 
 		TxnEntity e = new() {
 			Id = Guid.CreateVersion7(),
+			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new GeneralJsonData(),
+			JsonData = new BaseJsonData(),
 			Tags = p.Tags,
 			Amount = p.Amount,
 			TrackingNumber = p.TrackingNumber,
@@ -33,8 +34,9 @@ public class TxnService(
 	}
 
 	public async Task<UResponse<IEnumerable<TxnResponse>?>> Read(TxnReadParams p, CancellationToken ct) {
-		IQueryable<TxnResponse> q = db.Set<TxnEntity>().Select(Projections.TxnSelector(p.SelectorArgs));
-		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		IQueryable<TxnEntity> q = db.Set<TxnEntity>().ApplyReadParams<TxnEntity, TagTxn, BaseJsonData>(p);
+		IQueryable<TxnResponse> projected = q.Select(Projections.TxnSelector(p.SelectorArgs));
+		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse> Update(TxnUpdateParams p, CancellationToken ct) {
@@ -43,10 +45,7 @@ public class TxnService(
 
 		TxnEntity e = (await db.Set<TxnEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
 
-		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
-		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
-
-		db.Update(e);
+		db.Set<TxnEntity>().Update(e.ApplyUpdateParam<TxnEntity,TagTxn, BaseJsonData>(p));
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();
