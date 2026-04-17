@@ -9,8 +9,8 @@ public sealed class InvoiceEntity : BaseEntity<TagInvoice, InvoiceJson> {
 
 	public required DateTime DueDate { get; set; }
 
-	public required Guid? ContractId { get; set; }
-	public ContractEntity Contract { get; set; } = null!;
+	public Guid? ContractId { get; set; }
+	public ContractEntity? Contract { get; set; }
 }
 
 public sealed class InvoiceJson : BaseJsonData {

@@ -6,23 +6,20 @@ namespace SinaMN75U.Data.Entities;
 [Index(nameof(PhoneNumber), Name = "IX_Users_PhoneNumber", IsUnique = true)]
 [Index(nameof(NationalCode), Name = "IX_Users_NationalCode", IsUnique = true)]
 public sealed class UserEntity : BaseEntity<TagUser, UserJson> {
-	[Required]
-	[MaxLength(100)]
+	[Required, MaxLength(100)]
 	public string UserName { get; set; } = null!;
 
-	[Required]
-	[MaxLength(200)]
+	[Required, MaxLength(200)]
 	public string Password { get; set; } = null!;
 
-	[Required]
-	[MaxLength(200)]
+	[Required, MaxLength(200)]
 	public string RefreshToken { get; set; } = null!;
 
 	[MaxLength(15)]
 	public string? PhoneNumber { get; set; }
 
-	[MinLength(10)]
-	[MaxLength(10)]
+	
+	[MinLength(10), MaxLength(10)]
 	public string? NationalCode { get; set; }
 
 	[MaxLength(100)]
@@ -44,26 +41,30 @@ public sealed class UserEntity : BaseEntity<TagUser, UserJson> {
 
 	public ICollection<CategoryEntity> Categories { get; set; } = [];
 
+	[InverseProperty(nameof(MediaEntity.User))]
 	public ICollection<MediaEntity> Media { get; set; } = [];
 
 	[InverseProperty(nameof(ContractEntity.User))]
 	public ICollection<ContractEntity> Contracts { get; set; } = [];
 
-	[InverseProperty(nameof(ContractEntity.Creator))]
-	public ICollection<ContractEntity> CreatedContracts { get; set; } = [];
-
 	public ICollection<InvoiceEntity> Invoices { get; set; } = [];
 
+	[InverseProperty(nameof(TxnEntity.User))]
 	public ICollection<TxnEntity> Txns { get; set; } = [];
 
+	[InverseProperty(nameof(AddressEntity.Creator))]
 	public ICollection<AddressEntity> Addresses { get; set; } = [];
 
+	[InverseProperty(nameof(WalletEntity.Creator))]
 	public ICollection<WalletEntity> Wallets { get; set; } = [];
 	
+	[InverseProperty(nameof(TerminalEntity.User))]
 	public ICollection<TerminalEntity> Terminals { get; set; } = [];
 	
+	[InverseProperty(nameof(BankAccountEntity.Creator))]
 	public ICollection<BankAccountEntity> BankAccounts { get; set; } = [];
 	
+	[InverseProperty(nameof(SimCardEntity.User))]
 	public ICollection<SimCardEntity> SimCards { get; set; } = [];
 
 	public UserResponse MapToResponse() => new() {

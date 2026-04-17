@@ -22,6 +22,9 @@ public sealed class TerminalEntity : BaseEntity<TagTerminal, BaseJsonData> {
 	
 	[MaxLength(40)]
 	public string? TerminalId { get; set; }
+	
+	public Guid? UserId { get; set; }
+	public UserEntity? User { get; set; }
 
 	public ICollection<AgreementEntity> Agreements { get; set; } = [];
 }

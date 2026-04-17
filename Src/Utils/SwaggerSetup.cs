@@ -13,7 +13,7 @@ public static class SwaggerSetup {
 		app.UseSwagger();
 		app.UseSwaggerUI(c => {
 			c.DocExpansion(DocExpansion.None);
-			c.DefaultModelsExpandDepth(4);
+			c.DefaultModelsExpandDepth(128);
 			c.DocumentTitle = "SinaMN75";
 		});
 	}

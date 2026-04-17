@@ -29,11 +29,4 @@ public sealed class MediaEntity : BaseEntity<TagMedia, BaseJsonData> {
 
 	public Guid? TicketId { get; set; }
 	public TicketEntity? Ticket { get; set; }
-
-	public MediaResponse MapToResponse() => new() {
-		Id = Id,
-		Path = Path,
-		JsonData = JsonData,
-		Tags = Tags
-	};
 }
