@@ -12,5 +12,5 @@ public sealed class ContractResponse : BaseResponse<TagContract, BaseJsonData> {
 	public ProductResponse? Product { get; set; }
 	public required Guid ProductId { get; set; }
 
-	public IEnumerable<InvoiceResponse>? Invoices { get; set; } = [];
+	public IEnumerable<InvoiceResponse>? Invoices { get; set; }
 }

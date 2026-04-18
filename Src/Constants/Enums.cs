@@ -206,6 +206,10 @@ public enum TagIpg {
 	Pn = 101
 }
 
+public enum TagMpg {
+	Pn = 101
+}
+
 public enum TagPayment {
 	ChargeWallet = 101
 }

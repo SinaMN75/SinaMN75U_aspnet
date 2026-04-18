@@ -6,13 +6,13 @@ public class BaseEntity<T, TJ> where T : Enum where TJ : BaseJsonData {
 
 	[Required]
 	public required DateTime CreatedAt { get; set; }
-	
+
 	[Required]
 	public required TJ JsonData { get; set; }
 
 	[Required]
 	public required ICollection<T> Tags { get; set; }
-	
+
 	public required Guid CreatorId { get; set; }
 	public UserEntity Creator { get; set; } = null!;
 }

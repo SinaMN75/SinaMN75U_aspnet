@@ -37,7 +37,6 @@ public class SmsNotificationService(
 					break;
 				}
 				case TagSmsPanel.NikSms:
-				case TagSmsPanel.Test:
 				default: break;
 			}
 		}
