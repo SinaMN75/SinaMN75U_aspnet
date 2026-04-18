@@ -8,12 +8,12 @@ public sealed class VerifyNationalCodeAndPhoneNumber : BaseParams {
 	public string PhoneNumber { get; set; } = null!;
 }
 
-public sealed class PostalCodeToAddressDetailParams {
+public sealed class ZipCodeToAddressDetailParams : BaseParams {
 	[UValidationRequired("ZipCodeRequired"), UValidationStringLength(10, 10, "ZipCodeInvalid")]
 	public string ZipCode { get; set; } = null!;
 }
 
-public sealed class VehicleViolationDetailParams {
+public sealed class VehicleViolationDetailParams : BaseParams {
 	[UValidationRequired("NationalCodeRequired"), UValidationStringLength(10, 10, "NationalCodeInvalid")]
 	public string NationalCode { get; set; } = null!;
 
@@ -24,7 +24,7 @@ public sealed class VehicleViolationDetailParams {
 	public string LicencePlate { get; set; } = null!;
 }
 
-public sealed class DrivingLicenceStatusParams {
+public sealed class DrivingLicenceStatusParams : BaseParams {
 	[UValidationRequired("NationalCodeRequired"), UValidationStringLength(10, 10, "NationalCodeInvalid")]
 	public string NationalCode { get; set; } = null!;
 
@@ -32,7 +32,7 @@ public sealed class DrivingLicenceStatusParams {
 	public string PhoneNumber { get; set; } = null!;
 }
 
-public sealed class LicencePlateInquiryParams {
+public sealed class LicencePlateInquiryParams : BaseParams {
 	[UValidationRequired("NationalCodeRequired"), UValidationStringLength(10, 10, "NationalCodeInvalid")]
 	public string NationalCode { get; set; } = null!;
 
@@ -40,7 +40,7 @@ public sealed class LicencePlateInquiryParams {
 	public string LicencePlate { get; set; } = null!;
 }
 
-public sealed class DrivingLicenceNegativePointParams {
+public sealed class DrivingLicenceNegativePointParams : BaseParams {
 	[UValidationRequired("NationalCodeRequired"), UValidationStringLength(10, 10, "NationalCodeInvalid")]
 	public string NationalCode { get; set; } = null!;
 
@@ -51,7 +51,7 @@ public sealed class DrivingLicenceNegativePointParams {
 	public string DrivingLicenceNumber { get; set; } = null!;
 }
 
-public sealed class IBanToBankAccountDetailParams {
+public sealed class IBanToBankAccountDetailParams : BaseParams {
 	[UValidationRequired("IBanRequired"), UValidationStringLength(20, 28, "IBanInvalid")]
 	public string IBan { get; set; } = null!;
 }

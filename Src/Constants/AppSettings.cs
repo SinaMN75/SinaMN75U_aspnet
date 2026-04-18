@@ -11,6 +11,7 @@ public sealed class AppSettings {
 	public required BasicSettings BasicSettings { get; init; }
 	public required Ipg Ipg { get; init; }
 	public required DefaultUsers Users { get; init; }
+	public required ApiCallCosts ApiCallCosts { get; set; }
 }
 
 public sealed class ConnectionStrings {
@@ -43,9 +44,6 @@ public sealed class ItHub {
 	public required string ClientSecret { get; init; }
 	public required string UserName { get; init; }
 	public required string Password { get; set; }
-	public required string WalletOwnerUserName { get; set; }
-	public required decimal ShahkarVerifyNationalCodeAndMobilePrice { get; set; }
-	public required decimal ZipCodeToAddressDetailPrice { get; set; }
 }
 
 public sealed class BasicSettings {
@@ -65,4 +63,14 @@ public sealed class DefaultUsers {
 	public required UserEntity SystemAdmin { get; set; }
 	public required UserEntity ITHub { get; set; }
 	public required UserEntity AvaPlus { get; set; }
+}
+
+public sealed class ApiCallCosts {
+	public required decimal MobileAndNationalCodeVerification { get; set; }
+	public required decimal ZipCodeToAddressDetail { get; set; }
+	public required decimal VehicleViolationsDetail { get; set; }
+	public required decimal DrivingLicenceStatus { get; set; }
+	public required decimal LicencePlateDetail { get; set; }
+	public required decimal DrivingLicenceNegativePoint { get; set; }
+	public required decimal IBanToBankAccountDetail { get; set; }
 }

@@ -27,14 +27,17 @@ public enum Usc {
 public enum TagPurchase {
 	MobileAndNationalCodeVerification = 101,
 	ZipCodeToAddressDetail = 102,
-	Test = 999
+	VehicleViolationsDetail = 103,
+	DrivingLicenceStatus = 104,
+	LicencePlateDetail = 105,
+	DrivingLicenceNegativePoint = 106,
+	IBanToBankAccountDetail = 107
 }
 
 public enum TagSmsPanel {
 	NikSms = 101,
 	Ghasedak = 102,
-	Kavenegar = 103,
-	Test = 999
+	Kavenegar = 103
 }
 
 public enum TagUser {
@@ -52,8 +55,7 @@ public enum TagUser {
 	BirthCertificate4Verified = 305,
 	NationalCardFrontVerified = 306,
 	NationalCardBackVerified = 307,
-	VisualAuthenticationVerified = 308,
-	Test = 999
+	VisualAuthenticationVerified = 308
 }
 
 public enum TagCategory {
@@ -67,14 +69,12 @@ public enum TagCategory {
 	Bed = 108,
 	Enabled = 201,
 	Disabled = 202,
-	Hidden = 203,
-	Test = 999
+	Hidden = 203
 }
 
 public enum TagMedia {
 	Image = 101,
-	Profile = 102,
-	Test = 999
+	Profile = 102
 }
 
 public enum TagProduct {
@@ -103,44 +103,31 @@ public enum TagProduct {
 	Room7 = 407,
 	Room8 = 408,
 	Room9 = 409,
-	Room10 = 410,
-	Test = 999
+	Room10 = 410
 }
 
 public enum TagComment {
 	Released = 101,
 	InQueue = 102,
 	Rejected = 103,
-	Private = 201,
-	Test = 999
+	Private = 201
 }
 
 public enum TagReaction {
 	Like = 101,
-	DisLike = 102,
-	Test = 999
-}
-
-public enum TagExam {
-	Test = 999
+	DisLike = 102
 }
 
 public enum TagFollow {
 	User = 101,
 	Product = 102,
-	Category = 103,
-	Test = 999
+	Category = 103
 }
 
 public enum TagContent {
 	AboutUs = 101,
 	Terms = 102,
-	HomeSlider1 = 103,
-	Test = 999
-}
-
-public enum TagBadge {
-	Test = 999
+	HomeSlider1 = 103
 }
 
 public enum TagContract {
@@ -148,31 +135,21 @@ public enum TagContract {
 	Weekly = 102,
 	Monthly = 103,
 	Yearly = 104,
-	SingleInvoice = 201,
-	Test = 999
+	SingleInvoice = 201
 }
 
 public enum TagInvoice {
 	Deposit = 101,
 	Rent = 102,
-
 	Paid = 201,
 	PaidOnline = 202,
 	PaidManual = 203,
-	NotPaid = 204,
-
-	Test = 999
-}
-
-public enum TagChatBot {
-	DrHana = 101,
-	Test = 999
+	NotPaid = 204
 }
 
 public enum TagTicket {
 	SuperAdmin = 101,
-	Admin = 102,
-	Test = 999
+	Admin = 102
 }
 
 public enum TagTxn {
@@ -182,13 +159,7 @@ public enum TagTxn {
 	Paid = 202,
 	Failed = 203,
 	Refunded = 204,
-	ChargeWallet = 301,
-	Test = 999
-}
-
-public enum TagReservationGuest {
-	Primary = 101,
-	Test = 999
+	ChargeWallet = 301
 }
 
 public enum TagParking {
@@ -204,23 +175,19 @@ public enum TagParkingReport {
 }
 
 public enum TagAddress {
-	Verified = 101,
-	Test = 999
+	Verified = 101
 }
 
 public enum TagWallet {
-	Primary = 101,
-	Test = 999
+	Primary = 101
 }
 
 public enum TagWalletTxn {
-	Charge = 101,
-	Test = 999
+	Charge = 101
 }
 
 public enum TagUserExtra {
-	Verified = 101,
-	Test = 999
+	Verified = 101
 }
 
 public enum TagTerminal {
@@ -228,28 +195,23 @@ public enum TagTerminal {
 	WallCashless = 102,
 	DeskCashless = 103,
 	Verified = 104,
-	Suspended = 105,
-	Test = 999
+	Suspended = 105
 }
 
 public enum TagBankAccount {
-	Verified = 101,
-	Test = 999
+	Verified = 101
 }
 
 public enum TagIpg {
-	Pn = 101,
-	Test = 999
+	Pn = 101
 }
 
 public enum TagPayment {
-	ChargeWallet = 101,
-	Test = 999
+	ChargeWallet = 101
 }
 
 public enum TagSimCard {
-	IranCell = 101,
-	Test = 999
+	IranCell = 101
 }
 
 public enum TagInquiryHistory {
@@ -262,18 +224,23 @@ public enum TagInquiryHistory {
 	IBanToBankAccountDetail = 107,
 	Verified = 201,
 	NotVerified = 202,
-	ItHub = 301,
-	Test = 999
+	ItHub = 301
 }
 
 public enum TagAgreement {
 	TerminalRequest = 101,
 	Signed = 201,
-	Verified = 202,
-	Test = 999
+	Verified = 202
 }
 
 public enum TagNotification {
-	
 	Test = 999
+}
+
+public enum TagTxnErrorCodes {
+	LowBalance = 101,
+	UnAuthorized = 102,
+	SenderWalletNotFound = 103,
+	ReceiverWalletNotFound = 104,
+	Ok = 201
 }

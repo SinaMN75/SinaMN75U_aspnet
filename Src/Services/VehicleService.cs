@@ -25,7 +25,7 @@ public class VehicleService(
 			Brand = p.Brand,
 			Color = p.Color,
 			CreatorId = p.CreatorId ?? userData.Id,
-			Title = p.Title,
+			Title = p.Title
 		};
 		
 		await db.Set<VehicleEntity>().AddAsync(e, ct);

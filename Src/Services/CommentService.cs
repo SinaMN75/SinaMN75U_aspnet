@@ -31,7 +31,7 @@ public class CommentService(
 			CreatorId = p.CreatorId ?? userData.Id,
 			UserId = p.UserId,
 			ProductId = p.ProductId,
-			ParentId = p.ParentId,
+			ParentId = p.ParentId
 		};
 
 		await db.Set<CommentEntity>().AddAsync(e, ct);

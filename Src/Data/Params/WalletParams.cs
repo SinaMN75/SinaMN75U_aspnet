@@ -1,10 +1,7 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class WalletPurchaseParams : BaseParams {
-	[UValidationRequired("AmountRequired")]
-	public decimal Amount { get; set; }
 	public TagPurchase Tag { get; set; }
-	public bool AllowMinusBalance { get; set; }
 }
 
 public sealed class WalletTransferParams : BaseParams {
@@ -16,7 +13,7 @@ public sealed class WalletTransferParams : BaseParams {
 	[UValidationRequired("AmountRequired")]
 	public decimal Amount { get; set; }
 
-	public string? Description { get; set; }
+	public string? Detail1 { get; set; }
 }
 
 public sealed class WalletTxnReadParams : BaseReadParams<TagWalletTxn> {

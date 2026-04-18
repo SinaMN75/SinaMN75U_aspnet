@@ -60,7 +60,7 @@ public class AuthService(
 		
 		if (!userData.IsAdmin || userData.Id != e.Id) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 		
-		UResponse<bool?> shahkarResponse = await inquiryService.Shahkar(new VerifyNationalCodeAndPhoneNumber {
+		UResponse<bool?> shahkarResponse = await inquiryService.MobileAndNationalCodeVerification(new VerifyNationalCodeAndPhoneNumber {
 			NationalCode = p.NationalCode,
 			PhoneNumber = e.PhoneNumber!
 		}, ct);

@@ -5,7 +5,7 @@ public class GetAccessTokenResponse {
 	public int? ExpiresIn { get; set; }
 }
 
-public sealed class PostalCodeToAddressDetailResponse {
+public sealed class ZipCodeToAddressDetailResponse {
 	public string? BuildingName { get; set; }
 	public string? Description { get; set; }
 	public string? Floor { get; set; }
@@ -70,7 +70,7 @@ public sealed class VehicleViolationDetailItem {
 	public bool? HasImage { get; set; }
 }
 
-public sealed class LicencePlateInquiryResponse {
+public sealed class LicencePlateDetailResponse {
 	public string? Status { get; set; }
 	public string? TracePlate { get; set; }
 	public IEnumerable<LicencePlateHistoryItem> Items { get; set; } = [];

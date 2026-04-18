@@ -117,7 +117,7 @@ public static class Projections {
 		Id = x.Id,
 		Tags = x.Tags,
 		JsonData = x.JsonData,
-		ZipCode =  x.ZipCode,
+		ZipCode = x.ZipCode,
 		CreatorId = x.CreatorId, Creator = args.Creator == null
 			? null
 			: new UserResponse {
@@ -176,16 +176,8 @@ public static class Projections {
 			FirstName = x.Receiver.FirstName,
 			LastName = x.Receiver.LastName,
 			NationalCode = x.Receiver.NationalCode,
-			Media = args.Receiver.Media == null
-				? null
-				: x.Receiver.Media.AsQueryable()
-					.Select(MediaSelector())
-					.ToList(),
-			Categories = args.Receiver.Category == null
-				? null
-				: x.Receiver.Categories.AsQueryable()
-					.Select(CategorySelector(args.Receiver.Category))
-					.ToList()
+			Media = args.Receiver.Media == null ? null : x.Receiver.Media.AsQueryable().Select(MediaSelector()).ToList(),
+			Categories = args.Receiver.Category == null ? null : x.Receiver.Categories.AsQueryable().Select(CategorySelector(args.Receiver.Category)).ToList()
 		}
 	};
 
@@ -195,7 +187,7 @@ public static class Projections {
 		JsonData = x.JsonData,
 		CreatorId = x.CreatorId,
 		UserId = x.Userd,
-		ZipCode =  x.ZipCode,
+		ZipCode = x.ZipCode,
 		Creator = new UserResponse {
 			Id = x.Creator.Id,
 			JsonData = x.Creator.JsonData,
@@ -270,16 +262,8 @@ public static class Projections {
 				FirstName = x.Creator.FirstName,
 				LastName = x.Creator.LastName,
 				NationalCode = x.Creator.NationalCode,
-				Media = args.Creator.Media == null
-					? null
-					: x.Creator.Media.AsQueryable()
-						.Select(MediaSelector())
-						.ToList(),
-				Categories = args.Creator.Category == null
-					? null
-					: x.Creator.Categories.AsQueryable()
-						.Select(CategorySelector(args.Creator.Category))
-						.ToList()
+				Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
+				Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
 			}
 	};
 
@@ -303,16 +287,8 @@ public static class Projections {
 				FirstName = x.User.FirstName,
 				LastName = x.User.LastName,
 				NationalCode = x.User.NationalCode,
-				Media = args.User.Media == null
-					? null
-					: x.User.Media.AsQueryable()
-						.Select(MediaSelector())
-						.ToList(),
-				Categories = args.User.Category == null
-					? null
-					: x.User.Categories.AsQueryable()
-						.Select(CategorySelector(args.User.Category))
-						.ToList()
+				Media = args.User.Media == null ? null : x.User.Media.AsQueryable().Select(MediaSelector()).ToList(),
+				Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList()
 			}
 	};
 
@@ -345,8 +321,9 @@ public static class Projections {
 		Terminals = args.Terminal == null ? null : x.Terminals.AsQueryable().Select(TerminalSelector(args.Terminal)).ToList(),
 		Txns = args.Txns == null ? null : x.Txns.AsQueryable().Select(TxnSelector(args.Txns)).ToList(),
 		Wallets = args.Wallet == null ? null : x.Wallets.AsQueryable().Select(WalletSelector(args.Wallet)).ToList(),
-		Extra = args.Extra
-			? new UserExtraResponse {
+		Extra = !args.Extra
+			? null
+			: new UserExtraResponse {
 				NationalCardFront = x.Extra.NationalCardFront,
 				NationalCardBack = x.Extra.NationalCardBack,
 				BirthCertificateFirst = x.Extra.BirthCertificateFirst,
@@ -357,7 +334,6 @@ public static class Projections {
 				VisualAuthentication = x.Extra.VisualAuthentication,
 				ESignature = x.Extra.ESignature
 			}
-			: null
 	};
 
 	public static Expression<Func<ParkingEntity, ParkingResponse>> ParkingSelector(ParkingSelectorArgs args) => x => new ParkingResponse {
@@ -406,25 +382,29 @@ public static class Projections {
 		ParkingId = x.ParkingId,
 		Amount = x.Amount,
 		EndDate = x.EndDate,
-		Parking = args.Parking == null ? null : new ParkingResponse {
-			Id = x.Parking.Id,
-			CreatedAt = x.Parking.CreatedAt,
-			JsonData = x.Parking.JsonData,
-			Tags = x.Parking.Tags,
-			CreatorId = x.Parking.CreatorId,
-			Title = x.Parking.Title
-		},
-		Vehicle = args.Vehicle == null ? null : new VehicleResponse {
-			Id = x.Vehicle.Id,
-			CreatedAt = x.Vehicle.CreatedAt,
-			JsonData = x.Vehicle.JsonData,
-			Tags = x.Vehicle.Tags,
-			CreatorId = x.Vehicle.CreatorId,
-			LicencePlate = x.Vehicle.LicencePlate,
-			Title = x.Vehicle.Title,
-			Brand = x.Vehicle.Brand,
-			Color =x.Vehicle.Color,
-		}
+		Parking = args.Parking == null
+			? null
+			: new ParkingResponse {
+				Id = x.Parking.Id,
+				CreatedAt = x.Parking.CreatedAt,
+				JsonData = x.Parking.JsonData,
+				Tags = x.Parking.Tags,
+				CreatorId = x.Parking.CreatorId,
+				Title = x.Parking.Title
+			},
+		Vehicle = args.Vehicle == null
+			? null
+			: new VehicleResponse {
+				Id = x.Vehicle.Id,
+				CreatedAt = x.Vehicle.CreatedAt,
+				JsonData = x.Vehicle.JsonData,
+				Tags = x.Vehicle.Tags,
+				CreatorId = x.Vehicle.CreatorId,
+				LicencePlate = x.Vehicle.LicencePlate,
+				Title = x.Vehicle.Title,
+				Brand = x.Vehicle.Brand,
+				Color = x.Vehicle.Color
+			}
 	};
 
 	public static Expression<Func<VehicleEntity, VehicleResponse>> VehicleSelector(VehicleSelectorArgs args) => x => new VehicleResponse {
@@ -434,9 +414,9 @@ public static class Projections {
 		JsonData = x.JsonData,
 		LicencePlate = x.LicencePlate,
 		CreatorId = x.CreatorId,
-		Title =  x.Title,
-		Brand =  x.Brand,
-		Color =  x.Color,
+		Title = x.Title,
+		Brand = x.Brand,
+		Color = x.Color,
 		Creator = args.Creator == null
 			? null
 			: new UserResponse {
@@ -752,7 +732,6 @@ public static class Projections {
 				SimCards = args.Creator.SimCard == null ? null : x.Creator.SimCards.AsQueryable().Select(SimCardSelector(args.Creator.SimCard)).ToList(),
 				Wallets = args.Creator.Wallet == null ? null : x.Creator.Wallets.AsQueryable().Select(WalletSelector(args.Creator.Wallet)).ToList()
 			}
-		
 	};
 
 	public static Expression<Func<ContractEntity, ContractResponse>> ContractSelector(ContractSelectorArgs args) => x => new ContractResponse {
