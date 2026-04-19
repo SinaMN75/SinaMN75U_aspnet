@@ -21,7 +21,7 @@ public class IpgService(IHttpClientService http, DbContext db) : IIpgService {
 					additionalData = p.Base64AdditionalData,
 					email = p.Email,
 					originator = p.PhoneNumber,
-					mobileNumber = p.PhoneNumber,
+					mobileNumber = p.PhoneNumber
 				}
 			);
 			if (response?.IsSuccessStatusCode ?? false) {
@@ -36,7 +36,7 @@ public class IpgService(IHttpClientService http, DbContext db) : IIpgService {
 					PhoneNumber = data.GetStringOrNull("originator"),
 					Email = data.GetStringOrNull("email"),
 					Status = data.GetIntOrNull("status").ToString(),
-					Message = data.GetStringOrNull("message"),
+					Message = data.GetStringOrNull("message")
 				});
 			}
 

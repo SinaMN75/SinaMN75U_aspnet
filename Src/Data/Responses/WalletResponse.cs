@@ -5,10 +5,10 @@ public sealed class WalletResponse : BaseResponse<TagWallet, BaseJsonData> {
 }
 
 public sealed class WalletTxnResponse : BaseResponse<TagWalletTxn, BaseJsonData> {
-	public required UserResponse Sender { get; set; }
+	public UserResponse? Sender { get; set; }
 	public required Guid SenderId { get; set; }
 
-	public required UserResponse Receiver { get; set; }
+	public UserResponse? Receiver { get; set; }
 	public required Guid ReceiverId { get; set; }
 
 	public required decimal Amount { get; set; }

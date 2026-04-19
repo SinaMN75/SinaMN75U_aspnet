@@ -86,6 +86,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<INotificationService, NotificationService>();
 		builder.Services.AddScoped<IDataSeedService, DataSeedService>();
 		builder.Services.AddScoped<IAgreementService, AgreementService>();
+		builder.Services.AddScoped<IVasService, VasService>();
 	}
 
 	public static void UseUServices(this WebApplication app) {
@@ -125,7 +126,7 @@ public static partial class AspNetConfig {
 		app.MapIpgRoutes(RouteTags.Ipg);
 		app.MapSimCardRoutes(RouteTags.SimCard);
 		app.MapNotificationRoutes(RouteTags.Notification);
-		app.MapDashboardRoutes(RouteTags.DataSeeder);
+		app.MapDataSeedRoutes(RouteTags.DataSeeder);
 		app.MapAgreementRoutes(RouteTags.Agreement);
 	}
 

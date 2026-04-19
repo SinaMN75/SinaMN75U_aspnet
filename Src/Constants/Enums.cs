@@ -248,3 +248,7 @@ public enum TagTxnErrorCodes {
 	ReceiverWalletNotFound = 104,
 	Ok = 201
 }
+
+public enum TagVas {
+	Water = 101
+}
