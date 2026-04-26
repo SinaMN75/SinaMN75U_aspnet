@@ -1,17 +1,13 @@
-using Syncfusion.DocIO;
-using Syncfusion.DocIO.DLS;
-using Syncfusion.DocIORenderer;
-using Syncfusion.Pdf;
-
-namespace SinaMN75U.Utils;
-
+using PdfSharp.Drawing;
+using PdfSharp.Pdf;
+using PdfDocument = PdfSharp.Pdf.PdfDocument;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 
+namespace SinaMN75U.Utils;
+
 public class WordPdfGenerator {
-	public static async Task<string> GenerateWithTextsAsync(
-		Dictionary<string, string> texts,
-		string templatePath) {
+	public static async Task<string> GenerateWithTextsAsync(Dictionary<string, string> texts, string templatePath) {
 		(string docx, string pdf) = CreateTempFiles(templatePath);
 
 		FillTexts(docx, texts);
@@ -20,9 +16,7 @@ public class WordPdfGenerator {
 		return await ToBase64AndCleanup(docx, pdf);
 	}
 
-	public static async Task<string> GenerateWithImagesAsync(
-		Dictionary<string, string> imagesBase64,
-		string templatePath) {
+	public static async Task<string> GenerateWithImagesAsync(Dictionary<string, string> imagesBase64, string templatePath) {
 		(string docx, string pdf) = CreateTempFiles(templatePath);
 
 		InsertImages(docx, imagesBase64);
@@ -31,9 +25,7 @@ public class WordPdfGenerator {
 		return await ToBase64AndCleanup(docx, pdf);
 	}
 
-	public static async Task<string> GenerateWithTextsAndImagesAsync(
-		Dictionary<string, string> texts,
-		Dictionary<string, string> imagesBase64,
+	public static async Task<string> GenerateWithTextsAndImagesAsync(Dictionary<string, string> texts, Dictionary<string, string> imagesBase64,
 		string templatePath) {
 		(string docx, string pdf) = CreateTempFiles(templatePath);
 
@@ -44,10 +36,10 @@ public class WordPdfGenerator {
 
 		return await ToBase64AndCleanup(docx, pdf);
 	}
-	
+
 	private static (string docx, string pdf) CreateTempFiles(string templatePath) {
-		string tempDocx = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.docx");
-		string tempPdf = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.pdf");
+		string tempDocx = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", $"{Guid.NewGuid()}.docx");
+		string tempPdf = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", $"{Guid.NewGuid()}.pdf");
 
 		File.Copy(templatePath, tempDocx, true);
 
@@ -63,19 +55,15 @@ public class WordPdfGenerator {
 
 		return base64;
 	}
-	
+
 	private static void FillTexts(string filePath, Dictionary<string, string> values) {
 		using WordprocessingDocument doc = WordprocessingDocument.Open(filePath, true);
-
-		IEnumerable<SdtElement> sdtElements = doc.MainDocumentPart!.Document!
-			.Descendants<SdtElement>();
+		IEnumerable<SdtElement> sdtElements = doc.MainDocumentPart!.Document!.Descendants<SdtElement>();
 
 		foreach (SdtElement sdt in sdtElements) {
-			string? tag = sdt.SdtProperties?
-				.GetFirstChild<Tag>()?.Val?.Value;
+			string? tag = sdt.SdtProperties?.GetFirstChild<Tag>()?.Val?.Value;
 
-			if (tag == null || !values.ContainsKey(tag))
-				continue;
+			if (tag == null || !values.ContainsKey(tag)) continue;
 
 			Text? textElement = sdt.Descendants<Text>().FirstOrDefault();
 			textElement?.Text = values[tag];
@@ -83,13 +71,12 @@ public class WordPdfGenerator {
 
 		doc.MainDocumentPart.Document.Save();
 	}
-	
+
 	private static void InsertImages(string filePath, Dictionary<string, string> images) {
 		using WordprocessingDocument doc = WordprocessingDocument.Open(filePath, true);
 		MainDocumentPart? mainPart = doc.MainDocumentPart;
 
 		foreach (KeyValuePair<string, string> pair in images) {
-
 			SdtElement? sdt = doc.MainDocumentPart!.Document!.Descendants<SdtElement>().FirstOrDefault(s => s.SdtProperties?.GetFirstChild<Tag>()?.Val == pair.Key);
 
 			if (sdt == null) continue;
@@ -109,33 +96,73 @@ public class WordPdfGenerator {
 		doc.MainDocumentPart!.Document!.Save();
 	}
 
-	private static Drawing CreateImage(string relId) {
-		return new Drawing(
-			new DocumentFormat.OpenXml.Drawing.Wordprocessing.Inline(
-				new DocumentFormat.OpenXml.Drawing.Wordprocessing.Extent
-					{ Cx = 990000L, Cy = 792000L },
-				new DocumentFormat.OpenXml.Drawing.Wordprocessing.DocProperties
-					{ Id = 1U, Name = "Image" },
-				new DocumentFormat.OpenXml.Drawing.Graphic(
-					new DocumentFormat.OpenXml.Drawing.GraphicData(
-						new DocumentFormat.OpenXml.Drawing.Pictures.Picture(
-							new DocumentFormat.OpenXml.Drawing.Pictures.BlipFill(
-								new DocumentFormat.OpenXml.Drawing.Blip
-									{ Embed = relId }
-							)
+	private static Drawing CreateImage(string relId) => new(
+		new DocumentFormat.OpenXml.Drawing.Wordprocessing.Inline(
+			new DocumentFormat.OpenXml.Drawing.Wordprocessing.Extent { Cx = 990000L, Cy = 792000L },
+			new DocumentFormat.OpenXml.Drawing.Wordprocessing.DocProperties { Id = 1U, Name = "Image" },
+			new DocumentFormat.OpenXml.Drawing.Graphic(
+				new DocumentFormat.OpenXml.Drawing.GraphicData(
+					new DocumentFormat.OpenXml.Drawing.Pictures.Picture(
+						new DocumentFormat.OpenXml.Drawing.Pictures.BlipFill(
+							new DocumentFormat.OpenXml.Drawing.Blip { Embed = relId }
 						)
 					)
 				)
 			)
-		);
-	}
-	
+		)
+	);
+
+	// private static void ConvertToPdf(string inputDocx, string outputPdf) {
+	// 	using WordDocument wordDoc = new(inputDocx, FormatType.Docx);
+	// 	using DocIORenderer renderer = new();
+	// 	PdfDocument? pdf = renderer.ConvertToPDF(wordDoc);
+	// 	using FileStream stream = new(outputPdf, FileMode.Create);
+	// 	pdf.Save(stream);
+	// 	pdf.Close(true);
+	// }
+
+// Install-Package PdfSharp
+
 	private static void ConvertToPdf(string inputDocx, string outputPdf) {
-		using WordDocument wordDoc = new(inputDocx, FormatType.Docx);
-		using DocIORenderer renderer = new DocIORenderer();
-		PdfDocument? pdf = renderer.ConvertToPDF(wordDoc);
-		using FileStream stream = new(outputPdf, FileMode.Create);
-		pdf.Save(stream);
-		pdf.Close(true);
+		// Extract text from DOCX
+		string text = ExtractTextFromDocx(inputDocx);
+
+		// Create PDF document
+		using (PdfDocument document = new PdfDocument()) {
+			// Add a page - CORRECTED API usage
+			PdfPage page = document.AddPage();
+
+			// Set page size (optional - defaults to A4/Letter)
+			// page.Size = PageSize.;
+
+			// Create graphics object for drawing
+			using (XGraphics gfx = XGraphics.FromPdfPage(page)) {
+				// Define font and formatting
+				XFont font = new XFont("Arial", 12);
+				XBrush brush = XBrushes.Black;
+
+				// Create rectangle for text positioning
+				// FIXED: Use .Point property to get double value (modern PDFsharp)
+				XRect rect = new XRect(
+					40, // X position
+					40, // Y position  
+					page.Width.Point - 80, // Width with margins
+					page.Height.Point - 80 // Height with margins
+				);
+
+				// Draw the text
+				gfx.DrawString(text, font, brush, rect);
+			}
+
+			// Save the document
+			document.Save(outputPdf);
+		}
+	}
+
+	private static string ExtractTextFromDocx(string docxPath) {
+		// Install-Package DocumentFormat.OpenXml
+		using (var wordDoc = DocumentFormat.OpenXml.Packaging.WordprocessingDocument.Open(docxPath, false)) {
+			return wordDoc.MainDocumentPart.Document.Body.InnerText;
+		}
 	}
 }
