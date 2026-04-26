@@ -1,5 +1,7 @@
 using Syncfusion.DocIO;
 using Syncfusion.DocIO.DLS;
+using Syncfusion.DocIORenderer;
+using Syncfusion.Pdf;
 
 namespace SinaMN75U.Utils;
 
@@ -130,10 +132,10 @@ public class WordPdfGenerator {
 	
 	private static void ConvertToPdf(string inputDocx, string outputPdf) {
 		using WordDocument wordDoc = new(inputDocx, FormatType.Docx);
-		// using var renderer = new DocIORenderer();
-		// var pdf = renderer.ConvertToPDF(wordDoc);
+		using DocIORenderer renderer = new DocIORenderer();
+		PdfDocument? pdf = renderer.ConvertToPDF(wordDoc);
 		using FileStream stream = new(outputPdf, FileMode.Create);
-		// pdf.Save(stream);
-		// pdf.Close(true);
+		pdf.Save(stream);
+		pdf.Close(true);
 	}
 }

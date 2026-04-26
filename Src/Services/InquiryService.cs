@@ -358,28 +358,6 @@ public class InquiryService(
 		});
 	}
 
-	private async Task<GetAccessTokenResponse?> GetAccessToken(CancellationToken ct) {
-		HttpResponseMessage? response = await httpClient.PostForm(
-			"https://gateway.itsaaz.ir/sts/connect/token",
-			new Dictionary<string, string> {
-				{ "grant_type", "password" },
-				{ "client_id", _itHub.ClientId },
-				{ "Client_secret", _itHub.ClientSecret },
-				{ "username", _itHub.UserName },
-				{ "password", _itHub.Password }
-			}
-		);
-		if (response == null) return null;
-
-		string responseBody = await response.Content.ReadAsStringAsync(ct);
-		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody);
-
-		return new GetAccessTokenResponse {
-			AccessToken = data.GetStringOrNull("access_token"),
-			ExpiresIn = data.GetIntOrNull("expires_in")
-		};
-	}
-
 	private async Task CreateMobileAndNationalCodeVerificationHistory(string nationalCode, string phoneNumber, bool isVerified, CancellationToken ct) {
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
@@ -511,5 +489,27 @@ public class InquiryService(
 	private async Task<string?> ReadIBanToBankAccountDetailHistory(IBanToBankAccountDetailParams p, CancellationToken ct) {
 		InquiryHistoryEntity? e = await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.IBan == p.IBan && x.Tags.Contains(TagInquiryHistory.IBanToBankAccountDetail), ct);
 		return e?.Response;
+	}
+	
+	private async Task<GetAccessTokenResponse?> GetAccessToken(CancellationToken ct) {
+		HttpResponseMessage? response = await httpClient.PostForm(
+			"https://gateway.itsaaz.ir/sts/connect/token",
+			new Dictionary<string, string> {
+				{ "grant_type", "password" },
+				{ "client_id", _itHub.ClientId },
+				{ "Client_secret", _itHub.ClientSecret },
+				{ "username", _itHub.UserName },
+				{ "password", _itHub.Password }
+			}
+		);
+		if (response == null) return null;
+
+		string responseBody = await response.Content.ReadAsStringAsync(ct);
+		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody);
+
+		return new GetAccessTokenResponse {
+			AccessToken = data.GetStringOrNull("access_token"),
+			ExpiresIn = data.GetIntOrNull("expires_in")
+		};
 	}
 }

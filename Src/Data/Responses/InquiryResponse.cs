@@ -1,10 +1,5 @@
 namespace SinaMN75U.Data.Responses;
 
-public class GetAccessTokenResponse {
-	public string? AccessToken { get; set; }
-	public int? ExpiresIn { get; set; }
-}
-
 public sealed class ZipCodeToAddressDetailResponse {
 	public string? BuildingName { get; set; }
 	public string? Description { get; set; }

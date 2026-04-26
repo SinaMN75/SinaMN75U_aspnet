@@ -9,6 +9,11 @@ public class BaseResponse<T, TJ> where T : Enum where TJ : class {
 	public Guid? CreatorId { get; set; }
 }
 
+public class GetAccessTokenResponse {
+	public string? AccessToken { get; set; }
+	public int? ExpiresIn { get; set; }
+}
+
 public class UResponse<T> : UResponse {
 	public UResponse(T result, Usc status = Usc.Success, string message = "") {
 		Result = result;

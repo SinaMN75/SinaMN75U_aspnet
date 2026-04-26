@@ -8,6 +8,7 @@ public sealed class AppSettings {
 	public required Middleware Middleware { get; init; }
 	public required SmsPanel SmsPanel { get; init; }
 	public required ItHub ItHub { get; init; }
+	public required Mobtakeran Mobtakeran { get; init; }
 	public required BasicSettings BasicSettings { get; init; }
 	public required Ipg Ipg { get; init; }
 	public required Mpg Mpg { get; init; }
@@ -45,6 +46,13 @@ public sealed class ItHub {
 	public required string ClientSecret { get; init; }
 	public required string UserName { get; init; }
 	public required string Password { get; set; }
+}
+
+public sealed class Mobtakeran {
+	public required string UserName { get; set; }
+	public required string Password { get; set; }
+	public required string ApiKey { get; set; }
+	public required string BaseUrl { get; set; }
 }
 
 public sealed class BasicSettings {
