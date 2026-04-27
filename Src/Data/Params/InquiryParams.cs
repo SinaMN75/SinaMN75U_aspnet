@@ -40,6 +40,11 @@ public sealed class LicencePlateInquiryParams : BaseParams {
 	public string LicencePlate { get; set; } = null!;
 }
 
+public sealed class FreewayTollsParams : BaseParams {
+	[UValidationRequired("LicencePlateRequired"), UValidationStringLength(5, 15, "LicencePlateInvalid")]
+	public string LicencePlate { get; set; } = null!;
+}
+
 public sealed class DrivingLicenceNegativePointParams : BaseParams {
 	[UValidationRequired("NationalCodeRequired"), UValidationStringLength(10, 10, "NationalCodeInvalid")]
 	public string NationalCode { get; set; } = null!;

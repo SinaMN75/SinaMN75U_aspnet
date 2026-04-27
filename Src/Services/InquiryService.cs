@@ -8,6 +8,7 @@ public interface IInquiryService {
 	Task<UResponse<DrivingLicenceStatusResponse?>> DrivingLicenceStatus(DrivingLicenceStatusParams p, CancellationToken ct);
 	Task<UResponse<LicencePlateDetailResponse?>> LicencePlateDetail(LicencePlateInquiryParams p, CancellationToken ct);
 	Task<UResponse<DrivingLicenceNegativePointResponse?>> DrivingLicenceNegativePoint(DrivingLicenceNegativePointParams p, CancellationToken ct);
+	Task<UResponse<FreewayTollsResponse?>> FreewayTolls(FreewayTollsParams p, CancellationToken ct);
 	Task<UResponse<IBanToBankAccountDetailResponse?>> IBanToBankAccountDetail(IBanToBankAccountDetailParams p, CancellationToken ct);
 }
 
@@ -72,7 +73,7 @@ public class InquiryService(
 		if (responseBody == null) {
 			bool hasEnoughBalance = await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.ZipCodeToAddressDetail, ct);
 			if (!hasEnoughBalance) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
-			
+
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
@@ -106,7 +107,7 @@ public class InquiryService(
 			TraceId = json.GetStringOrNull("traceId"),
 			Village = json.GetStringOrNull("village")
 		};
-		
+
 		await walletService.Purchase(new WalletPurchaseParams { Tag = TagPurchase.ZipCodeToAddressDetail, Token = p.Token }, ct);
 
 		return new UResponse<ZipCodeToAddressDetailResponse?>(data);
@@ -166,7 +167,7 @@ public class InquiryService(
 			InquirePriceDictation = data.GetStringOrNull("inquirePriceDictation"),
 			Items = data.GetProperty("warningDTOs")
 				.EnumerateArray()
-				.Select(x => new VehicleViolationDetailItem {
+				.Select(x => new VehicleViolationDetailResponse.VehicleViolationDetailItem {
 					SerialNo = x.GetStringOrNull("serialNo"),
 					Date = x.GetStringOrNull("violationOccureDate"),
 					Type = x.TryGetProperty("violationDeliveryType", out JsonElement vdt)
@@ -272,7 +273,7 @@ public class InquiryService(
 			Status = data.GetStringOrNull("plateStatus"),
 			TracePlate = data.GetStringOrNull("tracePlate"),
 			Items = data.GetProperty("historyPlate")
-				.EnumerateArray().Select(x => new LicencePlateHistoryItem {
+				.EnumerateArray().Select(x => new LicencePlateDetailResponse.LicencePlateHistoryItem {
 						Type = x.GetStringOrNull("type"),
 						InstallDate = x.GetStringOrNull("installDate"),
 						Model = x.GetStringOrNull("model"),
@@ -316,6 +317,55 @@ public class InquiryService(
 			Allowable = data.GetStringOrNull("allowable") == "1",
 			Point = data.GetStringOrNull("negPoint"),
 			RuleId = data.GetStringOrNull("ruleId")
+		});
+	}
+
+	public async Task<UResponse<FreewayTollsResponse?>> FreewayTolls(FreewayTollsParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<FreewayTollsResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		string? responseBody = await ReadFreewayTollsHistory(p, ct);
+
+		if (responseBody == null) {
+			bool hasEnoughBalance = await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.IBanToBankAccountDetail, ct);
+			if (!hasEnoughBalance) return new UResponse<FreewayTollsResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+
+			UResponse<TagTxnErrorCodes> purchaseState = await walletService.Purchase(new WalletPurchaseParams { Tag = TagPurchase.FreewayTolls, Token = p.Token }, ct);
+			if (purchaseState.Result != TagTxnErrorCodes.Ok) return new UResponse<FreewayTollsResponse?>(null, purchaseState.Status, purchaseState.Message);
+
+			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
+			if (tokenResponse?.AccessToken == null) return new UResponse<FreewayTollsResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+
+			HttpResponseMessage? response = await httpClient.Post(
+				"https://api-ithub.itsaaz.ir/api/v1/CarServices/GetFreewayTollsQuery",
+				new {
+					plk1 = p.LicencePlate[..2],
+					plk2 = p.LicencePlate.Substring(2, 1),
+					plk3 = p.LicencePlate.Substring(3, 3),
+					plkSrl = p.LicencePlate.Substring(6, 2)
+				},
+				new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
+			);
+			if (response == null) return new UResponse<FreewayTollsResponse?>(null);
+
+			responseBody = await response.Content.ReadAsStringAsync(ct);
+			await CreateFreewayTollsHistory(responseBody, p, ct);
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagPurchase.IBanToBankAccountDetail, Token = p.Token }, ct);
+		}
+
+		Console.WriteLine(responseBody);
+
+		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody);
+
+		return new UResponse<FreewayTollsResponse?>(new FreewayTollsResponse {
+			TotalPrice = data.GetIntOrNull("total_price").ToString(),
+			Items = data.GetProperty("items").EnumerateArray().Select(x => new FreewayTollsResponse.FreewayTollsItem {
+				Id = x.GetStringOrNull("id"),
+				Date = x.GetStringOrNull("date"),
+				Price = x.GetIntOrNull("price").ToString(),
+				Gateway = x.GetStringOrNull("gateway"),
+				Freeway = x.GetStringOrNull("freeway"),
+			})
 		});
 	}
 
@@ -490,7 +540,25 @@ public class InquiryService(
 		InquiryHistoryEntity? e = await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.IBan == p.IBan && x.Tags.Contains(TagInquiryHistory.IBanToBankAccountDetail), ct);
 		return e?.Response;
 	}
-	
+
+	private async Task CreateFreewayTollsHistory(string responseBody, FreewayTollsParams p, CancellationToken ct) {
+		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
+			Id = Guid.CreateVersion7(),
+			CreatorId = Core.App.Users.SystemAdmin.Id,
+			CreatedAt = DateTime.UtcNow,
+			JsonData = new BaseJsonData(),
+			Tags = [TagInquiryHistory.ItHub, TagInquiryHistory.FreewayTolls],
+			LicencePlate = p.LicencePlate,
+			Response = responseBody
+		}, ct);
+		await db.SaveChangesAsync(ct);
+	}
+
+	private async Task<string?> ReadFreewayTollsHistory(FreewayTollsParams p, CancellationToken ct) {
+		InquiryHistoryEntity? e = await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.LicencePlate == p.LicencePlate && x.Tags.Contains(TagInquiryHistory.FreewayTolls), ct);
+		return e?.Response;
+	}
+
 	private async Task<GetAccessTokenResponse?> GetAccessToken(CancellationToken ct) {
 		HttpResponseMessage? response = await httpClient.PostForm(
 			"https://gateway.itsaaz.ir/sts/connect/token",

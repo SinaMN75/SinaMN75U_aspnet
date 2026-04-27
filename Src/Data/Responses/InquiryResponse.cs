@@ -49,33 +49,33 @@ public sealed class VehicleViolationDetailResponse {
 	public string? WarningId { get; set; }
 	public string? InquirePriceDictation { get; set; }
 	public IEnumerable<VehicleViolationDetailItem> Items { get; set; } = [];
-}
-
-public sealed class VehicleViolationDetailItem {
-	public string? SerialNo { get; set; }
-	public string? Date { get; set; }
-	public string? Type { get; set; }
-	public string? Address { get; set; }
-	public string? ViolationType { get; set; }
-	public string? FinalPrice { get; set; }
-	public string? PaperId { get; set; }
-	public string? PaymentId { get; set; }
-	public string? WarningId { get; set; }
-	public string? InvestigationAbility { get; set; }
-	public bool? HasImage { get; set; }
+	
+	public sealed class VehicleViolationDetailItem {
+		public string? SerialNo { get; set; }
+		public string? Date { get; set; }
+		public string? Type { get; set; }
+		public string? Address { get; set; }
+		public string? ViolationType { get; set; }
+		public string? FinalPrice { get; set; }
+		public string? PaperId { get; set; }
+		public string? PaymentId { get; set; }
+		public string? WarningId { get; set; }
+		public string? InvestigationAbility { get; set; }
+		public bool? HasImage { get; set; }
+	}
 }
 
 public sealed class LicencePlateDetailResponse {
 	public string? Status { get; set; }
 	public string? TracePlate { get; set; }
 	public IEnumerable<LicencePlateHistoryItem> Items { get; set; } = [];
-}
-
-public sealed class LicencePlateHistoryItem {
-	public string? System { get; set; }
-	public string? Type { get; set; }
-	public string? InstallDate { get; set; }
-	public string? Model { get; set; }
+	
+	public sealed class LicencePlateHistoryItem {
+		public string? System { get; set; }
+		public string? Type { get; set; }
+		public string? InstallDate { get; set; }
+		public string? Model { get; set; }
+	}
 }
 
 public sealed class DrivingLicenceNegativePointResponse {
@@ -90,4 +90,17 @@ public sealed class IBanToBankAccountDetailResponse {
 	public string? BankCode { get; set; }
 	public string? BankName { get; set; }
 	public string? OwnerName { get; set; }
+}
+
+public sealed class FreewayTollsResponse {
+	public string? TotalPrice { get; set; }
+	public IEnumerable<FreewayTollsItem> Items { get; set; } = [];
+	
+	public sealed class FreewayTollsItem {
+		public string? Id { get; set; }
+		public string? Date { get; set; }
+		public string? Price { get; set; }
+		public string? Gateway { get; set; }
+		public string? Freeway { get; set; }
+	}
 }

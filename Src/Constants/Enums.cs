@@ -31,7 +31,8 @@ public enum TagPurchase {
 	DrivingLicenceStatus = 104,
 	LicencePlateDetail = 105,
 	DrivingLicenceNegativePoint = 106,
-	IBanToBankAccountDetail = 107
+	IBanToBankAccountDetail = 107,
+	FreewayTolls = 108
 }
 
 public enum TagSmsPanel {
@@ -220,15 +221,16 @@ public enum TagSimCard {
 
 public enum TagInquiryHistory {
 	ValidateNationalCodeAndPhoneNumber = 101,
-	ZipCodeToAddressDetail = 102,
-	VehicleViolationsDetail = 103,
-	DrivingLicenceStatus = 104,
-	LicencePlateStatus = 105,
-	DrivingLicenceNegativePoint = 106,
-	IBanToBankAccountDetail = 107,
-	Verified = 201,
-	NotVerified = 202,
-	ItHub = 301
+	ZipCodeToAddressDetail = 201,
+	VehicleViolationsDetail = 301,
+	DrivingLicenceStatus = 302,
+	LicencePlateStatus = 303,
+	DrivingLicenceNegativePoint = 304,
+	FreewayTolls = 305,
+	IBanToBankAccountDetail = 501,
+	Verified = 601,
+	NotVerified = 602,
+	ItHub = 603
 }
 
 public enum TagAgreement {
