@@ -113,7 +113,8 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "TrackingNumberRequired", "Tracking Number Required." },
 		{ "NumberRequired", "Number Required." },
 		{ "SerialRequired", "Serial Required." },
-		{ "YouDoNotHaveClearanceToDoThisAction", "You Do Not have Clearance to do this Action." }
+		{ "YouDoNotHaveClearanceToDoThisAction", "You Do Not have Clearance to do this Action." },
+		{ "SecurityError", "Security Error." },
 	};
 
 	private readonly Dictionary<string, string> _fa = new() {
@@ -224,6 +225,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "NumberRequired", "شماره الزامی است" },
 		{ "TrackingNumberRequired", "کد رهگیری الزامی است" },
 		{ "SerialRequired", "سریال الزامی است" },
+		{ "SecurityError", "خطای امنیتی" },
 		{ "YouDoNotHaveClearanceToDoThisAction", "شما مجاز به انجام این عملیات نیستید." }
 	};
 

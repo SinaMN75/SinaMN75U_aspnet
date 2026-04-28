@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class WalletPurchaseParams : BaseParams {
-	public TagPurchase Tag { get; set; }
+	public required TagWalletTxn Tag { get; set; }
 }
 
 public sealed class WalletTransferParams : BaseParams {
@@ -14,6 +14,8 @@ public sealed class WalletTransferParams : BaseParams {
 	public decimal Amount { get; set; }
 
 	public string? Detail1 { get; set; }
+	
+	public required IEnumerable<TagWalletTxn> TagWalletTxn { get; set; }
 }
 
 public sealed class WalletTxnReadParams : BaseReadParams<TagWalletTxn> {

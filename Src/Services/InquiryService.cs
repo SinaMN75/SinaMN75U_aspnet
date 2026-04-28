@@ -59,7 +59,7 @@ public class InquiryService(
 		bool data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetBoolean();
 
 		await CreateMobileAndNationalCodeVerificationHistory(p.NationalCode, p.PhoneNumber, data, ct);
-		await walletService.Purchase(new WalletPurchaseParams { Tag = TagPurchase.MobileAndNationalCodeVerification, Token = p.Token }, ct);
+		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.MobileAndNationalCodeVerification, Token = p.Token }, ct);
 
 		return new UResponse<bool?>(data);
 	}
@@ -108,7 +108,7 @@ public class InquiryService(
 			Village = json.GetStringOrNull("village")
 		};
 
-		await walletService.Purchase(new WalletPurchaseParams { Tag = TagPurchase.ZipCodeToAddressDetail, Token = p.Token }, ct);
+		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.ZipCodeToAddressDetail, Token = p.Token }, ct);
 
 		return new UResponse<ZipCodeToAddressDetailResponse?>(data);
 	}
@@ -123,7 +123,7 @@ public class InquiryService(
 			bool hasEnoughBalance = await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.VehicleViolationsDetail, ct);
 			if (!hasEnoughBalance) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
-			UResponse<TagTxnErrorCodes> purchaseState = await walletService.Purchase(new WalletPurchaseParams { Tag = TagPurchase.VehicleViolationsDetail, Token = p.Token }, ct);
+			UResponse<TagTxnErrorCodes> purchaseState = await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.VehicleViolationsDetail, Token = p.Token }, ct);
 			if (purchaseState.Result != TagTxnErrorCodes.Ok) return new UResponse<VehicleViolationDetailResponse?>(null, purchaseState.Status, purchaseState.Message);
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
@@ -145,7 +145,7 @@ public class InquiryService(
 
 			responseBody = await response.Content.ReadAsStringAsync(ct);
 			await CreateVehicleViolationsDetailHistory(responseBody, p, ct);
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagPurchase.VehicleViolationsDetail, Token = p.Token }, ct);
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.VehicleViolationsDetail, Token = p.Token }, ct);
 		}
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetProperty("body");
@@ -197,7 +197,7 @@ public class InquiryService(
 			bool hasEnoughBalance = await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.DrivingLicenceStatus, ct);
 			if (!hasEnoughBalance) return new UResponse<DrivingLicenceStatusResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
-			UResponse<TagTxnErrorCodes> purchaseState = await walletService.Purchase(new WalletPurchaseParams { Tag = TagPurchase.DrivingLicenceStatus, Token = p.Token }, ct);
+			UResponse<TagTxnErrorCodes> purchaseState = await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceStatus, Token = p.Token }, ct);
 			if (purchaseState.Result != TagTxnErrorCodes.Ok) return new UResponse<DrivingLicenceStatusResponse?>(null, purchaseState.Status, purchaseState.Message);
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
@@ -212,7 +212,7 @@ public class InquiryService(
 
 			responseBody = await response.Content.ReadAsStringAsync(ct);
 			await CreateDrivingLicenceStatusHistory(responseBody, p, ct);
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagPurchase.DrivingLicenceStatus, Token = p.Token }, ct);
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceStatus, Token = p.Token }, ct);
 		}
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetProperty("body").EnumerateArray().First();
@@ -243,7 +243,7 @@ public class InquiryService(
 			bool hasEnoughBalance = await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.LicencePlateDetail, ct);
 			if (!hasEnoughBalance) return new UResponse<LicencePlateDetailResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
-			UResponse<TagTxnErrorCodes> purchaseState = await walletService.Purchase(new WalletPurchaseParams { Tag = TagPurchase.LicencePlateDetail, Token = p.Token }, ct);
+			UResponse<TagTxnErrorCodes> purchaseState = await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.LicencePlateDetail, Token = p.Token }, ct);
 			if (purchaseState.Result != TagTxnErrorCodes.Ok) return new UResponse<LicencePlateDetailResponse?>(null, purchaseState.Status, purchaseState.Message);
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
@@ -264,7 +264,7 @@ public class InquiryService(
 
 			responseBody = await response.Content.ReadAsStringAsync(ct);
 			await CreateLicencePlateStatusHistory(responseBody, p, ct);
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagPurchase.LicencePlateDetail, Token = p.Token }, ct);
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.LicencePlateDetail, Token = p.Token }, ct);
 		}
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetProperty("body");
@@ -293,7 +293,7 @@ public class InquiryService(
 			bool hasEnoughBalance = await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.DrivingLicenceNegativePoint, ct);
 			if (!hasEnoughBalance) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
-			UResponse<TagTxnErrorCodes> purchaseState = await walletService.Purchase(new WalletPurchaseParams { Tag = TagPurchase.DrivingLicenceNegativePoint, Token = p.Token }, ct);
+			UResponse<TagTxnErrorCodes> purchaseState = await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceNegativePoint, Token = p.Token }, ct);
 			if (purchaseState.Result != TagTxnErrorCodes.Ok) return new UResponse<DrivingLicenceNegativePointResponse?>(null, purchaseState.Status, purchaseState.Message);
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
@@ -308,7 +308,7 @@ public class InquiryService(
 
 			responseBody = await response.Content.ReadAsStringAsync(ct);
 			await CreateDrivingLicenceNegativePointHistory(responseBody, p, ct);
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagPurchase.DrivingLicenceNegativePoint, Token = p.Token }, ct);
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceNegativePoint, Token = p.Token }, ct);
 		}
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetProperty("body");
@@ -330,7 +330,7 @@ public class InquiryService(
 			bool hasEnoughBalance = await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.IBanToBankAccountDetail, ct);
 			if (!hasEnoughBalance) return new UResponse<FreewayTollsResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
-			UResponse<TagTxnErrorCodes> purchaseState = await walletService.Purchase(new WalletPurchaseParams { Tag = TagPurchase.FreewayTolls, Token = p.Token }, ct);
+			UResponse<TagTxnErrorCodes> purchaseState = await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.FreewayTolls, Token = p.Token }, ct);
 			if (purchaseState.Result != TagTxnErrorCodes.Ok) return new UResponse<FreewayTollsResponse?>(null, purchaseState.Status, purchaseState.Message);
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
@@ -339,6 +339,7 @@ public class InquiryService(
 			HttpResponseMessage? response = await httpClient.Post(
 				"https://api-ithub.itsaaz.ir/api/v1/CarServices/GetFreewayTollsQuery",
 				new {
+					requestId = "1",
 					plk1 = p.LicencePlate[..2],
 					plk2 = p.LicencePlate.Substring(2, 1),
 					plk3 = p.LicencePlate.Substring(3, 3),
@@ -347,13 +348,18 @@ public class InquiryService(
 				new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
 			);
 			if (response == null) return new UResponse<FreewayTollsResponse?>(null);
+			Console.WriteLine("jjhgfghjj");
+			Console.WriteLine(response.StatusCode);
 
 			responseBody = await response.Content.ReadAsStringAsync(ct);
+			
+			Console.WriteLine(responseBody);
+
 			await CreateFreewayTollsHistory(responseBody, p, ct);
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagPurchase.IBanToBankAccountDetail, Token = p.Token }, ct);
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.IBanToBankAccountDetail, Token = p.Token }, ct);
 		}
 
-		Console.WriteLine(responseBody);
+		// Console.WriteLine(responseBody);
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody);
 
@@ -379,7 +385,7 @@ public class InquiryService(
 			bool hasEnoughBalance = await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.IBanToBankAccountDetail, ct);
 			if (!hasEnoughBalance) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
-			UResponse<TagTxnErrorCodes> purchaseState = await walletService.Purchase(new WalletPurchaseParams { Tag = TagPurchase.IBanToBankAccountDetail, Token = p.Token }, ct);
+			UResponse<TagTxnErrorCodes> purchaseState = await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.IBanToBankAccountDetail, Token = p.Token }, ct);
 			if (purchaseState.Result != TagTxnErrorCodes.Ok) return new UResponse<IBanToBankAccountDetailResponse?>(null, purchaseState.Status, purchaseState.Message);
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
@@ -394,7 +400,7 @@ public class InquiryService(
 
 			responseBody = await response.Content.ReadAsStringAsync(ct);
 			await CreateIBanToBankAccountDetailHistory(responseBody, p, ct);
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagPurchase.IBanToBankAccountDetail, Token = p.Token }, ct);
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.IBanToBankAccountDetail, Token = p.Token }, ct);
 		}
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data");

@@ -85,6 +85,7 @@ public sealed class ApiCallCosts {
 	public required decimal ZipCodeToAddressDetail { get; set; }
 	public required decimal VehicleViolationsDetail { get; set; }
 	public required decimal DrivingLicenceStatus { get; set; }
+	public required decimal FreewayToll { get; set; }
 	public required decimal LicencePlateDetail { get; set; }
 	public required decimal DrivingLicenceNegativePoint { get; set; }
 	public required decimal IBanToBankAccountDetail { get; set; }

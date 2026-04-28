@@ -21,18 +21,9 @@ public enum Usc {
 	ShahkarError = 606,
 	BalanceIsLow = 607,
 	
+	SecurityError = 701,
+	
 	MediaTypeNotSupported = 802
-}
-
-public enum TagPurchase {
-	MobileAndNationalCodeVerification = 101,
-	ZipCodeToAddressDetail = 102,
-	VehicleViolationsDetail = 103,
-	DrivingLicenceStatus = 104,
-	LicencePlateDetail = 105,
-	DrivingLicenceNegativePoint = 106,
-	IBanToBankAccountDetail = 107,
-	FreewayTolls = 108
 }
 
 public enum TagSmsPanel {
@@ -184,7 +175,17 @@ public enum TagWallet {
 }
 
 public enum TagWalletTxn {
-	Charge = 101
+	Charge = 101,
+	Transfer = 102,
+	
+	MobileAndNationalCodeVerification = 201,
+	ZipCodeToAddressDetail = 202,
+	VehicleViolationsDetail = 203,
+	DrivingLicenceStatus = 204,
+	LicencePlateDetail = 205,
+	DrivingLicenceNegativePoint = 206,
+	IBanToBankAccountDetail = 207,
+	FreewayTolls = 208
 }
 
 public enum TagUserExtra {
@@ -248,6 +249,7 @@ public enum TagTxnErrorCodes {
 	UnAuthorized = 102,
 	SenderWalletNotFound = 103,
 	ReceiverWalletNotFound = 104,
+	SecurityError = 105,
 	Ok = 201
 }
 

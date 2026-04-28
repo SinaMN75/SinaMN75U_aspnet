@@ -23,33 +23,37 @@ public class WalletService(
 		string detail1 = p.Tag.ToString();
 
 		switch (p.Tag) {
-			case TagPurchase.MobileAndNationalCodeVerification:
+			case TagWalletTxn.MobileAndNationalCodeVerification:
 				receiverId = Core.App.Users.ITHub.Id;
 				amount = Core.App.ApiCallCosts.MobileAndNationalCodeVerification;
 				break;
-			case TagPurchase.ZipCodeToAddressDetail:
+			case TagWalletTxn.ZipCodeToAddressDetail:
 				receiverId = Core.App.Users.ITHub.Id;
 				amount = Core.App.ApiCallCosts.ZipCodeToAddressDetail;
 				break;
-			case TagPurchase.DrivingLicenceNegativePoint:
+			case TagWalletTxn.DrivingLicenceNegativePoint:
 				receiverId = Core.App.Users.ITHub.Id;
 				amount = Core.App.ApiCallCosts.DrivingLicenceNegativePoint;
 				break;
-			case TagPurchase.VehicleViolationsDetail:
+			case TagWalletTxn.VehicleViolationsDetail:
 				receiverId = Core.App.Users.ITHub.Id;
 				amount = Core.App.ApiCallCosts.VehicleViolationsDetail;
 				break;
-			case TagPurchase.LicencePlateDetail:
+			case TagWalletTxn.LicencePlateDetail:
 				receiverId = Core.App.Users.ITHub.Id;
 				amount = Core.App.ApiCallCosts.LicencePlateDetail;
 				break;
-			case TagPurchase.IBanToBankAccountDetail:
+			case TagWalletTxn.IBanToBankAccountDetail:
 				receiverId = Core.App.Users.ITHub.Id;
 				amount = Core.App.ApiCallCosts.IBanToBankAccountDetail;
 				break;
-			case TagPurchase.DrivingLicenceStatus:
+			case TagWalletTxn.DrivingLicenceStatus:
 				receiverId = Core.App.Users.ITHub.Id;
 				amount = Core.App.ApiCallCosts.DrivingLicenceStatus;
+				break;
+			case TagWalletTxn.FreewayTolls:
+				receiverId = Core.App.Users.ITHub.Id;
+				amount = Core.App.ApiCallCosts.FreewayToll;
 				break;
 			default:
 				throw new Exception();
@@ -61,7 +65,8 @@ public class WalletService(
 			SenderId = userData.Id,
 			ReceiverId = receiverId,
 			Amount = amount,
-			Detail1 = detail1
+			Detail1 = detail1,
+			TagWalletTxn = [p.Tag],
 		}, ct);
 	}
 
@@ -80,6 +85,8 @@ public class WalletService(
 		if (userData == null) return new UResponse<TagTxnErrorCodes>(TagTxnErrorCodes.UnAuthorized, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		Guid senderId = p.SenderId ?? userData.Id;
+		
+		if (!userData.IsAdmin && senderId != p.SenderId) return new UResponse<TagTxnErrorCodes>(TagTxnErrorCodes.SecurityError, Usc.SecurityError, ls.Get("SecurityError") );
 
 		WalletEntity? senderWallet = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == senderId, ct);
 		WalletEntity? receiverWallet = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == p.ReceiverId, ct);
@@ -101,7 +108,7 @@ public class WalletService(
 			ReceiverId = p.ReceiverId,
 			Amount = p.Amount,
 			JsonData = new BaseJsonData { Detail1 = p.Detail1 ?? "" },
-			Tags = []
+			Tags = [TagWalletTxn.Transfer]
 		}, ct);
 
 		db.Set<WalletEntity>().Update(senderWallet);
