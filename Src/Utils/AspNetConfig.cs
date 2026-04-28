@@ -87,6 +87,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IDataSeedService, DataSeedService>();
 		builder.Services.AddScoped<IAgreementService, AgreementService>();
 		builder.Services.AddScoped<IVasService, VasService>();
+		builder.Services.AddScoped<IChargeInternetService, ChargeInternetService>();
 	}
 
 	public static void UseUServices(this WebApplication app) {
@@ -128,6 +129,7 @@ public static partial class AspNetConfig {
 		app.MapNotificationRoutes(RouteTags.Notification);
 		app.MapDataSeedRoutes(RouteTags.DataSeeder);
 		app.MapAgreementRoutes(RouteTags.Agreement);
+		app.MapChargeInternetRoutes(RouteTags.ChargeInternet);
 	}
 
 	private static string CleanAndFormatSql(string sql) {

@@ -12,6 +12,10 @@ public class BaseResponse<T, TJ> where T : Enum where TJ : class {
 public class GetAccessTokenResponse {
 	public string? AccessToken { get; set; }
 	public int? ExpiresIn { get; set; }
+	public string? Reserve { get; set; }
+	public bool? Status { get; set; }
+	public int? Code { get; set; }
+	public string? Message { get; set; }
 }
 
 public class UResponse<T> : UResponse {

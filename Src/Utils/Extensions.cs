@@ -47,6 +47,11 @@ public static class UExtensions {
 		return null;
 	}
 
+	public static bool? GetBoolOrNull(this JsonElement element, string propertyName) {
+		if (element.TryGetProperty(propertyName, out JsonElement value) && value.ValueKind is JsonValueKind.False or JsonValueKind.True) return value.GetBoolean();
+		return null;
+	}
+
 	public static int? GetIntOrNull(this JsonElement element, string propertyName) {
 		if (element.TryGetProperty(propertyName, out JsonElement value))
 			if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out int intValue))

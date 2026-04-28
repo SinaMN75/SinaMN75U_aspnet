@@ -128,7 +128,7 @@ public class WordPdfGenerator {
 		string text = ExtractTextFromDocx(inputDocx);
 
 		// Create PDF document
-		using (PdfDocument document = new PdfDocument()) {
+		using (PdfDocument document = new()) {
 			// Add a page - CORRECTED API usage
 			PdfPage page = document.AddPage();
 
@@ -138,12 +138,12 @@ public class WordPdfGenerator {
 			// Create graphics object for drawing
 			using (XGraphics gfx = XGraphics.FromPdfPage(page)) {
 				// Define font and formatting
-				XFont font = new XFont("Arial", 12);
+				XFont font = new("Arial", 12);
 				XBrush brush = XBrushes.Black;
 
 				// Create rectangle for text positioning
 				// FIXED: Use .Point property to get double value (modern PDFsharp)
-				XRect rect = new XRect(
+				XRect rect = new(
 					40, // X position
 					40, // Y position  
 					page.Width.Point - 80, // Width with margins

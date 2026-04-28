@@ -216,10 +216,6 @@ public enum TagPayment {
 	ChargeWallet = 101
 }
 
-public enum TagSimCard {
-	IranCell = 101
-}
-
 public enum TagInquiryHistory {
 	ValidateNationalCodeAndPhoneNumber = 101,
 	ZipCodeToAddressDetail = 201,
@@ -255,4 +251,33 @@ public enum TagTxnErrorCodes {
 
 public enum TagVas {
 	Water = 101
+}
+
+public enum TagSimCard {
+	IranCell = 1,
+	HamrahAvval = 2,
+	Rigthel = 3,
+	Shatel = 5
+}
+
+public enum TagSimChargeType {
+	Normal = 0,
+	Javanan = 2,
+	Banovan = 3,
+	Delkhah = 5
+}
+
+public enum TagIrancelChargeType {
+	Normal = 0,
+	Shegeftangiz = 1,
+	Bill = 2,
+}
+
+public enum TagRightelChargeType {
+	Normal = 0,
+	ShoorAngiz = 1
+}
+
+public enum TagShatelChargeType {
+	Normal = 0
 }
