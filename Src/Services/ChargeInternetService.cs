@@ -2,6 +2,7 @@ namespace SinaMN75U.Services;
 
 public interface IChargeInternetService {
 	Task<UResponse<ChargeInternetReserveResponse?>> Reserve(ReserveChargeParams p, CancellationToken ct);
+	Task<UResponse<ChargeInternetReserveResponse?>> Topup(TopupChargeParams p, CancellationToken ct);
 }
 
 public class ChargeInternetService(
@@ -53,6 +54,49 @@ public class ChargeInternetService(
 					amount = p.Amount,
 					operator_id = ((int)p.SimType).ToString(),
 					device = "05"
+				}
+			},
+			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
+		);
+		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<ChargeInternetReserveResponse?>(null);
+
+		string responseBody = await response.Content.ReadAsStringAsync(ct);
+		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody);
+		JsonElement attachment = data.GetProperty("attachments");
+		
+		return new UResponse<ChargeInternetReserveResponse?>(new ChargeInternetReserveResponse {
+			Reserve = data.GetIntOrNull("reserve"),
+			ServerDateTime = data.GetStringOrNull("serverDateTime"),
+			Status = data.GetBoolOrNull("status"),
+			Code = data.GetIntOrNull("code"),
+			Message = data.GetStringOrNull("message"),
+			Reference = attachment.GetStringOrNull("reference"),
+			TraceId = attachment.GetStringOrNull("trace_id"),
+			AffectiveAmount = attachment.GetIntOrNull("affective_amount"),
+			Help = attachment.GetStringOrNull("help"),
+			MessageSource = attachment.GetStringOrNull("message_source"),
+		});
+	}
+
+	public async Task<UResponse<ChargeInternetReserveResponse?>> Topup(TopupChargeParams p, CancellationToken ct) {
+		// JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		// if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
+		if (tokenResponse?.AccessToken == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+
+		HttpResponseMessage? response = await httpClient.Post(
+			"https://{BaseURL}/api/v2/Pin/Reserve",
+			new {
+				apiKey = Core.App.Mobtakeran.ApiKey,
+				reserve = Guid.NewGuid().ToString(),
+				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+				attachments = new {
+					subscriber = p.PhoneNumber,
+					amount = p.Amount,
+					operator_id = ((int)p.SimType).ToString(),
+					device = "05",
+					type = "0"
 				}
 			},
 			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
