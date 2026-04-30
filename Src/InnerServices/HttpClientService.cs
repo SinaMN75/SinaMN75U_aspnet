@@ -26,9 +26,14 @@ public class HttpClientService(HttpClient httpClient) : IHttpClientService {
 				foreach (KeyValuePair<string, string> h in headers)
 					request.Headers.Add(h.Key, h.Value);
 
-			return await httpClient.SendAsync(request);
+			HttpResponseMessage response = await httpClient.SendAsync(request);
+			string responseBody = await response.Content.ReadAsStringAsync();
+			Console.WriteLine($"POST - {uri} - {(int)response.StatusCode} \nPARAMS: {JsonSerializer.Serialize(formData)} \nRESPONSE: {responseBody}");
+
+			return response;
 		}
-		catch (Exception) {
+		catch (Exception ex) {
+			Console.WriteLine($"POST - {uri} - ERROR \nPARAMS: {JsonSerializer.Serialize(formData)} \nRESPONSE: {ex.Message}");
 			return null;
 		}
 	}
@@ -57,18 +62,21 @@ public class HttpClientService(HttpClient httpClient) : IHttpClientService {
 	private async Task<HttpResponseMessage?> Send(HttpMethod method, string uri, object? body = null, Dictionary<string, string>? headers = null) {
 		try {
 			using HttpRequestMessage request = new(method, uri);
-			if (body != null) {
-				string json = JsonSerializer.Serialize(body);
-				request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-			}
+			string paramsLog = body != null ? JsonSerializer.Serialize(body) : "null";
 
+			if (body != null) request.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
 			if (headers != null)
 				foreach (KeyValuePair<string, string> header in headers)
 					request.Headers.Add(header.Key, header.Value);
 
-			return await httpClient.SendAsync(request);
+			HttpResponseMessage response = await httpClient.SendAsync(request);
+			string responseBody = await response.Content.ReadAsStringAsync();
+			Console.WriteLine($"{method} - {uri} - {(int)response.StatusCode} \nPARAMS: {paramsLog} \nRESPONSE: {responseBody}");
+
+			return response;
 		}
-		catch (Exception) {
+		catch (Exception ex) {
+			Console.WriteLine($"{method} - {uri} - ERROR \nPARAMS: {(body != null ? JsonSerializer.Serialize(body) : "null")} \nRESPONSE: {ex.Message}");
 			return null;
 		}
 	}
