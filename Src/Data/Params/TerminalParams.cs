@@ -10,6 +10,10 @@ public class TerminalCreateParams : BaseCreateParams<TagTerminal> {
 	public string? TerminalId { get; set; }
 }
 
+public class TerminalBulkCreateParams : BaseParams {
+	public required List<TerminalCreateParams> List { get; set; }
+}
+
 public class TerminalUpdateParams : BaseUpdateParams<TagTerminal> {
 	public string? Serial { get; set; }
 	public string? SimCardNumber { get; set; }

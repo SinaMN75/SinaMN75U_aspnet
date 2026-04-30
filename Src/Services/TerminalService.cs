@@ -2,6 +2,7 @@
 
 public interface ITerminalService {
 	Task<UResponse<Guid?>> Create(TerminalCreateParams p, CancellationToken ct);
+	Task<UResponse> BulkCreate(TerminalBulkCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<TerminalResponse>?>> Read(TerminalReadParams p, CancellationToken ct);
 	Task<UResponse> Update(TerminalUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
@@ -33,6 +34,27 @@ public class TerminalService(
 		await db.AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
 		return new UResponse<Guid?>(e.Id);
+	}
+
+	public async Task<UResponse> BulkCreate(TerminalBulkCreateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		
+		List<TerminalEntity> entities = [];
+		
+		entities.AddRange(p.List.Select(x => new TerminalEntity {
+			Serial = x.Serial,
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			JsonData = new BaseJsonData(),
+			Tags = x.Tags,
+			CreatorId = userData.Id
+		}));
+		
+		await db.Set<TerminalEntity>().AddRangeAsync(entities, ct);
+		await db.SaveChangesAsync(ct);
+		
+		return new UResponse();
 	}
 
 	public async Task<UResponse<IEnumerable<TerminalResponse>?>> Read(TerminalReadParams p, CancellationToken ct) {
