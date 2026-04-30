@@ -4,6 +4,12 @@ public sealed class WalletPurchaseParams : BaseParams {
 	public required TagWalletTxn Tag { get; set; }
 }
 
+public sealed class WalletChargeParams : BaseParams {
+	public required Guid UserId { get; set; }
+	public Guid? WalletId { get; set; }
+	public required decimal Amount { get; set; }
+}
+
 public sealed class WalletTransferParams : BaseParams {
 	public Guid? SenderId { get; set; }
 

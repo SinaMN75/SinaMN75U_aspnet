@@ -1,6 +1,7 @@
 namespace SinaMN75U.Services;
 
 public interface IWalletService {
+	Task<UResponse> Charge(WalletChargeParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<WalletResponse>?>> ReadByUserId(WalletReadParams p, CancellationToken ct);
 	Task<UResponse<TagTxnErrorCodes>> Transfer(WalletTransferParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<WalletTxnResponse>?>> ReadTxn(WalletTxnReadParams p, CancellationToken ct);
@@ -73,6 +74,26 @@ public class WalletService(
 	public async Task<bool> HasEnoughBalance(Guid userId, decimal amount, CancellationToken ct) {
 		WalletEntity? e = await db.Set<WalletEntity>().FirstOrDefaultAsync(x => x.CreatorId == userId, ct);
 		return amount >= e?.Balance;
+	}
+
+	public async Task<UResponse> Charge(WalletChargeParams p, CancellationToken ct) {
+		// JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		// if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		//
+		// WalletEntity? e = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == p.UserId, ct);
+		// if (e == null) return new UResponse(Usc.NotFound, ls.Get("WalletNotFound"));
+		//
+		// if (!userData.IsAdmin || userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+
+		return await Transfer(new WalletTransferParams {
+			ApiKey = p.ApiKey,
+			Token = p.Token,
+			SenderId = Core.App.Users.ITHub.Id,
+			ReceiverId = p.UserId,
+			Amount = p.Amount,
+			Detail1 = "chargeWallet",
+			TagWalletTxn = [TagWalletTxn.Charge]
+		}, ct);
 	}
 
 	public async Task<UResponse<IEnumerable<WalletResponse>?>> ReadByUserId(WalletReadParams p, CancellationToken ct) {

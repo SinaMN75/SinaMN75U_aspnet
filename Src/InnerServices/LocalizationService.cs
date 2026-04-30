@@ -114,6 +114,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "NumberRequired", "Number Required." },
 		{ "SerialRequired", "Serial Required." },
 		{ "YouDoNotHaveClearanceToDoThisAction", "You Do Not have Clearance to do this Action." },
+		{ "WalletNotFound", "wallet Not Found." },
 		{ "SecurityError", "Security Error." },
 	};
 
@@ -226,6 +227,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "TrackingNumberRequired", "کد رهگیری الزامی است" },
 		{ "SerialRequired", "سریال الزامی است" },
 		{ "SecurityError", "خطای امنیتی" },
+		{ "WalletNotFound", "کیف پول یافت نشد." },
 		{ "YouDoNotHaveClearanceToDoThisAction", "شما مجاز به انجام این عملیات نیستید." }
 	};
 

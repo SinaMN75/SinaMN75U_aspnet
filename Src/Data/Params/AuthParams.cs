@@ -6,7 +6,7 @@ public sealed class RefreshTokenParams : BaseParams {
 }
 
 public sealed class GetMobileVerificationCodeForLoginParams : BaseParams {
-	[UValidationRequired("PhoneNumberRequired"), UValidationStringLength(9, 12, "PhoneNumberNotValid")]
+	[UValidationRequired("PhoneNumberRequired"), UValidationStringLength(9, 15, "PhoneNumberNotValid")]
 	public string PhoneNumber { get; set; } = null!;
 }
 
@@ -35,7 +35,7 @@ public sealed class RegisterParams : BaseParams {
 }
 
 public sealed class VerifyMobileForLoginParams : BaseParams {
-	[UValidationRequired("PhoneNumberRequired"), UValidationStringLength(9, 12, "PhoneNumberNotValid")]
+	[UValidationRequired("PhoneNumberRequired"), UValidationStringLength(9, 15, "PhoneNumberNotValid")]
 	public string PhoneNumber { get; set; } = null!;
 
 	[UValidationRequired("OtpRequired")]
