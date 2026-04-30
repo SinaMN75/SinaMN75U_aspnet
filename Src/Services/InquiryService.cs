@@ -1,3 +1,5 @@
+using System.Net;
+
 namespace SinaMN75U.Services;
 
 public interface IInquiryService {
@@ -68,9 +70,10 @@ public class InquiryService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		string? responseBody = await ReadZipCodeToAddressHistory(p, ct);
-
-		if (responseBody == null) {
+		InquiryHistoryEntity? inquiryHistory = await ReadZipCodeToAddressHistory(p, ct);
+		string? responseBody = inquiryHistory?.Response;
+		
+		if (inquiryHistory == null || responseBody == null) {
 			bool hasEnoughBalance = await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.ZipCodeToAddressDetail, ct);
 			if (!hasEnoughBalance) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
@@ -86,15 +89,22 @@ public class InquiryService(
 			if (response == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null);
 			responseBody = await response.Content.ReadAsStringAsync(ct);
 			JsonElement httpResponse = JsonSerializer.Deserialize<JsonElement>(responseBody);
-
-			if (!response.IsSuccessStatusCode) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ThirdPartyError, httpResponse.GetProperty("error").GetStringOrNull("customMessage") ?? "");
-
-			await CreateZipCodeToAddressHistory(responseBody, p, ct);
+			
+			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
+				string errorMessage = httpResponse.GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
+				await CreateZipCodeToAddressHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.ZipCodeToAddressDetail, TagInquiryHistory.Verified, TagInquiryHistory.Error], errorMessage, p, ct);
+				return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ThirdPartyError, errorMessage);
+			} 
+			if (!response.IsSuccessStatusCode) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+			await CreateZipCodeToAddressHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.ZipCodeToAddressDetail, TagInquiryHistory.Verified], "", p, ct);
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.ZipCodeToAddressDetail, Token = p.Token }, ct);
 		}
-
+		
+		if (inquiryHistory?.Tags.Contains(TagInquiryHistory.Error) ?? false) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ThirdPartyError, inquiryHistory.JsonData.Detail1);
+			
 		JsonElement json = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data");
-
-		ZipCodeToAddressDetailResponse data = new() {
+		
+		return new UResponse<ZipCodeToAddressDetailResponse?>(new ZipCodeToAddressDetailResponse {
 			BuildingName = json.GetStringOrNull("BuildingName"),
 			Description = json.GetStringOrNull("description"),
 			Floor = json.GetStringOrNull("floor"),
@@ -110,11 +120,7 @@ public class InquiryService(
 			TownShip = json.GetStringOrNull("townShip"),
 			TraceId = json.GetStringOrNull("traceId"),
 			Village = json.GetStringOrNull("village")
-		};
-
-		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.ZipCodeToAddressDetail, Token = p.Token }, ct);
-
-		return new UResponse<ZipCodeToAddressDetailResponse?>(data);
+		});
 	}
 
 	public async Task<UResponse<VehicleViolationDetailResponse?>> VehicleViolationsDetail(VehicleViolationDetailParams p, CancellationToken ct) {
@@ -437,22 +443,22 @@ public class InquiryService(
 		return e?.Tags.Contains(TagInquiryHistory.Verified);
 	}
 
-	private async Task CreateZipCodeToAddressHistory(string responseBody, ZipCodeToAddressDetailParams p, CancellationToken ct) {
+	private async Task CreateZipCodeToAddressHistory(string responseBody, ICollection<TagInquiryHistory> tags, string message, ZipCodeToAddressDetailParams p, CancellationToken ct) {
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
 			CreatorId = Core.App.Users.SystemAdmin.Id,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJsonData(),
-			Tags = [TagInquiryHistory.ItHub, TagInquiryHistory.ZipCodeToAddressDetail, TagInquiryHistory.Verified],
+			JsonData = new BaseJsonData {Detail1 = message},
+			Tags = tags,
 			ZipCode = p.ZipCode,
 			Response = responseBody
 		}, ct);
 		await db.SaveChangesAsync(ct);
 	}
 
-	private async Task<string?> ReadZipCodeToAddressHistory(ZipCodeToAddressDetailParams p, CancellationToken ct) {
+	private async Task<InquiryHistoryEntity?> ReadZipCodeToAddressHistory(ZipCodeToAddressDetailParams p, CancellationToken ct) {
 		InquiryHistoryEntity? e = await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.ZipCode == p.ZipCode && x.Tags.Contains(TagInquiryHistory.ZipCodeToAddressDetail), ct);
-		return e?.Response;
+		return e;
 	}
 
 	private async Task CreateVehicleViolationsDetailHistory(string responseBody, VehicleViolationDetailParams p, CancellationToken ct) {

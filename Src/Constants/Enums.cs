@@ -228,7 +228,8 @@ public enum TagInquiryHistory {
 	IBanToBankAccountDetail = 501,
 	Verified = 601,
 	NotVerified = 602,
-	ItHub = 603
+	Error = 603,
+	ItHub = 701
 }
 
 public enum TagAgreement {
