@@ -115,6 +115,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "SerialRequired", "Serial Required." },
 		{ "YouDoNotHaveClearanceToDoThisAction", "You Do Not have Clearance to do this Action." },
 		{ "WalletNotFound", "wallet Not Found." },
+		{ "ThirdPartyError", "Third Party Service Error." },
 		{ "SecurityError", "Security Error." },
 	};
 
@@ -228,6 +229,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "SerialRequired", "سریال الزامی است" },
 		{ "SecurityError", "خطای امنیتی" },
 		{ "WalletNotFound", "کیف پول یافت نشد." },
+		{ "ThirdPartyError", "خطای سامانه مرجع" },
 		{ "YouDoNotHaveClearanceToDoThisAction", "شما مجاز به انجام این عملیات نیستید." }
 	};
 

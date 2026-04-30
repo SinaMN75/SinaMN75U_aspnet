@@ -13,6 +13,7 @@ public enum Usc {
 	PayloadTooLarge = 413,
 	InternalServerError = 500,
 
+	ThirdPartyError = 600,
 	WrongVerificationCode = 601,
 	MaximumLimitReached = 602,
 	UserNotFound = 603,

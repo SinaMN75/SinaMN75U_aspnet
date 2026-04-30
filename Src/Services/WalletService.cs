@@ -6,7 +6,7 @@ public interface IWalletService {
 	Task<UResponse<TagTxnErrorCodes>> Transfer(WalletTransferParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<WalletTxnResponse>?>> ReadTxn(WalletTxnReadParams p, CancellationToken ct);
 	Task<UResponse<TagTxnErrorCodes>> Purchase(WalletPurchaseParams p, CancellationToken ct);
-	
+
 	Task<bool> HasEnoughBalance(Guid userId, decimal amount, CancellationToken ct);
 }
 
@@ -73,7 +73,7 @@ public class WalletService(
 
 	public async Task<bool> HasEnoughBalance(Guid userId, decimal amount, CancellationToken ct) {
 		WalletEntity? e = await db.Set<WalletEntity>().FirstOrDefaultAsync(x => x.CreatorId == userId, ct);
-		return amount >= e?.Balance;
+		return amount <= e?.Balance;
 	}
 
 	public async Task<UResponse> Charge(WalletChargeParams p, CancellationToken ct) {
@@ -106,8 +106,8 @@ public class WalletService(
 		if (userData == null) return new UResponse<TagTxnErrorCodes>(TagTxnErrorCodes.UnAuthorized, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		Guid senderId = p.SenderId ?? userData.Id;
-		
-		if (!userData.IsAdmin && senderId != p.SenderId) return new UResponse<TagTxnErrorCodes>(TagTxnErrorCodes.SecurityError, Usc.SecurityError, ls.Get("SecurityError") );
+
+		if (!userData.IsAdmin && senderId != p.SenderId) return new UResponse<TagTxnErrorCodes>(TagTxnErrorCodes.SecurityError, Usc.SecurityError, ls.Get("SecurityError"));
 
 		WalletEntity? senderWallet = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == senderId, ct);
 		WalletEntity? receiverWallet = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == p.ReceiverId, ct);

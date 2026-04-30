@@ -82,9 +82,13 @@ public class InquiryService(
 				new { postcode = p.ZipCode, orderId = 1 },
 				new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
 			);
-			if (response == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null);
 
+			if (response == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null);
 			responseBody = await response.Content.ReadAsStringAsync(ct);
+			JsonElement httpResponse = JsonSerializer.Deserialize<JsonElement>(responseBody);
+
+			if (!response.IsSuccessStatusCode) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ThirdPartyError, httpResponse.GetProperty("error").GetStringOrNull("customMessage") ?? "");
+
 			await CreateZipCodeToAddressHistory(responseBody, p, ct);
 		}
 
@@ -352,7 +356,7 @@ public class InquiryService(
 			Console.WriteLine(response.StatusCode);
 
 			responseBody = await response.Content.ReadAsStringAsync(ct);
-			
+
 			Console.WriteLine(responseBody);
 
 			await CreateFreewayTollsHistory(responseBody, p, ct);
