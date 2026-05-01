@@ -1,8 +1,9 @@
-using PdfSharp.Drawing;
-using PdfSharp.Pdf;
-using PdfDocument = PdfSharp.Pdf.PdfDocument;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
+using Syncfusion.DocIO;
+using Syncfusion.DocIO.DLS;
+using Syncfusion.DocIORenderer;
+using Syncfusion.Pdf;
 
 namespace SinaMN75U.Utils;
 
@@ -112,57 +113,12 @@ public class WordPdfGenerator {
 		)
 	);
 
-	// private static void ConvertToPdf(string inputDocx, string outputPdf) {
-	// 	using WordDocument wordDoc = new(inputDocx, FormatType.Docx);
-	// 	using DocIORenderer renderer = new();
-	// 	PdfDocument? pdf = renderer.ConvertToPDF(wordDoc);
-	// 	using FileStream stream = new(outputPdf, FileMode.Create);
-	// 	pdf.Save(stream);
-	// 	pdf.Close(true);
-	// }
-
-// Install-Package PdfSharp
-
 	private static void ConvertToPdf(string inputDocx, string outputPdf) {
-		// Extract text from DOCX
-		string text = ExtractTextFromDocx(inputDocx);
-
-		// Create PDF document
-		using (PdfDocument document = new()) {
-			// Add a page - CORRECTED API usage
-			PdfPage page = document.AddPage();
-
-			// Set page size (optional - defaults to A4/Letter)
-			// page.Size = PageSize.;
-
-			// Create graphics object for drawing
-			using (XGraphics gfx = XGraphics.FromPdfPage(page)) {
-				// Define font and formatting
-				XFont font = new("Arial", 12);
-				XBrush brush = XBrushes.Black;
-
-				// Create rectangle for text positioning
-				// FIXED: Use .Point property to get double value (modern PDFsharp)
-				XRect rect = new(
-					40, // X position
-					40, // Y position  
-					page.Width.Point - 80, // Width with margins
-					page.Height.Point - 80 // Height with margins
-				);
-
-				// Draw the text
-				gfx.DrawString(text, font, brush, rect);
-			}
-
-			// Save the document
-			document.Save(outputPdf);
-		}
-	}
-
-	private static string ExtractTextFromDocx(string docxPath) {
-		// Install-Package DocumentFormat.OpenXml
-		using (var wordDoc = DocumentFormat.OpenXml.Packaging.WordprocessingDocument.Open(docxPath, false)) {
-			return wordDoc.MainDocumentPart.Document.Body.InnerText;
-		}
+		using WordDocument wordDoc = new(inputDocx, FormatType.Docx);
+		using DocIORenderer renderer = new();
+		PdfDocument? pdf = renderer.ConvertToPDF(wordDoc);
+		using FileStream stream = new(outputPdf, FileMode.Create);
+		pdf.Save(stream);
+		pdf.Close(true);
 	}
 }

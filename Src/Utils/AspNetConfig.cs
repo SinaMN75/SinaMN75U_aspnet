@@ -1,3 +1,5 @@
+using Syncfusion.Licensing;
+
 namespace SinaMN75U.Utils;
 
 public static partial class AspNetConfig {
@@ -55,7 +57,7 @@ public static partial class AspNetConfig {
 			x.MultipartBodyLengthLimit = int.MaxValue;
 			x.MultipartHeadersLengthLimit = int.MaxValue;
 		});
-
+		SyncfusionLicenseProvider.RegisterLicense("@32392e302e303b32393bKq35AiUSRDJT5uIaFzRCrJWDo7gKUKH1Rwb6jH+WX4o=");
 		builder.Services.AddScoped<IMediaService, MediaService>();
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
 		builder.Services.AddSingleton<IHttpClientService, HttpClientService>();
