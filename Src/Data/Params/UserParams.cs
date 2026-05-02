@@ -7,12 +7,9 @@ public sealed class UserCreateParams : BaseCreateParams<TagUser> {
 	[UValidationRequired("PasswordRequired"), UValidationStringLength(4, 100, "PasswordMinLength")]
 	public string Password { get; set; } = null!;
 
-	[UValidationRequired("PasswordRequired"), UValidationStringLength(4, 100, "PasswordMinLength")]
-	public string PhoneNumber { get; set; } = null!;
-
-	[UValidationRequired("PasswordRequired"), UValidationStringLength(4, 100, "PasswordMinLength")]
-	public string Email { get; set; } = null!;
-
+	public string? PhoneNumber { get; set; }
+	public string? Email { get; set; }
+	public string? LandLine { get; set; }
 	public string? FirstName { get; set; }
 	public string? LastName { get; set; }
 	public string? NationalCode { get; set; }
@@ -27,6 +24,7 @@ public sealed class UserCreateParams : BaseCreateParams<TagUser> {
 }
 
 public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {
+	public string? LandLine { get; set; }
 	public string? Password { get; set; }
 	public string? FirstName { get; set; }
 	public string? LastName { get; set; }
@@ -44,6 +42,7 @@ public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {
 }
 
 public sealed class UserReadParams : BaseReadParams<TagUser> {
+	public string? LandLine { get; set; }
 	public string? FirstName { get; set; }
 	public string? LastName { get; set; }
 	public string? UserName { get; set; }

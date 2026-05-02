@@ -8,6 +8,7 @@ public class TerminalCreateParams : BaseCreateParams<TagTerminal> {
 	public string? Imei { get; set; }
 	public string? MerchantId { get; set; }
 	public string? TerminalId { get; set; }
+	public Guid? AddressId { get; set; }
 }
 
 public class TerminalBulkCreateParams : BaseParams {
@@ -21,6 +22,7 @@ public class TerminalUpdateParams : BaseUpdateParams<TagTerminal> {
 	public string? Imei { get; set; }
 	public string? MerchantId { get; set; }
 	public string? TerminalId { get; set; }
+	public Guid? AddressId { get; set; }
 }
 
 public class TerminalReadParams : BaseReadParams<TagTerminal> {
@@ -30,6 +32,7 @@ public class TerminalReadParams : BaseReadParams<TagTerminal> {
 	public string? Imei { get; set; }
 	public string? MerchantId { get; set; }
 	public string? TerminalId { get; set; }
+	public Guid? AddressId { get; set; }
 
 	public TerminalSelectorArgs SelectorArgs { get; set; } = new();
 }

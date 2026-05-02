@@ -6,8 +6,8 @@ namespace SinaMN75U.Data.Entities;
 [Index(nameof(Imei), IsUnique = true, Name = "IX_Terminal_Imei")]
 public sealed class TerminalEntity : BaseEntity<TagTerminal, BaseJsonData> {
 	[MaxLength(40)]
-	public required string Serial { get; set; }	
-	
+	public required string Serial { get; set; }
+
 	[MaxLength(40)]
 	public string? SimCardNumber { get; set; }
 
@@ -19,12 +19,15 @@ public sealed class TerminalEntity : BaseEntity<TagTerminal, BaseJsonData> {
 
 	[MaxLength(40)]
 	public string? MerchantId { get; set; }
-	
+
 	[MaxLength(40)]
 	public string? TerminalId { get; set; }
-	
+
 	public Guid? UserId { get; set; }
 	public UserEntity? User { get; set; }
+
+	public Guid? AddressId { get; set; }
+	public AddressEntity? Address { get; set; }
 
 	public ICollection<AgreementEntity> Agreements { get; set; } = [];
 }

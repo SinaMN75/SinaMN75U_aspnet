@@ -20,7 +20,9 @@ public class AgreementService(
 		} 
 		
 		TerminalEntity? terminal = await db.Set<TerminalEntity>().AsTracking()
+			.Include(x => x.Address)
 			.Include(x => x.Creator).ThenInclude(x => x.Extra)
+			.Include(x => x.Creator).ThenInclude(x => x.Addresses)
 			.FirstOrDefaultAsync(x => x.Id == p.TerminalId, ct);
 		if (terminal == null) return new UResponse<AgreementResponse?>(null, Usc.NotFound, ls.Get("TerminalNotFound"));
 		
@@ -28,7 +30,17 @@ public class AgreementService(
 		
 		string agreement = await WordPdfGenerator.GenerateWithTextsAndImagesAsync(
 			texts: new Dictionary<string, string> {
-				{ "nationalCode", user.NationalCode! }
+				{ "day", PersianDateTime.Now.Day.ToString() },
+				{ "month", PersianDateTime.Now.Month.ToString() },
+				{ "number", "NUMBER" },
+				{ "fullName", $"{user.FirstName ?? ""} {user.LastName ?? ""}" },
+				{ "nationalCode", user.NationalCode ?? "" },
+				{ "birthdate", PersianDateTime.FromDateTime(user.Birthdate ?? DateTime.Now).ToString("yyyy-MM-dd") },
+				{ "address", "ADDRESS" },
+				{ "postalCode", terminal.Address?.ZipCode ?? "" },
+				{ "phoneNumber", user.PhoneNumber ?? "" },
+				{ "landLine", user.LandLine ?? "" },
+				{ "fatherName", user.JsonData.FatherName ?? "" }
 			},
 			imagesBase64: new Dictionary<string, string> {
 				{ "customerSignature", user.Extra.ESignature! }

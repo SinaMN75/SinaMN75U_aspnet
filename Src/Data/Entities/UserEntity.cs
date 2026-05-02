@@ -17,7 +17,9 @@ public sealed class UserEntity : BaseEntity<TagUser, UserJson> {
 
 	[MaxLength(15)]
 	public string? PhoneNumber { get; set; }
-
+	
+	[MaxLength(15)]
+	public string? LandLine { get; set; }
 	
 	[MinLength(10), MaxLength(10)]
 	public string? NationalCode { get; set; }

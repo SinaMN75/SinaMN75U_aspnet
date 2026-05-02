@@ -222,7 +222,7 @@ public enum TagInquiryHistory {
 	ZipCodeToAddressDetail = 201,
 	VehicleViolationsDetail = 301,
 	DrivingLicenceStatus = 302,
-	LicencePlateStatus = 303,
+	LicencePlateDetail = 303,
 	DrivingLicenceNegativePoint = 304,
 	FreewayTolls = 305,
 	IBanToBankAccountDetail = 501,

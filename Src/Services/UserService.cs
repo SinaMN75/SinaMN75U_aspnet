@@ -29,6 +29,7 @@ public class UserService(
 			CreatedAt = DateTime.UtcNow,
 			JsonData = new UserJson { FcmToken = p.FcmToken, FatherName = p.FatherName, Weight = p.Weight, Height = p.Height },
 			Tags = p.Tags,
+			LandLine = p.LandLine,
 			UserName = p.UserName,
 			Password = p.Password,
 			RefreshToken = UPasswordHasher.Hash(p.Password),
@@ -75,6 +76,7 @@ public class UserService(
 				Id = userId,
 				CreatorId = userData.Id,
 				UserName = userParam.UserName,
+				LandLine = userParam.LandLine,
 				Password = UPasswordHasher.Hash(userParam.Password),
 				RefreshToken = "",
 				PhoneNumber = userParam.PhoneNumber,
@@ -106,6 +108,7 @@ public class UserService(
 		if (p.FirstName.IsNotNullOrEmpty()) q = q.Where(u => (u.FirstName ?? "").Contains(p.FirstName!));
 		if (p.LastName.IsNotNullOrEmpty()) q = q.Where(u => (u.LastName ?? "").Contains(p.UserName!));
 		if (p.PhoneNumber.IsNotNullOrEmpty()) q = q.Where(u => u.PhoneNumber == p.PhoneNumber);
+		if (p.LandLine.IsNotNullOrEmpty()) q = q.Where(u => u.LandLine == p.LandLine);
 		if (p.Email.IsNotNullOrEmpty()) q = q.Where(u => u.Email == p.Email);
 		if (p.Bio.IsNotNullOrEmpty()) q = q.Where(u => (u.Bio ?? "").Contains(p.Bio));
 		if (p.NationalCode.IsNotNullOrEmpty()) q = q.Where(u => u.NationalCode == p.NationalCode);
@@ -140,6 +143,7 @@ public class UserService(
 		if (p.FirstName.IsNotNullOrEmpty()) e.FirstName = p.FirstName;
 		if (p.LastName.IsNotNullOrEmpty()) e.LastName = p.LastName;
 		if (p.UserName.IsNotNullOrEmpty()) e.UserName = p.UserName;
+		if (p.LandLine.IsNotNullOrEmpty()) e.LandLine = p.LandLine;
 		if (p.PhoneNumber.IsNotNullOrEmpty()) e.PhoneNumber = p.PhoneNumber;
 		if (p.Email.IsNotNullOrEmpty()) e.Email = p.Email;
 		if (p.Bio.IsNotNullOrEmpty()) e.Bio = p.Bio;

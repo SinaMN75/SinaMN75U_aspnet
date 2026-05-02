@@ -2,6 +2,7 @@ namespace SinaMN75U.Utils;
 
 public static class UExtensions {
 	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this string? s) => s is { Length: > 0 };
+	public static bool IsNotNullOrEmpty([NotNullWhen(true)] this Guid? s) => s != null;
 	public static bool IsNotNullOrEmpty<T>([NotNullWhen(true)] this IEnumerable<T>? list) => list != null && list.Any();
 	public static bool IsNotNullOrZero([NotNullWhen(true)] this int? s) => s != null && s != 0;
 	public static bool IsNotNullOrZero([NotNullWhen(true)] this decimal? s) => s != null && s != 0;

@@ -51,10 +51,7 @@ public class ContractService(
 				PenaltyAmount = 0,
 				ContractId = contractId,
 				DueDate = p.StartDate,
-				JsonData = new InvoiceJson {
-					Detail1 = "",
-					PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
-				}
+				JsonData = new InvoiceJson { Detail1 = "", PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate }
 			}, ct);
 
 			await db.SaveChangesAsync(ct);

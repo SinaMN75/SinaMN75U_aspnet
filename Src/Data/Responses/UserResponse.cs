@@ -1,6 +1,7 @@
 namespace SinaMN75U.Data.Responses;
 
 public sealed class UserResponse : BaseResponse<TagUser, UserJson> {
+	public string? LandLine { get; set; }
 	public string? UserName { get; set; }
 	public string? PhoneNumber { get; set; }
 	public string? Email { get; set; }

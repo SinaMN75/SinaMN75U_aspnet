@@ -7,4 +7,7 @@ public class TerminalResponse : BaseResponse<TagTerminal, BaseJsonData> {
 	public string? Imei { get; set; }
 	public string? MerchantId { get; set; }
 	public string? TerminalId { get; set; }
+	
+	public Guid? AddressId { get; set; }
+	public AddressResponse? Address { get; set; }
 }
