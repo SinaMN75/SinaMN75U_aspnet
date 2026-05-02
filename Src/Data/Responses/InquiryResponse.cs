@@ -18,7 +18,7 @@ public sealed class ZipCodeToAddressDetailResponse {
 	public string? Village { get; set; }
 }
 
-public sealed class DrivingLicenceStatusResponse {
+public sealed class DrivingLicenceDetailResponse {
 	public string? NationalCode { get; set; }
 	public string? FirstName { get; set; }
 	public string? LastName { get; set; }

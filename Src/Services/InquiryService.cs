@@ -6,8 +6,8 @@ public interface IInquiryService {
 	Task<UResponse<bool?>> MobileAndNationalCodeVerification(VerifyNationalCodeAndPhoneNumber p, CancellationToken ct);
 	Task<UResponse<ZipCodeToAddressDetailResponse?>> ZipCodeToAddressDetail(ZipCodeToAddressDetailParams p, CancellationToken ct);
 	Task<UResponse<VehicleViolationDetailResponse?>> VehicleViolationsDetail(VehicleViolationDetailParams p, CancellationToken ct);
-	Task<UResponse<DrivingLicenceStatusResponse?>> DrivingLicenceStatus(DrivingLicenceStatusParams p, CancellationToken ct);
-	Task<UResponse<LicencePlateDetailResponse?>> LicencePlateDetail(LicencePlateInquiryParams p, CancellationToken ct);
+	Task<UResponse<DrivingLicenceDetailResponse?>> DrivingLicenceDetail(DrivingLicenceDetailParams p, CancellationToken ct);
+	Task<UResponse<LicencePlateDetailResponse?>> LicencePlateDetail(LicencePlateDetailParams p, CancellationToken ct);
 	Task<UResponse<DrivingLicenceNegativePointResponse?>> DrivingLicenceNegativePoint(DrivingLicenceNegativePointParams p, CancellationToken ct);
 	Task<UResponse<FreewayTollsResponse?>> FreewayTolls(FreewayTollsParams p, CancellationToken ct);
 	Task<UResponse<IBanToBankAccountDetailResponse?>> IBanToBankAccountDetail(IBanToBankAccountDetailParams p, CancellationToken ct);
@@ -187,18 +187,18 @@ public class InquiryService(
 		});
 	}
 
-	public async Task<UResponse<DrivingLicenceStatusResponse?>> DrivingLicenceStatus(DrivingLicenceStatusParams p, CancellationToken ct) {
+	public async Task<UResponse<DrivingLicenceDetailResponse?>> DrivingLicenceDetail(DrivingLicenceDetailParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<DrivingLicenceStatusResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		InquiryHistoryEntity? inquiryHistory = await ReadDrivingLicenceStatusHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
 
 		if (inquiryHistory == null || responseBody == null) {
-			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.DrivingLicenceStatus, ct)) return new UResponse<DrivingLicenceStatusResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.DrivingLicenceStatus, ct)) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-			if (tokenResponse?.AccessToken == null) return new UResponse<DrivingLicenceStatusResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+			if (tokenResponse?.AccessToken == null) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
 			HttpResponseMessage? response = await httpClient.Post(
 				"https://gateway.itsaaz.ir/hub/api/v1/CarServices/GavahinameStatusInquiry",
@@ -206,25 +206,25 @@ public class InquiryService(
 				new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
 			);
 			
-			if (response == null) return new UResponse<DrivingLicenceStatusResponse?>(null);
+			if (response == null) return new UResponse<DrivingLicenceDetailResponse?>(null);
 			responseBody = await response.Content.ReadAsStringAsync(ct);
 			
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
 				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
 				await CreateDrivingLicenceStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceStatus, TagInquiryHistory.Verified, TagInquiryHistory.Error], errorMessage, p, ct);
-				return new UResponse<DrivingLicenceStatusResponse?>(null, Usc.ThirdPartyError, errorMessage);
+				return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			} 
 			
-			if (!response.IsSuccessStatusCode) return new UResponse<DrivingLicenceStatusResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+			if (!response.IsSuccessStatusCode) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
 			await CreateDrivingLicenceStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceStatus, TagInquiryHistory.Verified], "", p, ct);
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceStatus, Token = p.Token }, ct);
 		}
 
-		if (inquiryHistory?.Tags.Contains(TagInquiryHistory.Error) ?? false) return new UResponse<DrivingLicenceStatusResponse?>(null, Usc.ThirdPartyError, inquiryHistory.JsonData.Detail1);
+		if (inquiryHistory?.Tags.Contains(TagInquiryHistory.Error) ?? false) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ThirdPartyError, inquiryHistory.JsonData.Detail1);
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetProperty("body").EnumerateArray().First();
 
-		return new UResponse<DrivingLicenceStatusResponse?>(new DrivingLicenceStatusResponse {
+		return new UResponse<DrivingLicenceDetailResponse?>(new DrivingLicenceDetailResponse {
 			NationalCode = data.GetStringOrNull("nationalNo"),
 			FirstName = data.GetStringOrNull("firstName"),
 			LastName = data.GetStringOrNull("lastName"),
@@ -240,7 +240,7 @@ public class InquiryService(
 		});
 	}
 
-	public async Task<UResponse<LicencePlateDetailResponse?>> LicencePlateDetail(LicencePlateInquiryParams p, CancellationToken ct) {
+	public async Task<UResponse<LicencePlateDetailResponse?>> LicencePlateDetail(LicencePlateDetailParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<LicencePlateDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
@@ -485,7 +485,7 @@ public class InquiryService(
 		await db.SaveChangesAsync(ct);
 	}
 	
-	private async Task CreateDrivingLicenceStatusHistory(string responseBody, ICollection<TagInquiryHistory> tags, string message, DrivingLicenceStatusParams p, CancellationToken ct) {
+	private async Task CreateDrivingLicenceStatusHistory(string responseBody, ICollection<TagInquiryHistory> tags, string message, DrivingLicenceDetailParams p, CancellationToken ct) {
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
 			CreatorId = Core.App.Users.SystemAdmin.Id,
@@ -499,7 +499,7 @@ public class InquiryService(
 		await db.SaveChangesAsync(ct);
 	}
 	
-	private async Task CreateLicencePlateStatusHistory(string responseBody, ICollection<TagInquiryHistory> tags, string message, LicencePlateInquiryParams p, CancellationToken ct) {
+	private async Task CreateLicencePlateStatusHistory(string responseBody, ICollection<TagInquiryHistory> tags, string message, LicencePlateDetailParams p, CancellationToken ct) {
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
 			CreatorId = Core.App.Users.SystemAdmin.Id,
@@ -558,8 +558,8 @@ public class InquiryService(
 		InquiryHistoryEntity? e = await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.NationalCode == nationalCode && x.PhoneNumber == phoneNumber, ct);
 		return e;
 	}
-	private async Task<InquiryHistoryEntity?> ReadDrivingLicenceStatusHistory(DrivingLicenceStatusParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.LicencePlateDetail), ct);
-	private async Task<InquiryHistoryEntity?> ReadLicencePlateStatusHistory(LicencePlateInquiryParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.LicencePlate == p.LicencePlate && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.LicencePlateDetail), ct);
+	private async Task<InquiryHistoryEntity?> ReadDrivingLicenceStatusHistory(DrivingLicenceDetailParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.LicencePlateDetail), ct);
+	private async Task<InquiryHistoryEntity?> ReadLicencePlateStatusHistory(LicencePlateDetailParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.LicencePlate == p.LicencePlate && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.LicencePlateDetail), ct);
 	private async Task<InquiryHistoryEntity?> ReadDrivingLicenceNegativePointHistory(DrivingLicenceNegativePointParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.DrivingLicenceNumber == p.DrivingLicenceNumber && x.NationalCode == p.NationalCode && x.PhoneNumber == p.PhoneNumber && x.Tags.Contains(TagInquiryHistory.DrivingLicenceNegativePoint), ct);
 	private async Task<InquiryHistoryEntity?> ReadIBanToBankAccountDetailHistory(IBanToBankAccountDetailParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.IBan == p.IBan && x.Tags.Contains(TagInquiryHistory.IBanToBankAccountDetail), ct);
 	private async Task<InquiryHistoryEntity?> ReadFreewayTollsHistory(FreewayTollsParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.LicencePlate == p.LicencePlate && x.Tags.Contains(TagInquiryHistory.FreewayTolls), ct);

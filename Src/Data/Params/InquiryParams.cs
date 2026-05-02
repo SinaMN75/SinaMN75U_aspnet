@@ -24,7 +24,7 @@ public sealed class VehicleViolationDetailParams : BaseParams {
 	public string LicencePlate { get; set; } = null!;
 }
 
-public sealed class DrivingLicenceStatusParams : BaseParams {
+public sealed class DrivingLicenceDetailParams : BaseParams {
 	[UValidationRequired("NationalCodeRequired"), UValidationStringLength(10, 10, "NationalCodeInvalid")]
 	public string NationalCode { get; set; } = null!;
 
@@ -32,7 +32,7 @@ public sealed class DrivingLicenceStatusParams : BaseParams {
 	public string PhoneNumber { get; set; } = null!;
 }
 
-public sealed class LicencePlateInquiryParams : BaseParams {
+public sealed class LicencePlateDetailParams : BaseParams {
 	[UValidationRequired("NationalCodeRequired"), UValidationStringLength(10, 10, "NationalCodeInvalid")]
 	public string NationalCode { get; set; } = null!;
 
