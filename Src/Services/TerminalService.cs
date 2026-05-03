@@ -88,6 +88,7 @@ public class TerminalService(
 		if (p.TerminalId.IsNotNullOrEmpty()) e.TerminalId = p.TerminalId;
 		if (p.MerchantId.IsNotNullOrEmpty()) e.MerchantId = p.MerchantId;
 		if (p.AddressId.IsNotNullOrEmpty()) e.AddressId = p.AddressId;
+		if (p.UserId.IsNotNullOrEmpty()) e.UserId = p.UserId;
 
 		db.Set<TerminalEntity>().Update(e.ApplyUpdateParam<TerminalEntity,TagTerminal, BaseJsonData>(p));
 		await db.SaveChangesAsync(ct);

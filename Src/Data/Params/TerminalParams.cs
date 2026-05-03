@@ -23,6 +23,7 @@ public class TerminalUpdateParams : BaseUpdateParams<TagTerminal> {
 	public string? MerchantId { get; set; }
 	public string? TerminalId { get; set; }
 	public Guid? AddressId { get; set; }
+	public Guid? UserId { get; set; }
 }
 
 public class TerminalReadParams : BaseReadParams<TagTerminal> {

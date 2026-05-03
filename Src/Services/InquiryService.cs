@@ -554,10 +554,7 @@ public class InquiryService(
 		await db.SaveChangesAsync(ct);
 	}
 
-	private async Task<InquiryHistoryEntity?> ReadMobileAndNationalCodeVerificationHistory(string nationalCode, string phoneNumber, CancellationToken ct) {
-		InquiryHistoryEntity? e = await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.NationalCode == nationalCode && x.PhoneNumber == phoneNumber, ct);
-		return e;
-	}
+	private async Task<InquiryHistoryEntity?> ReadMobileAndNationalCodeVerificationHistory(string nationalCode, string phoneNumber, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.NationalCode == nationalCode && x.PhoneNumber == phoneNumber, ct);
 	private async Task<InquiryHistoryEntity?> ReadDrivingLicenceStatusHistory(DrivingLicenceDetailParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.LicencePlateDetail), ct);
 	private async Task<InquiryHistoryEntity?> ReadLicencePlateStatusHistory(LicencePlateDetailParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.LicencePlate == p.LicencePlate && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.LicencePlateDetail), ct);
 	private async Task<InquiryHistoryEntity?> ReadDrivingLicenceNegativePointHistory(DrivingLicenceNegativePointParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.DrivingLicenceNumber == p.DrivingLicenceNumber && x.NationalCode == p.NationalCode && x.PhoneNumber == p.PhoneNumber && x.Tags.Contains(TagInquiryHistory.DrivingLicenceNegativePoint), ct);
