@@ -221,7 +221,7 @@ public enum TagInquiryHistory {
 	ValidateNationalCodeAndPhoneNumber = 101,
 	ZipCodeToAddressDetail = 201,
 	VehicleViolationsDetail = 301,
-	DrivingLicenceStatus = 302,
+	DrivingLicenceDetail = 302,
 	LicencePlateDetail = 303,
 	DrivingLicenceNegativePoint = 304,
 	FreewayTolls = 305,
@@ -282,4 +282,8 @@ public enum TagRightelChargeType {
 
 public enum TagShatelChargeType {
 	Normal = 0
+}
+
+public enum TagMerchant {
+	Normal = 101
 }
