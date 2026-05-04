@@ -43,7 +43,7 @@ public class AgreementService(
 				{ "fatherName", user.JsonData.FatherName ?? "" }
 			},
 			imagesBase64: new Dictionary<string, string> {
-				{ "customerSignature", user.Extra.ESignature! }
+				{ "customerSignature", user.Extra.ESignature!.ToBase64()! }
 			},
 			templatePath: Path.Combine(Directory.GetCurrentDirectory(), "Templates", "atmAgreement.docx")
 		);

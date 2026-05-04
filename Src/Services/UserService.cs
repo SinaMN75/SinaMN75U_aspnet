@@ -189,15 +189,15 @@ public class UserService(
 		if (!userData.IsAdmin || userData.Id != e.CreatorId) return new UResponse<UserExtraResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		return new UResponse<UserExtraResponse?>(new UserExtraResponse {
-			NationalCardFront = e.NationalCardFront,
-			NationalCardBack = e.NationalCardBack,
-			BirthCertificateFirst = e.BirthCertificateFirst,
-			BirthCertificateSecond = e.BirthCertificateSecond,
-			BirthCertificateThird = e.BirthCertificateThird,
-			BirthCertificateForth = e.BirthCertificateForth,
-			BirthCertificateFifth = e.BirthCertificateFifth,
-			VisualAuthentication = e.VisualAuthentication,
-			ESignature = e.ESignature
+			NationalCardFront = e.NationalCardFront.ToBase64(),
+			NationalCardBack = e.NationalCardBack.ToBase64(),
+			BirthCertificateFirst = e.BirthCertificateFirst.ToBase64(),
+			BirthCertificateSecond = e.BirthCertificateSecond.ToBase64(),
+			BirthCertificateThird = e.BirthCertificateThird.ToBase64(),
+			BirthCertificateForth = e.BirthCertificateForth.ToBase64(),
+			BirthCertificateFifth = e.BirthCertificateFifth.ToBase64(),
+			VisualAuthentication = e.VisualAuthentication.ToBase64(),
+			ESignature = e.ESignature.ToBase64()
 		});
 	}
 
@@ -210,15 +210,15 @@ public class UserService(
 
 		if (!userData.IsAdmin || userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
-		if (p.NationalCardFront.IsNotNullOrEmpty()) e.NationalCardFront = p.NationalCardFront;
-		if (p.NationalCardBack.IsNotNullOrEmpty()) e.NationalCardBack = p.NationalCardBack;
-		if (p.BirthCertificateFirst.IsNotNullOrEmpty()) e.BirthCertificateFirst = p.BirthCertificateFirst;
-		if (p.BirthCertificateSecond.IsNotNullOrEmpty()) e.BirthCertificateSecond = p.BirthCertificateSecond;
-		if (p.BirthCertificateThird.IsNotNullOrEmpty()) e.BirthCertificateThird = p.BirthCertificateThird;
-		if (p.BirthCertificateForth.IsNotNullOrEmpty()) e.BirthCertificateForth = p.BirthCertificateForth;
-		if (p.BirthCertificateFifth.IsNotNullOrEmpty()) e.BirthCertificateFifth = p.BirthCertificateFifth;
-		if (p.VisualAuthentication.IsNotNullOrEmpty()) e.VisualAuthentication = p.VisualAuthentication;
-		if (p.ESignature.IsNotNullOrEmpty()) e.ESignature = p.ESignature;
+		if (p.NationalCardFront.IsNotNullOrEmpty()) e.NationalCardFront = p.NationalCardFront.FromBase64();
+		if (p.NationalCardBack.IsNotNullOrEmpty()) e.NationalCardBack = p.NationalCardBack.FromBase64();
+		if (p.BirthCertificateFirst.IsNotNullOrEmpty()) e.BirthCertificateFirst = p.BirthCertificateFirst.FromBase64();
+		if (p.BirthCertificateSecond.IsNotNullOrEmpty()) e.BirthCertificateSecond = p.BirthCertificateSecond.FromBase64();
+		if (p.BirthCertificateThird.IsNotNullOrEmpty()) e.BirthCertificateThird = p.BirthCertificateThird.FromBase64();
+		if (p.BirthCertificateForth.IsNotNullOrEmpty()) e.BirthCertificateForth = p.BirthCertificateForth.FromBase64();
+		if (p.BirthCertificateFifth.IsNotNullOrEmpty()) e.BirthCertificateFifth = p.BirthCertificateFifth.FromBase64();
+		if (p.VisualAuthentication.IsNotNullOrEmpty()) e.VisualAuthentication = p.VisualAuthentication.FromBase64();
+		if (p.ESignature.IsNotNullOrEmpty()) e.ESignature = p.ESignature.FromBase64();
 
 		db.Set<UserExtraEntity>().Update(e);
 		await db.SaveChangesAsync(ct);

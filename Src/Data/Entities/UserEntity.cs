@@ -94,13 +94,13 @@ public sealed class UserJson : BaseJsonData {
 
 [Table("UserExtras")]
 public sealed class UserExtraEntity : BaseEntity<TagUserExtra, BaseJsonData> {
-	public string? NationalCardFront { get; set; }
-	public string? NationalCardBack { get; set; }
-	public string? BirthCertificateFirst { get; set; }
-	public string? BirthCertificateSecond { get; set; }
-	public string? BirthCertificateThird { get; set; }
-	public string? BirthCertificateForth { get; set; }
-	public string? BirthCertificateFifth { get; set; }
-	public string? VisualAuthentication { get; set; }
-	public string? ESignature { get; set; }
+	public byte[]? NationalCardFront { get; set; }
+	public byte[]? NationalCardBack { get; set; }
+	public byte[]? BirthCertificateFirst { get; set; }
+	public byte[]? BirthCertificateSecond { get; set; }
+	public byte[]? BirthCertificateThird { get; set; }
+	public byte[]? BirthCertificateForth { get; set; }
+	public byte[]? BirthCertificateFifth { get; set; }
+	public byte[]? VisualAuthentication { get; set; }
+	public byte[]? ESignature { get; set; }
 }

@@ -73,7 +73,7 @@ public sealed class UMiddleware(RequestDelegate next, ILocalizationService ls) {
 			context.Response.Body = originalResponseStream;
 
 			if (Core.App.Middleware.EncryptResponse && responseBody.Length > 0) {
-				byte[] payload = Encoding.UTF8.GetBytes(Convert.ToBase64String(Encoding.UTF8.GetBytes(responseBody)));
+				byte[] payload = Encoding.UTF8.GetBytes(SimpleCrypto.Encrypt(responseBody));
 				context.Response.ContentLength = payload.Length;
 				await originalResponseStream.WriteAsync(payload);
 			}
@@ -104,13 +104,15 @@ public sealed class UMiddleware(RequestDelegate next, ILocalizationService ls) {
 		string processed = raw;
 
 		if (Core.App.Middleware.DecryptParams) {
-			if (!TryDecodeBase64(raw, out byte[] decodedBytes)) {
+			try {
+				string decrypted = SimpleCrypto.Decrypt(raw);
+				decoded = decrypted;
+				processed = decrypted;
+			}
+			catch {
 				await WriteErrorAsync(ctx, Usc.BadRequest, ls.Get("InvalidBase64RequestBody"));
 				return (null, raw);
 			}
-
-			decoded = Encoding.UTF8.GetString(decodedBytes);
-			processed = decoded;
 		}
 
 		if (Core.App.Middleware.RequireApiKey)
@@ -127,19 +129,6 @@ public sealed class UMiddleware(RequestDelegate next, ILocalizationService ls) {
 			}
 
 		return (processed, decoded);
-	}
-
-	private static bool TryDecodeBase64(string input, out byte[] result) {
-		try {
-			string clean = input.Replace(" ", "").Replace("\n", "").Replace("\r", "").Replace("\t", "");
-			if (clean.Length % 4 != 0) clean += new string('=', 4 - clean.Length % 4);
-			result = Convert.FromBase64String(clean);
-			return true;
-		}
-		catch {
-			result = [];
-			return false;
-		}
 	}
 
 	private static async Task WriteErrorAsync(HttpContext ctx, Usc status, string msg) {

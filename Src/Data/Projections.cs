@@ -330,15 +330,15 @@ public static class Projections {
 		Extra = !args.Extra
 			? null
 			: new UserExtraResponse {
-				NationalCardFront = x.Extra.NationalCardFront,
-				NationalCardBack = x.Extra.NationalCardBack,
-				BirthCertificateFirst = x.Extra.BirthCertificateFirst,
-				BirthCertificateSecond = x.Extra.BirthCertificateSecond,
-				BirthCertificateThird = x.Extra.BirthCertificateThird,
-				BirthCertificateForth = x.Extra.BirthCertificateForth,
-				BirthCertificateFifth = x.Extra.BirthCertificateFifth,
-				VisualAuthentication = x.Extra.VisualAuthentication,
-				ESignature = x.Extra.ESignature
+				NationalCardFront = x.Extra.NationalCardFront.ToBase64(),
+				NationalCardBack = x.Extra.NationalCardBack.ToBase64(),
+				BirthCertificateFirst = x.Extra.BirthCertificateFirst.ToBase64(),
+				BirthCertificateSecond = x.Extra.BirthCertificateSecond.ToBase64(),
+				BirthCertificateThird = x.Extra.BirthCertificateThird.ToBase64(),
+				BirthCertificateForth = x.Extra.BirthCertificateForth.ToBase64(),
+				BirthCertificateFifth = x.Extra.BirthCertificateFifth.ToBase64(),
+				VisualAuthentication = x.Extra.VisualAuthentication.ToBase64(),
+				ESignature = x.Extra.ESignature.ToBase64(),
 			}
 	};
 
@@ -623,7 +623,7 @@ public static class Projections {
 				Contract = args.Invoice.Contract == null
 					? null
 					: new ContractResponse {
-						Id = x.Invoice.Contract.Id,
+						Id = x.Invoice.Contract!.Id,
 						JsonData = x.Invoice.Contract.JsonData,
 						Tags = x.Invoice.Contract.Tags,
 						StartDate = x.Invoice.Contract.StartDate,
@@ -820,7 +820,7 @@ public static class Projections {
 		Contract = args.Contract == null
 			? null
 			: new ContractResponse {
-				Id = x.Contract.Id,
+				Id = x.Contract!.Id,
 				JsonData = x.Contract.JsonData,
 				Tags = x.Contract.Tags,
 				StartDate = x.Contract.StartDate,
