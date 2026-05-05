@@ -58,7 +58,7 @@ public class AuthService(
 		UserEntity? e = await db.Set<UserEntity>().Include(x => x.Extra).AsTracking().FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound);
 		
-		if (!userData.IsAdmin || userData.Id != e.Id) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (!userData.IsAdmin && userData.Id != e.Id) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 		
 		UResponse<bool?> shahkarResponse = await inquiryService.MobileAndNationalCodeVerification(new VerifyNationalCodeAndPhoneNumber {
 			ApiKey = p.ApiKey,
