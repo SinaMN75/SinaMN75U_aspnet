@@ -67,7 +67,7 @@ public class WalletService(
 			ReceiverId = receiverId,
 			Amount = amount,
 			Detail1 = detail1,
-			TagWalletTxn = [p.Tag],
+			TagWalletTxn = [p.Tag]
 		}, ct);
 	}
 
@@ -83,7 +83,7 @@ public class WalletService(
 		// WalletEntity? e = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == p.UserId, ct);
 		// if (e == null) return new UResponse(Usc.NotFound, ls.Get("WalletNotFound"));
 		//
-		// if (!userData.IsAdmin || userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		// if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		return await Transfer(new WalletTransferParams {
 			ApiKey = p.ApiKey,

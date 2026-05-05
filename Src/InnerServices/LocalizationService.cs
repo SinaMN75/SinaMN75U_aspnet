@@ -116,7 +116,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "YouDoNotHaveClearanceToDoThisAction", "You Do Not have Clearance to do this Action." },
 		{ "WalletNotFound", "wallet Not Found." },
 		{ "ThirdPartyError", "Third Party Service Error." },
-		{ "SecurityError", "Security Error." },
+		{ "SecurityError", "Security Error." }
 	};
 
 	private readonly Dictionary<string, string> _fa = new() {

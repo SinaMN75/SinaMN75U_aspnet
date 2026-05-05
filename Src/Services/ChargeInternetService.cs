@@ -12,7 +12,7 @@ public class ChargeInternetService(
 ) : IChargeInternetService {
 	private async Task<GetAccessTokenResponse?> GetAccessToken(CancellationToken ct) {
 		HttpResponseMessage? response = await httpClient.Post(
-			uri: $"{Core.App.Mobtakeran.BaseUrl}/api/v2/login",
+			uri: $"{Core.App.Mobtakeran.BaseUrl}api/v2/login",
 			body: new {
 				apiKey = Core.App.Mobtakeran.ApiKey,
 				reserve = Guid.NewGuid().ToString(),
@@ -63,7 +63,7 @@ public class ChargeInternetService(
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody);
 		JsonElement attachment = data.GetProperty("attachments");
-		
+
 		return new UResponse<ChargeInternetReserveResponse?>(new ChargeInternetReserveResponse {
 			Reserve = data.GetIntOrNull("reserve"),
 			ServerDateTime = data.GetStringOrNull("serverDateTime"),
@@ -86,7 +86,7 @@ public class ChargeInternetService(
 		if (tokenResponse?.AccessToken == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
 		HttpResponseMessage? response = await httpClient.Post(
-			"https://{BaseURL}/api/v2/Pin/Reserve",
+			$"{Core.App.Mobtakeran.BaseUrl}api/v2/Topup/Reserve",
 			new {
 				apiKey = Core.App.Mobtakeran.ApiKey,
 				reserve = Guid.NewGuid().ToString(),
@@ -106,7 +106,7 @@ public class ChargeInternetService(
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody);
 		JsonElement attachment = data.GetProperty("attachments");
-		
+
 		return new UResponse<ChargeInternetReserveResponse?>(new ChargeInternetReserveResponse {
 			Reserve = data.GetIntOrNull("reserve"),
 			ServerDateTime = data.GetStringOrNull("serverDateTime"),

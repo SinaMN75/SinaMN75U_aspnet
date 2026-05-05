@@ -6,9 +6,8 @@ public class TerminalCreateParams : BaseCreateParams<TagTerminal> {
 	public string? SimCardNumber { get; set; }
 	public string? SimCardSerial { get; set; }
 	public string? Imei { get; set; }
-	public string? MerchantId { get; set; }
+	public Guid? MerchantId { get; set; }
 	public string? TerminalId { get; set; }
-	public Guid? AddressId { get; set; }
 }
 
 public class TerminalBulkCreateParams : BaseParams {
@@ -20,10 +19,7 @@ public class TerminalUpdateParams : BaseUpdateParams<TagTerminal> {
 	public string? SimCardNumber { get; set; }
 	public string? SimCardSerial { get; set; }
 	public string? Imei { get; set; }
-	public string? MerchantId { get; set; }
 	public string? TerminalId { get; set; }
-	public Guid? AddressId { get; set; }
-	public Guid? UserId { get; set; }
 }
 
 public class TerminalReadParams : BaseReadParams<TagTerminal> {
@@ -31,7 +27,7 @@ public class TerminalReadParams : BaseReadParams<TagTerminal> {
 	public string? SimCardNumber { get; set; }
 	public string? SimCardSerial { get; set; }
 	public string? Imei { get; set; }
-	public string? MerchantId { get; set; }
+	public Guid? MerchantId { get; set; }
 	public string? TerminalId { get; set; }
 	public Guid? AddressId { get; set; }
 

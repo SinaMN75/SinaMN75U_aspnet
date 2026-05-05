@@ -60,8 +60,8 @@ public sealed class UserEntity : BaseEntity<TagUser, UserJson> {
 	[InverseProperty(nameof(WalletEntity.Creator))]
 	public ICollection<WalletEntity> Wallets { get; set; } = [];
 	
-	[InverseProperty(nameof(TerminalEntity.User))]
-	public ICollection<TerminalEntity> Terminals { get; set; } = [];
+	[InverseProperty(nameof(MerchantEntity.User))]
+	public ICollection<MerchantEntity> Merchants { get; set; } = [];
 	
 	[InverseProperty(nameof(BankAccountEntity.Creator))]
 	public ICollection<BankAccountEntity> BankAccounts { get; set; } = [];

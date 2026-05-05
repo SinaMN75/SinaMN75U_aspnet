@@ -18,7 +18,7 @@ public sealed class UserResponse : BaseResponse<TagUser, UserJson> {
 	public ICollection<TxnResponse>? Txns { get; set; }
 	public ICollection<AddressResponse>? Addresses { get; set; }
 	public ICollection<WalletResponse>? Wallets { get; set; }
-	public ICollection<TerminalResponse>? Terminals { get; set; }
+	public ICollection<MerchantResponse>? Merchants { get; set; }
 	public ICollection<BankAccountResponse>? BankAccounts { get; set; }
 	public ICollection<SimCardResponse>? SimCards { get; set; }
 }

@@ -272,7 +272,7 @@ public enum TagSimChargeType {
 public enum TagIrancelChargeType {
 	Normal = 0,
 	Shegeftangiz = 1,
-	Bill = 2,
+	Bill = 2
 }
 
 public enum TagRightelChargeType {

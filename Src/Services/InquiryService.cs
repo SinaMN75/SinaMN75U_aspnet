@@ -29,8 +29,6 @@ public class InquiryService(
 		InquiryHistoryEntity? inquiryHistory = await ReadMobileAndNationalCodeVerificationHistory(p.NationalCode, p.PhoneNumber, ct);
 		if (inquiryHistory != null) return new UResponse<bool?>(inquiryHistory.Tags.Contains(TagInquiryHistory.Verified));
 
-		if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.MobileAndNationalCodeVerification, ct)) return new UResponse<bool?>(false, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
-
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null) return new UResponse<bool?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
@@ -74,6 +72,7 @@ public class InquiryService(
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
 				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
+				await CreateZipCodeToAddressHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.ZipCodeToAddressDetail, TagInquiryHistory.Verified, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
@@ -137,6 +136,7 @@ public class InquiryService(
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
 				string errorMessage = httpResponse.GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
+				await CreateVehicleViolationsDetailHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.VehicleViolationsDetail, TagInquiryHistory.Verified, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
@@ -210,6 +210,7 @@ public class InquiryService(
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
 				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
+				await CreateDrivingLicenceStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceDetail, TagInquiryHistory.Verified, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
@@ -268,6 +269,7 @@ public class InquiryService(
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
 				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
+				await CreateLicencePlateStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.LicencePlateDetail, TagInquiryHistory.Verified, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<LicencePlateDetailResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
@@ -318,6 +320,7 @@ public class InquiryService(
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
 				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
+				await CreateDrivingLicenceNegativePointHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceNegativePoint, TagInquiryHistory.Verified, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
@@ -367,6 +370,7 @@ public class InquiryService(
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
 				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
+				await CreateFreewayTollsHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.IBanToBankAccountDetail, TagInquiryHistory.Verified, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<FreewayTollsResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
@@ -415,6 +419,7 @@ public class InquiryService(
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
 				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
+				await CreateIBanToBankAccountDetailHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.IBanToBankAccountDetail, TagInquiryHistory.Verified, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
@@ -547,8 +552,12 @@ public class InquiryService(
 		await db.SaveChangesAsync(ct);
 	}
 
-	private async Task<InquiryHistoryEntity?> ReadMobileAndNationalCodeVerificationHistory(string nationalCode, string phoneNumber, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.NationalCode == nationalCode && x.PhoneNumber == phoneNumber, ct);
-	private async Task<InquiryHistoryEntity?> ReadDrivingLicenceStatusHistory(DrivingLicenceDetailParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.DrivingLicenceDetail), ct);
+	private async Task<InquiryHistoryEntity?> ReadMobileAndNationalCodeVerificationHistory(string nationalCode, string phoneNumber, CancellationToken ct) {
+		InquiryHistoryEntity? e = await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.NationalCode == nationalCode && x.PhoneNumber == phoneNumber, ct);
+		return e;
+	}
+
+	private async Task<InquiryHistoryEntity?> ReadDrivingLicenceStatusHistory(DrivingLicenceDetailParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.LicencePlateDetail), ct);
 	private async Task<InquiryHistoryEntity?> ReadLicencePlateStatusHistory(LicencePlateDetailParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.LicencePlate == p.LicencePlate && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.LicencePlateDetail), ct);
 	private async Task<InquiryHistoryEntity?> ReadDrivingLicenceNegativePointHistory(DrivingLicenceNegativePointParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.DrivingLicenceNumber == p.DrivingLicenceNumber && x.NationalCode == p.NationalCode && x.PhoneNumber == p.PhoneNumber && x.Tags.Contains(TagInquiryHistory.DrivingLicenceNegativePoint), ct);
 	private async Task<InquiryHistoryEntity?> ReadIBanToBankAccountDetailHistory(IBanToBankAccountDetailParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.IBan == p.IBan && x.Tags.Contains(TagInquiryHistory.IBanToBankAccountDetail), ct);
@@ -575,82 +584,3 @@ public class InquiryService(
 		return new GetAccessTokenResponse { AccessToken = data.GetStringOrNull("access_token"), ExpiresIn = data.GetIntOrNull("expires_in") };
 	}
 }
-
-// OK:
-// POST - https://gateway.itsaaz.ir/hub/api/v1/CarServices/GavahinameStatusInquiry - 200 
-// PARAMS: {"nationalCode":"0019246935","cellphone":"09351902721"} 
-// RESPONSE: {
-//   "data": {
-//     "body": [
-//       {
-//         "nationalNo": "0019246935",
-//         "firstName": "سينا",
-//         "lastName": "محمدزاده نوري",
-//         "requestDate": "1394/06/07",
-//         "title": "پايه سوم",
-//         "printConfirmDate": "1396/05/31",
-//         "rahvarStatus": "تحويل به پست",
-//         "packetNo": "18776000017058314626",
-//         "barcode": "18776000017058314626",
-//         "printLicDate": "1396/06/01",
-//         "printNum": "9602810974",
-//         "printDate": "1396/05/31",
-//         "validYears": "10",
-//         "statusId": null,
-//         "requestId": null,
-//         "errorCode": null
-//       },
-//       {
-//         "nationalNo": null,
-//         "firstName": null,
-//         "lastName": null,
-//         "requestDate": null,
-//         "title": null,
-//         "printConfirmDate": null,
-//         "rahvarStatus": "تحويل به پست",
-//         "packetNo": null,
-//         "barcode": null,
-//         "printLicDate": null,
-//         "printNum": null,
-//         "printDate": null,
-//         "validYears": null,
-//         "statusId": "102",
-//         "requestId": "45006106",
-//         "errorCode": "0"
-//       }
-//     ]
-//   },
-//   "meta": null,
-//   "error": null
-// }
-// 
-// Error:
-// {
-//   "data": null,
-//   "meta": null,
-//   "error": {
-//     "errorCode": 400,
-//     "customMessage": "کد ملی صحیح نمی باشد.",
-//     "exception": null
-//   }
-// }
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 

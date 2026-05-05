@@ -20,7 +20,6 @@ public class AgreementService(
 		} 
 		
 		TerminalEntity? terminal = await db.Set<TerminalEntity>().AsTracking()
-			.Include(x => x.Address)
 			.Include(x => x.Creator).ThenInclude(x => x.Extra)
 			.Include(x => x.Creator).ThenInclude(x => x.Addresses)
 			.FirstOrDefaultAsync(x => x.Id == p.TerminalId, ct);
@@ -37,7 +36,7 @@ public class AgreementService(
 				{ "nationalCode", user.NationalCode ?? "" },
 				{ "birthdate", PersianDateTime.FromDateTime(user.Birthdate ?? DateTime.Now).ToString("yyyy-MM-dd") },
 				{ "address", "ADDRESS" },
-				{ "postalCode", terminal.Address?.ZipCode ?? "" },
+				{ "postalCode", terminal.Merchant?.ZipCode ?? "" },
 				{ "phoneNumber", user.PhoneNumber ?? "" },
 				{ "landLine", user.LandLine ?? "" },
 				{ "fatherName", user.JsonData.FatherName ?? "" }

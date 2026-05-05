@@ -28,8 +28,7 @@ public class TerminalService(
 			SimCardSerial = p.SimCardSerial,
 			Imei = p.Imei,
 			TerminalId = p.TerminalId,
-			MerchantId =  p.MerchantId,
-			AddressId = p.AddressId
+			MerchantId =  p.MerchantId
 		};
 
 		await db.AddAsync(e, ct);
@@ -49,8 +48,7 @@ public class TerminalService(
 			CreatedAt = DateTime.UtcNow,
 			JsonData = new BaseJsonData(),
 			Tags = x.Tags,
-			CreatorId = userData.Id,
-			AddressId = x.AddressId
+			CreatorId = userData.Id
 		}));
 		
 		await db.Set<TerminalEntity>().AddRangeAsync(entities, ct);
@@ -68,7 +66,6 @@ public class TerminalService(
 		if (p.Imei.IsNotNullOrEmpty()) q = q.Where(x => x.Imei == p.Imei);
 		if (p.SimCardNumber.IsNotNullOrEmpty()) q = q.Where(x => x.SimCardNumber == p.SimCardNumber);
 		if (p.SimCardSerial.IsNotNullOrEmpty()) q = q.Where(x => x.SimCardSerial == p.SimCardSerial);
-		if (p.AddressId.IsNotNullOrEmpty()) q = q.Where(x => x.AddressId == p.AddressId);
 		
 		IQueryable<TerminalResponse> projected = q.Select(Projections.TerminalSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
@@ -86,9 +83,6 @@ public class TerminalService(
 		if (p.SimCardNumber.IsNotNullOrEmpty()) e.SimCardNumber = p.SimCardNumber;
 		if (p.SimCardSerial.IsNotNullOrEmpty()) e.SimCardSerial = p.SimCardSerial;
 		if (p.TerminalId.IsNotNullOrEmpty()) e.TerminalId = p.TerminalId;
-		if (p.MerchantId.IsNotNullOrEmpty()) e.MerchantId = p.MerchantId;
-		if (p.AddressId.IsNotNullOrEmpty()) e.AddressId = p.AddressId;
-		if (p.UserId.IsNotNullOrEmpty()) e.UserId = p.UserId;
 
 		db.Set<TerminalEntity>().Update(e.ApplyUpdateParam<TerminalEntity,TagTerminal, BaseJsonData>(p));
 		await db.SaveChangesAsync(ct);
