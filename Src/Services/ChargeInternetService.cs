@@ -3,7 +3,7 @@ namespace SinaMN75U.Services;
 public interface IChargeInternetService {
 	Task<UResponse<ChargeInternetReserveResponse?>> Pin(ReserveChargeParams p, CancellationToken ct);
 	Task<UResponse<ChargeInternetReserveResponse?>> Topup(TopupChargeParams p, CancellationToken ct);
-	Task<UResponse> InternetList(TopupChargeParams p, CancellationToken ct);
+	Task<UResponse<InternetPackageResponse?>> InternetList(TopupChargeParams p, CancellationToken ct);
 }
 
 public class ChargeInternetService(
@@ -53,7 +53,7 @@ public class ChargeInternetService(
 				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
 				attachments = new {
 					amount = p.Amount,
-					operator_id = ((int)p.SimType).ToString(),
+					operator_id = p.SimType,
 					device = "05"
 				}
 			},
@@ -95,7 +95,7 @@ public class ChargeInternetService(
 				attachments = new {
 					subscriber = p.PhoneNumber,
 					amount = p.Amount,
-					operator_id = ((int)p.SimType).ToString(),
+					operator_id = p.OperatorId,
 					device = "05",
 					type = "0"
 				}
@@ -122,9 +122,10 @@ public class ChargeInternetService(
 		});
 	}
 
-	public async Task<UResponse> InternetList(TopupChargeParams p, CancellationToken ct) {
+	public async Task<UResponse<InternetPackageResponse?>> InternetList(TopupChargeParams p, CancellationToken ct) {
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.AccessToken == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		if (tokenResponse?.AccessToken == null)
+			return new UResponse<InternetPackageResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
 		HttpResponseMessage? response = await httpClient.Post(
 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/Internet/getlist",
@@ -132,13 +133,49 @@ public class ChargeInternetService(
 				apiKey = Core.App.Mobtakeran.ApiKey,
 				reserve = Guid.NewGuid().ToString(),
 				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
-				attachments = new {
-					operator_id = ((int)p.SimType).ToString(),
-				}
+				attachments = new { operator_id = p.OperatorId, }
 			},
 			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
 		);
 
-		return new UResponse();
+		if (response is null or { IsSuccessStatusCode: false })
+			return new UResponse<InternetPackageResponse?>(null);
+
+		string responseBody = await response.Content.ReadAsStringAsync(ct);
+		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody);
+		JsonElement attachment = data.GetProperty("attachments");
+
+		string? listJson = attachment.GetStringOrNull("list");
+		IEnumerable<InternetPackageItem> packages = [];
+
+		if (!string.IsNullOrEmpty(listJson)) {
+			JsonElement packagesArray = JsonSerializer.Deserialize<JsonElement>(listJson);
+			packages = packagesArray.EnumerateArray()
+				.Select(x => new InternetPackageItem {
+					Amount = x.GetIntOrNull("Amount"),
+					Id = x.GetStringOrNull("Id"),
+					Title = x.GetStringOrNull("Title"),
+					ShortTitle = x.GetStringOrNull("ShortTitle"),
+					SimType = x.GetIntOrNull("SimType"),
+					Duration = x.GetStringOrNull("Duration"),
+					OfferCode = x.GetStringOrNull("OfferCode"),
+					Price = x.GetDecimalOrNull("Price"),
+					PackageDType = x.GetIntOrNull("PackageDType"),
+					Capacity = x.GetStringOrNull("Capacity")
+				})
+				.ToList();
+		}
+
+		return new UResponse<InternetPackageResponse?>(new InternetPackageResponse {
+			Reserve = data.GetIntOrNull("reserve"),
+			ServerDateTime = data.GetStringOrNull("serverDateTime"),
+			Status = data.GetBoolOrNull("status"),
+			Code = data.GetIntOrNull("code"),
+			Message = data.GetStringOrNull("message"),
+			Reference = attachment.GetStringOrNull("reference"),
+			TraceId = attachment.GetStringOrNull("trace_id"),
+			Help = attachment.GetStringOrNull("help"),
+			List = packages
+		});
 	}
 }

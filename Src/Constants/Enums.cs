@@ -269,21 +269,6 @@ public enum TagSimChargeType {
 	Delkhah = 5
 }
 
-public enum TagIrancelChargeType {
-	Normal = 0,
-	Shegeftangiz = 1,
-	Bill = 2
-}
-
-public enum TagRightelChargeType {
-	Normal = 0,
-	ShoorAngiz = 1
-}
-
-public enum TagShatelChargeType {
-	Normal = 0
-}
-
 public enum TagMerchant {
 	Normal = 101
 }
