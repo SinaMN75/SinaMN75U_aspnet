@@ -3,7 +3,7 @@ namespace SinaMN75U.Services;
 public interface IChargeInternetService {
 	Task<UResponse<ChargeInternetReserveResponse?>> Pin(ReserveChargeParams p, CancellationToken ct);
 	Task<UResponse<ChargeInternetReserveResponse?>> Topup(TopupChargeParams p, CancellationToken ct);
-	Task<UResponse<InternetPackageResponse?>> InternetList(TopupChargeParams p, CancellationToken ct);
+	Task<UResponse<InternetPackageResponse?>> InternetList(InternetListParams p, CancellationToken ct);
 }
 
 public class ChargeInternetService(
@@ -122,7 +122,7 @@ public class ChargeInternetService(
 		});
 	}
 
-	public async Task<UResponse<InternetPackageResponse?>> InternetList(TopupChargeParams p, CancellationToken ct) {
+	public async Task<UResponse<InternetPackageResponse?>> InternetList(InternetListParams p, CancellationToken ct) {
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null)
 			return new UResponse<InternetPackageResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
@@ -133,7 +133,7 @@ public class ChargeInternetService(
 				apiKey = Core.App.Mobtakeran.ApiKey,
 				reserve = Guid.NewGuid().ToString(),
 				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
-				attachments = new { operator_id = p.OperatorId, }
+				attachments = new { operator_id = p.OperatorId }
 			},
 			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
 		);

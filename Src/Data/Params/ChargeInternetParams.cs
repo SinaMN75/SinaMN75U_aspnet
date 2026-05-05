@@ -13,5 +13,5 @@ public sealed class TopupChargeParams : BaseParams{
 }
 
 public sealed class InternetListParams : BaseParams{
-	public required string SimType { get; set; }
+	public required string OperatorId { get; set; }
 }

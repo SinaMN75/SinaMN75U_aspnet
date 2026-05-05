@@ -13,10 +13,6 @@ public sealed class ChargeInternetReserveResponse {
 	public string? MessageSource { get; set; }
 }
 
-public sealed class ChargeInternetGetPinResponse {
-	public required string ReferenceCode { get; set; }
-	public required long EffectiveAmount { get; set; }
-}
 
 public sealed class InternetPackageResponse {
 	public long? Reserve { get; set; }
