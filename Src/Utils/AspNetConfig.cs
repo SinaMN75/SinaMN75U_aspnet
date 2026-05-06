@@ -90,6 +90,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IAgreementService, AgreementService>();
 		builder.Services.AddScoped<IVasService, VasService>();
 		builder.Services.AddScoped<IChargeInternetService, ChargeInternetService>();
+		builder.Services.AddScoped<IMerchantService, MerchantService>();
 	}
 
 	public static void UseUServices(this WebApplication app) {
@@ -132,6 +133,7 @@ public static partial class AspNetConfig {
 		app.MapDataSeedRoutes(RouteTags.DataSeeder);
 		app.MapAgreementRoutes(RouteTags.Agreement);
 		app.MapChargeInternetRoutes(RouteTags.ChargeInternet);
+		app.MapMerchantRoutes(RouteTags.Merchant);
 	}
 
 	private static string CleanAndFormatSql(string sql) {

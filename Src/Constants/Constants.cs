@@ -27,6 +27,7 @@ public static class RouteTags {
 	public const string Notification = "api/Notification/";
 	public const string Agreement = "api/Agreement/";
 	public const string ChargeInternet = "api/ChargeInternet/";
+	public const string Merchant = "api/Merchant/";
 }
 
 public static class UConstants {

@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Merchants")]
-public sealed class MerchantEntity : BaseEntity<TagMerchant, BaseJsonData> {
+public sealed class MerchantEntity : BaseEntity<TagMerchant, MerchantJson> {
 
 	[Required, StringLength(10)]
 	public required string ZipCode { get; set; }
@@ -11,4 +11,7 @@ public sealed class MerchantEntity : BaseEntity<TagMerchant, BaseJsonData> {
 	
 	public ICollection<TerminalEntity> Terminals { get; set; } = [];
 	public ICollection<AgreementEntity> Agreements { get; set; } = [];
+}
+
+public sealed class MerchantJson : BaseJsonData {
 }

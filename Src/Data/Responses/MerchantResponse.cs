@@ -1,7 +1,6 @@
 namespace SinaMN75U.Data.Responses;
 
 public class MerchantResponse : BaseResponse<TagMerchant, BaseJsonData> {
-
 	public required string ZipCode { get; set; }
 	
 	public required Guid UserId { get; set; }
