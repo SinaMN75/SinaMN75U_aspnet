@@ -13,5 +13,4 @@ public sealed class MerchantEntity : BaseEntity<TagMerchant, MerchantJson> {
 	public ICollection<AgreementEntity> Agreements { get; set; } = [];
 }
 
-public sealed class MerchantJson : BaseJsonData {
-}
+public sealed class MerchantJson : BaseJsonData;

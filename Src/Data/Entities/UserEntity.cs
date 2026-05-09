@@ -46,11 +46,6 @@ public sealed class UserEntity : BaseEntity<TagUser, UserJson> {
 	[InverseProperty(nameof(MediaEntity.User))]
 	public ICollection<MediaEntity> Media { get; set; } = [];
 
-	[InverseProperty(nameof(ContractEntity.User))]
-	public ICollection<ContractEntity> Contracts { get; set; } = [];
-
-	public ICollection<InvoiceEntity> Invoices { get; set; } = [];
-
 	[InverseProperty(nameof(TxnEntity.User))]
 	public ICollection<TxnEntity> Txns { get; set; } = [];
 

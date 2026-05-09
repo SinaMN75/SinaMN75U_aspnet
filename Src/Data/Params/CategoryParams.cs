@@ -33,7 +33,6 @@ public sealed class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
 
 	public decimal? ProductDeposit { get; set; }
 	public decimal? ProductRent { get; set; }
-	public bool UpdateInvoicesRent { get; set; }
 }
 
 public sealed class CategoryReadParams : BaseReadParams<TagCategory> {

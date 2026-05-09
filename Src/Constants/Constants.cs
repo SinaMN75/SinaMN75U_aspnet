@@ -11,8 +11,6 @@ public static class RouteTags {
 	public const string Comment = "api/comment/";
 	public const string Category = "api/category/";
 	public const string Dashboard = "api/dashboard/";
-	public const string Contract = "api/contract/";
-	public const string Invoice = "api/invoice/";
 	public const string Ticket = "api/ticket/";
 	public const string Txn = "api/txn/";
 	public const string Parking = "api/parking/";

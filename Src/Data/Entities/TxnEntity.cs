@@ -11,9 +11,6 @@ public sealed class TxnEntity : BaseEntity<TagTxn, BaseJsonData> {
 	[Required, MaxLength(100)]
 	public required string TrackingNumber { get; set; }
 
-	public Guid? InvoiceId { get; set; }
-	public InvoiceEntity? Invoice { get; set; }
-
 	public required Guid UserId { get; set; }
 	public UserEntity User { get; set; } = null!;
 }

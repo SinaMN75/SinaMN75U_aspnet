@@ -72,8 +72,6 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<ICommentService, CommentService>();
 		builder.Services.AddScoped<IFollowService, FollowService>();
 		builder.Services.AddScoped<IDashboardService, DashboardService>();
-		builder.Services.AddScoped<IInvoiceService, InvoiceService>();
-		builder.Services.AddScoped<IContractService, ContractService>();
 		builder.Services.AddScoped<ITxnService, TxnService>();
 		builder.Services.AddScoped<ITicketService, TicketService>();
 		builder.Services.AddScoped<IVehicleService, VehicleService>();
@@ -116,8 +114,6 @@ public static partial class AspNetConfig {
 		app.MapCommentRoutes(RouteTags.Comment);
 		app.MapCategoryRoutes(RouteTags.Category);
 		app.MapDashboardRoutes(RouteTags.Dashboard);
-		app.MapContractRoutes(RouteTags.Contract);
-		app.MapInvoiceRoutes(RouteTags.Invoice);
 		app.MapTicketRoutes(RouteTags.Ticket);
 		app.MapTxnRoutes(RouteTags.Txn);
 		app.MapParkingRoutes(RouteTags.Parking);

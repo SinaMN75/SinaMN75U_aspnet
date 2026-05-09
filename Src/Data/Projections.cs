@@ -19,7 +19,7 @@ public sealed class VasSelectorArgs {
 
 public sealed class VehicleSelectorArgs {
 	public UserSelectorArgs? Creator { get; set; }
-};
+}
 
 public sealed class CategorySelectorArgs {
 	public MediaSelectorArgs? Media { get; set; }
@@ -73,7 +73,6 @@ public sealed class TicketSelectorArgs {
 public sealed class UserSelectorArgs {
 	public CategorySelectorArgs? Category { get; set; }
 	public MediaSelectorArgs? Media { get; set; }
-	public InvoiceSelectorArgs? Invoice { get; set; }
 	public TxnSelectorArgs? Txns { get; set; }
 	public AddressSelectorArgs? Address { get; set; }
 	public WalletSelectorArgs? Wallet { get; set; }
@@ -95,17 +94,6 @@ public sealed class ProductSelectorArgs {
 	public int ChildrenDebt { get; set; }
 }
 
-public sealed class ContractSelectorArgs {
-	public UserSelectorArgs? User { get; set; }
-	public UserSelectorArgs? Creator { get; set; }
-	public ProductSelectorArgs? Product { get; set; }
-	public InvoiceSelectorArgs? Invoice { get; set; }
-}
-
-public sealed class InvoiceSelectorArgs {
-	public ContractSelectorArgs? Contract { get; set; }
-}
-
 public sealed class CommentSelectorArgs {
 	public CommentSelectorArgs? Children { get; set; }
 	public UserSelectorArgs? User { get; set; }
@@ -115,7 +103,6 @@ public sealed class CommentSelectorArgs {
 
 public sealed class TxnSelectorArgs {
 	public UserSelectorArgs? User { get; set; }
-	public InvoiceSelectorArgs? Invoice { get; set; }
 }
 
 public sealed class AgreementSelectorArgs {
@@ -149,7 +136,6 @@ public static class Projections {
 				Addresses = args.Creator.Address == null ? null : x.Creator.Addresses.AsQueryable().Select(AddressSelector(args.Creator.Address)).ToList(),
 				BankAccounts = args.Creator.BankAccount == null ? null : x.Creator.BankAccounts.AsQueryable().Select(BankAccountSelector(args.Creator.BankAccount)).ToList(),
 				Merchants = args.Creator.Merchant == null ? null : x.Creator.Merchants.AsQueryable().Select(MerchantSelector(args.Creator.Merchant)).ToList(),
-				Invoices = args.Creator.Invoice == null ? null : x.Creator.Invoices.AsQueryable().Select(InvoiceSelector(args.Creator.Invoice)).ToList(),
 				Txns = args.Creator.Txns == null ? null : x.Creator.Txns.AsQueryable().Select(TxnSelector(args.Creator.Txns)).ToList(),
 				SimCards = args.Creator.SimCard == null ? null : x.Creator.SimCards.AsQueryable().Select(SimCardSelector(args.Creator.SimCard)).ToList(),
 				Wallets = args.Creator.Wallet == null ? null : x.Creator.Wallets.AsQueryable().Select(WalletSelector(args.Creator.Wallet)).ToList()
@@ -326,7 +312,6 @@ public static class Projections {
 		Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 		Addresses = args.Address == null ? null : x.Addresses.AsQueryable().Select(AddressSelector(args.Address)).ToList(),
 		BankAccounts = args.BankAccount == null ? null : x.BankAccounts.AsQueryable().Select(BankAccountSelector(args.BankAccount)).ToList(),
-		Invoices = args.Invoice == null ? null : x.Invoices.AsQueryable().Select(InvoiceSelector(args.Invoice)).ToList(),
 		SimCards = args.SimCard == null ? null : x.SimCards.AsQueryable().Select(SimCardSelector(args.SimCard)).ToList(),
 		Merchants = args.Merchant == null ? null : x.Merchants.AsQueryable().Select(MerchantSelector(args.Merchant)).ToList(),
 		Txns = args.Txns == null ? null : x.Txns.AsQueryable().Select(TxnSelector(args.Txns)).ToList(),
@@ -374,7 +359,6 @@ public static class Projections {
 				Addresses = args.Creator.Address == null ? null : x.Creator.Addresses.AsQueryable().Select(AddressSelector(args.Creator.Address)).ToList(),
 				BankAccounts = args.Creator.BankAccount == null ? null : x.Creator.BankAccounts.AsQueryable().Select(BankAccountSelector(args.Creator.BankAccount)).ToList(),
 				Merchants = args.Creator.Merchant == null ? null : x.Creator.Merchants.AsQueryable().Select(MerchantSelector(args.Creator.Merchant)).ToList(),
-				Invoices = args.Creator.Invoice == null ? null : x.Creator.Invoices.AsQueryable().Select(InvoiceSelector(args.Creator.Invoice)).ToList(),
 				Txns = args.Creator.Txns == null ? null : x.Creator.Txns.AsQueryable().Select(TxnSelector(args.Creator.Txns)).ToList(),
 				SimCards = args.Creator.SimCard == null ? null : x.Creator.SimCards.AsQueryable().Select(SimCardSelector(args.Creator.SimCard)).ToList(),
 				Wallets = args.Creator.Wallet == null ? null : x.Creator.Wallets.AsQueryable().Select(WalletSelector(args.Creator.Wallet)).ToList()
@@ -429,11 +413,6 @@ public static class Projections {
 					? null
 					: x.Creator.Merchants.AsQueryable()
 						.Select(MerchantSelector(args.Creator.Merchant))
-						.ToList(),
-				Invoices = args.Creator.Invoice == null
-					? null
-					: x.Creator.Invoices.AsQueryable()
-						.Select(InvoiceSelector(args.Creator.Invoice))
 						.ToList(),
 				Txns = args.Creator.Txns == null
 					? null
@@ -553,7 +532,6 @@ public static class Projections {
 						Addresses = args.Terminal.Creator.Address == null ? null : x.Terminal.Creator.Addresses.AsQueryable().Select(AddressSelector(args.Terminal.Creator.Address)).ToList(),
 						BankAccounts = args.Terminal.Creator.BankAccount == null ? null : x.Terminal.Creator.BankAccounts.AsQueryable().Select(BankAccountSelector(args.Terminal.Creator.BankAccount)).ToList(),
 						Merchants = args.Terminal.Creator.Merchant == null ? null : x.Terminal.Creator.Merchants.AsQueryable().Select(MerchantSelector(args.Terminal.Creator.Merchant)).ToList(),
-						Invoices = args.Terminal.Creator.Invoice == null ? null : x.Terminal.Creator.Invoices.AsQueryable().Select(InvoiceSelector(args.Terminal.Creator.Invoice)).ToList(),
 						Txns = args.Terminal.Creator.Txns == null ? null : x.Terminal.Creator.Txns.AsQueryable().Select(TxnSelector(args.Terminal.Creator.Txns)).ToList(),
 						SimCards = args.Terminal.Creator.SimCard == null ? null : x.Terminal.Creator.SimCards.AsQueryable().Select(SimCardSelector(args.Terminal.Creator.SimCard)).ToList(),
 						Wallets = args.Terminal.Creator.Wallet == null ? null : x.Terminal.Creator.Wallets.AsQueryable().Select(WalletSelector(args.Terminal.Creator.Wallet)).ToList()
@@ -588,8 +566,6 @@ public static class Projections {
 			Content = x.Content,
 			Latitude = x.Latitude,
 			Longitude = x.Longitude,
-			Deposit = x.Deposit,
-			Rent = x.Rent,
 			Stock = x.Stock,
 			Point = x.Point,
 			Order = x.Order,
@@ -683,32 +659,6 @@ public static class Projections {
 		TrackingNumber = x.TrackingNumber,
 		JsonData = x.JsonData,
 		UserId = x.UserId,
-		InvoiceId = x.InvoiceId,
-		Invoice = args.Invoice == null
-			? null
-			: new InvoiceResponse {
-				DebtAmount = x.Invoice!.DebtAmount,
-				CreditorAmount = x.Invoice.CreditorAmount,
-				PaidAmount = x.Invoice.PaidAmount,
-				PenaltyAmount = x.Invoice.PenaltyAmount,
-				DueDate = x.Invoice.DueDate,
-				JsonData = x.Invoice.JsonData,
-				Tags = x.Invoice.Tags,
-				Contract = args.Invoice.Contract == null
-					? null
-					: new ContractResponse {
-						Id = x.Invoice.Contract!.Id,
-						JsonData = x.Invoice.Contract.JsonData,
-						Tags = x.Invoice.Contract.Tags,
-						StartDate = x.Invoice.Contract.StartDate,
-						EndDate = x.Invoice.Contract.EndDate,
-						Deposit = x.Invoice.Contract.Deposit,
-						Rent = x.Invoice.Contract.Rent,
-						UserId = x.Invoice.Contract.UserId,
-						CreatorId = x.Invoice.Contract.CreatorId,
-						ProductId = x.Invoice.Contract.ProductId
-					}
-			},
 		User = args.User == null
 			? null
 			: new UserResponse {
@@ -781,7 +731,6 @@ public static class Projections {
 				Addresses = args.User.Address == null ? null : x.User.Addresses.AsQueryable().Select(AddressSelector(args.User.Address)).ToList(),
 				BankAccounts = args.User.BankAccount == null ? null : x.User.BankAccounts.AsQueryable().Select(BankAccountSelector(args.User.BankAccount)).ToList(),
 				Merchants = args.User.Merchant == null ? null : x.User.Merchants.AsQueryable().Select(MerchantSelector(args.User.Merchant)).ToList(),
-				Invoices = args.User.Invoice == null ? null : x.User.Invoices.AsQueryable().Select(InvoiceSelector(args.User.Invoice)).ToList(),
 				Txns = args.User.Txns == null ? null : x.User.Txns.AsQueryable().Select(TxnSelector(args.User.Txns)).ToList(),
 				SimCards = args.User.SimCard == null ? null : x.User.SimCards.AsQueryable().Select(SimCardSelector(args.User.SimCard)).ToList(),
 				Wallets = args.User.Wallet == null ? null : x.User.Wallets.AsQueryable().Select(WalletSelector(args.User.Wallet)).ToList()
@@ -807,147 +756,9 @@ public static class Projections {
 				Addresses = args.Creator.Address == null ? null : x.Creator.Addresses.AsQueryable().Select(AddressSelector(args.Creator.Address)).ToList(),
 				BankAccounts = args.Creator.BankAccount == null ? null : x.Creator.BankAccounts.AsQueryable().Select(BankAccountSelector(args.Creator.BankAccount)).ToList(),
 				Merchants = args.Creator.Merchant == null ? null : x.Creator.Merchants.AsQueryable().Select(MerchantSelector(args.Creator.Merchant)).ToList(),
-				Invoices = args.Creator.Invoice == null ? null : x.Creator.Invoices.AsQueryable().Select(InvoiceSelector(args.Creator.Invoice)).ToList(),
 				Txns = args.Creator.Txns == null ? null : x.Creator.Txns.AsQueryable().Select(TxnSelector(args.Creator.Txns)).ToList(),
 				SimCards = args.Creator.SimCard == null ? null : x.Creator.SimCards.AsQueryable().Select(SimCardSelector(args.Creator.SimCard)).ToList(),
 				Wallets = args.Creator.Wallet == null ? null : x.Creator.Wallets.AsQueryable().Select(WalletSelector(args.Creator.Wallet)).ToList()
-			}
-	};
-
-	public static Expression<Func<ContractEntity, ContractResponse>> ContractSelector(ContractSelectorArgs args) => x => new ContractResponse {
-		Id = x.Id,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		StartDate = x.StartDate,
-		EndDate = x.EndDate,
-		Deposit = x.Deposit,
-		Rent = x.Rent,
-		UserId = x.UserId,
-		CreatorId = x.CreatorId,
-		ProductId = x.ProductId,
-		Invoices = args.Invoice == null ? null : x.Invoices.AsQueryable().Select(InvoiceSelector(args.Invoice)).ToList(),
-		User = args.User == null
-			? null
-			: new UserResponse {
-				Id = x.User.Id,
-				JsonData = x.User.JsonData,
-				Tags = x.User.Tags,
-				UserName = x.User.UserName,
-				PhoneNumber = x.User.PhoneNumber,
-				Email = x.User.Email,
-				FirstName = x.User.FirstName,
-				LastName = x.User.LastName,
-				NationalCode = x.User.NationalCode,
-				Media = args.User.Media == null ? null : x.User.Media.AsQueryable().Select(MediaSelector()).ToList(),
-				Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList()
-			},
-		Creator = args.Creator == null
-			? null
-			: new UserResponse {
-				Id = x.Creator.Id,
-				JsonData = x.Creator.JsonData,
-				Tags = x.Creator.Tags,
-				UserName = x.Creator.UserName,
-				PhoneNumber = x.Creator.PhoneNumber,
-				Email = x.Creator.Email,
-				FirstName = x.Creator.FirstName,
-				LastName = x.Creator.LastName,
-				NationalCode = x.Creator.NationalCode,
-				Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
-				Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
-			},
-		Product = args.Product == null
-			? null
-			: new ProductResponse {
-				Id = x.Product.Id,
-				JsonData = x.Product.JsonData,
-				Tags = x.Product.Tags,
-				Title = x.Product.Title,
-				Code = x.Product.Code,
-				Subtitle = x.Product.Subtitle,
-				Description = x.Product.Description,
-				Slug = x.Product.Slug,
-				Type = x.Product.Type,
-				Content = x.Product.Content,
-				Latitude = x.Product.Latitude,
-				Longitude = x.Product.Longitude,
-				Deposit = x.Product.Deposit,
-				Rent = x.Product.Rent,
-				Stock = x.Product.Stock,
-				Point = x.Product.Point,
-				Order = x.Product.Order,
-				CreatorId = x.Product.CreatorId,
-				Categories = args.Product.Category == null ? null : x.Product.Categories.AsQueryable().Select(CategorySelector(args.Product.Category)).ToList(),
-				Media = args.Product.Media == null ? null : x.Product.Media.AsQueryable().Select(MediaSelector()).ToList()
-			}
-	};
-
-	public static Expression<Func<InvoiceEntity, InvoiceResponse>> InvoiceSelector(InvoiceSelectorArgs args) => x => new InvoiceResponse {
-		Id = x.Id,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		DebtAmount = x.DebtAmount,
-		CreditorAmount = x.CreditorAmount,
-		PaidAmount = x.PaidAmount,
-		PenaltyAmount = x.PenaltyAmount,
-		DueDate = x.DueDate,
-		Contract = args.Contract == null
-			? null
-			: new ContractResponse {
-				Id = x.Contract!.Id,
-				JsonData = x.Contract.JsonData,
-				Tags = x.Contract.Tags,
-				StartDate = x.Contract.StartDate,
-				EndDate = x.Contract.EndDate,
-				Deposit = x.Contract.Deposit,
-				Rent = x.Contract.Rent,
-				UserId = x.Contract.UserId,
-				CreatorId = x.Contract.CreatorId,
-				ProductId = x.Contract.ProductId,
-				Creator = args.Contract.Creator == null
-					? null
-					: new UserResponse {
-						Id = x.Contract.Creator.Id,
-						JsonData = x.Contract.Creator.JsonData,
-						Tags = x.Contract.Creator.Tags,
-						UserName = x.Contract.Creator.UserName,
-						PhoneNumber = x.Contract.Creator.PhoneNumber,
-						Email = x.Contract.Creator.Email,
-						FirstName = x.Contract.Creator.FirstName,
-						LastName = x.Contract.Creator.LastName,
-						NationalCode = x.Contract.Creator.NationalCode,
-						Categories = args.Contract.Creator.Category == null ? null : x.Contract.Creator.Categories.AsQueryable().Select(CategorySelector(args.Contract.Creator.Category)).ToList(),
-						Media = args.Contract.Creator.Media == null ? null : x.Contract.Creator.Media.AsQueryable().Select(MediaSelector()).ToList()
-					},
-				User = args.Contract.User == null
-					? null
-					: new UserResponse {
-						Id = x.Contract.User.Id,
-						JsonData = x.Contract.User.JsonData,
-						Tags = x.Contract.User.Tags,
-						UserName = x.Contract.User.UserName,
-						PhoneNumber = x.Contract.User.PhoneNumber,
-						Email = x.Contract.User.Email,
-						FirstName = x.Contract.User.FirstName,
-						LastName = x.Contract.User.LastName,
-						NationalCode = x.Contract.User.NationalCode,
-						Categories = args.Contract.User.Category == null ? null : x.Contract.User.Categories.AsQueryable().Select(CategorySelector(args.Contract.User.Category)).ToList(),
-						Media = args.Contract.User.Media == null ? null : x.Contract.User.Media.AsQueryable().Select(MediaSelector()).ToList()
-					},
-				Product = args.Contract.Product == null
-					? null
-					: new ProductResponse {
-						Id = x.Contract.Product.Id,
-						JsonData = x.Contract.Product.JsonData,
-						Tags = x.Contract.Product.Tags,
-						Title = x.Contract.Product.Title,
-						Code = x.Contract.Product.Code,
-						Deposit = x.Contract.Product.Deposit,
-						Rent = x.Contract.Product.Rent,
-						CreatorId = x.Contract.Product.CreatorId,
-						Categories = args.Contract.Product.Category == null ? null : x.Contract.Product.Categories.AsQueryable().Select(CategorySelector(args.Contract.Product.Category)).ToList(),
-						Media = args.Contract.Product.Media == null ? null : x.Contract.Product.Media.AsQueryable().Select(MediaSelector()).ToList()
-					}
 			}
 	};
 
@@ -989,7 +800,6 @@ public static class Projections {
 				Tags = x.Txn.Tags,
 				CreatorId = x.Txn.CreatorId,
 				TrackingNumber = x.Txn.TrackingNumber,
-				InvoiceId = x.Txn.InvoiceId,
 				UserId = x.Txn.UserId,
 				Amount = x.Txn.Amount
 			},

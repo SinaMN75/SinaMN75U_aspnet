@@ -6,8 +6,6 @@ public sealed class TxnCreateParams : BaseCreateParams<TagTxn> {
 
 	[UValidationRequired("TrackingNumberRequired")]
 	public string TrackingNumber { get; set; } = null!;
-
-	public Guid? InvoiceId { get; set; }
 }
 
 public sealed class TxnUpdateParams : BaseUpdateParams<TagTxn> {

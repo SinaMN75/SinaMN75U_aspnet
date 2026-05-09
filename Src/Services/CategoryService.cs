@@ -101,38 +101,6 @@ public class CategoryService(
 		if (p.ParentId != null) e.ParentId = p.ParentId;
 		if (p.RelatedProducts != null) e.JsonData.RelatedProducts = p.RelatedProducts;
 
-		if (p.ProductDeposit.IsNotNull())
-			await db.Set<ProductEntity>()
-				.Where(x => x.Categories.Any(c => c.Id == e.Id))
-				.ExecuteUpdateAsync(set => set.SetProperty(x => x.Deposit, p.ProductDeposit.Value), ct);
-
-		if (p.ProductRent.IsNotNull()) {
-			await db.Set<ProductEntity>()
-				.Where(x => x.Categories.Any(c => c.Id == e.Id))
-				.ExecuteUpdateAsync(set => set.SetProperty(x => x.Rent, p.ProductRent.Value), ct);
-
-			if (p.UpdateInvoicesRent) {
-				PersianDateTime today = PersianDateTime.Today;
-				int totalDays = PersianDateTime.DaysInMonth(today.Year, today.Month);
-				int pastDays = today.Day;
-				int remainingDays = totalDays - today.Day;
-
-				List<InvoiceEntity> invoices = await db.Set<InvoiceEntity>()
-					.Where(inv => inv.Tags.Contains(TagInvoice.NotPaid) && inv.Contract.Product.Categories.Any(c => c.Id == e.Id))
-					.AsNoTracking()
-					.ToListAsync(ct);
-
-				foreach (InvoiceEntity inv in invoices) {
-					decimal oldPrice = inv.DebtAmount;
-					decimal newDebt = oldPrice / totalDays * pastDays + p.ProductRent.Value / totalDays * remainingDays;
-					inv.DebtAmount = Math.Round(newDebt, 2);
-					db.Update(inv);
-				}
-
-				await db.SaveChangesAsync(ct);
-			}
-		}
-
 		db.Set<CategoryEntity>() .Update(e.ApplyUpdateParam<CategoryEntity,TagCategory, CategoryJson>(p));
 		await db.SaveChangesAsync(ct);
 		await AddMedia(e.Id, p.Media ?? [], ct);

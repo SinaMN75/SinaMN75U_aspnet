@@ -28,12 +28,6 @@ public sealed class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 
 	public double? Latitude { get; set; }
 	public double? Longitude { get; set; }
-	
-	[Column(TypeName = "decimal(18,2)")]
-	public decimal? Deposit { get; set; }
-
-	[Column(TypeName = "decimal(18,2)")]
-	public decimal? Rent { get; set; }
 
 	public int Stock { get; set; }
 	public int Point { get; set; }
@@ -49,7 +43,6 @@ public sealed class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	public ICollection<CategoryEntity> Categories { get; set; } = [];
 	public ICollection<CommentEntity> Comments { get; set; } = [];
 	public ICollection<FollowEntity> Followers { get; set; } = [];
-	public ICollection<ContractEntity> Contracts { get; set; } = [];
 }
 
 public sealed class ProductJson : BaseJsonData {

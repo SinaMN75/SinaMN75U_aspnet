@@ -123,23 +123,6 @@ public enum TagContent {
 	HomeSlider1 = 103
 }
 
-public enum TagContract {
-	Daily = 101,
-	Weekly = 102,
-	Monthly = 103,
-	Yearly = 104,
-	SingleInvoice = 201
-}
-
-public enum TagInvoice {
-	Deposit = 101,
-	Rent = 102,
-	Paid = 201,
-	PaidOnline = 202,
-	PaidManual = 203,
-	NotPaid = 204
-}
-
 public enum TagTicket {
 	SuperAdmin = 101,
 	Admin = 102

@@ -52,15 +52,10 @@ public class ProductService(
 		if (p.ParentId.HasValue) q = q.Where(x => x.ParentId == p.ParentId);
 		if (p.MinStock.IsNotNull()) q = q.Where(x => x.Stock >= p.MinStock);
 		if (p.MaxStock.IsNotNull()) q = q.Where(x => x.Stock <= p.MaxStock);
-		if (p.MaxRent.IsNotNull()) q = q.Where(x => x.Deposit >= p.MaxRent);
-		if (p.MinDeposit.IsNotNull()) q = q.Where(x => x.Deposit <= p.MinDeposit);
 		if (p.Categories.IsNotNullOrEmpty()) q = q.Where(x => x.Categories.Any(y => p.Categories.Contains(y.Id)));
 		
 		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
 		else if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
-
-		if (p.HasActiveContract == true) q = q.Where(x => x.Contracts.Any(y => y.EndDate >= DateTime.UtcNow));
-		if (p.HasActiveContract == false) q = q.Where(x => x.Contracts.Any(y => y.EndDate <= DateTime.UtcNow));
 
 		UResponse<IEnumerable<ProductResponse>?> list = await q.Select(Projections.ProductSelector(p.SelectorArgs)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 		return list;
@@ -88,7 +83,6 @@ public class ProductService(
 		if (p.Latitude.IsNotNull()) e.Latitude = p.Latitude;
 		if (p.Longitude.IsNotNull()) e.Longitude = p.Longitude;
 		if (p.Stock.IsNotNull()) e.Stock = p.Stock.Value;
-		if (p.Deposit.IsNotNull()) e.Deposit = p.Deposit.Value;
 		if (p.Point.IsNotNull()) e.Point = p.Point.Value;
 		if (p.Order.IsNotNull()) e.Order = p.Order.Value;
 		if (p.ParentId.IsNotNull()) e.ParentId = p.ParentId;
@@ -109,28 +103,6 @@ public class ProductService(
 		if (p.Categories.IsNotNull()) {
 			if (p.Categories.Count == 0) e.Categories = [];
 			else e.Categories = await db.Set<CategoryEntity>().AsTracking().Where(x => p.Categories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct);
-		}
-
-		if (p is { UpdateInvoicesPrices: true, Rent: not null }) {
-			PersianDateTime today = PersianDateTime.Today;
-
-			int currentDay = today.Day;
-			int totalDays = PersianDateTime.DaysInMonth(today.Year, today.Month);
-			int remainingDays = totalDays - currentDay;
-
-			IQueryable<ContractEntity> contracts = db.Set<ContractEntity>()
-				.Where(x => x.ProductId == p.Id)
-				.Include(x => x.Invoices);
-
-			foreach (ContractEntity contract in contracts)
-			foreach (InvoiceEntity invoice in contract.Invoices)
-				if (invoice.Tags.Contains(TagInvoice.NotPaid)) {
-					decimal oldPrice = invoice.DebtAmount;
-					decimal newPrice = p.Rent.Value;
-					decimal newDebt = oldPrice / totalDays * currentDay + newPrice / totalDays * remainingDays;
-					invoice.DebtAmount = Math.Round(newDebt, 2);
-					db.Update(invoice);
-				}
 		}
 
 		db.Set<ProductEntity>().Update(e.ApplyUpdateParam<ProductEntity,TagProduct, ProductJson>(p));
@@ -197,8 +169,6 @@ public class ProductService(
 			Description = p.Description,
 			Latitude = p.Latitude,
 			Longitude = p.Longitude,
-			Deposit = p.Deposit,
-			Rent = p.Rent,
 			ParentId = parentId ?? p.ParentId,
 			CreatorId = p.CreatorId ?? userId,
 			Tags = p.Tags,

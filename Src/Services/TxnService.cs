@@ -24,7 +24,6 @@ public class TxnService(
 			Tags = p.Tags,
 			Amount = p.Amount,
 			TrackingNumber = p.TrackingNumber,
-			InvoiceId = p.InvoiceId,
 			UserId = userData.Id
 		};
 		
