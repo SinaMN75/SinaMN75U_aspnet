@@ -41,3 +41,15 @@ public sealed class UserExtraResponse {
 	public string? VisualAuthentication { get; set; }
 	public string? ESignature { get; set; }
 }
+
+public sealed class UserExtraStatusResponse {
+	public bool NationalCardFront { get; set; }
+	public bool NationalCardBack { get; set; }
+	public bool BirthCertificateFirst { get; set; }
+	public bool BirthCertificateSecond { get; set; }
+	public bool BirthCertificateThird { get; set; }
+	public bool BirthCertificateForth { get; set; }
+	public bool BirthCertificateFifth { get; set; }
+	public bool VisualAuthentication { get; set; }
+	public bool ESignature { get; set; }
+}

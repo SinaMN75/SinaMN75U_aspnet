@@ -6,6 +6,8 @@ public interface ITerminalService {
 	Task<UResponse<IEnumerable<TerminalResponse>?>> Read(TerminalReadParams p, CancellationToken ct);
 	Task<UResponse> Update(TerminalUpdateParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
+	Task<UResponse<TerminalSupportPasswordResponse?>> ReadSupportPassword(IdParams p, CancellationToken ct);
+	
 }
 
 public class TerminalService(
@@ -96,5 +98,20 @@ public class TerminalService(
 		await db.Set<TerminalEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
 		return new UResponse();
+	}
+
+	public async Task<UResponse<TerminalSupportPasswordResponse?>> ReadSupportPassword(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		TerminalEntity? e = await db.Set<TerminalEntity>().Include(x => x.Merchant).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.NotFound, ls.Get("TerminalNotFound"));
+		if (!userData.IsAdmin && userData.Id != e.CreatorId && userData.Id != e.Merchant?.UserId) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+
+		return new UResponse<TerminalSupportPasswordResponse?>(
+			new TerminalSupportPasswordResponse {
+				Password = "12345"
+			}
+			);
 	}
 }

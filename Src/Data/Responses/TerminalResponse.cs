@@ -9,3 +9,7 @@ public class TerminalResponse : BaseResponse<TagTerminal, BaseJsonData> {
 	public Guid? MerchantId { get; set; }
 	public MerchantResponse? Merchant { get; set; }
 }
+
+public class TerminalSupportPasswordResponse {
+	public string? Password { get; set; }
+}

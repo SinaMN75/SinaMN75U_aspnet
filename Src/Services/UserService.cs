@@ -9,6 +9,7 @@ public interface IUserService {
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	public Task<UResponse<UserExtraResponse?>> ReadExtraById(IdParams p, CancellationToken ct);
 	public Task<UResponse> UpdateExtra(UserExtraUpdateParams p, CancellationToken ct);
+	public Task<UResponse<UserExtraStatusResponse?>> ReadExtraStatusById(IdParams p, CancellationToken ct);
 }
 
 public class UserService(
@@ -159,7 +160,7 @@ public class UserService(
 			e.Categories.AddRangeIfNotExist(list);
 		}
 
-		db.Set<UserEntity>().Update(e.ApplyUpdateParam<UserEntity,TagUser, UserJson>(p));
+		db.Set<UserEntity>().Update(e.ApplyUpdateParam<UserEntity, TagUser, UserJson>(p));
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();
@@ -223,5 +224,26 @@ public class UserService(
 		db.Set<UserExtraEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
+	}
+
+	public async Task<UResponse<UserExtraStatusResponse?>> ReadExtraStatusById(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<UserExtraStatusResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		UserExtraEntity? e = await db.Set<UserExtraEntity>().FirstOrDefaultAsync(x => x.CreatorId == p.Id, ct);
+		if (e == null) return new UResponse<UserExtraStatusResponse?>(null, Usc.NotFound);
+
+		return new UResponse<UserExtraStatusResponse?>(new UserExtraStatusResponse {
+				NationalCardFront = e.NationalCardFront != null,
+				NationalCardBack = e.NationalCardBack != null,
+				BirthCertificateFirst = e.BirthCertificateFirst != null,
+				BirthCertificateSecond = e.BirthCertificateSecond != null,
+				BirthCertificateThird = e.BirthCertificateThird != null,
+				BirthCertificateForth = e.BirthCertificateForth != null,
+				BirthCertificateFifth = e.BirthCertificateFifth != null,
+				VisualAuthentication = e.VisualAuthentication != null,
+				ESignature = e.ESignature != null,
+			}
+		);
 	}
 }

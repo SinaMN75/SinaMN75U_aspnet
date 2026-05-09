@@ -11,5 +11,6 @@ public static class UserRoutes {
 		r.MapPost("Delete", async (IdParams d, IUserService s, CancellationToken c) => (await s.Delete(d, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("ReadExtraById", async (IdParams d, IUserService s, CancellationToken c) => (await s.ReadExtraById(d, c)).ToResult()).Produces<UResponse<UserExtraResponse>>();
 		r.MapPost("UpdateExtra", async (UserExtraUpdateParams d, IUserService s, CancellationToken c) => (await s.UpdateExtra(d, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("ExtraStatus", async (IdParams d, IUserService s, CancellationToken c) => (await s.ReadExtraStatusById(d, c)).ToResult()).Produces<UResponse<UserExtraStatusResponse>>();
 	}
 }
