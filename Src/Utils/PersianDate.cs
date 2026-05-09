@@ -1,3 +1,5 @@
+using Calendar = System.Globalization.Calendar;
+
 namespace SinaMN75U.Utils;
 
 public readonly partial struct PersianDateTime : IComparable<PersianDateTime>, IEquatable<PersianDateTime> {
