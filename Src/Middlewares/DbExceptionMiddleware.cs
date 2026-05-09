@@ -1,5 +1,3 @@
-using Npgsql;
-
 namespace SinaMN75U.Middlewares;
 
 public class DbExceptionMiddleware(RequestDelegate next, ILocalizationService ls) {

@@ -1,5 +1,3 @@
-using System.Net;
-
 namespace SinaMN75U.Services;
 
 public interface IInquiryService {
@@ -390,7 +388,7 @@ public class InquiryService(
 				Date = x.GetStringOrNull("date"),
 				Price = x.GetIntOrNull("price").ToString(),
 				Gateway = x.GetStringOrNull("gateway"),
-				Freeway = x.GetStringOrNull("freeway"),
+				Freeway = x.GetStringOrNull("freeway")
 			})
 		});
 	}

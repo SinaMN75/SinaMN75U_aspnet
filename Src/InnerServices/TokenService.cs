@@ -37,7 +37,7 @@ public class TokenService : ITokenService {
 		try {
 			IEnumerable<Claim> claims = new JwtSecurityTokenHandler().ReadJwtToken(token).Claims.ToList();
 			string? rolesClaim = claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-			IEnumerable<TagUser> tags = Enumerable.Empty<TagUser>();
+			IEnumerable<TagUser> tags = [];
 			if (!string.IsNullOrWhiteSpace(rolesClaim)) {
 				tags = rolesClaim.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(roleStr => {
 					if (int.TryParse(roleStr, out int roleInt)) return (TagUser)roleInt;

@@ -7,8 +7,8 @@ public interface IChargeInternetService {
 
 	Task<UResponse<ApproveResponse?>> Approve(ApproveParams p, CancellationToken ct);
 	Task<UResponse<GetStatusResponse?>> GetStatus(GetStatusParams p, CancellationToken ct);
-	Task<UResponse<GetBalanceResponse?>> GetBalance(ReserveChargeParams p, CancellationToken ct);
-	Task<UResponse<EchoResponse?>> Echo(ReserveChargeParams p, CancellationToken ct);
+	Task<UResponse<GetBalanceResponse?>> GetBalance(CancellationToken ct);
+	Task<UResponse<EchoResponse?>> Echo(CancellationToken ct);
 	Task<UResponse<InternetPackageResponse?>> MCITopOffer(MCITopOfferParams p, CancellationToken ct);
 	Task<UResponse<ChargeInternetReserveResponse?>> InternetReserve(InternetReserveParams p, CancellationToken ct);
 }
@@ -41,7 +41,7 @@ public class ChargeInternetService(
 			Reserve = data.GetStringOrNull("reserve"),
 			Status = data.GetBoolOrNull("status"),
 			Code = data.GetIntOrNull("code"),
-			Message = data.GetStringOrNull("message"),
+			Message = data.GetStringOrNull("message")
 		};
 	}
 
@@ -82,7 +82,7 @@ public class ChargeInternetService(
 			TraceId = attachment.GetStringOrNull("trace_id"),
 			AffectiveAmount = attachment.GetIntOrNull("affective_amount"),
 			Help = attachment.GetStringOrNull("help"),
-			MessageSource = attachment.GetStringOrNull("message_source"),
+			MessageSource = attachment.GetStringOrNull("message_source")
 		});
 	}
 
@@ -125,7 +125,7 @@ public class ChargeInternetService(
 			TraceId = attachment.GetStringOrNull("trace_id"),
 			AffectiveAmount = attachment.GetIntOrNull("affective_amount"),
 			Help = attachment.GetStringOrNull("help"),
-			MessageSource = attachment.GetStringOrNull("message_source"),
+			MessageSource = attachment.GetStringOrNull("message_source")
 		});
 	}
 
@@ -224,7 +224,7 @@ public class ChargeInternetService(
 			TraceId = attachment.GetStringOrNull("trace_id"),
 			Help = attachment.GetStringOrNull("help"),
 			MessageSource = attachment.GetStringOrNull("message_source"),
-			ExtCode = attachment.GetStringOrNull("ext_code"),
+			ExtCode = attachment.GetStringOrNull("ext_code")
 		});
 	}
 
@@ -264,11 +264,11 @@ public class ChargeInternetService(
 			TxnTime = attachment.GetStringOrNull("txn_time"),
 			Help = attachment.GetStringOrNull("help"),
 			MessageSource = attachment.GetStringOrNull("message_source"),
-			ExtCode = attachment.GetStringOrNull("ext_code"),
+			ExtCode = attachment.GetStringOrNull("ext_code")
 		});
 	}
 
-	public async Task<UResponse<GetBalanceResponse?>> GetBalance(ReserveChargeParams p, CancellationToken ct) {
+	public async Task<UResponse<GetBalanceResponse?>> GetBalance(CancellationToken ct) {
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null)
 			return new UResponse<GetBalanceResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
@@ -303,11 +303,11 @@ public class ChargeInternetService(
 			Limit = attachment.GetIntOrNull("limit"),
 			Help = attachment.GetStringOrNull("help"),
 			MessageSource = attachment.GetStringOrNull("message_source"),
-			ExtCode = attachment.GetStringOrNull("ext_code"),
+			ExtCode = attachment.GetStringOrNull("ext_code")
 		});
 	}
 
-	public async Task<UResponse<EchoResponse?>> Echo(ReserveChargeParams p, CancellationToken ct) {
+	public async Task<UResponse<EchoResponse?>> Echo(CancellationToken ct) {
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null)
 			return new UResponse<EchoResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
@@ -317,7 +317,7 @@ public class ChargeInternetService(
 			new {
 				apiKey = Core.App.Mobtakeran.ApiKey,
 				reserve = Random.Shared.Next(999999),
-				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ")
 			},
 			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
 		);
@@ -339,7 +339,7 @@ public class ChargeInternetService(
 			Mtn = attachment.GetBoolOrNull("mtn"),
 			Rightel = attachment.GetBoolOrNull("rightel"),
 			Shatel = attachment.GetBoolOrNull("shatel"),
-			MciInternet = attachment.GetBoolOrNull("mci_internet"),
+			MciInternet = attachment.GetBoolOrNull("mci_internet")
 		});
 	}
 
@@ -440,7 +440,7 @@ public class ChargeInternetService(
 			TraceId = attachment.GetStringOrNull("trace_id"),
 			AffectiveAmount = attachment.GetIntOrNull("affective_amount"),
 			Help = attachment.GetStringOrNull("help"),
-			MessageSource = attachment.GetStringOrNull("message_source"),
+			MessageSource = attachment.GetStringOrNull("message_source")
 		});
 	}
 }

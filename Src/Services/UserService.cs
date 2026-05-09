@@ -242,7 +242,7 @@ public class UserService(
 				BirthCertificateForth = e.BirthCertificateForth != null,
 				BirthCertificateFifth = e.BirthCertificateFifth != null,
 				VisualAuthentication = e.VisualAuthentication != null,
-				ESignature = e.ESignature != null,
+				ESignature = e.ESignature != null
 			}
 		);
 	}

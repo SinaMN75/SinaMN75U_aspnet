@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Options;
-
 namespace SinaMN75U.Middlewares;
 
 public static class LeanResponseExtensions {

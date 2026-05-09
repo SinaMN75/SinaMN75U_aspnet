@@ -9,8 +9,8 @@ public static class ChargeInternetRoutes {
 		r.MapPost("InternetReserve", async (InternetReserveParams p, IChargeInternetService s, CancellationToken c) => (await s.InternetReserve(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("Approve", async (ApproveParams p, IChargeInternetService s, CancellationToken c) => (await s.Approve(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("GetStatus", async (GetStatusParams p, IChargeInternetService s, CancellationToken c) => (await s.GetStatus(p, c)).ToResult()).Produces<UResponse>();
-		r.MapPost("GetBalance", async (ReserveChargeParams p, IChargeInternetService s, CancellationToken c) => (await s.GetBalance(p, c)).ToResult()).Produces<UResponse>();
-		r.MapPost("Echo", async (ReserveChargeParams p, IChargeInternetService s, CancellationToken c) => (await s.Echo(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("GetBalance", async (IChargeInternetService s, CancellationToken c) => (await s.GetBalance(c)).ToResult()).Produces<UResponse>();
+		r.MapPost("Echo", async (IChargeInternetService s, CancellationToken c) => (await s.Echo(c)).ToResult()).Produces<UResponse>();
 		r.MapPost("MCITopOffer", async (MCITopOfferParams p, IChargeInternetService s, CancellationToken c) => (await s.MCITopOffer(p, c)).ToResult()).Produces<UResponse>();
 	}
 }

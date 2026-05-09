@@ -1,5 +1,3 @@
-using Syncfusion.Licensing;
-
 namespace SinaMN75U.Utils;
 
 public static partial class AspNetConfig {

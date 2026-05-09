@@ -11,8 +11,7 @@ public interface IMerchantService {
 public class MerchantService(
 	DbContext db,
 	ILocalizationService ls,
-	ITokenService ts,
-	IMediaService mediaService
+	ITokenService ts
 ) : IMerchantService {
 	public async Task<UResponse<Guid?>> Create(MerchantCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
@@ -28,7 +27,7 @@ public class MerchantService(
 			JsonData = new MerchantJson {
 				Detail1 = p.Detail1, 
 				Detail2 = p.Detail2
-			},
+			}
 		};
 		await db.Set<MerchantEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
