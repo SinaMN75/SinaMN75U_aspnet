@@ -169,7 +169,11 @@ public enum TagWalletTxn {
 	LicencePlateDetail = 205,
 	DrivingLicenceNegativePoint = 206,
 	IBanToBankAccountDetail = 207,
-	FreewayTolls = 208
+	FreewayTolls = 208,
+	
+	ChargeSimPin = 301,
+	ChargeSimTopup = 302,
+	InternetSim = 303
 }
 
 public enum TagUserExtra {

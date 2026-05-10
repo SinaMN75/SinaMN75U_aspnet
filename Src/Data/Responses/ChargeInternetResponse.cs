@@ -11,6 +11,7 @@ public sealed class ChargeInternetReserveResponse {
 	public long? AffectiveAmount { get; set; }
 	public string? Help { get; set; }
 	public string? MessageSource { get; set; }
+	public string? Pin { get; set; }
 }
 
 
