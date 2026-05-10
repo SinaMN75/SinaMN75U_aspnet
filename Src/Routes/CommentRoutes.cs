@@ -5,7 +5,7 @@ public static class CommentRoutes {
 		RouteGroupBuilder r = app.MapGroup(tag).WithTags(tag).AddEndpointFilter<UValidationFilter>();
 		r.MapPost("Create", async (CommentCreateParams d, ICommentService s, CancellationToken c) => (await s.Create(d, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("Read", async (CommentReadParams p, ICommentService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Produces<UResponse<IEnumerable<CommentResponse>>>();
-		r.MapPost("ReadById", async (IdParams p, ICommentService s, CancellationToken c) => (await s.ReadById(p, c)).ToResult()).Produces<UResponse<CommentResponse>>();
+		r.MapPost("ReadById", async (IdParams<CommentSelectorArgs> p, ICommentService s, CancellationToken c) => (await s.ReadById(p, c)).ToResult()).Produces<UResponse<CommentResponse>>();
 		r.MapPost("Update", async (CommentUpdateParams d, ICommentService s, CancellationToken c) => (await s.Update(d, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("Delete", async (IdParams d, ICommentService s, CancellationToken c) => (await s.Delete(d, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("ReadProductCommentCount", async (IdParams p, ICommentService s, CancellationToken c) => (await s.ReadProductCommentCount(p, c)).ToResult()).Produces<UResponse<int>>();
