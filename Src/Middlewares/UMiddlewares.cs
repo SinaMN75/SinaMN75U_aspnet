@@ -3,7 +3,7 @@ using Lock = System.Threading.Lock;
 
 namespace SinaMN75U.Middlewares;
 
-public sealed class UMiddleware(RequestDelegate next, ILocalizationService ls) {
+public sealed class UMiddleware(RequestDelegate next, ILocalizationService ls, ITokenService ts) {
 	private static readonly Lock LogLock = new();
 
 	public async Task InvokeAsync(HttpContext context) {
@@ -121,6 +121,20 @@ public sealed class UMiddleware(RequestDelegate next, ILocalizationService ls) {
 				JsonElement json = JsonSerializer.Deserialize<JsonElement>(processed);
 				if (!json.TryGetProperty("apiKey", out JsonElement token) || token.GetString() != Core.App.ApiKey) {
 					await WriteErrorAsync(ctx, Usc.UnAuthorized, ls.Get("InvalidAPIKey"));
+					return (null, decoded);
+				}
+			}
+			catch {
+				await WriteErrorAsync(ctx, Usc.BadRequest, ls.Get("InvalidJsonBody"));
+				return (null, decoded);
+			}
+
+		if (Core.App.Middleware.RequireRefreshToken)
+			try {
+				JsonElement json = JsonSerializer.Deserialize<JsonElement>(processed);
+				JwtClaimData? userData = ts.ExtractClaims(json.GetStringOrNull("token"));
+				if (userData != null && userData.IsExpired) {
+					await WriteErrorAsync(ctx, Usc.ExpiredToken, ls.Get("TokenExpired"));
 					return (null, decoded);
 				}
 			}

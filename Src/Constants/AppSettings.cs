@@ -102,5 +102,5 @@ public sealed class ChargeInternet {
 
 public sealed class ChargeInternetPreDefinedAmounts {
 	public required string Title { get; set; }
-	public required string Amount { get; set; }
+	public required decimal Amount { get; set; }
 }
