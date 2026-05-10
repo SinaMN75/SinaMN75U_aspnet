@@ -23,7 +23,7 @@ public class ChargeInternetService(
 			uri: $"{Core.App.Mobtakeran.BaseUrl}api/v2/login",
 			body: new {
 				apiKey = Core.App.Mobtakeran.ApiKey,
-				reserve = Random.Shared.Next(999999),
+				reserve = Random.Shared.Next(999999).ToString(),
 				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
 				attachments = new {
 					username = Core.App.Mobtakeran.UserName,
@@ -56,7 +56,7 @@ public class ChargeInternetService(
 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/Pin/Reserve",
 			new {
 				apiKey = Core.App.Mobtakeran.ApiKey,
-				reserve = Random.Shared.Next(999999),
+				reserve = Random.Shared.Next(999999).ToString(),
 				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
 				attachments = new {
 					amount = p.Amount,
@@ -97,7 +97,7 @@ public class ChargeInternetService(
 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/Topup/Reserve",
 			new {
 				apiKey = Core.App.Mobtakeran.ApiKey,
-				reserve = Random.Shared.Next(999999),
+				reserve = Random.Shared.Next(999999).ToString(),
 				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
 				attachments = new {
 					subscriber = p.PhoneNumber,
@@ -138,7 +138,7 @@ public class ChargeInternetService(
 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/Internet/getlist",
 			new {
 				apiKey = Core.App.Mobtakeran.ApiKey,
-				reserve = Random.Shared.Next(999999),
+				reserve = Random.Shared.Next(999999).ToString(),
 				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
 				attachments = new { operator_id = p.OperatorId }
 			},
@@ -198,7 +198,7 @@ public class ChargeInternetService(
 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/Approve",
 			new {
 				apiKey = Core.App.Mobtakeran.ApiKey,
-				reserve = Random.Shared.Next(999999),
+				reserve = Random.Shared.Next(999999).ToString(),
 				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
 				attachments = attachments
 			},
@@ -237,7 +237,7 @@ public class ChargeInternetService(
 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/GetStatus",
 			new {
 				apiKey = Core.App.Mobtakeran.ApiKey,
-				reserve = Random.Shared.Next(999999),
+				reserve = Random.Shared.Next(999999).ToString(),
 				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
 				attachments = new { reference = p.Reference }
 			},
@@ -277,7 +277,7 @@ public class ChargeInternetService(
 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/GetBalance",
 			new {
 				apiKey = Core.App.Mobtakeran.ApiKey,
-				reserve = Random.Shared.Next(999999),
+				reserve = Random.Shared.Next(999999).ToString(),
 				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
 				attachments = new { }
 			},
@@ -316,7 +316,7 @@ public class ChargeInternetService(
 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/Echo",
 			new {
 				apiKey = Core.App.Mobtakeran.ApiKey,
-				reserve = Random.Shared.Next(999999),
+				reserve = Random.Shared.Next(999999).ToString(),
 				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ")
 			},
 			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
@@ -352,7 +352,7 @@ public class ChargeInternetService(
 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/Internet/MCITopOffer",
 			new {
 				apiKey = Core.App.Mobtakeran.ApiKey,
-				reserve = Random.Shared.Next(999999),
+				reserve = Random.Shared.Next(999999).ToString(),
 				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
 				attachments = new { subscriber = p.Subscriber }
 			},
@@ -409,7 +409,7 @@ public class ChargeInternetService(
 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/Internet/Reserve",
 			new {
 				apiKey = Core.App.Mobtakeran.ApiKey,
-				reserve = Random.Shared.Next(999999),
+				reserve = Random.Shared.Next(999999).ToString(),
 				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
 				attachments = new {
 					subscriber = p.Subscriber,
