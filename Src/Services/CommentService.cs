@@ -3,7 +3,7 @@ namespace SinaMN75U.Services;
 public interface ICommentService {
 	public Task<UResponse<Guid?>> Create(CommentCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<CommentResponse>?>> Read(CommentReadParams p, CancellationToken ct);
-	public Task<UResponse<CommentResponse?>> ReadById(IdParams p, CancellationToken ct);
+	public Task<UResponse<CommentResponse?>> ReadById(IdParams<CommentSelectorArgs> p, CancellationToken ct);
 	public Task<UResponse> Update(CommentUpdateParams p, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	public Task<UResponse<int>> ReadProductCommentCount(IdParams p, CancellationToken ct);
@@ -49,9 +49,9 @@ public class CommentService(
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
-	public async Task<UResponse<CommentResponse?>> ReadById(IdParams p, CancellationToken ct) {
+	public async Task<UResponse<CommentResponse?>> ReadById(IdParams<CommentSelectorArgs> p, CancellationToken ct) {
 		CommentResponse? e = await db.Set<CommentEntity>()
-			.Select(Projections.CommentSelector(new CommentSelectorArgs()))
+			.Select(Projections.CommentSelector(p.SelectorArgs))
 			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<CommentResponse?>(null, Usc.NotFound, ls.Get("CommentNotFound")) : new UResponse<CommentResponse?>(e);
 	}
@@ -62,6 +62,7 @@ public class CommentService(
 
 		CommentEntity? e = await db.Set<CommentEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("CommentNotFound"));
+		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Score.IsNotNull()) e.Score = p.Score.Value;
 		if (p.Description.IsNotNullOrEmpty()) e.Description = p.Description;
@@ -75,8 +76,14 @@ public class CommentService(
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		
+		CommentEntity? e = await db.Set<CommentEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("CommentNotFound"));
+		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
-		await db.Set<CommentEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
+		db.Set<CommentEntity>().Remove(e);
+		await db.SaveChangesAsync(ct);
+		
 		return new UResponse();
 	}
 

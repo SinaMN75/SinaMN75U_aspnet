@@ -31,7 +31,7 @@ public class ChargeInternetService(
 				}
 			}
 		);
-		if (response == null) return null;
+		if (response is null or { IsSuccessStatusCode: false }) return null;
 
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("attachments");

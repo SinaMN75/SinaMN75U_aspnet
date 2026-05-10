@@ -112,9 +112,14 @@ public class CategoryService(
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-
-		await db.Set<CategoryEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
-
+		
+		CategoryEntity? e = await db.Set<CategoryEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("CategoryNotFound"));
+		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		
+		db.Set<CategoryEntity>().Remove(e);
+		await db.SaveChangesAsync(ct);
+		
 		return new UResponse();
 	}
 

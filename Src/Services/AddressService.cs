@@ -60,7 +60,6 @@ public class AddressService(
 
 		AddressEntity? e = await db.Set<AddressEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("AddressNotFound"));
-		
 		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		if (p.ZipCode != null) e.ZipCode = p.ZipCode;
@@ -90,7 +89,6 @@ public class AddressService(
 		
 		AddressEntity? e = await db.Set<AddressEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("AddressNotFound"));
-
 		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<AddressEntity>().Remove(e);

@@ -14,6 +14,7 @@ public sealed class AppSettings {
 	public required Mpg Mpg { get; init; }
 	public required DefaultUsers Users { get; init; }
 	public required ApiCallCosts ApiCallCosts { get; set; }
+	public required IEnumerable<ChargeInternet> ChargeInternet { get; set; }
 }
 
 public sealed class ConnectionStrings {
@@ -31,6 +32,7 @@ public sealed class Middleware {
 	public required bool DecryptParams { get; init; }
 	public required bool EncryptResponse { get; init; }
 	public required bool RequireApiKey { get; init; }
+	public required bool RequireRefreshToken { get; init; }
 	public required bool Log { get; init; }
 	public required bool LogSuccess { get; init; }
 }
@@ -89,4 +91,16 @@ public sealed class ApiCallCosts {
 	public required decimal LicencePlateDetail { get; set; }
 	public required decimal DrivingLicenceNegativePoint { get; set; }
 	public required decimal IBanToBankAccountDetail { get; set; }
+}
+
+public sealed class ChargeInternet {
+	public required TagSimCard Operator { get; set; }
+	public required string Title { get; set; }
+	public required string Logo { get; set; }
+	public required List<ChargeInternetPreDefinedAmounts> PreDefinedAmountsList { get; set; }
+}
+
+public sealed class ChargeInternetPreDefinedAmounts {
+	public required string Title { get; set; }
+	public required string Amount { get; set; }
 }
