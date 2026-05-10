@@ -10,7 +10,7 @@ public interface IHttpClientService {
 	Task<HttpResponseMessage?> Upload(string uri, IFormFile file, string fileName, Dictionary<string, string>? headers = null);
 }
 
-public class HttpClientService(HttpClient httpClient) : IHttpClientService {
+public class HttpClientService(HttpClient httpClient, IRequestLogger logger) : IHttpClientService {
 	public async Task<HttpResponseMessage?> Get(string uri, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Get, uri, null, headers);
 	public async Task<HttpResponseMessage?> Post(string uri, object? body, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Post, uri, body, headers);
 	public async Task<HttpResponseMessage?> Put(string uri, object? body, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Put, uri, body, headers);
@@ -60,6 +60,7 @@ public class HttpClientService(HttpClient httpClient) : IHttpClientService {
 	}
 
 	private async Task<HttpResponseMessage?> Send(HttpMethod method, string uri, object? body = null, Dictionary<string, string>? headers = null) {
+		Stopwatch sw = Stopwatch.StartNew();
 		try {
 			using HttpRequestMessage request = new(method, uri);
 			string paramsLog = body != null ? JsonSerializer.Serialize(body) : "null";
@@ -73,9 +74,37 @@ public class HttpClientService(HttpClient httpClient) : IHttpClientService {
 			string responseBody = await response.Content.ReadAsStringAsync();
 			Console.WriteLine($"{method} - {uri} - {(int)response.StatusCode} \nPARAMS: {paramsLog} \nRESPONSE: {responseBody}");
 
+			sw.Stop();
+			if (!response.IsSuccessStatusCode) {
+				logger.TryLog(new RequestLogDto {
+					Timestamp = DateTime.UtcNow,
+					Method = method.ToString(),
+					Path = uri,
+					StatusCode = (int)response.StatusCode,
+					DurationMs = sw.ElapsedMilliseconds,
+					RawRequest = body == null ? "" : body.ToString() ?? "",
+					DecodedRequest = body == null ? "" : JsonSerializer.Serialize(body),
+					Response = responseBody,
+					Exception = null
+				});
+			}
+
 			return response;
 		}
 		catch (Exception ex) {
+			sw.Stop();
+				logger.TryLog(new RequestLogDto {
+					Timestamp = DateTime.UtcNow,
+					Method = method.ToString(),
+					Path = uri,
+					StatusCode = 500,
+					DurationMs = sw.ElapsedMilliseconds,
+					RawRequest = body == null ? "" : body.ToString() ?? "",
+					DecodedRequest = body == null ? "" : JsonSerializer.Serialize(body),
+					Response = "",
+					Exception = ex
+				});
+
 			Console.WriteLine($"{method} - {uri} - ERROR \nPARAMS: {(body != null ? JsonSerializer.Serialize(body) : "null")} \nRESPONSE: {ex.Message}");
 			return null;
 		}

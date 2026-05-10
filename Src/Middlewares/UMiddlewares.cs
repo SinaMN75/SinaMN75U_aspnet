@@ -1,11 +1,13 @@
 using BadHttpRequestException = Microsoft.AspNetCore.Http.BadHttpRequestException;
-using Lock = System.Threading.Lock;
 
 namespace SinaMN75U.Middlewares;
 
-public sealed class UMiddleware(RequestDelegate next, ILocalizationService ls, ITokenService ts) {
-	private static readonly Lock LogLock = new();
-
+public sealed class UMiddleware(
+	RequestDelegate next,
+	ILocalizationService ls,
+	ITokenService ts,
+	IRequestLogger logger
+) {
 	public async Task InvokeAsync(HttpContext context) {
 		if (!ShouldHandle(context)) {
 			await next(context);
@@ -85,7 +87,17 @@ public sealed class UMiddleware(RequestDelegate next, ILocalizationService ls, I
 
 			sw.Stop();
 
-			_ = Task.Run(() => TryLog(context, sw.ElapsedMilliseconds, rawRequestBody, decodedRequestBodyForLog, responseBody, exception));
+			_ = Task.Run(() => logger.TryLog(new RequestLogDto {
+				Timestamp = DateTime.UtcNow,
+				Method = context.Request.Method,
+				Path = context.Request.Path,
+				StatusCode = context.Response.StatusCode,
+				DurationMs = sw.ElapsedMilliseconds,
+				RawRequest = rawRequestBody,
+				DecodedRequest = decodedRequestBodyForLog,
+				Response = responseBody,
+				Exception = exception
+			}));
 		}
 	}
 
@@ -149,66 +161,5 @@ public sealed class UMiddleware(RequestDelegate next, ILocalizationService ls, I
 	private static async Task WriteErrorAsync(HttpContext ctx, Usc status, string msg) {
 		if (ctx.Response.HasStarted) return;
 		await new UResponse(status, msg).ToResult().ExecuteAsync(ctx);
-	}
-
-	private static void TryLog(HttpContext ctx, long ms, string rawReq, string decodedReq, string res, Exception? ex) {
-		if (!Core.App.Middleware.Log) return;
-		if (ctx.Response.StatusCode is >= 200 and <= 299 && !Core.App.Middleware.LogSuccess) return;
-
-		const int maxLen = 10_000;
-		if (rawReq.Length > maxLen) rawReq = rawReq[..maxLen] + "...<truncated>";
-		if (decodedReq.Length > maxLen) decodedReq = decodedReq[..maxLen] + "...<truncated>";
-		if (res.Length > maxLen) res = res[..maxLen] + "...<truncated>";
-
-		LogToFile(DateTime.UtcNow, ctx.Request.Method, ctx.Request.Path, ctx.Response.StatusCode, ms, rawReq, decodedReq, res, ex);
-	}
-
-	private static void LogToFile(DateTime ts, string method, string path, int status, long ms, string rawReq, string decodedReq, string res, Exception? ex) {
-		try {
-			DateTime now = DateTime.Now;
-			string dir = Path.Combine("wwwroot", "Logs", now.Year.ToString(), $"{now.Month:00}");
-			Directory.CreateDirectory(dir);
-			string file = Path.Combine(dir, $"{now:dd}_{(status < 300 ? "success" : "failed")}.json");
-
-			var entry = new {
-				summary = $"{ts:yyyy-MM-dd HH:mm:ss} | {method} {path} | {status} | {ms}ms",
-				requestBodyRaw = TryParseJson(rawReq) ?? rawReq,
-				requestBody = TryParseJson(decodedReq) ?? decodedReq,
-				responseBody = TryParseJson(res) ?? res,
-				exception = ex is null ? null : new { type = ex.GetType().Name, message = ex.Message, stackTrace = ex.StackTrace }
-			};
-
-			lock (LogLock) {
-				List<object> list = File.Exists(file)
-					? JsonSerializer.Deserialize<List<object>>(File.ReadAllText(file), Core.Default) ?? []
-					: [];
-				list.Add(entry);
-				File.WriteAllText(file, JsonSerializer.Serialize(list, Core.Default));
-			}
-		}
-		catch {
-			/* ignore */
-		}
-	}
-
-	private static object? TryParseJson(string s) {
-		try {
-			return JsonElementToDynamic(JsonDocument.Parse(s).RootElement);
-		}
-		catch {
-			return null;
-		}
-	}
-
-	private static object? JsonElementToDynamic(JsonElement e) {
-		return e.ValueKind switch {
-			JsonValueKind.Object => e.EnumerateObject().ToDictionary(p => p.Name, p => JsonElementToDynamic(p.Value)),
-			JsonValueKind.Array => e.EnumerateArray().Select(JsonElementToDynamic).ToList(),
-			JsonValueKind.String => e.GetString(),
-			JsonValueKind.Number => e.TryGetInt64(out long l) ? l : e.GetDouble(),
-			JsonValueKind.True => true,
-			JsonValueKind.False => false,
-			_ => null
-		};
 	}
 }
