@@ -1,52 +1,11 @@
 namespace SinaMN75U.Services;
 
 public interface IIpgService {
-	Task<UResponse<MpgSaleResponse?>> DirectPurchase(MpgSaleParams p, CancellationToken ct);
 	Task<UResponse<string?>> GetSaleIpgLink(IpgSaleParams p, CancellationToken ct);
 	Task IpgCallBack(string base64AdditionalData, CancellationToken ct);
 }
 
 public class IpgService(IHttpClientService http, DbContext db) : IIpgService {
-	public async Task<UResponse<MpgSaleResponse?>> DirectPurchase(MpgSaleParams p, CancellationToken ct) {
-		try {
-			HttpResponseMessage? response = await http.Post("https://IPGPayment.pna.co.ir/Mhipg/api/DirectPay/DirectPurchase", new {
-					corporationpin = Core.App.Mpg.Token,
-					amount = p.Amount,
-					orderId = p.OrderId,
-					pan = p.Pan,
-					pin2 = p.Pin2,
-					cvv2 = p.Cvv2,
-					expireMonth = p.ExpireMonth,
-					expireYear = p.ExpireYear,
-					additionalData = p.Base64AdditionalData,
-					email = p.Email,
-					originator = p.PhoneNumber,
-					mobileNumber = p.PhoneNumber
-				}
-			);
-			if (response?.IsSuccessStatusCode ?? false) {
-				string responseBody = await response.Content.ReadAsStringAsync(ct);
-				JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody);
-				return new UResponse<MpgSaleResponse?>(new MpgSaleResponse {
-					Rrn = data.GetStringOrNull("rrn"),
-					Trace = data.GetStringOrNull("traceNo"),
-					OrderId = data.GetStringOrNull("orderId"),
-					Token = data.GetStringOrNull("token"),
-					Pan = data.GetStringOrNull("truncatedPAN"),
-					PhoneNumber = data.GetStringOrNull("originator"),
-					Email = data.GetStringOrNull("email"),
-					Status = data.GetIntOrNull("status").ToString(),
-					Message = data.GetStringOrNull("message")
-				});
-			}
-
-			return new UResponse<MpgSaleResponse?>(null);
-		}
-		catch (Exception) {
-			return new UResponse<MpgSaleResponse?>(null, Usc.InternalServerError);
-		}
-	}
-
 	public async Task<UResponse<string?>> GetSaleIpgLink(IpgSaleParams p, CancellationToken ct) {
 		try {
 			HttpResponseMessage? response = await http.Post("https://pna.shaparak.ir/mhipg/api/Payment/NormalSale", new {
@@ -73,8 +32,20 @@ public class IpgService(IHttpClientService http, DbContext db) : IIpgService {
 	}
 
 	public async Task IpgCallBack(string base64AdditionalData, CancellationToken ct) {
-		IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(Convert.FromBase64String(base64AdditionalData).ToString()!)!;
-
+		string jsonString = Encoding.UTF8.GetString(Convert.FromBase64String(base64AdditionalData));
+		IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(jsonString)!;
+		
+		await db.Set<TxnEntity>().AddAsync(new TxnEntity {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			JsonData = new BaseJsonData(),
+			Tags = [TagTxn.Paid],
+			CreatorId = Guid.Parse(data.UserId),
+			Amount = data.Amount,
+			TrackingNumber = data.TrackingNumber,
+			UserId = Guid.Parse(data.UserId),
+		}, ct);
+		
 		await db.Set<TxnEntity>().AddAsync(new TxnEntity {
 			CreatorId = Core.App.Users.SystemAdmin.Id,
 			Id = Guid.CreateVersion7(),
