@@ -10,6 +10,7 @@
         <PackageReference Include="DocumentFormat.OpenXml" Version="3.5.1" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.7" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
+        <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
         <PackageReference Include="Syncfusion.Licensing" Version="29.1.33" />
         <PackageReference Include="Syncfusion.DocIO.Net.Core" Version="29.1.33" />

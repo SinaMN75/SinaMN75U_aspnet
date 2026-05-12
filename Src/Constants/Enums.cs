@@ -21,9 +21,9 @@ public enum Usc {
 	ShahkarException = 605,
 	ShahkarError = 606,
 	BalanceIsLow = 607,
-	
+
 	SecurityError = 701,
-	
+
 	MediaTypeNotSupported = 802
 }
 
@@ -161,7 +161,7 @@ public enum TagWallet {
 public enum TagWalletTxn {
 	Charge = 101,
 	Transfer = 102,
-	
+
 	MobileAndNationalCodeVerification = 201,
 	ZipCodeToAddressDetail = 202,
 	VehicleViolationsDetail = 203,
@@ -170,7 +170,7 @@ public enum TagWalletTxn {
 	DrivingLicenceNegativePoint = 206,
 	IBanToBankAccountDetail = 207,
 	FreewayTolls = 208,
-	
+
 	ChargeSimPin = 301,
 	ChargeSimTopup = 302,
 	InternetSim = 303
@@ -242,14 +242,14 @@ public enum TagVas {
 	Water = 101
 }
 
-public enum TagSimCard {
+public enum TagSimOperator {
 	IranCell = 1,
 	HamrahAvval = 2,
 	Rigthel = 3,
 	Shatel = 5
 }
 
-public enum TagSimChargeType {
+public enum TagHamrahAvvalChargeType {
 	Normal = 0,
 	Javanan = 2,
 	Banovan = 3,

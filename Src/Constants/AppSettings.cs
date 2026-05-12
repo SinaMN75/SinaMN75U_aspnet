@@ -94,7 +94,7 @@ public sealed class ApiCallCosts {
 }
 
 public sealed class ChargeInternet {
-	public required TagSimCard Operator { get; set; }
+	public required TagSimOperator Operator { get; set; }
 	public required string Title { get; set; }
 	public required string Logo { get; set; }
 	public required List<ChargeInternetPreDefinedAmounts> PreDefinedAmountsList { get; set; }

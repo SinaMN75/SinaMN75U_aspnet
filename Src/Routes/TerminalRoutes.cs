@@ -6,8 +6,8 @@ public static class TerminalRoutes {
 		r.MapPost("Create", async (TerminalCreateParams p, ITerminalService s, CancellationToken c) => (await s.Create(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("BulkCreate", async (TerminalBulkCreateParams p, ITerminalService s, CancellationToken c) => (await s.BulkCreate(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("Read", async (TerminalReadParams p, ITerminalService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Produces<UResponse<IEnumerable<TerminalResponse>>>();
-		r.MapPost("Update", async (TerminalUpdateParams p, ITerminalService s, CancellationToken c) => (await s.Update(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("Delete", async (IdParams p, ITerminalService s, CancellationToken c) => (await s.Delete(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("ReadSupportPassword", async (IdParams p, ITerminalService s, CancellationToken c) => (await s.ReadSupportPassword(p, c)).ToResult()).Produces<UResponse<TerminalSupportPasswordResponse>>();
+		r.MapPost("Assign", async (TerminalAssignParams p, ITerminalService s, CancellationToken c) => (await s.Assign(p, c)).ToResult()).Produces<UResponse>();
 	}
 }

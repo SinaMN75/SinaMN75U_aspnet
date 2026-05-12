@@ -45,6 +45,7 @@ public sealed class TerminalSelectorArgs {
 
 public sealed class MerchantSelectorArgs {
 	public UserSelectorArgs? Creator { get; set; }
+	public UserSelectorArgs? User { get; set; }
 }
 
 public sealed class AddressSelectorArgs {
@@ -149,32 +150,36 @@ public static class Projections {
 		SenderId = x.SenderId,
 		ReceiverId = x.ReceiverId,
 		Amount = x.Amount,
-		Sender = args.Sender == null ? null : new UserResponse {
-			Id = x.Sender.Id,
-			JsonData = x.Sender.JsonData,
-			Tags = x.Sender.Tags,
-			UserName = x.Sender.UserName,
-			PhoneNumber = x.Sender.PhoneNumber,
-			Email = x.Sender.Email,
-			FirstName = x.Sender.FirstName,
-			LastName = x.Sender.LastName,
-			NationalCode = x.Sender.NationalCode,
-			Media = args.Sender.Media == null ? null : x.Sender.Media.AsQueryable().Select(MediaSelector()).ToList(),
-			Categories = args.Sender.Category == null ? null : x.Sender.Categories.AsQueryable().Select(CategorySelector(args.Sender.Category)).ToList()
-		},
-		Receiver = args.Receiver == null ? null : new UserResponse {
-			Id = x.Receiver.Id,
-			JsonData = x.Receiver.JsonData,
-			Tags = x.Receiver.Tags,
-			UserName = x.Receiver.UserName,
-			PhoneNumber = x.Receiver.PhoneNumber,
-			Email = x.Receiver.Email,
-			FirstName = x.Receiver.FirstName,
-			LastName = x.Receiver.LastName,
-			NationalCode = x.Receiver.NationalCode,
-			Media = args.Receiver.Media == null ? null : x.Receiver.Media.AsQueryable().Select(MediaSelector()).ToList(),
-			Categories = args.Receiver.Category == null ? null : x.Receiver.Categories.AsQueryable().Select(CategorySelector(args.Receiver.Category)).ToList()
-		}
+		Sender = args.Sender == null
+			? null
+			: new UserResponse {
+				Id = x.Sender.Id,
+				JsonData = x.Sender.JsonData,
+				Tags = x.Sender.Tags,
+				UserName = x.Sender.UserName,
+				PhoneNumber = x.Sender.PhoneNumber,
+				Email = x.Sender.Email,
+				FirstName = x.Sender.FirstName,
+				LastName = x.Sender.LastName,
+				NationalCode = x.Sender.NationalCode,
+				Media = args.Sender.Media == null ? null : x.Sender.Media.AsQueryable().Select(MediaSelector()).ToList(),
+				Categories = args.Sender.Category == null ? null : x.Sender.Categories.AsQueryable().Select(CategorySelector(args.Sender.Category)).ToList()
+			},
+		Receiver = args.Receiver == null
+			? null
+			: new UserResponse {
+				Id = x.Receiver.Id,
+				JsonData = x.Receiver.JsonData,
+				Tags = x.Receiver.Tags,
+				UserName = x.Receiver.UserName,
+				PhoneNumber = x.Receiver.PhoneNumber,
+				Email = x.Receiver.Email,
+				FirstName = x.Receiver.FirstName,
+				LastName = x.Receiver.LastName,
+				NationalCode = x.Receiver.NationalCode,
+				Media = args.Receiver.Media == null ? null : x.Receiver.Media.AsQueryable().Select(MediaSelector()).ToList(),
+				Categories = args.Receiver.Category == null ? null : x.Receiver.Categories.AsQueryable().Select(CategorySelector(args.Receiver.Category)).ToList()
+			}
 	};
 
 	public static Expression<Func<NotificationEntity, NotificationResponse>> NotificationSelector(NotificationSelectorArgs args) => x => new NotificationResponse {
@@ -184,32 +189,36 @@ public static class Projections {
 		CreatorId = x.CreatorId,
 		UserId = x.Userd,
 		ZipCode = x.ZipCode,
-		Creator = args.Creator == null ? null : new UserResponse {
-			Id = x.Creator.Id,
-			JsonData = x.Creator.JsonData,
-			Tags = x.Creator.Tags,
-			UserName = x.Creator.UserName,
-			PhoneNumber = x.Creator.PhoneNumber,
-			Email = x.Creator.Email,
-			FirstName = x.Creator.FirstName,
-			LastName = x.Creator.LastName,
-			NationalCode = x.Creator.NationalCode,
-			Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
-			Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
-		},
-		User = args.User == null ? null : new UserResponse {
-			Id = x.User.Id,
-			JsonData = x.User.JsonData,
-			Tags = x.User.Tags,
-			UserName = x.User.UserName,
-			PhoneNumber = x.User.PhoneNumber,
-			Email = x.User.Email,
-			FirstName = x.User.FirstName,
-			LastName = x.User.LastName,
-			NationalCode = x.User.NationalCode,
-			Media = args.User.Media == null ? null : x.User.Media.AsQueryable().Select(MediaSelector()).ToList(),
-			Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList()
-		}
+		Creator = args.Creator == null
+			? null
+			: new UserResponse {
+				Id = x.Creator.Id,
+				JsonData = x.Creator.JsonData,
+				Tags = x.Creator.Tags,
+				UserName = x.Creator.UserName,
+				PhoneNumber = x.Creator.PhoneNumber,
+				Email = x.Creator.Email,
+				FirstName = x.Creator.FirstName,
+				LastName = x.Creator.LastName,
+				NationalCode = x.Creator.NationalCode,
+				Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
+				Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
+			},
+		User = args.User == null
+			? null
+			: new UserResponse {
+				Id = x.User.Id,
+				JsonData = x.User.JsonData,
+				Tags = x.User.Tags,
+				UserName = x.User.UserName,
+				PhoneNumber = x.User.PhoneNumber,
+				Email = x.User.Email,
+				FirstName = x.User.FirstName,
+				LastName = x.User.LastName,
+				NationalCode = x.User.NationalCode,
+				Media = args.User.Media == null ? null : x.User.Media.AsQueryable().Select(MediaSelector()).ToList(),
+				Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList()
+			}
 	};
 
 	public static Expression<Func<WalletEntity, WalletResponse>> WalletSelector(WalletSelectorArgs args) => x => new WalletResponse {
@@ -373,6 +382,72 @@ public static class Projections {
 		CreatorId = x.CreatorId,
 		UserId = x.UserId,
 		ZipCode = x.ZipCode,
+		BankAccountId = x.BankAccountId,
+		NationalCode = x.NationalCode,
+		Title = x.Title,
+		CityCode = x.CityCode,
+		InsId = x.InsId,
+		Landline = x.Landline,
+		Mcc = x.Mcc,
+		MerchantId = x.MerchantId,
+		PhoneNumber = x.PhoneNumber,
+		User = args.User == null
+			? null
+			: new UserResponse {
+				Id = x.User.Id,
+				JsonData = x.User.JsonData,
+				Tags = x.User.Tags,
+				UserName = x.User.UserName,
+				PhoneNumber = x.User.PhoneNumber,
+				Email = x.User.Email,
+				FirstName = x.User.FirstName,
+				LastName = x.User.LastName,
+				NationalCode = x.User.NationalCode,
+				Bio = x.User.Bio,
+				Birthdate = x.User.Birthdate,
+				CreatedAt = x.User.CreatedAt,
+				CreatorId = x.User.CreatorId,
+				Media = args.User.Media == null
+					? null
+					: x.User.Media.AsQueryable()
+						.Select(MediaSelector())
+						.ToList(),
+				Categories = args.User.Category == null
+					? null
+					: x.User.Categories.AsQueryable()
+						.Select(CategorySelector(args.User.Category))
+						.ToList(),
+				Addresses = args.User.Address == null
+					? null
+					: x.User.Addresses.AsQueryable()
+						.Select(AddressSelector(args.User.Address))
+						.ToList(),
+				BankAccounts = args.User.BankAccount == null
+					? null
+					: x.User.BankAccounts.AsQueryable()
+						.Select(BankAccountSelector(args.User.BankAccount))
+						.ToList(),
+				Merchants = args.User.Merchant == null
+					? null
+					: x.User.Merchants.AsQueryable()
+						.Select(MerchantSelector(args.User.Merchant))
+						.ToList(),
+				Txns = args.User.Txns == null
+					? null
+					: x.User.Txns.AsQueryable()
+						.Select(TxnSelector(args.User.Txns))
+						.ToList(),
+				SimCards = args.User.SimCard == null
+					? null
+					: x.User.SimCards.AsQueryable()
+						.Select(SimCardSelector(args.User.SimCard))
+						.ToList(),
+				Wallets = args.User.Wallet == null
+					? null
+					: x.User.Wallets.AsQueryable()
+						.Select(WalletSelector(args.User.Wallet))
+						.ToList()
+			},
 		Creator = args.Creator == null
 			? null
 			: new UserResponse {
@@ -814,32 +889,36 @@ public static class Projections {
 				SenderId = x.WalletTxn.SenderId,
 				ReceiverId = x.WalletTxn.ReceiverId,
 				Amount = x.WalletTxn.Amount,
-				Sender = args.WalletTxn.Sender == null ? null : new UserResponse {
-					Id = x.WalletTxn.Creator.Id,
-					JsonData = x.WalletTxn.Creator.JsonData,
-					Tags = x.WalletTxn.Creator.Tags,
-					UserName = x.WalletTxn.Creator.UserName,
-					PhoneNumber = x.WalletTxn.Creator.PhoneNumber,
-					Email = x.WalletTxn.Creator.Email,
-					FirstName = x.WalletTxn.Creator.FirstName,
-					LastName = x.WalletTxn.Creator.LastName,
-					NationalCode = x.WalletTxn.Creator.NationalCode,
-					Media = args.WalletTxn.Sender.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
-					Categories = args.WalletTxn.Sender.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.WalletTxn.Sender.Category)).ToList()
-				},
-				Receiver = args.WalletTxn.Receiver == null ? null : new UserResponse {
-					Id = x.WalletTxn.Receiver.Id,
-					JsonData = x.WalletTxn.Receiver.JsonData,
-					Tags = x.WalletTxn.Receiver.Tags,
-					UserName = x.WalletTxn.Receiver.UserName,
-					PhoneNumber = x.WalletTxn.Receiver.PhoneNumber,
-					Email = x.WalletTxn.Receiver.Email,
-					FirstName = x.WalletTxn.Receiver.FirstName,
-					LastName = x.WalletTxn.Receiver.LastName,
-					NationalCode = x.WalletTxn.Receiver.NationalCode,
-					Media = args.WalletTxn.Receiver.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
-					Categories = args.WalletTxn.Receiver.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.WalletTxn.Receiver.Category)).ToList()
-				}
+				Sender = args.WalletTxn.Sender == null
+					? null
+					: new UserResponse {
+						Id = x.WalletTxn.Creator.Id,
+						JsonData = x.WalletTxn.Creator.JsonData,
+						Tags = x.WalletTxn.Creator.Tags,
+						UserName = x.WalletTxn.Creator.UserName,
+						PhoneNumber = x.WalletTxn.Creator.PhoneNumber,
+						Email = x.WalletTxn.Creator.Email,
+						FirstName = x.WalletTxn.Creator.FirstName,
+						LastName = x.WalletTxn.Creator.LastName,
+						NationalCode = x.WalletTxn.Creator.NationalCode,
+						Media = args.WalletTxn.Sender.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
+						Categories = args.WalletTxn.Sender.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.WalletTxn.Sender.Category)).ToList()
+					},
+				Receiver = args.WalletTxn.Receiver == null
+					? null
+					: new UserResponse {
+						Id = x.WalletTxn.Receiver.Id,
+						JsonData = x.WalletTxn.Receiver.JsonData,
+						Tags = x.WalletTxn.Receiver.Tags,
+						UserName = x.WalletTxn.Receiver.UserName,
+						PhoneNumber = x.WalletTxn.Receiver.PhoneNumber,
+						Email = x.WalletTxn.Receiver.Email,
+						FirstName = x.WalletTxn.Receiver.FirstName,
+						LastName = x.WalletTxn.Receiver.LastName,
+						NationalCode = x.WalletTxn.Receiver.NationalCode,
+						Media = args.WalletTxn.Receiver.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
+						Categories = args.WalletTxn.Receiver.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.WalletTxn.Receiver.Category)).ToList()
+					}
 			}
 	};
 }

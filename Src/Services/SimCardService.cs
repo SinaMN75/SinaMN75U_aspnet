@@ -33,7 +33,7 @@ public class SimCardService(
 	}
 
 	public async Task<UResponse<IEnumerable<SimCardResponse>?>> Read(SimCardReadParams p, CancellationToken ct) {
-		IQueryable<SimCardEntity> q = db.Set<SimCardEntity>().ApplyReadParams<SimCardEntity, TagSimCard, BaseJsonData>(p);
+		IQueryable<SimCardEntity> q = db.Set<SimCardEntity>().ApplyReadParams<SimCardEntity, TagSimOperator, BaseJsonData>(p);
 		IQueryable<SimCardResponse> projected = q.Select(Projections.SimCardSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
@@ -48,7 +48,7 @@ public class SimCardService(
 		if (p.Number != null) e.Number = p.Number;
 		if (p.Serial != null) e.Serial = p.Serial;
 
-		db.Set<SimCardEntity>().Update(e.ApplyUpdateParam<SimCardEntity,TagSimCard, BaseJsonData>(p));
+		db.Set<SimCardEntity>().Update(e.ApplyUpdateParam<SimCardEntity,TagSimOperator, BaseJsonData>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
