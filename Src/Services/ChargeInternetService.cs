@@ -16,13 +16,14 @@ public class ChargeInternetService(
 	IHttpClientService httpClient,
 	ILocalizationService ls,
 	ITokenService ts,
-	IWalletService walletService
+	IWalletService walletService,
+	IVasService vs
 ) : IChargeInternetService {
 	public async Task<UResponse<ChargeInternetReserveResponse?>> Pin(ReserveChargeParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount.ToDecimal(), ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
-		
+		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
@@ -33,7 +34,7 @@ public class ChargeInternetService(
 				reserve = Random.Shared.Next(999999).ToString(),
 				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
 				attachments = new {
-					amount = p.Amount,
+					amount = p.Amount.ToIntString(),
 					operator_id = p.SimType,
 					device = "05"
 				}
@@ -53,7 +54,24 @@ public class ChargeInternetService(
 			NationalCode = userData.NationalCode
 		}, ct);
 
-		if (approveResponse?.Pin != null) await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.ChargeSimPin }, ct);
+		if (approveResponse != null) {
+			await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.ChargeSimPin, Amount = p.Amount }, ct);
+			await vs.Create(new VasCreateParams {
+				Id = Guid.CreateVersion7(),
+				ApiKey = p.ApiKey,
+				Token = p.Token,
+				Tags = [TagVas.ChargePin],
+				CreatorId = userData.Id,
+				Amount = p.Amount,
+				AuthorizeCode = approveResponse.Reference?.ToString() ?? "",
+				BillId = null,
+				PaymentId = null,
+				TxnId = null,
+				WalletTxnId = null,
+				ChargePin = approveResponse.Pin
+			}, ct);
+			await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.ChargeSimPin }, ct);
+		}
 
 		return new UResponse<ChargeInternetReserveResponse?>(new ChargeInternetReserveResponse {
 			Reserve = data.GetIntOrNull("reserve"),
@@ -73,7 +91,7 @@ public class ChargeInternetService(
 	public async Task<UResponse<ChargeInternetReserveResponse?>> Topup(TopupChargeParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount.ToDecimal(), ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
@@ -84,7 +102,7 @@ public class ChargeInternetService(
 				apiKey = Core.App.Mobtakeran.ApiKey,
 				reserve = Random.Shared.Next(999999).ToString(),
 				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
-				attachments = new { subscriber = p.PhoneNumber, amount = p.Amount, operator_id = p.OperatorId, device = "05", type = "0" }
+				attachments = new { subscriber = p.PhoneNumber, amount = p.Amount.ToIntString(), operator_id = p.OperatorId, device = "05", type = "0" }
 			},
 			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
 		);
@@ -101,7 +119,7 @@ public class ChargeInternetService(
 			NationalCode = userData.NationalCode
 		}, ct);
 
-		await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.ChargeSimTopup }, ct);
+		await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.ChargeSimTopup, Amount = p.Amount }, ct);
 
 		return new UResponse<ChargeInternetReserveResponse?>(new ChargeInternetReserveResponse {
 			Reserve = data.GetIntOrNull("reserve"),
@@ -120,7 +138,7 @@ public class ChargeInternetService(
 	public async Task<UResponse<ChargeInternetReserveResponse?>> InternetReserve(InternetReserveParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount.ToDecimal(), ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
@@ -131,7 +149,7 @@ public class ChargeInternetService(
 				apiKey = Core.App.Mobtakeran.ApiKey,
 				reserve = Random.Shared.Next(999999).ToString(),
 				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
-				attachments = new { subscriber = p.Subscriber, operator_id = p.OperatorId, package_id = p.PackageId, amount = p.Amount, device = p.Device, bank = p.Bank }
+				attachments = new { subscriber = p.Subscriber, operator_id = p.OperatorId, package_id = p.PackageId, amount = p.Amount.ToIntString(), device = p.Device, bank = p.Bank }
 			},
 			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
 		);

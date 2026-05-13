@@ -844,8 +844,6 @@ public static class Projections {
 		CreatorId = x.CreatorId,
 		Amount = x.Amount,
 		AuthorizeCode = x.AuthorizeCode,
-		OrganizationType = x.OrganizationType,
-		OrganizationName = x.OrganizationName,
 		BillId = x.BillId,
 		PaymentId = x.PaymentId,
 		TxnId = x.TxnId,

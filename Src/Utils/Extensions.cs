@@ -13,6 +13,8 @@ public static class UExtensions {
 	public static bool IsGuid(this string s) => Guid.TryParse(s, out Guid _);
 	public static string ToJson<T>(this T obj) => JsonSerializer.Serialize(obj, Core.Default);
 	public static int ToInt(this string s) => int.Parse(s);
+	public static int ToInt(this decimal s) => (int)s;
+	public static string ToIntString(this decimal s) => ((int)s).ToString();
 	public static string? ToBase64(this byte[]? s) => s == null ? null : Convert.ToBase64String(s);
 	public static byte[]? FromBase64(this string? s) => s == null ? null : Convert.FromBase64String(s);
 	public static T FromJson<T>(this string json) => JsonSerializer.Deserialize<T>(json, Core.Default)!;
