@@ -188,7 +188,7 @@ public class InquiryService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		InquiryHistoryEntity? inquiryHistory = await ReadDrivingLicenceStatusHistory(p, ct);
+		InquiryHistoryEntity? inquiryHistory = await ReadDrivingLicenceDetailHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
 
 		if (inquiryHistory == null || responseBody == null) {
@@ -555,7 +555,7 @@ public class InquiryService(
 		return e;
 	}
 
-	private async Task<InquiryHistoryEntity?> ReadDrivingLicenceStatusHistory(DrivingLicenceDetailParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.LicencePlateDetail), ct);
+	private async Task<InquiryHistoryEntity?> ReadDrivingLicenceDetailHistory(DrivingLicenceDetailParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.DrivingLicenceDetail), ct);
 	private async Task<InquiryHistoryEntity?> ReadLicencePlateStatusHistory(LicencePlateDetailParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.LicencePlate == p.LicencePlate && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.LicencePlateDetail), ct);
 	private async Task<InquiryHistoryEntity?> ReadDrivingLicenceNegativePointHistory(DrivingLicenceNegativePointParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.DrivingLicenceNumber == p.DrivingLicenceNumber && x.NationalCode == p.NationalCode && x.PhoneNumber == p.PhoneNumber && x.Tags.Contains(TagInquiryHistory.DrivingLicenceNegativePoint), ct);
 	private async Task<InquiryHistoryEntity?> ReadIBanToBankAccountDetailHistory(IBanToBankAccountDetailParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.IBan == p.IBan && x.Tags.Contains(TagInquiryHistory.IBanToBankAccountDetail), ct);

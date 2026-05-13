@@ -129,6 +129,7 @@ public static partial class AspNetConfig {
 		app.MapAgreementRoutes(RouteTags.Agreement);
 		app.MapChargeInternetRoutes(RouteTags.ChargeInternet);
 		app.MapMerchantRoutes(RouteTags.Merchant);
+		app.MapAppSettingsRoutes(RouteTags.AppSettings);
 	}
 
 	private static string CleanAndFormatSql(string sql) {
