@@ -32,4 +32,5 @@ public static class UConstants {
 	public static readonly Guid SystemAdminId = Guid.Parse("019d9545-4e5c-7b80-ab26-53e069c48a73");
 	public static readonly Guid ITHubUserId = Guid.Parse("019d9545-4e5c-7ae4-b99f-a2105f785c5b");
 	public static readonly Guid AvaPlus = Guid.Parse("019d9545-4e5c-719f-838d-fb27b9321279");
+	public static readonly Guid Mobtakeran = Guid.Parse("019d9545-4e5c-719f-838d-fb27b9321267");
 }
