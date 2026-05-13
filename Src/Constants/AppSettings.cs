@@ -80,6 +80,7 @@ public sealed class DefaultUsers {
 	public required UserEntity SystemAdmin { get; set; }
 	public required UserEntity ITHub { get; set; }
 	public required UserEntity AvaPlus { get; set; }
+	public required UserEntity Mobtakeran { get; set; }
 }
 
 public sealed class ApiCallCosts {

@@ -56,6 +56,13 @@ public class WalletService(
 				receiverId = Core.App.Users.ITHub.Id;
 				amount = Core.App.ApiCallCosts.FreewayToll;
 				break;
+			case TagWalletTxn.ChargeSimPin:
+			case TagWalletTxn.ChargeSimTopup:
+			case TagWalletTxn.InternetSim:
+				receiverId = Core.App.Users.Mobtakeran.Id;
+				amount = p.Amount!.Value;
+				break;
+			case TagWalletTxn.Transfer:
 			default:
 				throw new Exception();
 		}
