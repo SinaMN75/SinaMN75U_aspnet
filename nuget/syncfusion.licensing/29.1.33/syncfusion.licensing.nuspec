@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>Syncfusion.Licensing</id>
+    <version>29.1.33</version>
+    <title>Syncfusion Licensing for .NET</title>
+    <authors>Syncfusion Inc.</authors>
+    <owners>Syncfusion Inc.</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="file">LICENSE.txt</license>
+    <licenseUrl>https://aka.ms/deprecateLicenseUrl</licenseUrl>
+    <icon>syncfusion_logo.png</icon>
+    <projectUrl>https://www.syncfusion.com/?utm_source=nuget&amp;utm_medium=listing</projectUrl>
+    <description>Syncfusion® licensing is a .NET library for validating the registered Syncfusion® license in an application at runtime. The Syncfusion® license must be registered in an application when using the Syncfusion® evaluation build or NuGet package assemblies.
+
+Documentation: https://help.syncfusion.com/common/essential-studio/licensing/license-key?utm_source=nuget&amp;utm_medium=listing
+
+Support:
+Incident: https://www.syncfusion.com/support/directtrac/incidents/newincident?utm_source=nuget&amp;utm_medium=listing
+Forum: https://www.syncfusion.com/forums/general?utm_source=nuget&amp;utm_medium=listing
+This is a commercial product and requires a paid license for possession or use. Syncfusion’s licensed software, including this component, is subject to the terms and conditions of Syncfusion's EULA (https://www.syncfusion.com/eula/es/?utm_source=nuget&amp;utm_medium=listing). To acquire a license, you can purchase one at https://www.syncfusion.com/sales/products?utm_source=nuget&amp;utm_medium=listing or start a free 30-day trial here (https://www.syncfusion.com/account/manage-trials/start-trials?utm_source=nuget&amp;utm_medium=listing).
+
+© Copyright 2025 Syncfusion®, Inc. All Rights Reserved. The Syncfusion® Essential Studio® license and copyright applies to this distribution.</description>
+    <releaseNotes>https://help.syncfusion.com/common/essential-studio/release-notes/v29.1.33?utm_source=nuget&amp;utm_medium=listing</releaseNotes>
+    <copyright>Copyright 2001 - 2025 Syncfusion® Inc.</copyright>
+    <tags>syncfusion,licensing,license,xamarin,windows,wpf,asp.net,mvc,Xamarin.forms,ios,android,pcl,uwp,.net,aspnetcore,core</tags>
+    <readme>README.md</readme>
+  </metadata>
+</package>

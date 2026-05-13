@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>Syncfusion.DocIO.Net.Core</id>
+    <version>29.1.33</version>
+    <title>Create, Read and Edit Word file in .NET Core using Syncfusion DocIO library</title>
+    <authors>Syncfusion Inc.</authors>
+    <owners>Syncfusion Inc.</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="file">LICENSE.txt</license>
+    <licenseUrl>https://aka.ms/deprecateLicenseUrl</licenseUrl>
+    <icon>syncfusion_logo.png</icon>
+    <projectUrl>https://www.syncfusion.com/?utm_source=nuget&amp;utm_medium=listing</projectUrl>
+    <description>Syncfusion® Word library is feature-rich and high-performance .NET Word library that allows you to create, manipulate and convert Word documents (DOC, DOT, DOCM, DOTM, DOCX, DOTX, RTF, and WordML), TXT, and HTML files.</description>
+    <releaseNotes>https://ej2.syncfusion.com/aspnetcore/documentation/release-notes/29.1.33?utm_source=nuget&amp;utm_medium=listing</releaseNotes>
+    <copyright>Copyright 2001 - 2025 Syncfusion® Inc.</copyright>
+    <tags>syncfusion ej1 net-core net-standard .net core word docx doc html wordml rtf odt mail-merge</tags>
+    <readme>README.md</readme>
+    <dependencies>
+      <group targetFramework=".NETStandard2.0">
+        <dependency id="System.Text.Encoding.CodePages" version="4.4.0" />
+        <dependency id="Syncfusion.Compression.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.OfficeChart.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.Licensing" version="29.1.33" />
+      </group>
+      <group targetFramework="net8.0">
+        <dependency id="System.Text.Encoding.CodePages" version="4.4.0" />
+        <dependency id="Syncfusion.Compression.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.OfficeChart.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.Licensing" version="29.1.33" />
+      </group>
+      <group targetFramework="net9.0">
+        <dependency id="System.Text.Encoding.CodePages" version="4.4.0" />
+        <dependency id="Syncfusion.Compression.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.OfficeChart.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.Licensing" version="29.1.33" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

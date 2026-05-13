@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>Syncfusion.MetafileRenderer.NET</id>
+    <version>29.1.33</version>
+    <title>Syncfusion Metafile Renderer library for .NET</title>
+    <authors>Syncfusion Inc.</authors>
+    <owners>Syncfusion Inc.</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="file">LICENSE.txt</license>
+    <licenseUrl>https://aka.ms/deprecateLicenseUrl</licenseUrl>
+    <icon>syncfusion_logo.png</icon>
+    <projectUrl>https://www.syncfusion.com/?utm_source=nuget&amp;utm_medium=listing</projectUrl>
+    <description>The Metafile Renderer is a .NET library used by Syncfusion® Document Processing Libraries for converting the Metafile (EMF and WMF) to SKBitmap image in any .NET applications.</description>
+    <releaseNotes>https://ej2.syncfusion.com/aspnetcore/documentation/release-notes/29.1.33?utm_source=nuget&amp;utm_medium=listing</releaseNotes>
+    <copyright>Copyright 2001 - 2025 Syncfusion® Inc.</copyright>
+    <tags>syncfusion .net c# emf metafile wmf</tags>
+    <readme>README.md</readme>
+    <dependencies>
+      <group targetFramework=".NETStandard2.0">
+        <dependency id="NETStandard.Library" version="2.0.0" />
+        <dependency id="SkiaSharp" version="3.116.1" />
+        <dependency id="Syncfusion.Licensing" version="29.1.33" />
+      </group>
+      <group targetFramework="net8.0">
+        <dependency id="SkiaSharp" version="3.116.1" />
+        <dependency id="Syncfusion.Licensing" version="29.1.33" />
+      </group>
+      <group targetFramework="net9.0">
+        <dependency id="SkiaSharp" version="3.116.1" />
+        <dependency id="Syncfusion.Licensing" version="29.1.33" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

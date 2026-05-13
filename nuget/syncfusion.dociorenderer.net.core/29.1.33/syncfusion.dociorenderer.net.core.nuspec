@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>Syncfusion.DocIORenderer.Net.Core</id>
+    <version>29.1.33</version>
+    <title>Syncfusion Word to Pdf conversion library for .NET Core</title>
+    <authors>Syncfusion Inc.</authors>
+    <owners>Syncfusion Inc.</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="file">LICENSE.txt</license>
+    <licenseUrl>https://aka.ms/deprecateLicenseUrl</licenseUrl>
+    <icon>syncfusion_logo.png</icon>
+    <projectUrl>https://www.syncfusion.com/?utm_source=nuget&amp;utm_medium=listing</projectUrl>
+    <description>Syncfusion® Word library is feature-rich and high-performance .NET Word library that allows you to create, manipulate and convert Word documents (DOC, DOT, DOCM, DOTM, DOCX, DOTX, RTF, and WordML), TXT, and HTML files.</description>
+    <releaseNotes>https://ej2.syncfusion.com/aspnetcore/documentation/release-notes/29.1.33?utm_source=nuget&amp;utm_medium=listing</releaseNotes>
+    <copyright>Copyright 2001 - 2025 Syncfusion® Inc.</copyright>
+    <tags>syncfusion aspnetcore syncfusion.aspnetcore ej1 net-core net-standard .net core docio word-to-pdf doc-to-pdf convert pdf html wordml rtf</tags>
+    <readme>README.md</readme>
+    <dependencies>
+      <group targetFramework=".NETStandard2.0">
+        <dependency id="SkiaSharp.HarfBuzz" version="3.116.1" />
+        <dependency id="Syncfusion.Compression.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.OfficeChart.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.DocIO.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.Pdf.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.Pdf.Imaging.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.MetafileRenderer.NET" version="29.1.33" />
+        <dependency id="Syncfusion.SkiaSharpHelper.Net.Core" version="29.1.33" />
+      </group>
+      <group targetFramework="net8.0">
+        <dependency id="SkiaSharp.HarfBuzz" version="3.116.1" />
+        <dependency id="Syncfusion.Compression.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.OfficeChart.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.DocIO.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.Pdf.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.Pdf.Imaging.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.MetafileRenderer.NET" version="29.1.33" />
+        <dependency id="Syncfusion.SkiaSharpHelper.Net.Core" version="29.1.33" />
+      </group>
+      <group targetFramework="net9.0">
+        <dependency id="SkiaSharp.HarfBuzz" version="3.116.1" />
+        <dependency id="Syncfusion.Compression.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.OfficeChart.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.DocIO.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.Pdf.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.Pdf.Imaging.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.MetafileRenderer.NET" version="29.1.33" />
+        <dependency id="Syncfusion.SkiaSharpHelper.Net.Core" version="29.1.33" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

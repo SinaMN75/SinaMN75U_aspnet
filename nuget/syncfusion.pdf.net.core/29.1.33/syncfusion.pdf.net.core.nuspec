@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>Syncfusion.Pdf.Net.Core</id>
+    <version>29.1.33</version>
+    <title>Create, Read and Edit PDF file in .NET Core using Syncfusion PDF library</title>
+    <authors>Syncfusion Inc.</authors>
+    <owners>Syncfusion Inc.</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="file">LICENSE.txt</license>
+    <licenseUrl>https://aka.ms/deprecateLicenseUrl</licenseUrl>
+    <icon>syncfusion_logo.png</icon>
+    <projectUrl>https://www.syncfusion.com/?utm_source=nuget&amp;utm_medium=listing</projectUrl>
+    <description>The Syncfusion® Essential PDF is a .NET standard PDF library that enables your .NET core applications to read, write, and manipulate existing PDF documents. It has various features such table creation, PDF form creation and filling, digital signature, and advanced PDF encryption.
+		
+		It also has various PDF manipulation features such as PDF compression, redaction, split and merge PDF, watermark, import and export PDF form data, replace or remove images, extract text and find text.</description>
+    <releaseNotes>https://ej2.syncfusion.com/aspnetcore/documentation/release-notes/29.1.33?utm_source=nuget&amp;utm_medium=listing</releaseNotes>
+    <copyright>Copyright 2001 - 2025 Syncfusion® Inc.</copyright>
+    <tags>syncfusion syncfusion.aspnetcore aspnetcore net-standard .net core c# pdf acroform pdf-table tagged-pdf conformance-standard syncfusion.pdf</tags>
+    <readme>README.md</readme>
+    <dependencies>
+      <group targetFramework=".NETStandard2.0">
+        <dependency id="NETStandard.Library" version="2.0.0" />
+        <dependency id="System.Text.Encoding.CodePages" version="4.4.0" />
+        <dependency id="Syncfusion.Compression.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.Licensing" version="29.1.33" />
+      </group>
+      <group targetFramework="net8.0">
+        <dependency id="System.Text.Encoding.CodePages" version="4.4.0" />
+        <dependency id="Syncfusion.Compression.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.Licensing" version="29.1.33" />
+      </group>
+      <group targetFramework="net9.0">
+        <dependency id="System.Text.Encoding.CodePages" version="4.4.0" />
+        <dependency id="Syncfusion.Compression.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.Licensing" version="29.1.33" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

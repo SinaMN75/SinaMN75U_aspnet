@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>Syncfusion.Pdf.Imaging.Net.Core</id>
+    <version>29.1.33</version>
+    <title>Syncfusion PDF imaging library for .NET Core</title>
+    <authors>Syncfusion Inc.</authors>
+    <owners>Syncfusion Inc.</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="file">LICENSE.txt</license>
+    <licenseUrl>https://aka.ms/deprecateLicenseUrl</licenseUrl>
+    <icon>syncfusion_logo.png</icon>
+    <projectUrl>https://www.syncfusion.com/?utm_source=nuget&amp;utm_medium=listing</projectUrl>
+    <description>Syncfusion® Essential PDF Imaging is a .NET standard PDF library used to draw the image files to PDF in any .NET Core applications.
+
+Key features:
+• Supports drawing JPEG, PNG, GIF, BMP, and TIFF images to PDF document.
+
+Learn more: https://www.syncfusion.com/pdf-framework/net-core
+
+Documentation: http://help.syncfusion.com/file-formats/pdf/
+
+Support:
+Incident: https://www.syncfusion.com/support/directtrac/incidents/newincident 
+Forums: https://www.syncfusion.com/forums/windowsforms
+
+This is a commercial product and requires a paid license for possession or use. The Syncfusion® licensed software, including this component, is subject to the terms and conditions of the Syncfusion® EULA (https://www.syncfusion.com/eula/es/). To acquire a license, you can purchase one at https://www.syncfusion.com/sales/products or start a free 30-day trial here (https://www.syncfusion.com/account/manage-trials/start-trials).
+
+© Copyright 2025 Syncfusion®, Inc. All Rights Reserved. The Syncfusion Essential Studio® license and copyright applies to this distribution.</description>
+    <releaseNotes>https://ej2.syncfusion.com/aspnetcore/documentation/release-notes/29.1.33?utm_source=nuget&amp;utm_medium=listing</releaseNotes>
+    <copyright>Copyright 2001 - 2025 Syncfusion® Inc.</copyright>
+    <tags>syncfusion syncfusion.aspnetcore aspnetcore net-standard .net core c# pdf acroform pdf-table tagged-pdf conformance-standard syncfusion.pdf</tags>
+    <readme>README.md</readme>
+    <dependencies>
+      <group targetFramework=".NETStandard2.0">
+        <dependency id="NETStandard.Library" version="2.0.0" />
+        <dependency id="Syncfusion.Compression.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.Pdf.Net.Core" version="29.1.33" />
+        <dependency id="SkiaSharp" version="3.116.1" />
+        <dependency id="BitMiracle.LibTiff.NET" version="2.4.649" />
+      </group>
+      <group targetFramework="net8.0">
+        <dependency id="Syncfusion.Compression.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.Pdf.Net.Core" version="29.1.33" />
+        <dependency id="SkiaSharp" version="3.116.1" />
+        <dependency id="BitMiracle.LibTiff.NET" version="2.4.649" />
+      </group>
+      <group targetFramework="net9.0">
+        <dependency id="Syncfusion.Compression.Net.Core" version="29.1.33" />
+        <dependency id="Syncfusion.Pdf.Net.Core" version="29.1.33" />
+        <dependency id="SkiaSharp" version="3.116.1" />
+        <dependency id="BitMiracle.LibTiff.NET" version="2.4.649" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>
