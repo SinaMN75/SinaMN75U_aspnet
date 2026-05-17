@@ -75,7 +75,6 @@ public class HttpClientService(HttpClient httpClient, IRequestLogger logger) : I
 			Console.WriteLine($"{method} - {uri} - {(int)response.StatusCode} \nPARAMS: {paramsLog} \nRESPONSE: {responseBody}");
 
 			sw.Stop();
-			if (!response.IsSuccessStatusCode) {
 				logger.TryLog(new RequestLogDto {
 					Timestamp = DateTime.UtcNow,
 					Method = method.ToString(),
@@ -87,7 +86,6 @@ public class HttpClientService(HttpClient httpClient, IRequestLogger logger) : I
 					Response = responseBody,
 					Exception = null
 				});
-			}
 
 			return response;
 		}
