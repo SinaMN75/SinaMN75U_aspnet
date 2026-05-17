@@ -7,7 +7,9 @@ public interface IChargeInternetService {
 
 	Task<UResponse<GetStatusResponse?>> GetStatus(GetStatusParams p, CancellationToken ct);
 	Task<UResponse<GetBalanceResponse?>> GetBalance(CancellationToken ct);
+
 	Task<UResponse<EchoResponse?>> Echo(CancellationToken ct);
+
 	// Task<UResponse<InternetPackageResponse?>> MciTopOffer(MCITopOfferParams p, CancellationToken ct);
 	Task<UResponse<ChargeInternetReserveResponse?>> InternetReserve(InternetReserveParams p, CancellationToken ct);
 }
@@ -167,7 +169,12 @@ public partial class ChargeInternetService(
 			NationalCode = userData.NationalCode
 		}, ct);
 
-		await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.InternetSim }, ct);
+		await walletService.Purchase(new WalletPurchaseParams {
+			ApiKey = p.ApiKey,
+			Token = p.Token,
+			Tag = TagWalletTxn.InternetSim,
+			Amount = p.Amount
+		}, ct);
 
 		return new UResponse<ChargeInternetReserveResponse?>(new ChargeInternetReserveResponse {
 			Reserve = data.GetIntOrNull("reserve"),
