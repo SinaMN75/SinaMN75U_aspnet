@@ -17,7 +17,7 @@ public static class UserRoutes {
 		app.MapGet("/api/download/{token}", (string token, IMemoryCache cache) => {
 			if (!cache.TryGetValue(token, out byte[]? zipBytes)) return Results.NotFound("Download link expired or invalid");
 			cache.Remove(token);
-			return Results.File(zipBytes!, "application/zip", $"UserData_{DateTime.Now:yyyyMMddHHmmss}.zip");
+			return Results.File(zipBytes!, "application/zip", $"{token}_{DateTime.Now:yyyyMMddHHmmss}.zip");
 		});
 	}
 }
