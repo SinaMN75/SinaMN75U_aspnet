@@ -9,6 +9,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddHttpContextAccessor();
 		builder.Services.AddHttpClient();
 		builder.Services.AddURateLimiter();
+		builder.Services.AddMemoryCache();
 		builder.Services.ConfigureHttpJsonOptions(o => {
 			o.SerializerOptions.WriteIndented = false;
 			o.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
