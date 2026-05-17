@@ -13,5 +13,11 @@ public static class UserRoutes {
 		r.MapPost("UpdateExtra", async (UserExtraUpdateParams d, IUserService s, CancellationToken c) => (await s.UpdateExtra(d, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("ExtraStatus", async (IdParams d, IUserService s, CancellationToken c) => (await s.ReadExtraStatusById(d, c)).ToResult()).Produces<UResponse<UserExtraStatusResponse>>();
 		r.MapPost("DownloadUserData", async (IdParams d, IUserService s, CancellationToken c) => (await s.DownloadUserData(d, c)).ToResult()).Produces<UResponse<string>>();
+
+		app.MapGet("/api/download/{token}", (string token, IMemoryCache cache) => {
+			if (!cache.TryGetValue(token, out byte[]? zipBytes)) return Results.NotFound("Download link expired or invalid");
+			cache.Remove(token);
+			return Results.File(zipBytes!, "application/zip", $"UserData_{DateTime.Now:yyyyMMddHHmmss}.zip");
+		});
 	}
 }

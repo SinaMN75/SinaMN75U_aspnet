@@ -18,7 +18,8 @@ public interface IUserService {
 public class UserService(
 	DbContext db,
 	ILocalizationService ls,
-	ITokenService ts
+	ITokenService ts,
+	IMemoryCache cache
 ) : IUserService {
 	public async Task<UResponse<Guid?>> Create(UserCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
@@ -251,94 +252,64 @@ public class UserService(
 	}
 
 	public async Task<UResponse<string?>> DownloadUserData(IdParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null)
-			return new UResponse<string?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		// JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		// if (userData == null) return new UResponse<string?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		//
+		// if (!userData.IsAdmin) return new UResponse<string?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
-		if (!userData.IsAdmin)
-			return new UResponse<string?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		UserEntity? e = await db.Set<UserEntity>().Include(x => x.Extra).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse<string?>(null, Usc.NotFound);
 
-		UserEntity? e = await db.Set<UserEntity>()
-			.Include(x => x.Extra)
-			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		string firstName = e.FirstName ?? "---";
+		string lastName = e.LastName ?? "---";
+		string phoneNumber = e.PhoneNumber ?? "---";
+		string email = e.Email ?? "---";
+		string landLine = e.LandLine ?? "---";
+		string nationalCode = e.NationalCode ?? "---";
+		string birthdate = (e.Birthdate ?? DateTime.UtcNow).ToPersianString();
+		string fatherName = e.JsonData.FatherName ?? "---";
 
-		if (e == null)
-			return new UResponse<string?>(null, Usc.NotFound);
+		string nationalCardFront = e.Extra.NationalCardFront.ToBase64() ?? "";
+		string nationalCardBack = e.Extra.NationalCardBack.ToBase64() ?? "";
+		string birthCertificateFirst = e.Extra.BirthCertificateFirst.ToBase64() ?? "";
+		string visualAuthentication = e.Extra.VisualAuthentication.ToBase64() ?? "";
+		string eSignature = e.Extra.ESignature.ToBase64() ?? "";
 
-		// Prepare user data for text file
-		string textContent = BuildUserDataText(e);
-
-		// Get base64 strings for images
-		string nationalCardFront = e.Extra.NationalCardFront?.ToBase64() ?? "";
-		string nationalCardBack = e.Extra.NationalCardBack?.ToBase64() ?? "";
-		string birthCertificateFirst = e.Extra.BirthCertificateFirst?.ToBase64() ?? "";
-		string visualAuthentication = e.Extra.VisualAuthentication?.ToBase64() ?? "";
-		string eSignature = e.Extra.ESignature?.ToBase64() ?? "";
-
-		// Create ZIP in memory and convert to base64
-		string zipBase64 = await CreateZipAsBase64(textContent, new Dictionary<string, string> {
-			["NationalCardFront.jpg"] = nationalCardFront,
-			["NationalCardBack.jpg"] = nationalCardBack,
-			["BirthCertificateFirst.jpg"] = birthCertificateFirst,
-			["VisualAuthentication.jpg"] = visualAuthentication,
-			["ESignature.png"] = eSignature
-		});
-
-		return new UResponse<string?>(zipBase64, Usc.Success, "User data exported successfully");
-	}
-
-	private string BuildUserDataText(UserEntity e) {
-		var sb = new StringBuilder();
-		sb.AppendLine("========== USER INFORMATION ==========");
-		sb.AppendLine($"First Name: {e.FirstName ?? "---"}");
-		sb.AppendLine($"Last Name: {e.LastName ?? "---"}");
-		sb.AppendLine($"Phone Number: {e.PhoneNumber ?? "---"}");
-		sb.AppendLine($"Email: {e.Email ?? "---"}");
-		sb.AppendLine($"Land Line: {e.LandLine ?? "---"}");
-		sb.AppendLine($"National Code: {e.NationalCode ?? "---"}");
-		sb.AppendLine($"Birthdate: {(e.Birthdate ?? DateTime.UtcNow).ToPersianString()}");
-		sb.AppendLine($"Father Name: {e.JsonData?.FatherName ?? "---"}");
-		sb.AppendLine($"Registration Date: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
-		sb.AppendLine("======================================");
-		return sb.ToString();
-	}
-
-	private async Task<string> CreateZipAsBase64(string textContent, Dictionary<string, string> files) {
-		using var memoryStream = new MemoryStream();
-
-		using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true)) {
-			// Add text file
-			var textEntry = archive.CreateEntry("UserData.txt", CompressionLevel.Optimal);
-			using (var textStream = textEntry.Open())
-			using (var writer = new StreamWriter(textStream)) {
-				await writer.WriteAsync(textContent);
+		using MemoryStream memoryStream = new MemoryStream();
+		await using (ZipArchive archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true)) {
+			ZipArchiveEntry textEntry = archive.CreateEntry("UserData.txt");
+			await using (Stream textStream = await textEntry.OpenAsync(ct))
+			await using (StreamWriter textWriter = new StreamWriter(textStream)) {
+				await textWriter.WriteAsync($"First Name: {firstName}\n");
+				await textWriter.WriteAsync($"Last Name: {lastName}\n");
+				await textWriter.WriteAsync($"Phone Number: {phoneNumber}\n");
+				await textWriter.WriteAsync($"Email: {email}\n");
+				await textWriter.WriteAsync($"Land Line: {landLine}\n");
+				await textWriter.WriteAsync($"National Code: {nationalCode}\n");
+				await textWriter.WriteAsync($"Birthdate: {birthdate}\n");
+				await textWriter.WriteAsync($"Father Name: {fatherName}\n");
 			}
 
-			// Add image files (only if they have content)
-			foreach (var file in files) {
-				if (!string.IsNullOrEmpty(file.Value)) {
-					try {
-						byte[] fileBytes = Convert.FromBase64String(file.Value);
-
-						// Determine folder based on file type
-						string folder = file.Key.Contains("Card") || file.Key.Contains("Certificate")
-							? "Documents"
-							: "AuthImages";
-
-						var entry = archive.CreateEntry($"{folder}/{file.Key}", CompressionLevel.Optimal);
-						using var entryStream = entry.Open();
-						await entryStream.WriteAsync(fileBytes, 0, fileBytes.Length);
-					}
-					catch (FormatException) {
-						// Skip invalid base64 data
-						continue;
-					}
-				}
-			}
+			AddFileToZip(archive, "NationalCardFront.jpg", nationalCardFront);
+			AddFileToZip(archive, "NationalCardBack.jpg", nationalCardBack);
+			AddFileToZip(archive, "BirthCertificateFirst.jpg", birthCertificateFirst);
+			AddFileToZip(archive, "VisualAuthentication.jpg", visualAuthentication);
+			AddFileToZip(archive, "ESignature.png", eSignature);
 		}
 
-		// Convert ZIP to base64
-		memoryStream.Position = 0;
-		return Convert.ToBase64String(memoryStream.ToArray());
+		string downloadToken = Guid.NewGuid().ToString();
+		byte[] zipBytes = memoryStream.ToArray();
+		cache.Set(downloadToken, zipBytes, TimeSpan.FromMinutes(30));
+		string downloadUrl = $"{Core.App.BaseUrl}/api/download/{downloadToken}";
+		return new UResponse<string?>(downloadUrl, Usc.Success, "Download link generated");
+	}
+
+	private void AddFileToZip(ZipArchive archive, string fileName, string base64Content) {
+		if (!string.IsNullOrEmpty(base64Content)) {
+			ZipArchiveEntry entry = archive.CreateEntry(fileName);
+			using Stream entryStream = entry.Open();
+			byte[] bytes = Convert.FromBase64String(base64Content);
+			entryStream.Write(bytes, 0, bytes.Length);
+		}
 	}
 }

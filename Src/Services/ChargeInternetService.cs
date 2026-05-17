@@ -215,7 +215,7 @@ public partial class ChargeInternetService(
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
 		JsonElement attachment = data.GetProperty("attachments");
 
-		var result = new InternetPackageResponse {
+		InternetPackageResponse result = new() {
 			Status = data.GetBoolOrNull("status") ?? false,
 			Message = data.GetStringOrNull("message") ?? ""
 		};
