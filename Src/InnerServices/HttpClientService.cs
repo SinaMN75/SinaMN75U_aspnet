@@ -75,33 +75,33 @@ public class HttpClientService(HttpClient httpClient, IRequestLogger logger) : I
 			Console.WriteLine($"{method} - {uri} - {(int)response.StatusCode} \nPARAMS: {paramsLog} \nRESPONSE: {responseBody}");
 
 			sw.Stop();
-				logger.TryLog(new RequestLogDto {
-					Timestamp = DateTime.UtcNow,
-					Method = method.ToString(),
-					Path = uri,
-					StatusCode = (int)response.StatusCode,
-					DurationMs = sw.ElapsedMilliseconds,
-					RawRequest = body == null ? "" : body.ToString() ?? "",
-					DecodedRequest = body == null ? "" : JsonSerializer.Serialize(body),
-					Response = responseBody,
-					Exception = null
-				});
+			logger.TryLog(new RequestLogDto {
+				Timestamp = DateTime.UtcNow,
+				Method = method.ToString(),
+				Path = uri,
+				StatusCode = (int)response.StatusCode,
+				DurationMs = sw.ElapsedMilliseconds,
+				RawRequest = body == null ? "" : body.ToString() ?? "",
+				DecodedRequest = body == null ? "" : JsonSerializer.Serialize(body),
+				Response = responseBody,
+				Exception = null
+			});
 
 			return response;
 		}
 		catch (Exception ex) {
 			sw.Stop();
-				logger.TryLog(new RequestLogDto {
-					Timestamp = DateTime.UtcNow,
-					Method = method.ToString(),
-					Path = uri,
-					StatusCode = 500,
-					DurationMs = sw.ElapsedMilliseconds,
-					RawRequest = body == null ? "" : body.ToString() ?? "",
-					DecodedRequest = body == null ? "" : JsonSerializer.Serialize(body),
-					Response = "",
-					Exception = ex
-				});
+			logger.TryLog(new RequestLogDto {
+				Timestamp = DateTime.UtcNow,
+				Method = method.ToString(),
+				Path = uri,
+				StatusCode = 500,
+				DurationMs = sw.ElapsedMilliseconds,
+				RawRequest = body == null ? "" : body.ToString() ?? "",
+				DecodedRequest = body == null ? "" : JsonSerializer.Serialize(body),
+				Response = "",
+				Exception = ex
+			});
 
 			Console.WriteLine($"{method} - {uri} - ERROR \nPARAMS: {(body != null ? JsonSerializer.Serialize(body) : "null")} \nRESPONSE: {ex.Message}");
 			return null;
