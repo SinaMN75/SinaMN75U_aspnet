@@ -52,3 +52,7 @@ public sealed class UserExtraStatusResponse {
 	public bool VisualAuthentication { get; set; }
 	public bool ESignature { get; set; }
 }
+
+public sealed class UserDataDownloadResponse {
+	public required string Link { get; set; }
+}

@@ -1,3 +1,5 @@
+using System.IO.Compression;
+
 namespace SinaMN75U.Services;
 
 public interface IUserService {
@@ -10,6 +12,7 @@ public interface IUserService {
 	public Task<UResponse<UserExtraResponse?>> ReadExtraById(IdParams p, CancellationToken ct);
 	public Task<UResponse> UpdateExtra(UserExtraUpdateParams p, CancellationToken ct);
 	public Task<UResponse<UserExtraStatusResponse?>> ReadExtraStatusById(IdParams p, CancellationToken ct);
+	public Task<UResponse<string?>> DownloadUserData(IdParams p, CancellationToken ct);
 }
 
 public class UserService(
@@ -245,5 +248,97 @@ public class UserService(
 				ESignature = e.ESignature != null
 			}
 		);
+	}
+
+	public async Task<UResponse<string?>> DownloadUserData(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null)
+			return new UResponse<string?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		if (!userData.IsAdmin)
+			return new UResponse<string?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+
+		UserEntity? e = await db.Set<UserEntity>()
+			.Include(x => x.Extra)
+			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+
+		if (e == null)
+			return new UResponse<string?>(null, Usc.NotFound);
+
+		// Prepare user data for text file
+		string textContent = BuildUserDataText(e);
+
+		// Get base64 strings for images
+		string nationalCardFront = e.Extra.NationalCardFront?.ToBase64() ?? "";
+		string nationalCardBack = e.Extra.NationalCardBack?.ToBase64() ?? "";
+		string birthCertificateFirst = e.Extra.BirthCertificateFirst?.ToBase64() ?? "";
+		string visualAuthentication = e.Extra.VisualAuthentication?.ToBase64() ?? "";
+		string eSignature = e.Extra.ESignature?.ToBase64() ?? "";
+
+		// Create ZIP in memory and convert to base64
+		string zipBase64 = await CreateZipAsBase64(textContent, new Dictionary<string, string> {
+			["NationalCardFront.jpg"] = nationalCardFront,
+			["NationalCardBack.jpg"] = nationalCardBack,
+			["BirthCertificateFirst.jpg"] = birthCertificateFirst,
+			["VisualAuthentication.jpg"] = visualAuthentication,
+			["ESignature.png"] = eSignature
+		});
+
+		return new UResponse<string?>(zipBase64, Usc.Success, "User data exported successfully");
+	}
+
+	private string BuildUserDataText(UserEntity e) {
+		var sb = new StringBuilder();
+		sb.AppendLine("========== USER INFORMATION ==========");
+		sb.AppendLine($"First Name: {e.FirstName ?? "---"}");
+		sb.AppendLine($"Last Name: {e.LastName ?? "---"}");
+		sb.AppendLine($"Phone Number: {e.PhoneNumber ?? "---"}");
+		sb.AppendLine($"Email: {e.Email ?? "---"}");
+		sb.AppendLine($"Land Line: {e.LandLine ?? "---"}");
+		sb.AppendLine($"National Code: {e.NationalCode ?? "---"}");
+		sb.AppendLine($"Birthdate: {(e.Birthdate ?? DateTime.UtcNow).ToPersianString()}");
+		sb.AppendLine($"Father Name: {e.JsonData?.FatherName ?? "---"}");
+		sb.AppendLine($"Registration Date: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+		sb.AppendLine("======================================");
+		return sb.ToString();
+	}
+
+	private async Task<string> CreateZipAsBase64(string textContent, Dictionary<string, string> files) {
+		using var memoryStream = new MemoryStream();
+
+		using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true)) {
+			// Add text file
+			var textEntry = archive.CreateEntry("UserData.txt", CompressionLevel.Optimal);
+			using (var textStream = textEntry.Open())
+			using (var writer = new StreamWriter(textStream)) {
+				await writer.WriteAsync(textContent);
+			}
+
+			// Add image files (only if they have content)
+			foreach (var file in files) {
+				if (!string.IsNullOrEmpty(file.Value)) {
+					try {
+						byte[] fileBytes = Convert.FromBase64String(file.Value);
+
+						// Determine folder based on file type
+						string folder = file.Key.Contains("Card") || file.Key.Contains("Certificate")
+							? "Documents"
+							: "AuthImages";
+
+						var entry = archive.CreateEntry($"{folder}/{file.Key}", CompressionLevel.Optimal);
+						using var entryStream = entry.Open();
+						await entryStream.WriteAsync(fileBytes, 0, fileBytes.Length);
+					}
+					catch (FormatException) {
+						// Skip invalid base64 data
+						continue;
+					}
+				}
+			}
+		}
+
+		// Convert ZIP to base64
+		memoryStream.Position = 0;
+		return Convert.ToBase64String(memoryStream.ToArray());
 	}
 }

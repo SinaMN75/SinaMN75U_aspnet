@@ -43,14 +43,8 @@ public enum TagUser {
 	Guest = 202,
 	SystemAdmin = 203,
 	SystemUser = 204,
-	ESignatureVerified = 301,
-	BirthCertificate1Verified = 302,
-	BirthCertificate2Verified = 303,
-	BirthCertificate3Verified = 304,
-	BirthCertificate4Verified = 305,
-	NationalCardFrontVerified = 306,
-	NationalCardBackVerified = 307,
-	VisualAuthenticationVerified = 308
+	AwaitingVerification = 301,
+	Verified = 302,
 }
 
 public enum TagCategory {
