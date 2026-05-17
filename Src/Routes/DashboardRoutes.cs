@@ -22,7 +22,8 @@ public static class DashboardRoutes {
 		r.MapPost("Logs/structure", () => {
 			string logPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Logs");
 
-			if (!Directory.Exists(logPath)) return Results.NotFound("Logs directory not found");
+			if (!Directory.Exists(logPath))
+				return Results.NotFound("Logs directory not found");
 
 			List<YearLog> structure = GetStructuredLogDirectory(logPath);
 			return Results.Ok(new { logs = structure });
@@ -30,19 +31,11 @@ public static class DashboardRoutes {
 
 		r.MapPost("Logs/content", async (LogFileRequest request) => {
 			try {
-				string filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Logs", $"{request.Id}.json");
+				string status = request.Id.EndsWith("success") ? "success" : "failed";
+				string datePart = request.Id[..^status.Length];
+				string filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Logs", datePart[..4], datePart.Substring(4, 2), $"{datePart[6..]}_{status}.json");
 				string content = await File.ReadAllTextAsync(filePath);
 				return Results.Ok(content.FromJson<object>());
-			}
-			catch (Exception e) {
-				return Results.Problem(e.Message);
-			}
-		});
-
-		r.MapPost("Logs/delete", (LogFileRequest request) => {
-			try {
-				File.Delete(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Logs", $"{request.Id}.json"));
-				return Results.Ok(new { message = "Log deleted successfully" });
 			}
 			catch (Exception e) {
 				return Results.Problem(e.Message);

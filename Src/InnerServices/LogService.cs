@@ -41,8 +41,7 @@ public sealed class RequestLogger : IRequestLogger {
 			DateTime now = DateTime.Now;
 			string dir = Path.Combine("wwwroot", "Logs", now.Year.ToString(), $"{now.Month:00}");
 			Directory.CreateDirectory(dir);
-			// string file = Path.Combine(dir, $"{now:dd}_{(status < 300 ? "success" : "failed")}.json");
-			string file = Path.Combine(dir, $"{now:dd}.json");
+			string file = Path.Combine(dir, $"{now:dd}_{(status < 300 ? "success" : "failed")}.json");
 
 			var entry = new {
 				summary = $"{ts:yyyy-MM-dd HH:mm:ss} | {method} {path} | {status} | {ms}ms",
