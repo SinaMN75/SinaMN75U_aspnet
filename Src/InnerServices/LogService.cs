@@ -75,17 +75,15 @@ public sealed class RequestLogger : IRequestLogger {
 		}
 	}
 
-	private static object? JsonElementToDynamic(JsonElement e) {
-		return e.ValueKind switch {
-			JsonValueKind.Object => e.EnumerateObject().ToDictionary(p => p.Name, p => JsonElementToDynamic(p.Value)),
-			JsonValueKind.Array => e.EnumerateArray().Select(JsonElementToDynamic).ToList(),
-			JsonValueKind.String => e.GetString(),
-			JsonValueKind.Number => e.TryGetInt64(out long l) ? l : e.GetDouble(),
-			JsonValueKind.True => true,
-			JsonValueKind.False => false,
-			_ => null
-		};
-	}
+	private static object? JsonElementToDynamic(JsonElement e) => e.ValueKind switch {
+		JsonValueKind.Object => e.EnumerateObject().ToDictionary(p => p.Name, p => JsonElementToDynamic(p.Value)),
+		JsonValueKind.Array => e.EnumerateArray().Select(JsonElementToDynamic).ToList(),
+		JsonValueKind.String => e.GetString(),
+		JsonValueKind.Number => e.TryGetInt64(out long l) ? l : e.GetDouble(),
+		JsonValueKind.True => true,
+		JsonValueKind.False => false,
+		_ => null
+	};
 }
 
 public sealed class RequestLogDto {

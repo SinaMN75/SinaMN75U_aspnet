@@ -11,6 +11,9 @@ public enum Usc {
 	NotFound = 404,
 	Conflict = 409,
 	PayloadTooLarge = 413,
+	MediaTypeNotSupported = 451,
+	SecurityError = 452,
+	
 	InternalServerError = 500,
 
 	ThirdPartyError = 600,
@@ -20,11 +23,10 @@ public enum Usc {
 	ExpiredToken = 604,
 	ShahkarException = 605,
 	ShahkarError = 606,
-	BalanceIsLow = 607,
-
-	SecurityError = 701,
-
-	MediaTypeNotSupported = 802
+	
+	BalanceIsLow = 701,
+	
+	
 }
 
 public enum TagSmsPanel {
@@ -252,12 +254,6 @@ public enum TagSimOperator {
 	Shatel = 5
 }
 
-public enum TagHamrahAvvalChargeType {
-	Normal = 0,
-	Javanan = 2,
-	Banovan = 3,
-	Delkhah = 5
-}
 
 public enum TagMerchant {
 	Normal = 101

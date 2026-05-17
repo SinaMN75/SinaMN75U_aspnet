@@ -70,12 +70,12 @@ public class InquiryService(
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
 				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
-				await CreateZipCodeToAddressHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.ZipCodeToAddressDetail, TagInquiryHistory.Verified, TagInquiryHistory.Error], errorMessage, p, ct);
+				await CreateZipCodeToAddressHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.ZipCodeToAddressDetail, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
-			await CreateZipCodeToAddressHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.ZipCodeToAddressDetail, TagInquiryHistory.Verified], "", p, ct);
+			await CreateZipCodeToAddressHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.ZipCodeToAddressDetail], "", p, ct);
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.ZipCodeToAddressDetail, Token = p.Token }, ct);
 		}
 
@@ -134,12 +134,12 @@ public class InquiryService(
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
 				string errorMessage = httpResponse.GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
-				await CreateVehicleViolationsDetailHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.VehicleViolationsDetail, TagInquiryHistory.Verified, TagInquiryHistory.Error], errorMessage, p, ct);
+				await CreateVehicleViolationsDetailHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.VehicleViolationsDetail, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
-			await CreateVehicleViolationsDetailHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.VehicleViolationsDetail, TagInquiryHistory.Verified], "", p, ct);
+			await CreateVehicleViolationsDetailHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.VehicleViolationsDetail], "", p, ct);
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.VehicleViolationsDetail, Token = p.Token }, ct);
 		}
 
@@ -208,12 +208,12 @@ public class InquiryService(
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
 				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
-				await CreateDrivingLicenceStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceDetail, TagInquiryHistory.Verified, TagInquiryHistory.Error], errorMessage, p, ct);
+				await CreateDrivingLicenceStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceDetail, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
-			await CreateDrivingLicenceStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceDetail, TagInquiryHistory.Verified], "", p, ct);
+			await CreateDrivingLicenceStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceDetail], "", p, ct);
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceStatus, Token = p.Token }, ct);
 		}
 
@@ -267,12 +267,12 @@ public class InquiryService(
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
 				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
-				await CreateLicencePlateStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.LicencePlateDetail, TagInquiryHistory.Verified, TagInquiryHistory.Error], errorMessage, p, ct);
+				await CreateLicencePlateStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.LicencePlateDetail, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<LicencePlateDetailResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<LicencePlateDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
-			await CreateLicencePlateStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.LicencePlateDetail, TagInquiryHistory.Verified], "", p, ct);
+			await CreateLicencePlateStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.LicencePlateDetail], "", p, ct);
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.LicencePlateDetail, Token = p.Token }, ct);
 		}
 
@@ -318,12 +318,12 @@ public class InquiryService(
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
 				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
-				await CreateDrivingLicenceNegativePointHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceNegativePoint, TagInquiryHistory.Verified, TagInquiryHistory.Error], errorMessage, p, ct);
+				await CreateDrivingLicenceNegativePointHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceNegativePoint, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
-			await CreateDrivingLicenceNegativePointHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceNegativePoint, TagInquiryHistory.Verified], "", p, ct);
+			await CreateDrivingLicenceNegativePointHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceNegativePoint], "", p, ct);
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceNegativePoint, Token = p.Token }, ct);
 		}
 
@@ -368,12 +368,12 @@ public class InquiryService(
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
 				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
-				await CreateFreewayTollsHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.IBanToBankAccountDetail, TagInquiryHistory.Verified, TagInquiryHistory.Error], errorMessage, p, ct);
+				await CreateFreewayTollsHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.IBanToBankAccountDetail, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<FreewayTollsResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<FreewayTollsResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
-			await CreateFreewayTollsHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.IBanToBankAccountDetail, TagInquiryHistory.Verified], "", p, ct);
+			await CreateFreewayTollsHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.IBanToBankAccountDetail], "", p, ct);
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.IBanToBankAccountDetail, Token = p.Token }, ct);
 		}
 
@@ -417,12 +417,12 @@ public class InquiryService(
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
 				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
-				await CreateIBanToBankAccountDetailHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.IBanToBankAccountDetail, TagInquiryHistory.Verified, TagInquiryHistory.Error], errorMessage, p, ct);
+				await CreateIBanToBankAccountDetailHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.IBanToBankAccountDetail, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
-			await CreateIBanToBankAccountDetailHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.IBanToBankAccountDetail, TagInquiryHistory.Verified], "", p, ct);
+			await CreateIBanToBankAccountDetailHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.IBanToBankAccountDetail], "", p, ct);
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.IBanToBankAccountDetail, Token = p.Token }, ct);
 		}
 
@@ -445,7 +445,7 @@ public class InquiryService(
 			CreatorId = Core.App.Users.SystemAdmin.Id,
 			CreatedAt = DateTime.UtcNow,
 			JsonData = new BaseJsonData(),
-			Tags = isVerified ? [TagInquiryHistory.ValidateNationalCodeAndPhoneNumber, TagInquiryHistory.Verified] : [TagInquiryHistory.ValidateNationalCodeAndPhoneNumber, TagInquiryHistory.NotVerified],
+			Tags = isVerified ? [TagInquiryHistory.ValidateNationalCodeAndPhoneNumber] : [TagInquiryHistory.ValidateNationalCodeAndPhoneNumber, TagInquiryHistory.NotVerified],
 			NationalCode = nationalCode,
 			PhoneNumber = phoneNumber,
 			Response = ""

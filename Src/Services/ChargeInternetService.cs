@@ -8,11 +8,11 @@ public interface IChargeInternetService {
 	Task<UResponse<GetStatusResponse?>> GetStatus(GetStatusParams p, CancellationToken ct);
 	Task<UResponse<GetBalanceResponse?>> GetBalance(CancellationToken ct);
 	Task<UResponse<EchoResponse?>> Echo(CancellationToken ct);
-	Task<UResponse<InternetPackageResponse?>> MCITopOffer(MCITopOfferParams p, CancellationToken ct);
+	// Task<UResponse<InternetPackageResponse?>> MciTopOffer(MCITopOfferParams p, CancellationToken ct);
 	Task<UResponse<ChargeInternetReserveResponse?>> InternetReserve(InternetReserveParams p, CancellationToken ct);
 }
 
-public class ChargeInternetService(
+public partial class ChargeInternetService(
 	IHttpClientService httpClient,
 	ILocalizationService ls,
 	ITokenService ts,
@@ -185,7 +185,8 @@ public class ChargeInternetService(
 
 	public async Task<UResponse<InternetPackageResponse?>> InternetList(InternetListParams p, CancellationToken ct) {
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.AccessToken == null) return new UResponse<InternetPackageResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		if (tokenResponse?.AccessToken == null)
+			return new UResponse<InternetPackageResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
 		HttpResponseMessage? response = await httpClient.Post(
 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/Internet/getlist",
@@ -195,46 +196,41 @@ public class ChargeInternetService(
 				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
 				attachments = new { operator_id = p.OperatorId }
 			},
-			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
+			new Dictionary<string, string> {
+				{ "Authorization", $"Bearer {tokenResponse.AccessToken}" },
+				{ "Accept", "application/json" }
+			}
 		);
 
-		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<InternetPackageResponse?>(null);
+		if (response is null or { IsSuccessStatusCode: false })
+			return new UResponse<InternetPackageResponse?>(null);
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
 		JsonElement attachment = data.GetProperty("attachments");
 
-		string? listJson = attachment.GetStringOrNull("list");
-		IEnumerable<InternetPackageItem> packages = [];
+		var result = new InternetPackageResponse {
+			Status = data.GetBoolOrNull("status") ?? false,
+			Message = data.GetStringOrNull("message") ?? ""
+		};
 
+		string? listJson = attachment.GetStringOrNull("list");
 		if (!string.IsNullOrEmpty(listJson)) {
 			JsonElement packagesArray = JsonSerializer.Deserialize<JsonElement>(listJson);
-			packages = packagesArray.EnumerateArray()
+			result.List = packagesArray.EnumerateArray()
 				.Select(x => new InternetPackageItem {
-					Amount = x.GetIntOrNull("Amount"),
-					Id = x.GetStringOrNull("Id"),
-					Title = x.GetStringOrNull("Title"),
-					ShortTitle = x.GetStringOrNull("ShortTitle"),
-					SimType = x.GetIntOrNull("SimType"),
-					Duration = x.GetStringOrNull("Duration"),
-					OfferCode = x.GetStringOrNull("OfferCode"),
-					Price = x.GetDecimalOrNull("Price"),
-					PackageDType = x.GetIntOrNull("PackageDType"),
-					Capacity = x.GetStringOrNull("Capacity")
+					Id = x.GetStringOrNull("Id") ?? "",
+					Title = x.GetStringOrNull("Title") ?? "",
+					Amount = x.GetIntOrNull("Amount") ?? 0,
+					SimType = x.GetIntOrNull("SimType") ?? 0,
+					Duration = NormalizeDuration(x.GetStringOrNull("Duration")),
+					OfferCode = x.GetStringOrNull("OfferCode") ?? "",
+					PackageDType = x.GetIntOrNull("PackageDType") ?? 0,
+					Capacity = x.GetStringOrNull("Capacity") ?? ""
 				})
 				.ToList();
 		}
 
-		return new UResponse<InternetPackageResponse?>(new InternetPackageResponse {
-			Reserve = data.GetIntOrNull("reserve"),
-			ServerDateTime = data.GetStringOrNull("serverDateTime"),
-			Status = data.GetBoolOrNull("status"),
-			Code = data.GetIntOrNull("code"),
-			Message = data.GetStringOrNull("message"),
-			Reference = attachment.GetStringOrNull("reference"),
-			TraceId = attachment.GetStringOrNull("trace_id"),
-			Help = attachment.GetStringOrNull("help"),
-			List = packages
-		});
+		return new UResponse<InternetPackageResponse?>(result);
 	}
 
 	public async Task<UResponse<GetBalanceResponse?>> GetBalance(CancellationToken ct) {
@@ -306,59 +302,59 @@ public class ChargeInternetService(
 		});
 	}
 
-	public async Task<UResponse<InternetPackageResponse?>> MCITopOffer(MCITopOfferParams p, CancellationToken ct) {
-		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.AccessToken == null) return new UResponse<InternetPackageResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
-
-		HttpResponseMessage? response = await httpClient.Post(
-			$"{Core.App.Mobtakeran.BaseUrl}api/v2/Internet/MCITopOffer",
-			new {
-				apiKey = Core.App.Mobtakeran.ApiKey,
-				reserve = Random.Shared.Next(999999).ToString(),
-				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
-				attachments = new { subscriber = p.Subscriber }
-			},
-			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
-		);
-
-		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<InternetPackageResponse?>(null);
-
-		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
-		JsonElement attachment = data.GetProperty("attachments");
-
-		string? listJson = attachment.GetStringOrNull("list");
-		IEnumerable<InternetPackageItem> packages = [];
-
-		if (!string.IsNullOrEmpty(listJson)) {
-			JsonElement packagesArray = JsonSerializer.Deserialize<JsonElement>(listJson);
-			packages = packagesArray.EnumerateArray()
-				.Select(x => new InternetPackageItem {
-					Amount = x.GetIntOrNull("amount"),
-					Id = x.GetStringOrNull("id"),
-					Title = x.GetStringOrNull("title"),
-					ShortTitle = null, // Not in this endpoint
-					SimType = x.GetIntOrNull("simType"),
-					Duration = x.GetStringOrNull("duration"),
-					OfferCode = x.GetStringOrNull("offerCode"),
-					Price = x.GetDecimalOrNull("price"),
-					PackageDType = x.GetIntOrNull("packageDTYPE"),
-					Capacity = x.GetStringOrNull("capacity")
-				})
-				.ToList();
-		}
-
-		return new UResponse<InternetPackageResponse?>(new InternetPackageResponse {
-			Reserve = data.GetIntOrNull("reserve"),
-			ServerDateTime = data.GetStringOrNull("serverDateTime"),
-			Status = data.GetBoolOrNull("status"),
-			Code = data.GetIntOrNull("code"),
-			Message = data.GetStringOrNull("message"),
-			Reference = attachment.GetStringOrNull("reference"),
-			TraceId = attachment.GetStringOrNull("trace_id"),
-			Help = attachment.GetStringOrNull("help"),
-			List = packages
-		});
-	}
+	// public async Task<UResponse<InternetPackageResponse?>> MciTopOffer(MCITopOfferParams p, CancellationToken ct) {
+	// 	GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
+	// 	if (tokenResponse?.AccessToken == null) return new UResponse<InternetPackageResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+	//
+	// 	HttpResponseMessage? response = await httpClient.Post(
+	// 		$"{Core.App.Mobtakeran.BaseUrl}api/v2/Internet/MCITopOffer",
+	// 		new {
+	// 			apiKey = Core.App.Mobtakeran.ApiKey,
+	// 			reserve = Random.Shared.Next(999999).ToString(),
+	// 			localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+	// 			attachments = new { subscriber = p.Subscriber }
+	// 		},
+	// 		new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
+	// 	);
+	//
+	// 	if (response is null or { IsSuccessStatusCode: false }) return new UResponse<InternetPackageResponse?>(null);
+	//
+	// 	JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
+	// 	JsonElement attachment = data.GetProperty("attachments");
+	//
+	// 	string? listJson = attachment.GetStringOrNull("list");
+	// 	IEnumerable<InternetPackageItem> packages = [];
+	//
+	// 	if (!string.IsNullOrEmpty(listJson)) {
+	// 		JsonElement packagesArray = JsonSerializer.Deserialize<JsonElement>(listJson);
+	// 		packages = packagesArray.EnumerateArray()
+	// 			.Select(x => new InternetPackageItem {
+	// 				Amount = x.GetIntOrNull("amount"),
+	// 				Id = x.GetStringOrNull("id"),
+	// 				Title = x.GetStringOrNull("title"),
+	// 				ShortTitle = null, // Not in this endpoint
+	// 				SimType = x.GetIntOrNull("simType"),
+	// 				Duration = x.GetStringOrNull("duration"),
+	// 				OfferCode = x.GetStringOrNull("offerCode"),
+	// 				Price = x.GetDecimalOrNull("price"),
+	// 				PackageDType = x.GetIntOrNull("packageDTYPE"),
+	// 				Capacity = x.GetStringOrNull("capacity")
+	// 			})
+	// 			.ToList();
+	// 	}
+	//
+	// 	return new UResponse<InternetPackageResponse?>(new InternetPackageResponse {
+	// 		Reserve = data.GetIntOrNull("reserve"),
+	// 		ServerDateTime = data.GetStringOrNull("serverDateTime"),
+	// 		Status = data.GetBoolOrNull("status"),
+	// 		Code = data.GetIntOrNull("code"),
+	// 		Message = data.GetStringOrNull("message"),
+	// 		Reference = attachment.GetStringOrNull("reference"),
+	// 		TraceId = attachment.GetStringOrNull("trace_id"),
+	// 		Help = attachment.GetStringOrNull("help"),
+	// 		List = packages
+	// 	});
+	// }
 
 	private async Task<ApproveResponse?> Approve(ApproveParams p, CancellationToken ct) {
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
@@ -454,5 +450,25 @@ public class ChargeInternetService(
 			Code = data.GetIntOrNull("code"),
 			Message = data.GetStringOrNull("message")
 		};
+	}
+
+	private static string NormalizeDuration(string? raw) {
+		if (string.IsNullOrWhiteSpace(raw)) return "UNKNOWN";
+
+		string v = raw.Trim().ToUpperInvariant().Replace(" ", "");
+
+		// "30" -> "30D", "7" -> "7D", "90" -> "3M"
+		if (int.TryParse(v, out int num)) {
+			return num <= 31 ? $"{num}D" : $"{Math.Max(1, (int)Math.Round(num / 30.0))}M";
+		}
+
+		// "W1" -> "1W", "M1" -> "1M"  
+		if (v.Length == 2 && (v[0] == 'W' || v[0] == 'M' || v[0] == 'D')) {
+			return $"{v[1]}{v[0]}";
+		}
+
+		// "W" -> "1W", "M" -> "1M"
+		if (v == "W") return "1W";
+		return v == "M" ? "1M" : v;
 	}
 }

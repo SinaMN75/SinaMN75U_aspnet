@@ -3,9 +3,9 @@ namespace SinaMN75U.Services;
 public interface IWalletService {
 	Task<UResponse> Charge(WalletChargeParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<WalletResponse>?>> ReadByUserId(WalletReadParams p, CancellationToken ct);
-	Task<UResponse<TagTxnErrorCodes>> Transfer(WalletTransferParams p, CancellationToken ct);
+	Task<UResponse<WalletTxnResponse?>> Transfer(WalletTransferParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<WalletTxnResponse>?>> ReadTxn(WalletTxnReadParams p, CancellationToken ct);
-	Task<UResponse<TagTxnErrorCodes>> Purchase(WalletPurchaseParams p, CancellationToken ct);
+	Task<UResponse> Purchase(WalletPurchaseParams p, CancellationToken ct);
 
 	Task<bool> HasEnoughBalance(Guid userId, decimal amount, CancellationToken ct);
 }
@@ -15,7 +15,7 @@ public class WalletService(
 	ILocalizationService ls,
 	ITokenService ts
 ) : IWalletService {
-	public async Task<UResponse<TagTxnErrorCodes>> Purchase(WalletPurchaseParams p, CancellationToken ct) {
+	public async Task<UResponse> Purchase(WalletPurchaseParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<TagTxnErrorCodes>(TagTxnErrorCodes.UnAuthorized, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
@@ -63,6 +63,7 @@ public class WalletService(
 				amount = p.Amount!.Value;
 				break;
 			case TagWalletTxn.Transfer:
+			case TagWalletTxn.Charge:
 			default:
 				throw new Exception();
 		}
@@ -84,13 +85,13 @@ public class WalletService(
 	}
 
 	public async Task<UResponse> Charge(WalletChargeParams p, CancellationToken ct) {
-		// JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		// if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		//
-		// WalletEntity? e = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == p.UserId, ct);
-		// if (e == null) return new UResponse(Usc.NotFound, ls.Get("WalletNotFound"));
-		//
-		// if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		WalletEntity? e = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == p.UserId, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("WalletNotFound"));
+
+		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		return await Transfer(new WalletTransferParams {
 			ApiKey = p.ApiKey,
@@ -107,20 +108,18 @@ public class WalletService(
 		IQueryable<WalletResponse> q = db.Set<WalletEntity>().Where(x => x.CreatorId == p.UserId).Select(Projections.WalletSelector(p.SelectorArgs));
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
-
-	public async Task<UResponse<TagTxnErrorCodes>> Transfer(WalletTransferParams p, CancellationToken ct) {
+	
+	public async Task<UResponse<WalletTxnResponse?>> Transfer(WalletTransferParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<TagTxnErrorCodes>(TagTxnErrorCodes.UnAuthorized, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<WalletTxnResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		Guid senderId = p.SenderId ?? userData.Id;
 
-		if (!userData.IsAdmin && senderId != p.SenderId) return new UResponse<TagTxnErrorCodes>(TagTxnErrorCodes.SecurityError, Usc.SecurityError, ls.Get("SecurityError"));
-
 		WalletEntity? senderWallet = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == senderId, ct);
 		WalletEntity? receiverWallet = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == p.ReceiverId, ct);
-		if (senderWallet == null) return new UResponse<TagTxnErrorCodes>(TagTxnErrorCodes.SenderWalletNotFound, Usc.NotFound, ls.Get("SenderWalletNotFound"));
-		if (receiverWallet == null) return new UResponse<TagTxnErrorCodes>(TagTxnErrorCodes.ReceiverWalletNotFound, Usc.NotFound, ls.Get("ReceiverWalletNotFound"));
-		if (senderWallet.Balance < p.Amount) return new UResponse<TagTxnErrorCodes>(TagTxnErrorCodes.LowBalance, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+		if (senderWallet == null) return new UResponse<WalletTxnResponse?>(null, Usc.NotFound, ls.Get("SenderWalletNotFound"));
+		if (receiverWallet == null) return new UResponse<WalletTxnResponse?>(null, Usc.NotFound, ls.Get("ReceiverWalletNotFound"));
+		if (senderWallet.Balance < p.Amount) return new UResponse<WalletTxnResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
 		decimal senderBalance = senderWallet.Balance - p.Amount;
 		decimal receiverBalance = receiverWallet.Balance + p.Amount;
@@ -128,7 +127,7 @@ public class WalletService(
 		senderWallet.Balance = senderBalance;
 		receiverWallet.Balance = receiverBalance;
 
-		await db.Set<WalletTxnEntity>().AddAsync(new WalletTxnEntity {
+		WalletTxnEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			CreatorId = userData.Id,
 			CreatedAt = DateTime.UtcNow,
@@ -137,13 +136,20 @@ public class WalletService(
 			Amount = p.Amount,
 			JsonData = new BaseJsonData { Detail1 = p.Detail1 ?? "" },
 			Tags = [TagWalletTxn.Transfer]
-		}, ct);
+		};
+		await db.Set<WalletTxnEntity>().AddAsync(e, ct);
 
 		db.Set<WalletEntity>().Update(senderWallet);
 		db.Set<WalletEntity>().Update(receiverWallet);
-
 		await db.SaveChangesAsync(ct);
-		return new UResponse<TagTxnErrorCodes>(TagTxnErrorCodes.Ok);
+		
+		return new UResponse<WalletTxnResponse?>(new WalletTxnResponse {
+			SenderId = e.SenderId,
+			ReceiverId = e.ReceiverId,
+			Amount = e.Amount,
+			JsonData = e.JsonData,
+			Tags = e.Tags
+		});
 	}
 
 	public async Task<UResponse<IEnumerable<WalletTxnResponse>?>> ReadTxn(WalletTxnReadParams p, CancellationToken ct) {

@@ -10,6 +10,6 @@ public static class ChargeInternetRoutes {
 		r.MapPost("GetStatus", async (GetStatusParams p, IChargeInternetService s, CancellationToken c) => (await s.GetStatus(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("GetBalance", async (IChargeInternetService s, CancellationToken c) => (await s.GetBalance(c)).ToResult()).Produces<UResponse>();
 		r.MapPost("Echo", async (IChargeInternetService s, CancellationToken c) => (await s.Echo(c)).ToResult()).Produces<UResponse>();
-		r.MapPost("MCITopOffer", async (MCITopOfferParams p, IChargeInternetService s, CancellationToken c) => (await s.MCITopOffer(p, c)).ToResult()).Produces<UResponse>();
+		// r.MapPost("MCITopOffer", async (MCITopOfferParams p, IChargeInternetService s, CancellationToken c) => (await s.MciTopOffer(p, c)).ToResult()).Produces<UResponse>();
 	}
 }

@@ -1,7 +1,6 @@
 ﻿namespace SinaMN75U.Services;
 
 public interface ISmsNotificationService {
-	Task SendSms(string mobileNumber, string template, string param1, string? param2 = null, string? param3 = null);
 	Task<bool> SendOtpSms(UserResponse user);
 }
 
@@ -9,7 +8,7 @@ public class SmsNotificationService(
 	IHttpClientService http,
 	ILocalStorageService cache
 ) : ISmsNotificationService {
-	public async Task SendSms(
+	private async Task SendSms(
 		string mobileNumber,
 		string template,
 		string param1,
