@@ -4,9 +4,8 @@ public class MerchantCreateParams : BaseCreateParams<TagMerchant> {
 	[UValidationRequired("ZipCodeRequired"), UValidationStringLength(10, 10, "ZipCodeNotValid")]
 	public string ZipCode { get; set; } = null!;
 
-	[UValidationRequired("UserIdRequired")]
-	public Guid UserId { get; set; }
-	
+	public Guid? UserId { get; set; }
+
 	[UValidationRequired("CityCodeRequired"), UValidationStringLength(1, 100, "CityCodeNotValid")]
 	public string CityCode { get; set; } = null!;
 
@@ -18,7 +17,7 @@ public class MerchantCreateParams : BaseCreateParams<TagMerchant> {
 
 	[UValidationRequired("MerchantTitleRequired"), UValidationStringLength(5, 100, "MerchantTitleNotValid")]
 	public string Title { get; set; } = null!;
-	
+
 	[UValidationRequired("LandlineRequired"), UValidationStringLength(6, 12, "LandlineNotValid")]
 	public string Landline { get; set; } = null!;
 
@@ -28,12 +27,12 @@ public class MerchantCreateParams : BaseCreateParams<TagMerchant> {
 	[UValidationRequired("OwnerPhoneNumberRequired"), UValidationStringLength(10, 15, "OwnerPhoneNumberNotValid")]
 	public string OwnerPhoneNumber { get; set; } = null!;
 
-	[UValidationRequired("OwnerNameRequired"), UValidationStringLength(10, 15, "OwnerNameNotValid")]
+	[UValidationRequired("OwnerNameRequired"), UValidationStringLength(5, 100, "OwnerNameNotValid")]
 	public string OwnerName { get; set; } = null!;
-	
+
 	[UValidationRequired("MccRequired"), UValidationStringLength(1, 100, "MccNotValid")]
 	public string Mcc { get; set; } = null!;
-	
+
 	public string? BusinessTitle { get; set; }
 	public string? BankAccountId { get; set; }
 }

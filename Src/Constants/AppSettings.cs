@@ -39,7 +39,8 @@ public sealed class Middleware {
 
 public sealed class SmsPanel {
 	public required TagSmsPanel Tag { get; init; }
-	public required string Pattern { get; init; }
+	public required string LoginOtpPattern { get; init; }
+	public required string SupportPasswordOtp { get; init; }
 	public required string ApiKey { get; init; }
 }
 

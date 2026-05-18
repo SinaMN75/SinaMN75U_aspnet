@@ -2,13 +2,14 @@
 
 public interface ISmsNotificationService {
 	Task<bool> SendOtpSms(UserResponse user);
+	Task<bool> SendSms(SmsNotificationParams p);
 }
 
 public class SmsNotificationService(
 	IHttpClientService http,
 	ILocalStorageService cache
 ) : ISmsNotificationService {
-	private async Task SendSms(
+	private async Task Send(
 		string mobileNumber,
 		string template,
 		string param1,
@@ -22,7 +23,7 @@ public class SmsNotificationService(
 					await http.Post("https://api.ghasedak.me/v2/verification/send/simple", new {
 							receptor = mobileNumber,
 							type = 1,
-							template = sms.Pattern,
+							template = sms.LoginOtpPattern,
 							param1,
 							param2,
 							param3
@@ -52,7 +53,12 @@ public class SmsNotificationService(
 		cache.Set("otp_" + user.Id, otp, TimeSpan.FromMinutes(1));
 
 		if (user.PhoneNumber.IsNull()) return false;
-		await SendSms(user.PhoneNumber, Core.App.SmsPanel.Pattern, otp);
+		await Send(user.PhoneNumber, Core.App.SmsPanel.LoginOtpPattern, otp);
+		return true;
+	}
+
+	public async Task<bool> SendSms(SmsNotificationParams p) {
+		await Send(p.Mobile, p.Template, p.Text);
 		return true;
 	}
 }

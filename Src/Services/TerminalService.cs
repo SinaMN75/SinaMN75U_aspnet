@@ -13,7 +13,8 @@ public class TerminalService(
 	DbContext db,
 	ILocalizationService ls,
 	ITokenService ts,
-	IHttpClientService http
+	IHttpClientService http,
+	ISmsNotificationService sms
 ) : ITerminalService {
 	public async Task<UResponse<Guid?>> Create(TerminalCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
@@ -44,7 +45,7 @@ public class TerminalService(
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		TerminalEntity? e = await db.Set<TerminalEntity>().FirstOrDefaultAsync(x => x.Serial == p.Serial && x.SimCardSerial == p.SimCardSerial, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("TerminalNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("TerminalNotFoundCheckDetails"));
 
 		HttpResponseMessage? response = await http.Post(
 			"https://oa.avreenco.com:8080/api/mms/ing/v2/defineAndBindTerminal",
@@ -63,6 +64,7 @@ public class TerminalService(
 
 		e.TerminalId = data.GetStringOrNull("terminalId");
 		e.InsId = data.GetStringOrNull("insId");
+		e.MerchantId = p.MerchantId;
 
 		db.Set<TerminalEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
@@ -137,10 +139,14 @@ public class TerminalService(
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
 
+		await sms.SendSms(new SmsNotificationParams {
+			Mobile = userData.PhoneNumber!,
+			Template = Core.App.SmsPanel.SupportPasswordOtp,
+			Text = "12345"
+		});
+
 		return new UResponse<TerminalSupportPasswordResponse?>(
-			new TerminalSupportPasswordResponse {
-				Password = data.GetStringOrNull("supportPassword")
-			}
+			new TerminalSupportPasswordResponse { Password = data.GetStringOrNull("supportPassword") }
 		);
 	}
 }
