@@ -254,7 +254,7 @@ public class UserService(
 	public async Task<UResponse<string?>> DownloadUserData(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<string?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		
+
 		if (!userData.IsAdmin) return new UResponse<string?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		UserEntity? e = await db.Set<UserEntity>().Include(x => x.Extra).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
@@ -274,42 +274,33 @@ public class UserService(
 		string birthCertificateFirst = e.Extra.BirthCertificateFirst.ToBase64() ?? "";
 		string visualAuthentication = e.Extra.VisualAuthentication.ToBase64() ?? "";
 		string eSignature = e.Extra.ESignature.ToBase64() ?? "";
+		
+		StringBuilder data = new();
+		data.AppendLine($"First Name: {firstName}");
+		data.AppendLine($"Last Name: {lastName}");
+		data.AppendLine($"Phone Number: {phoneNumber}");
+		data.AppendLine($"Email: {email}");
+		data.AppendLine($"Land Line: {landLine}");
+		data.AppendLine($"National Code: {nationalCode}");
+		data.AppendLine($"Birthdate: {birthdate}");
+		data.AppendLine($"Father Name: {fatherName}");
 
-		using MemoryStream memoryStream = new();
-		await using (ZipArchive archive = new(memoryStream, ZipArchiveMode.Create, true)) {
-			ZipArchiveEntry textEntry = archive.CreateEntry("UserData.txt");
-			await using (Stream textStream = await textEntry.OpenAsync(ct))
-			await using (StreamWriter textWriter = new(textStream)) {
-				await textWriter.WriteAsync($"First Name: {firstName}\n");
-				await textWriter.WriteAsync($"Last Name: {lastName}\n");
-				await textWriter.WriteAsync($"Phone Number: {phoneNumber}\n");
-				await textWriter.WriteAsync($"Email: {email}\n");
-				await textWriter.WriteAsync($"Land Line: {landLine}\n");
-				await textWriter.WriteAsync($"National Code: {nationalCode}\n");
-				await textWriter.WriteAsync($"Birthdate: {birthdate}\n");
-				await textWriter.WriteAsync($"Father Name: {fatherName}\n");
-			}
+		byte[] zipBytes = await ZipUtils.CreateZipAsync(
+			new Dictionary<string, string> { ["UserData.txt"] = data.ToString() },
+			new Dictionary<string, string> {
+				["NationalCardFront.jpg"] = nationalCardFront,
+				["NationalCardBack.jpg"] = nationalCardBack,
+				["BirthCertificateFirst.jpg"] = birthCertificateFirst,
+				["VisualAuthentication.mp4"] = visualAuthentication,
+				["ESignature.png"] = eSignature
+			},
+			ct
+		);
 
-			AddFileToZip(archive, "NationalCardFront.jpg", nationalCardFront);
-			AddFileToZip(archive, "NationalCardBack.jpg", nationalCardBack);
-			AddFileToZip(archive, "BirthCertificateFirst.jpg", birthCertificateFirst);
-			AddFileToZip(archive, "VisualAuthentication.jpg", visualAuthentication);
-			AddFileToZip(archive, "ESignature.png", eSignature);
-		}
-
-		string downloadToken = $"{nationalCode}- {firstName}-{lastName}";
-		byte[] zipBytes = memoryStream.ToArray();
+		string downloadToken = $"{nationalCode} - {firstName} {lastName}";
 		cache.Set(downloadToken, zipBytes, TimeSpan.FromMinutes(30));
 		string downloadUrl = $"{Core.App.BaseUrl}/api/download/{downloadToken}";
-		return new UResponse<string?>(downloadUrl, Usc.Success, "Download link generated");
-	}
 
-	private static void AddFileToZip(ZipArchive archive, string fileName, string base64Content) {
-		if (!string.IsNullOrEmpty(base64Content)) {
-			ZipArchiveEntry entry = archive.CreateEntry(fileName);
-			using Stream entryStream = entry.Open();
-			byte[] bytes = Convert.FromBase64String(base64Content);
-			entryStream.Write(bytes, 0, bytes.Length);
-		}
+		return new UResponse<string?>(downloadUrl, Usc.Success, "Download link generated");
 	}
 }
