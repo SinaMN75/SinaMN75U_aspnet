@@ -6,10 +6,7 @@ public class MerchantCreateParams : BaseCreateParams<TagMerchant> {
 
 	[UValidationRequired("UserIdRequired")]
 	public Guid UserId { get; set; }
-
-	[UValidationRequired("TitleRequired"), UValidationStringLength(5, 100, "TitleNotValid")]
-	public string BusinessTitle { get; set; } = null!;
-
+	
 	[UValidationRequired("CityCodeRequired"), UValidationStringLength(1, 100, "CityCodeNotValid")]
 	public string CityCode { get; set; } = null!;
 
@@ -33,12 +30,12 @@ public class MerchantCreateParams : BaseCreateParams<TagMerchant> {
 
 	[UValidationRequired("OwnerNameRequired"), UValidationStringLength(10, 15, "OwnerNameNotValid")]
 	public string OwnerName { get; set; } = null!;
-
-	[UValidationRequired("BankAccountRequired"), UValidationStringLength(10, 100, "BankAccountNotValid")]
-	public string BankAccountId { get; set; } = null!;
-
+	
 	[UValidationRequired("MccRequired"), UValidationStringLength(1, 100, "MccNotValid")]
 	public string Mcc { get; set; } = null!;
+	
+	public string? BusinessTitle { get; set; }
+	public string? BankAccountId { get; set; }
 }
 
 public class MerchantUpdateParams : BaseUpdateParams<TagMerchant> {

@@ -20,18 +20,18 @@ public sealed class MerchantEntity : BaseEntity<TagMerchant, MerchantJson> {
 	[Required, StringLength(10)]
 	public required string NationalCode { get; set; } // کد ملی 
 	
-	[Required, StringLength(100)]
-	public required string BankAccountId { get; set; } // شماره حساب / شبا
-	
 	[Required, StringLength(20)]
 	public required string Mcc { get; set; } // کد نصنف
 
-	[Required, StringLength(20)]
-	public required string MerchantId { get; set; }
+	[MaxLength(50)]
+	public string? BankAccountId { get; set; } // شماره حساب / شبا
 	
-	[Required, StringLength(20)]
-	public required string InsId { get; set; }
-
+	[MaxLength(50)]
+	public string? MerchantId { get; set; }
+	
+	[StringLength(20)]
+	public string? InsId { get; set; }
+	
 	public required Guid UserId { get; set; }
 	public UserEntity User { get; set; } = null!;
 
@@ -40,9 +40,9 @@ public sealed class MerchantEntity : BaseEntity<TagMerchant, MerchantJson> {
 }
 
 public sealed class MerchantJson : BaseJsonData {
-	public required string BusinessTitle { get; set; } // عنوان کسب و کار
-	public required string Address { get; set; } // آدرس محل پذیرنده (آدرس فروشگاه، قرارگیری ترمینال)
-	public required string OwnerPhoneNumber { get; set; } // شماره موبایل مالک
+	public string? BusinessTitle { get; set; } // عنوان کسب و کار
+	public string? Address { get; set; } // آدرس محل پذیرنده (آدرس فروشگاه، قرارگیری ترمینال)
+	public string? OwnerPhoneNumber { get; set; } // شماره موبایل مالک
 	public int DefinitionTemplate { get; set; } = 1;
 	public int SettlementCurrency { get; set; } = 364; // واحد پول تسویه
 	public string? OwnerName { get; set; } // نام مالک فروشگاه
