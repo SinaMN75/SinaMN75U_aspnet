@@ -22,7 +22,7 @@ public sealed class WalletTransferParams : BaseParams {
 
 	public string? Detail1 { get; set; }
 	
-	public required IEnumerable<TagWalletTxn> TagWalletTxn { get; set; }
+	public required ICollection<TagWalletTxn> TagWalletTxn { get; set; }
 }
 
 public sealed class WalletTxnReadParams : BaseReadParams<TagWalletTxn> {

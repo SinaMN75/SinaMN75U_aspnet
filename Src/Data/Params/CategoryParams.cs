@@ -13,7 +13,7 @@ public sealed class CategoryCreateParams : BaseCreateParams<TagCategory> {
 	public int? Order { get; set; }
 
 	public List<Guid> RelatedProducts { get; set; } = [];
-	public IEnumerable<CategoryCreateParams> Children { get; set; } = [];
+	public ICollection<CategoryCreateParams> Children { get; set; } = [];
 	public ICollection<Guid> Media { get; set; } = [];
 }
 

@@ -20,7 +20,7 @@ public sealed class UserCreateParams : BaseCreateParams<TagUser> {
 	public decimal? Height { get; set; }
 	public DateTime? Birthdate { get; set; }
 
-	public IEnumerable<Guid>? Categories { get; set; }
+	public ICollection<Guid>? Categories { get; set; }
 }
 
 public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {
@@ -52,7 +52,7 @@ public sealed class UserReadParams : BaseReadParams<TagUser> {
 	public string? NationalCode { get; set; }
 	public DateTime? StartBirthDate { get; set; }
 	public DateTime? EndBirthDate { get; set; }
-	public IEnumerable<Guid>? Categories { get; set; }
+	public ICollection<Guid>? Categories { get; set; }
 	public bool OrderByFirstName { get; set; }
 	public bool OrderByFirstNameDesc { get; set; }
 	public bool OrderByLastName { get; set; }

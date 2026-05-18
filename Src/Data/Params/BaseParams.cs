@@ -19,7 +19,7 @@ public sealed class IdParams<T> : BaseParams where T : new() {
 
 public sealed class IdListParams : BaseParams {
 	[UValidationMinCollectionLength(1, "IdRequired")]
-	public IEnumerable<Guid> Ids { get; set; } = null!;
+	public ICollection<Guid> Ids { get; set; } = null!;
 }
 
 public sealed class IdTitleParams : BaseParams {
@@ -34,8 +34,8 @@ public class BaseReadParams<T> : BaseParams {
 	public DateTime? ToCreatedAt { get; set; }
 	public bool OrderByCreatedAt { get; set; } = true;
 	public bool OrderByCreatedAtDesc { get; set; }
-	public IEnumerable<T>? Tags { get; set; }
-	public IEnumerable<Guid> Ids { get; set; } = [];
+	public ICollection<T>? Tags { get; set; }
+	public ICollection<Guid> Ids { get; set; } = [];
 	public Guid? CreatorId { get; set; }
 }
 

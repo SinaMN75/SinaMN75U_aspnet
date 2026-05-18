@@ -21,8 +21,8 @@ public sealed class ProductCreateParams : BaseCreateParams<TagProduct> {
 	public string? PhoneNumber { get; set; }
 	public string? Address { get; set; }
 
-	public IEnumerable<Guid>? Categories { get; set; }
-	public IEnumerable<Guid>? RelatedProducts { get; set; }
+	public ICollection<Guid>? Categories { get; set; }
+	public ICollection<Guid>? RelatedProducts { get; set; }
 	public ICollection<ProductCreateParams>? Children { get; set; }
 
 	public Guid? ParentId { get; set; }
@@ -71,6 +71,6 @@ public sealed class ProductReadParams : BaseReadParams<TagProduct> {
 	public int? MaxStock { get; set; }
 	public bool OrderByOrder { get; set; }
 	public bool OrderByOrderDesc { get; set; }
-	public IEnumerable<Guid>? Categories { get; set; }
+	public ICollection<Guid>? Categories { get; set; }
 	public ProductSelectorArgs SelectorArgs { get; set; } = new();
 }
