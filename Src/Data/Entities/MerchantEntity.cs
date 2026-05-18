@@ -14,24 +14,24 @@ public sealed class MerchantEntity : BaseEntity<TagMerchant, MerchantJson> {
 	[Required, StringLength(100)]
 	public required string Title { get; set; } // عنوان فروشگاه
 
-	[Required, StringLength(15)]
+	[Required, MinLength(6), MaxLength(12)]
 	public required string Landline { get; set; } // شماره ثابت
 
 	[Required, StringLength(10)]
 	public required string NationalCode { get; set; } // کد ملی 
-	
+
 	[Required, StringLength(20)]
 	public required string Mcc { get; set; } // کد نصنف
 
 	[MaxLength(50)]
 	public string? BankAccountId { get; set; } // شماره حساب / شبا
-	
+
 	[MaxLength(50)]
 	public string? MerchantId { get; set; }
-	
+
 	[StringLength(20)]
 	public string? InsId { get; set; }
-	
+
 	public required Guid UserId { get; set; }
 	public UserEntity User { get; set; } = null!;
 
