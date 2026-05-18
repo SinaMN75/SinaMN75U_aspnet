@@ -62,6 +62,7 @@ public class TerminalService(
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
 
+		e.JsonData.Detail1 = p.Title ?? "";
 		e.TerminalId = data.GetStringOrNull("terminalId");
 		e.InsId = data.GetStringOrNull("insId");
 		e.MerchantId = p.MerchantId;

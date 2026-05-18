@@ -52,10 +52,10 @@ public sealed class ProductUpdateParams : BaseUpdateParams<TagProduct> {
 	public string? PhoneNumber { get; set; }
 	public string? Address { get; set; }
 	public ICollection<Guid>? RelatedProducts { get; set; }
-	public IEnumerable<Guid>? AddRelatedProducts { get; set; }
-	public IEnumerable<Guid>? RemoveRelatedProducts { get; set; }
-	public IEnumerable<Guid>? AddCategories { get; set; }
-	public IEnumerable<Guid>? RemoveCategories { get; set; }
+	public ICollection<Guid>? AddRelatedProducts { get; set; }
+	public ICollection<Guid>? RemoveRelatedProducts { get; set; }
+	public ICollection<Guid>? AddCategories { get; set; }
+	public ICollection<Guid>? RemoveCategories { get; set; }
 	public ICollection<Guid>? Categories { get; set; }
 
 	public ICollection<Guid>? Media { get; set; }

@@ -48,7 +48,7 @@ public class MerchantService(
 			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
 			Tags = p.Tags,
-			UserId = p.UserId,
+			UserId = p.UserId ?? userData.Id,
 			ZipCode = p.ZipCode,
 			Title = p.Title,
 			CityCode = p.CityCode,

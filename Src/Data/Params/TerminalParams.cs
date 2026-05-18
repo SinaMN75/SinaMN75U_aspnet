@@ -13,6 +13,7 @@ public class TerminalCreateParams : BaseCreateParams<TagTerminal> {
 }
 
 public class TerminalAssignParams : BaseParams {
+	public string? Title { get; set; }
 	public string Serial { get; set; } = null!;
 	public string? SimCardSerial { get; set; }
 	public Guid? MerchantId { get; set; }

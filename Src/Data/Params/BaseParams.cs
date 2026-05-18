@@ -46,8 +46,8 @@ public class BaseUpdateParams<T> : BaseParams {
 	public string? Detail1 { get; set; }
 	public string? Detail2 { get; set; }
 
-	public IEnumerable<T>? AddTags { get; set; }
-	public IEnumerable<T>? RemoveTags { get; set; }
+	public ICollection<T>? AddTags { get; set; }
+	public ICollection<T>? RemoveTags { get; set; }
 	public ICollection<T>? Tags { get; set; }
 }
 

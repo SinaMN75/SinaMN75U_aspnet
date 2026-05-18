@@ -236,7 +236,7 @@ public enum TagTxnErrorCodes {
 
 public enum TagVas {
 	Water = 101,
-	ChargeToup = 201,
+	ChargeTopup = 201,
 	ChargePin = 202,
 	InternetPackage = 203
 }
