@@ -37,9 +37,16 @@ public sealed class UserEntity : BaseEntity<TagUser, UserJson> {
 	public string? Bio { get; set; }
 
 	public DateTime? Birthdate { get; set; }
-
-	[Required]
-	public UserExtraEntity Extra { get; set; } = null!;
+	
+	public byte[]? NationalCardFront { get; set; }
+	public byte[]? NationalCardBack { get; set; }
+	public byte[]? BirthCertificateFirst { get; set; }
+	public byte[]? BirthCertificateSecond { get; set; }
+	public byte[]? BirthCertificateThird { get; set; }
+	public byte[]? BirthCertificateForth { get; set; }
+	public byte[]? BirthCertificateFifth { get; set; }
+	public byte[]? VisualAuthentication { get; set; }
+	public byte[]? ESignature { get; set; }
 
 	public ICollection<CategoryEntity> Categories { get; set; } = [];
 
@@ -85,17 +92,4 @@ public sealed class UserJson : BaseJsonData {
 	public string? FatherName { get; set; }
 	public decimal? Weight { get; set; }
 	public decimal? Height { get; set; }
-}
-
-[Table("UserExtras")]
-public sealed class UserExtraEntity : BaseEntity<TagUserExtra, BaseJsonData> {
-	public byte[]? NationalCardFront { get; set; }
-	public byte[]? NationalCardBack { get; set; }
-	public byte[]? BirthCertificateFirst { get; set; }
-	public byte[]? BirthCertificateSecond { get; set; }
-	public byte[]? BirthCertificateThird { get; set; }
-	public byte[]? BirthCertificateForth { get; set; }
-	public byte[]? BirthCertificateFifth { get; set; }
-	public byte[]? VisualAuthentication { get; set; }
-	public byte[]? ESignature { get; set; }
 }

@@ -16,6 +16,15 @@ public sealed class UserCreateParams : BaseCreateParams<TagUser> {
 	public string? Bio { get; set; }
 	public string? FatherName { get; set; }
 	public string? FcmToken { get; set; }
+	public string? NationalCardFront { get; set; }
+	public string? NationalCardBack { get; set; }
+	public string? BirthCertificateFirst { get; set; }
+	public string? BirthCertificateSecond { get; set; }
+	public string? BirthCertificateThird { get; set; }
+	public string? BirthCertificateForth { get; set; }
+	public string? BirthCertificateFifth { get; set; }
+	public string? VisualAuthentication { get; set; }
+	public string? ESignature { get; set; }
 	public decimal? Weight { get; set; }
 	public decimal? Height { get; set; }
 	public DateTime? Birthdate { get; set; }
@@ -35,6 +44,15 @@ public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {
 	public string? FcmToken { get; set; }
 	public string? FatherName { get; set; }
 	public string? NationalCode { get; set; }
+	public string? NationalCardFront { get; set; }
+	public string? NationalCardBack { get; set; }
+	public string? BirthCertificateFirst { get; set; }
+	public string? BirthCertificateSecond { get; set; }
+	public string? BirthCertificateThird { get; set; }
+	public string? BirthCertificateForth { get; set; }
+	public string? BirthCertificateFifth { get; set; }
+	public string? VisualAuthentication { get; set; }
+	public string? ESignature { get; set; }
 	public decimal? Weight { get; set; }
 	public decimal? Height { get; set; }
 	public DateTime? Birthdate { get; set; }
@@ -63,16 +81,4 @@ public sealed class UserReadParams : BaseReadParams<TagUser> {
 public sealed class UserBulkCreateParams : BaseParams {
 	[UValidationRequired("UsersRequired"), UValidationMinCollectionLength(1, "AtLeastOneUserRequired")]
 	public List<UserCreateParams> Users { get; set; } = null!;
-}
-
-public sealed class UserExtraUpdateParams : BaseUpdateParams<TagUserExtra> {
-	public string? NationalCardFront { get; set; }
-	public string? NationalCardBack { get; set; }
-	public string? BirthCertificateFirst { get; set; }
-	public string? BirthCertificateSecond { get; set; }
-	public string? BirthCertificateThird { get; set; }
-	public string? BirthCertificateForth { get; set; }
-	public string? BirthCertificateFifth { get; set; }
-	public string? VisualAuthentication { get; set; }
-	public string? ESignature { get; set; }
 }

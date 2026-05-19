@@ -80,7 +80,15 @@ public sealed class UserSelectorArgs {
 	public MerchantSelectorArgs? Merchant { get; set; }
 	public BankAccountSelectorArgs? BankAccount { get; set; }
 	public SimCardSelectorArgs? SimCard { get; set; }
-	public bool Extra { get; set; }
+	public bool NationalCardFront { get; set; }
+	public bool NationalCardBack { get; set; }
+	public bool BirthCertificateFirst { get; set; }
+	public bool BirthCertificateSecond { get; set; }
+	public bool BirthCertificateThird { get; set; }
+	public bool BirthCertificateForth { get; set; }
+	public bool BirthCertificateFifth { get; set; }
+	public bool VisualAuthentication { get; set; }
+	public bool ESignature { get; set; }
 }
 
 public sealed class ProductSelectorArgs {
@@ -317,6 +325,15 @@ public static class Projections {
 		Birthdate = x.Birthdate,
 		NationalCode = x.NationalCode,
 		CreatedAt = x.CreatedAt,
+		NationalCardFront = args.NationalCardFront ? x.NationalCardFront.ToBase64() : null,
+		NationalCardBack = args.NationalCardFront ? x.NationalCardBack.ToBase64() : null,
+		BirthCertificateFirst = args.NationalCardFront ? x.BirthCertificateFirst.ToBase64() : null,
+		BirthCertificateSecond = args.NationalCardFront ? x.BirthCertificateSecond.ToBase64() : null,
+		BirthCertificateThird = args.NationalCardFront ? x.BirthCertificateThird.ToBase64() : null,
+		BirthCertificateForth = args.NationalCardFront ? x.BirthCertificateForth.ToBase64() : null,
+		BirthCertificateFifth = args.NationalCardFront ? x.BirthCertificateFifth.ToBase64() : null,
+		VisualAuthentication = args.NationalCardFront ? x.VisualAuthentication.ToBase64() : null,
+		ESignature = args.NationalCardFront ? x.ESignature.ToBase64() : null,
 		Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
 		Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 		Addresses = args.Address == null ? null : x.Addresses.AsQueryable().Select(AddressSelector(args.Address)).ToList(),
@@ -324,20 +341,7 @@ public static class Projections {
 		SimCards = args.SimCard == null ? null : x.SimCards.AsQueryable().Select(SimCardSelector(args.SimCard)).ToList(),
 		Merchants = args.Merchant == null ? null : x.Merchants.AsQueryable().Select(MerchantSelector(args.Merchant)).ToList(),
 		Txns = args.Txns == null ? null : x.Txns.AsQueryable().Select(TxnSelector(args.Txns)).ToList(),
-		Wallets = args.Wallet == null ? null : x.Wallets.AsQueryable().Select(WalletSelector(args.Wallet)).ToList(),
-		Extra = !args.Extra
-			? null
-			: new UserExtraResponse {
-				NationalCardFront = x.Extra.NationalCardFront.ToBase64(),
-				NationalCardBack = x.Extra.NationalCardBack.ToBase64(),
-				BirthCertificateFirst = x.Extra.BirthCertificateFirst.ToBase64(),
-				BirthCertificateSecond = x.Extra.BirthCertificateSecond.ToBase64(),
-				BirthCertificateThird = x.Extra.BirthCertificateThird.ToBase64(),
-				BirthCertificateForth = x.Extra.BirthCertificateForth.ToBase64(),
-				BirthCertificateFifth = x.Extra.BirthCertificateFifth.ToBase64(),
-				VisualAuthentication = x.Extra.VisualAuthentication.ToBase64(),
-				ESignature = x.Extra.ESignature.ToBase64()
-			}
+		Wallets = args.Wallet == null ? null : x.Wallets.AsQueryable().Select(WalletSelector(args.Wallet)).ToList()
 	};
 
 	public static Expression<Func<ParkingEntity, ParkingResponse>> ParkingSelector(ParkingSelectorArgs args) => x => new ParkingResponse {

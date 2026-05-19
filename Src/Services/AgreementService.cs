@@ -20,7 +20,7 @@ public class AgreementService(
 		} 
 		
 		TerminalEntity? terminal = await db.Set<TerminalEntity>().AsTracking()
-			.Include(x => x.Creator).ThenInclude(x => x.Extra)
+			.Include(x => x.Creator)
 			.Include(x => x.Creator).ThenInclude(x => x.Addresses)
 			.FirstOrDefaultAsync(x => x.Id == p.TerminalId, ct);
 		if (terminal == null) return new UResponse<AgreementResponse?>(null, Usc.NotFound, ls.Get("TerminalNotFound"));
@@ -42,7 +42,7 @@ public class AgreementService(
 				{ "fatherName", user.JsonData.FatherName ?? "" }
 			},
 			imagesBase64: new Dictionary<string, string> {
-				{ "customerSignature", user.Extra.ESignature!.ToBase64()! }
+				{ "customerSignature", user.ESignature!.ToBase64()! }
 			},
 			templatePath: Path.Combine(Directory.GetCurrentDirectory(), "Templates", "atmAgreement.docx")
 		);

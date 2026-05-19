@@ -13,7 +13,7 @@ public enum Usc {
 	PayloadTooLarge = 413,
 	MediaTypeNotSupported = 451,
 	SecurityError = 452,
-	
+
 	InternalServerError = 500,
 
 	ThirdPartyError = 600,
@@ -23,10 +23,8 @@ public enum Usc {
 	ExpiredToken = 604,
 	ShahkarException = 605,
 	ShahkarError = 606,
-	
+
 	BalanceIsLow = 701,
-	
-	
 }
 
 public enum TagSmsPanel {
@@ -45,6 +43,35 @@ public enum TagUser {
 	SystemUser = 204,
 	AwaitingVerification = 301,
 	Verified = 302,
+	NationalCardFrontVerified = 401,
+	NationalCardBackVerified = 402,
+	BirthCertificateFirstVerified = 403,
+	BirthCertificateSecondVerified = 404,
+	BirthCertificateThirdVerified = 405,
+	BirthCertificateForthVerified = 406,
+	BirthCertificateFifthVerified = 407,
+	VisualAuthenticationVerified = 408,
+	ESignatureVerified = 409,
+
+	NationalCardFrontAwaitingVerification = 501,
+	NationalCardBackAwaitingVerification = 502,
+	BirthCertificateFirstAwaitingVerification = 503,
+	BirthCertificateSecondAwaitingVerification = 504,
+	BirthCertificateThirdAwaitingVerification = 505,
+	BirthCertificateForthAwaitingVerification = 506,
+	BirthCertificateFifthAwaitingVerification = 507,
+	VisualAuthenticationAwaitingVerification = 508,
+	ESignatureAwaitingVerification = 509,
+	
+	NationalCardFrontRejected = 601,
+	NationalCardBackRejected = 602,
+	BirthCertificateFirstRejected = 603,
+	BirthCertificateSecondRejected = 604,
+	BirthCertificateThirdRejected = 605,
+	BirthCertificateForthRejected = 606,
+	BirthCertificateFifthRejected = 607,
+	VisualAuthenticationRejected = 608,
+	ESignatureRejected = 609,
 }
 
 public enum TagCategory {
@@ -172,10 +199,6 @@ public enum TagWalletTxn {
 	InternetSim = 303
 }
 
-public enum TagUserExtra {
-	Verified = 101
-}
-
 public enum TagTerminal {
 	Atm = 101,
 	WallCashless = 102,
@@ -247,7 +270,6 @@ public enum TagSimOperator {
 	Rigthel = 3,
 	Shatel = 5
 }
-
 
 public enum TagMerchant {
 	Normal = 101

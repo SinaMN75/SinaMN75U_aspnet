@@ -1,5 +1,3 @@
-using System.IO.Compression;
-
 namespace SinaMN75U.Services;
 
 public interface IUserService {
@@ -9,9 +7,6 @@ public interface IUserService {
 	public Task<UResponse<UserResponse?>> ReadById(IdParams<UserSelectorArgs> p, CancellationToken ct);
 	public Task<UResponse> Update(UserUpdateParams p, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
-	public Task<UResponse<UserExtraResponse?>> ReadExtraById(IdParams p, CancellationToken ct);
-	public Task<UResponse> UpdateExtra(UserExtraUpdateParams p, CancellationToken ct);
-	public Task<UResponse<UserExtraStatusResponse?>> ReadExtraStatusById(IdParams p, CancellationToken ct);
 	public Task<UResponse<string?>> DownloadUserData(IdParams p, CancellationToken ct);
 }
 
@@ -45,7 +40,15 @@ public class UserService(
 			LastName = p.LastName,
 			Bio = p.Bio,
 			Birthdate = p.Birthdate,
-			Extra = new UserExtraEntity { Id = userId, CreatorId = userId, CreatedAt = now, JsonData = new BaseJsonData(), Tags = [] },
+			NationalCardFront = p.NationalCardFront.FromBase64(),
+			NationalCardBack = p.NationalCardFront.FromBase64(),
+			BirthCertificateFirst = p.NationalCardFront.FromBase64(),
+			BirthCertificateSecond = p.NationalCardFront.FromBase64(),
+			BirthCertificateThird = p.NationalCardFront.FromBase64(),
+			BirthCertificateForth = p.NationalCardFront.FromBase64(),
+			BirthCertificateFifth = p.NationalCardFront.FromBase64(),
+			ESignature = p.NationalCardFront.FromBase64(),
+			VisualAuthentication = p.NationalCardFront.FromBase64(),
 			Wallets = [new WalletEntity { Id = userId, CreatorId = userId, CreatedAt = now, JsonData = new BaseJsonData(), Tags = [TagWallet.Primary], Balance = 0 }]
 		};
 
@@ -95,7 +98,6 @@ public class UserService(
 				Tags = userParam.Tags,
 				CreatedAt = DateTime.UtcNow,
 				Categories = categories.Where(c => userParam.Categories?.Contains(c.Id) ?? false).ToList(),
-				Extra = new UserExtraEntity { Id = userId, CreatorId = userId, CreatedAt = now, JsonData = new BaseJsonData(), Tags = [] },
 				Wallets = [new WalletEntity { Id = userId, CreatorId = userId, CreatedAt = now, JsonData = new BaseJsonData(), Tags = [TagWallet.Primary], Balance = 0 }]
 			};
 		}));
@@ -158,6 +160,15 @@ public class UserService(
 		if (p.FatherName.IsNotNullOrEmpty()) e.JsonData.FatherName = p.FatherName;
 		if (p.Weight.IsNotNullOrZero()) e.JsonData.Weight = p.Weight;
 		if (p.Height.IsNotNullOrZero()) e.JsonData.Height = p.Height;
+		if (p.NationalCardFront.IsNotNullOrEmpty()) e.NationalCardFront = p.NationalCardFront.FromBase64();
+		if (p.NationalCardBack.IsNotNullOrEmpty()) e.NationalCardBack = p.NationalCardBack.FromBase64();
+		if (p.BirthCertificateFirst.IsNotNullOrEmpty()) e.BirthCertificateFirst = p.BirthCertificateFirst.FromBase64();
+		if (p.BirthCertificateSecond.IsNotNullOrEmpty()) e.BirthCertificateSecond = p.BirthCertificateSecond.FromBase64();
+		if (p.BirthCertificateThird.IsNotNullOrEmpty()) e.BirthCertificateThird = p.BirthCertificateThird.FromBase64();
+		if (p.BirthCertificateForth.IsNotNullOrEmpty()) e.BirthCertificateForth = p.BirthCertificateForth.FromBase64();
+		if (p.BirthCertificateFifth.IsNotNullOrEmpty()) e.BirthCertificateFifth = p.BirthCertificateFifth.FromBase64();
+		if (p.VisualAuthentication.IsNotNullOrEmpty()) e.VisualAuthentication = p.VisualAuthentication.FromBase64();
+		if (p.ESignature.IsNotNullOrEmpty()) e.ESignature = p.ESignature.FromBase64();
 
 		if (p.Categories.IsNotNullOrEmpty()) {
 			List<CategoryEntity> list = await db.Set<CategoryEntity>().AsTracking().Where(x => p.Categories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct);
@@ -184,80 +195,13 @@ public class UserService(
 		return new UResponse();
 	}
 
-	public async Task<UResponse<UserExtraResponse?>> ReadExtraById(IdParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<UserExtraResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-
-		UserExtraEntity? e = await db.Set<UserExtraEntity>().FirstOrDefaultAsync(x => x.CreatorId == p.Id, ct);
-		if (e == null) return new UResponse<UserExtraResponse?>(null, Usc.NotFound);
-
-		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse<UserExtraResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
-
-		return new UResponse<UserExtraResponse?>(new UserExtraResponse {
-			NationalCardFront = e.NationalCardFront.ToBase64(),
-			NationalCardBack = e.NationalCardBack.ToBase64(),
-			BirthCertificateFirst = e.BirthCertificateFirst.ToBase64(),
-			BirthCertificateSecond = e.BirthCertificateSecond.ToBase64(),
-			BirthCertificateThird = e.BirthCertificateThird.ToBase64(),
-			BirthCertificateForth = e.BirthCertificateForth.ToBase64(),
-			BirthCertificateFifth = e.BirthCertificateFifth.ToBase64(),
-			VisualAuthentication = e.VisualAuthentication.ToBase64(),
-			ESignature = e.ESignature.ToBase64()
-		});
-	}
-
-	public async Task<UResponse> UpdateExtra(UserExtraUpdateParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-
-		UserExtraEntity? e = await db.Set<UserExtraEntity>().FirstOrDefaultAsync(x => x.CreatorId == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound);
-
-		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
-
-		if (p.NationalCardFront.IsNotNullOrEmpty()) e.NationalCardFront = p.NationalCardFront.FromBase64();
-		if (p.NationalCardBack.IsNotNullOrEmpty()) e.NationalCardBack = p.NationalCardBack.FromBase64();
-		if (p.BirthCertificateFirst.IsNotNullOrEmpty()) e.BirthCertificateFirst = p.BirthCertificateFirst.FromBase64();
-		if (p.BirthCertificateSecond.IsNotNullOrEmpty()) e.BirthCertificateSecond = p.BirthCertificateSecond.FromBase64();
-		if (p.BirthCertificateThird.IsNotNullOrEmpty()) e.BirthCertificateThird = p.BirthCertificateThird.FromBase64();
-		if (p.BirthCertificateForth.IsNotNullOrEmpty()) e.BirthCertificateForth = p.BirthCertificateForth.FromBase64();
-		if (p.BirthCertificateFifth.IsNotNullOrEmpty()) e.BirthCertificateFifth = p.BirthCertificateFifth.FromBase64();
-		if (p.VisualAuthentication.IsNotNullOrEmpty()) e.VisualAuthentication = p.VisualAuthentication.FromBase64();
-		if (p.ESignature.IsNotNullOrEmpty()) e.ESignature = p.ESignature.FromBase64();
-
-		db.Set<UserExtraEntity>().Update(e);
-		await db.SaveChangesAsync(ct);
-		return new UResponse();
-	}
-
-	public async Task<UResponse<UserExtraStatusResponse?>> ReadExtraStatusById(IdParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<UserExtraStatusResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-
-		UserExtraEntity? e = await db.Set<UserExtraEntity>().FirstOrDefaultAsync(x => x.CreatorId == p.Id, ct);
-		if (e == null) return new UResponse<UserExtraStatusResponse?>(null, Usc.NotFound);
-
-		return new UResponse<UserExtraStatusResponse?>(new UserExtraStatusResponse {
-				NationalCardFront = e.NationalCardFront != null,
-				NationalCardBack = e.NationalCardBack != null,
-				BirthCertificateFirst = e.BirthCertificateFirst != null,
-				BirthCertificateSecond = e.BirthCertificateSecond != null,
-				BirthCertificateThird = e.BirthCertificateThird != null,
-				BirthCertificateForth = e.BirthCertificateForth != null,
-				BirthCertificateFifth = e.BirthCertificateFifth != null,
-				VisualAuthentication = e.VisualAuthentication != null,
-				ESignature = e.ESignature != null
-			}
-		);
-	}
-
 	public async Task<UResponse<string?>> DownloadUserData(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<string?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		if (!userData.IsAdmin) return new UResponse<string?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
-		UserEntity? e = await db.Set<UserEntity>().Include(x => x.Extra).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		UserEntity? e = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse<string?>(null, Usc.NotFound);
 
 		string firstName = e.FirstName ?? "---";
@@ -269,12 +213,12 @@ public class UserService(
 		string birthdate = (e.Birthdate ?? DateTime.UtcNow).ToPersianString();
 		string fatherName = e.JsonData.FatherName ?? "---";
 
-		string nationalCardFront = e.Extra.NationalCardFront.ToBase64() ?? "";
-		string nationalCardBack = e.Extra.NationalCardBack.ToBase64() ?? "";
-		string birthCertificateFirst = e.Extra.BirthCertificateFirst.ToBase64() ?? "";
-		string visualAuthentication = e.Extra.VisualAuthentication.ToBase64() ?? "";
-		string eSignature = e.Extra.ESignature.ToBase64() ?? "";
-		
+		string nationalCardFront = e.NationalCardFront.ToBase64() ?? "";
+		string nationalCardBack = e.NationalCardBack.ToBase64() ?? "";
+		string birthCertificateFirst = e.BirthCertificateFirst.ToBase64() ?? "";
+		string visualAuthentication = e.VisualAuthentication.ToBase64() ?? "";
+		string eSignature = e.ESignature.ToBase64() ?? "";
+
 		StringBuilder data = new();
 		data.AppendLine($"First Name: {firstName}");
 		data.AppendLine($"Last Name: {lastName}");

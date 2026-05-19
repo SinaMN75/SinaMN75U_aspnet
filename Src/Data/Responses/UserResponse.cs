@@ -10,8 +10,16 @@ public sealed class UserResponse : BaseResponse<TagUser, UserJson> {
 	public string? Bio { get; set; }
 	public string? NationalCode { get; set; }
 	public DateTime? Birthdate { get; set; }
+	public string? NationalCardFront { get; set; }
+	public string? NationalCardBack { get; set; }
+	public string? BirthCertificateFirst { get; set; }
+	public string? BirthCertificateSecond { get; set; }
+	public string? BirthCertificateThird { get; set; }
+	public string? BirthCertificateForth { get; set; }
+	public string? BirthCertificateFifth { get; set; }
+	public string? VisualAuthentication { get; set; }
+	public string? ESignature { get; set; }
 	
-	public UserExtraResponse? Extra { get; set; }
 	public ICollection<CategoryResponse>? Categories { get; set; }
 	public ICollection<MediaResponse>? Media { get; set; }
 	public ICollection<TxnResponse>? Txns { get; set; }
@@ -27,30 +35,6 @@ public sealed class LoginResponse {
 	public required string RefreshToken { get; set; }
 	public required string Expires { get; set; }
 	public required UserResponse User { get; set; }
-}
-
-public sealed class UserExtraResponse {
-	public string? NationalCardFront { get; set; }
-	public string? NationalCardBack { get; set; }
-	public string? BirthCertificateFirst { get; set; }
-	public string? BirthCertificateSecond { get; set; }
-	public string? BirthCertificateThird { get; set; }
-	public string? BirthCertificateForth { get; set; }
-	public string? BirthCertificateFifth { get; set; }
-	public string? VisualAuthentication { get; set; }
-	public string? ESignature { get; set; }
-}
-
-public sealed class UserExtraStatusResponse {
-	public bool NationalCardFront { get; set; }
-	public bool NationalCardBack { get; set; }
-	public bool BirthCertificateFirst { get; set; }
-	public bool BirthCertificateSecond { get; set; }
-	public bool BirthCertificateThird { get; set; }
-	public bool BirthCertificateForth { get; set; }
-	public bool BirthCertificateFifth { get; set; }
-	public bool VisualAuthentication { get; set; }
-	public bool ESignature { get; set; }
 }
 
 public sealed class UserDataDownloadResponse {
