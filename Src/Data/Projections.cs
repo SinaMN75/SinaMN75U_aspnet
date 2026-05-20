@@ -41,6 +41,7 @@ public sealed class SimCardSelectorArgs {
 
 public sealed class TerminalSelectorArgs {
 	public UserSelectorArgs? Creator { get; set; }
+	public bool Agreement { get; set; }
 }
 
 public sealed class MerchantSelectorArgs {
@@ -112,10 +113,6 @@ public sealed class CommentSelectorArgs {
 
 public sealed class TxnSelectorArgs {
 	public UserSelectorArgs? User { get; set; }
-}
-
-public sealed class AgreementSelectorArgs {
-	public TerminalSelectorArgs? Terminal { get; set; }
 }
 
 public static class Projections {
@@ -195,7 +192,7 @@ public static class Projections {
 		Tags = x.Tags,
 		JsonData = x.JsonData,
 		CreatorId = x.CreatorId,
-		UserId = x.Userd,
+		UserId = x.UserId,
 		ZipCode = x.ZipCode,
 		Creator = args.Creator == null
 			? null
@@ -573,51 +570,7 @@ public static class Projections {
 				Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
 			}
 	};
-
-	public static Expression<Func<AgreementEntity, AgreementResponse>> VehicleSelector(AgreementSelectorArgs args) => x => new AgreementResponse {
-		Id = x.Id,
-		CreatedAt = x.CreatedAt,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		TerminalId = x.TerminalId,
-		Agreement = x.Agreement,
-		Terminal = args.Terminal == null
-			? null
-			: new TerminalResponse {
-				Id = x.Terminal.Id,
-				CreatedAt = x.Terminal.CreatedAt,
-				JsonData = x.Terminal.JsonData,
-				Tags = x.Terminal.Tags,
-				Serial = x.Terminal.Serial,
-				SimCardNumber = x.Terminal.SimCardNumber,
-				SimCardSerial = x.Terminal.SimCardSerial,
-				Imei = x.Terminal.Imei,
-				CreatorId = x.Terminal.CreatorId,
-				MerchantId = x.Terminal.MerchantId,
-				Creator = args.Terminal.Creator == null
-					? null
-					: new UserResponse {
-						Id = x.Terminal.Creator.Id,
-						JsonData = x.Terminal.Creator.JsonData,
-						Tags = x.Terminal.Creator.Tags,
-						UserName = x.Terminal.Creator.UserName,
-						PhoneNumber = x.Terminal.Creator.PhoneNumber,
-						Email = x.Terminal.Creator.Email,
-						FirstName = x.Terminal.Creator.FirstName,
-						LastName = x.Terminal.Creator.LastName,
-						NationalCode = x.Terminal.Creator.NationalCode,
-						Media = args.Terminal.Creator.Media == null ? null : x.Terminal.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
-						Categories = args.Terminal.Creator.Category == null ? null : x.Terminal.Creator.Categories.AsQueryable().Select(CategorySelector(args.Terminal.Creator.Category)).ToList(),
-						Addresses = args.Terminal.Creator.Address == null ? null : x.Terminal.Creator.Addresses.AsQueryable().Select(AddressSelector(args.Terminal.Creator.Address)).ToList(),
-						BankAccounts = args.Terminal.Creator.BankAccount == null ? null : x.Terminal.Creator.BankAccounts.AsQueryable().Select(BankAccountSelector(args.Terminal.Creator.BankAccount)).ToList(),
-						Merchants = args.Terminal.Creator.Merchant == null ? null : x.Terminal.Creator.Merchants.AsQueryable().Select(MerchantSelector(args.Terminal.Creator.Merchant)).ToList(),
-						Txns = args.Terminal.Creator.Txns == null ? null : x.Terminal.Creator.Txns.AsQueryable().Select(TxnSelector(args.Terminal.Creator.Txns)).ToList(),
-						SimCards = args.Terminal.Creator.SimCard == null ? null : x.Terminal.Creator.SimCards.AsQueryable().Select(SimCardSelector(args.Terminal.Creator.SimCard)).ToList(),
-						Wallets = args.Terminal.Creator.Wallet == null ? null : x.Terminal.Creator.Wallets.AsQueryable().Select(WalletSelector(args.Terminal.Creator.Wallet)).ToList()
-					}
-			}
-	};
-
+	
 	public static Expression<Func<ProductEntity, ProductResponse>> ProductSelector(ProductSelectorArgs args) {
 		Expression<Func<ProductEntity, ProductResponse>>? childSelector = null;
 		if (args is { Children: not null, ChildrenDebt: > 0 and < 10 })

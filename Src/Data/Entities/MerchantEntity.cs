@@ -36,7 +36,6 @@ public sealed class MerchantEntity : BaseEntity<TagMerchant, MerchantJson> {
 	public UserEntity User { get; set; } = null!;
 
 	public ICollection<TerminalEntity> Terminals { get; set; } = [];
-	public ICollection<AgreementEntity> Agreements { get; set; } = [];
 }
 
 public sealed class MerchantJson : BaseJsonData {

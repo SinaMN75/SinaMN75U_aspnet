@@ -6,6 +6,7 @@ public class TerminalResponse : BaseResponse<TagTerminal, BaseJsonData> {
 	public string? SimCardSerial { get; set; }
 	public string? Imei { get; set; }
 	public string? TerminalId { get; set; }
+	public string? Agreement { get; set; }
 
 	public Guid? MerchantId { get; set; }
 	public MerchantResponse? Merchant { get; set; }

@@ -3,6 +3,7 @@
 public interface ITerminalService {
 	Task<UResponse<Guid?>> Create(TerminalCreateParams p, CancellationToken ct);
 	Task<UResponse> Assign(TerminalAssignParams p, CancellationToken ct);
+	Task<UResponse> Bind(TerminalBindParams p, CancellationToken ct);
 	Task<UResponse> BulkCreate(TerminalBulkCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<TerminalResponse>?>> Read(TerminalReadParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
@@ -44,17 +45,37 @@ public class TerminalService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		TerminalEntity? e = await db.Set<TerminalEntity>().FirstOrDefaultAsync(x => x.Serial == p.Serial && x.SimCardSerial == p.SimCardSerial, ct);
+		TerminalEntity? terminal = await db.Set<TerminalEntity>().FirstOrDefaultAsync(x => x.Serial == p.Serial && x.SimCardSerial == p.SimCardSerial, ct);
+		if (terminal == null) return new UResponse(Usc.NotFound, ls.Get("TerminalNotFoundCheckDetails"));
+		MerchantResponse? merchant = await db.Set<MerchantEntity>()
+			.Select(Projections.MerchantSelector(new MerchantSelectorArgs {User = new UserSelectorArgs {ESignature = true}}))
+			.FirstOrDefaultAsync(x => x.Id == p.MerchantId, ct);
+		if (merchant == null) return new UResponse(Usc.NotFound, ls.Get("MerchantNotFound"));
+
+		terminal.JsonData.Detail1 = p.Title ?? "";
+		terminal.MerchantId = p.MerchantId;
+
+		db.Set<TerminalEntity>().Update(terminal);
+		await db.SaveChangesAsync(ct);
+
+		return new UResponse();
+	}
+
+	public async Task<UResponse> Bind(TerminalBindParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		TerminalEntity? e = await db.Set<TerminalEntity>().AsTracking().Include(x => x.Merchant).FirstOrDefaultAsync(x => x.Id == p.TerminalId, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("TerminalNotFoundCheckDetails"));
 
 		HttpResponseMessage? response = await http.Post(
 			"https://oa.avreenco.com:8080/api/mms/ing/v2/defineAndBindTerminal",
 			new {
 				definitionTemplate = 0,
-				merchantId = p.MerchantId,
+				merchantId = e.Merchant!.MerchantId,
 				project = "AvaPlus",
-				terminalSerial = p.Serial,
-				terminalSerial2 = p.SimCardSerial
+				terminalSerial = e.Serial,
+				terminalSerial2 = e.SimCardSerial
 			}
 		);
 
@@ -62,10 +83,8 @@ public class TerminalService(
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
 
-		e.JsonData.Detail1 = p.Title ?? "";
 		e.TerminalId = data.GetStringOrNull("terminalId");
 		e.InsId = data.GetStringOrNull("insId");
-		e.MerchantId = p.MerchantId;
 
 		db.Set<TerminalEntity>().Update(e);
 		await db.SaveChangesAsync(ct);

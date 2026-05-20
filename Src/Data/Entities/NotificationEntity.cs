@@ -4,6 +4,6 @@ namespace SinaMN75U.Data.Entities;
 public sealed class NotificationEntity : BaseEntity<TagNotification, BaseJsonData> {
 	public string? ZipCode { get; set; }
 	
-	public required Guid Userd { get; set; }
+	public required Guid UserId { get; set; }
 	public UserEntity User { get; set; } = null!;
 }

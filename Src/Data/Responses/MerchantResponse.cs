@@ -16,5 +16,4 @@ public class MerchantResponse : BaseResponse<TagMerchant, MerchantJson> {
 	public UserResponse? User { get; set; }
 	
 	public ICollection<TerminalResponse>? Terminals { get; set; }
-	public ICollection<AgreementResponse>? Agreements { get; set; }
 }

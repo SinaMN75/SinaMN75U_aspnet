@@ -9,6 +9,7 @@ public class TerminalCreateParams : BaseCreateParams<TagTerminal> {
 	public string? Imei { get; set; }
 	public string? TerminalId { get; set; }
 	public string? InsId { get; set; }
+	public string? Agreement { get; set; }
 	public Guid? MerchantId { get; set; }
 }
 
@@ -17,6 +18,11 @@ public class TerminalAssignParams : BaseParams {
 	public string Serial { get; set; } = null!;
 	public string? SimCardSerial { get; set; }
 	public Guid? MerchantId { get; set; }
+}
+
+public class TerminalBindParams : BaseParams {
+	public Guid TerminalId { get; set; }
+	public Guid MerchantId { get; set; }
 }
 
 public class TerminalBulkCreateParams : BaseParams {

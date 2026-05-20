@@ -22,7 +22,7 @@ public class NotificationService(
 			JsonData = new BaseJsonData { Detail1 = p.Detail1, Detail2 = p.Detail2 },
 			Tags = p.Tags,
 			CreatorId = p.CreatorId ?? userData.Id,
-			Userd = p.UserId
+			UserId = p.UserId
 		};
 
 		await db.AddAsync(e, ct);
@@ -33,7 +33,7 @@ public class NotificationService(
 	public async Task<UResponse<IEnumerable<NotificationResponse>?>> Read(NotificationReadParams p, CancellationToken ct) {
 		IQueryable<NotificationEntity> q = db.Set<NotificationEntity>().ApplyReadParams<NotificationEntity, TagNotification, BaseJsonData>(p);
 		
-		if (p.UserId.IsNotNull()) q = q.Where(x => x.Userd == p.UserId);
+		if (p.UserId.IsNotNull()) q = q.Where(x => x.UserId == p.UserId);
 		
 		IQueryable<NotificationResponse> projected = q.Select(Projections.NotificationSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
