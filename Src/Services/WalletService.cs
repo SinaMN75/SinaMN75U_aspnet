@@ -119,7 +119,7 @@ public class WalletService(
 		WalletEntity? receiverWallet = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == p.ReceiverId, ct);
 		if (senderWallet == null) return new UResponse<WalletTxnResponse?>(null, Usc.NotFound, ls.Get("SenderWalletNotFound"));
 		if (receiverWallet == null) return new UResponse<WalletTxnResponse?>(null, Usc.NotFound, ls.Get("ReceiverWalletNotFound"));
-		if (senderWallet.Balance < p.Amount) return new UResponse<WalletTxnResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+		if (!senderWallet.JsonData.AllowMinusBalance && senderWallet.Balance < p.Amount) return new UResponse<WalletTxnResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
 		decimal senderBalance = senderWallet.Balance - p.Amount;
 		decimal receiverBalance = receiverWallet.Balance + p.Amount;

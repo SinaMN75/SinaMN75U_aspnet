@@ -1,8 +1,12 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Wallets")]
-public sealed class WalletEntity : BaseEntity<TagWallet, BaseJson> {
+public sealed class WalletEntity : BaseEntity<TagWallet, WalletJson> {
 	public required decimal Balance { get; set; }
+}
+
+public sealed class WalletJson : BaseJson {
+	public bool AllowMinusBalance { get; set; } = false;
 }
 
 public sealed class WalletTxnEntity : BaseEntity<TagWalletTxn, BaseJson> {

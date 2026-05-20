@@ -7,13 +7,13 @@ namespace SinaMN75U.Data.Entities;
 [Index(nameof(NationalCode), Name = "IX_Users_NationalCode", IsUnique = true)]
 public sealed class UserEntity : BaseEntity<TagUser, UserJson> {
 	[Required, MaxLength(100)]
-	public string UserName { get; set; } = null!;
+	public required string UserName { get; set; }
+	
+	[Required, MaxLength(200)]
+	public required string Password { get; set; }
 
 	[Required, MaxLength(200)]
-	public string Password { get; set; } = null!;
-
-	[Required, MaxLength(200)]
-	public string RefreshToken { get; set; } = null!;
+	public required string RefreshToken { get; set; }
 
 	[MaxLength(15)]
 	public string? PhoneNumber { get; set; }

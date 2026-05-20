@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class UserCreateParams : BaseCreateParams<TagUser> {
-	[UValidationRequired("UserNameRequired"), UValidationStringLength(2, 100, "UserNameMinLenght")]
+	[UValidationRequired("UserNameRequired"), UValidationStringLength(2, 100, "UserNameMinLength")]
 	public string UserName { get; set; } = null!;
 
 	[UValidationRequired("PasswordRequired"), UValidationStringLength(4, 100, "PasswordMinLength")]

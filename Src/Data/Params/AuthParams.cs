@@ -19,7 +19,7 @@ public sealed class LoginParams : BaseParams {
 }
 
 public sealed class RegisterParams : BaseParams {
-	[UValidationRequired("UserNameRequired"), UValidationStringLength(2, 100, "UserNameMinLenght")]
+	[UValidationRequired("UserNameRequired"), UValidationStringLength(2, 100, "UserNameMinLength")]
 	public string UserName { get; set; } = null!;
 
 	[UValidationRequired("PasswordRequired"), UValidationStringLength(4, 100, "PasswordMinLength")]

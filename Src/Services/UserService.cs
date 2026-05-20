@@ -49,7 +49,7 @@ public class UserService(
 			BirthCertificateFifth = p.NationalCardFront.FromBase64(),
 			ESignature = p.NationalCardFront.FromBase64(),
 			VisualAuthentication = p.NationalCardFront.FromBase64(),
-			Wallets = [new WalletEntity { Id = userId, CreatorId = userId, CreatedAt = now, JsonData = new BaseJson(), Tags = [TagWallet.Primary], Balance = 0 }]
+			Wallets = [new WalletEntity { Id = userId, CreatorId = userId, CreatedAt = now, JsonData = new WalletJson(), Tags = [TagWallet.Primary], Balance = 0 }]
 		};
 
 		if (p.Categories.IsNotNullOrEmpty()) {
@@ -98,7 +98,7 @@ public class UserService(
 				Tags = userParam.Tags,
 				CreatedAt = DateTime.UtcNow,
 				Categories = categories.Where(c => userParam.Categories?.Contains(c.Id) ?? false).ToList(),
-				Wallets = [new WalletEntity { Id = userId, CreatorId = userId, CreatedAt = now, JsonData = new BaseJson(), Tags = [TagWallet.Primary], Balance = 0 }]
+				Wallets = [new WalletEntity { Id = userId, CreatorId = userId, CreatedAt = now, JsonData = new WalletJson(), Tags = [TagWallet.Primary], Balance = 0 }]
 			};
 		}));
 
