@@ -25,7 +25,7 @@ public class TerminalService(
 			Id = p.Id ?? Guid.CreateVersion7(),
 			Serial = p.Serial,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJsonData(),
+			JsonData = new BaseJson(),
 			Tags = p.Tags,
 			CreatorId = p.CreatorId ?? userData.Id,
 			SimCardNumber = p.SimCardNumber,
@@ -102,7 +102,7 @@ public class TerminalService(
 			Serial = x.Serial,
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJsonData(),
+			JsonData = new BaseJson(),
 			Tags = x.Tags,
 			CreatorId = userData.Id
 		}));
@@ -114,7 +114,7 @@ public class TerminalService(
 	}
 
 	public async Task<UResponse<IEnumerable<TerminalResponse>?>> Read(TerminalReadParams p, CancellationToken ct) {
-		IQueryable<TerminalEntity> q = db.Set<TerminalEntity>().ApplyReadParams<TerminalEntity, TagTerminal, BaseJsonData>(p);
+		IQueryable<TerminalEntity> q = db.Set<TerminalEntity>().ApplyReadParams<TerminalEntity, TagTerminal, BaseJson>(p);
 
 		if (p.Serial.IsNotNullOrEmpty()) q = q.Where(x => x.Serial == p.Serial);
 		if (p.TerminalId.IsNotNullOrEmpty()) q = q.Where(x => x.TerminalId == p.TerminalId);

@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Parking")]
-public sealed class ParkingEntity : BaseEntity<TagParking, BaseJsonData> {
+public sealed class ParkingEntity : BaseEntity<TagParking, BaseJson> {
 	[Required]
 	[MaxLength(100)]
 	public required string Title { get; set; }
@@ -11,19 +11,10 @@ public sealed class ParkingEntity : BaseEntity<TagParking, BaseJsonData> {
 	public decimal EntrancePrice { get; set; }
 	public decimal HourlyPrice { get; set; }
 	public decimal DailyPrice { get; set; }
-
-	public ParkingResponse MapToResponse() => new() {
-		Id = Id,
-		CreatedAt = CreatedAt,
-		JsonData = JsonData,
-		Tags = Tags,
-		Title = Title,
-		CreatorId = CreatorId
-	};
 }
 
 [Table("ParkingReport")]
-public sealed class ParkingReportEntity : BaseEntity<TagParkingReport, BaseJsonData> {
+public sealed class ParkingReportEntity : BaseEntity<TagParkingReport, BaseJson> {
 	public required DateTime StartDate { get; set; }
 	public DateTime? EndDate { get; set; }
 

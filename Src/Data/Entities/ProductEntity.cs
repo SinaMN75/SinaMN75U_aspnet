@@ -45,7 +45,7 @@ public sealed class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	public ICollection<FollowEntity> Followers { get; set; } = [];
 }
 
-public sealed class ProductJson : BaseJsonData {
+public sealed class ProductJson : BaseJson {
 	public string? ActionType { get; set; }
 	public string? ActionTitle { get; set; }
 	public string? ActionUri { get; set; }

@@ -21,6 +21,6 @@ public sealed class VasEntity : BaseEntity<TagVas, VasJson> {
 	public WalletTxnEntity? WalletTxn { get; set; }
 }
 
-public sealed class VasJson: BaseJsonData {
+public sealed class VasJson: BaseJson {
 	public string? ChargePin { get; set; }
 }

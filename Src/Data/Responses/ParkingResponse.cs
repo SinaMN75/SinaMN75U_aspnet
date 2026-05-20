@@ -1,10 +1,10 @@
 namespace SinaMN75U.Data.Responses;
 
-public sealed class ParkingResponse : BaseResponse<TagParking, BaseJsonData> {
+public sealed class ParkingResponse : BaseResponse<TagParking, BaseJson> {
 	public required string Title { get; set; }
 }
 
-public sealed class ParkingReportResponse : BaseResponse<TagParkingReport, BaseJsonData> {
+public sealed class ParkingReportResponse : BaseResponse<TagParkingReport, BaseJson> {
 	public required DateTime StartDate { get; set; }
 	public DateTime? EndDate { get; set; }
 	public decimal? Amount { get; set; }

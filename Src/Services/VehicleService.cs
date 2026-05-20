@@ -19,7 +19,7 @@ public class VehicleService(
 		VehicleEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJsonData { Detail1 = p.Detail1, Detail2 = p.Detail2 },
+			JsonData = new BaseJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
 			Tags = p.Tags,
 			LicencePlate = p.LicencePlate,
 			Brand = p.Brand,
@@ -34,7 +34,7 @@ public class VehicleService(
 	}
 
 	public async Task<UResponse<IEnumerable<VehicleResponse>?>> Read(VehicleReadParams p, CancellationToken ct) {
-		IQueryable<VehicleEntity> q = db.Set<VehicleEntity>().ApplyReadParams<VehicleEntity, TagVehicle, BaseJsonData>(p);
+		IQueryable<VehicleEntity> q = db.Set<VehicleEntity>().ApplyReadParams<VehicleEntity, TagVehicle, BaseJson>(p);
 		if (p.Brand.IsNotNullOrEmpty()) q = q.Where(x => x.Brand == p.Brand);
 		if (p.LicencePlate.IsNotNullOrEmpty()) q = q.Where(x => x.LicencePlate == p.LicencePlate);
 		if (p.Color.IsNotNullOrEmpty()) q = q.Where(x => x.Color == p.Color);
@@ -54,7 +54,7 @@ public class VehicleService(
 		if (p.Brand.IsNotNull()) e.Brand = p.Brand;
 		if (p.Color.IsNotNull()) e.Color = p.Color;
 		
-		db.Set<VehicleEntity>().Update(e.ApplyUpdateParam<VehicleEntity,TagVehicle, BaseJsonData>(p));
+		db.Set<VehicleEntity>().Update(e.ApplyUpdateParam<VehicleEntity,TagVehicle, BaseJson>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}

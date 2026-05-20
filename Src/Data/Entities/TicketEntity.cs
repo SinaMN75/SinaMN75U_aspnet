@@ -5,7 +5,7 @@ public sealed class TicketEntity : BaseEntity<TagTicket, TicketJson> {
 	public ICollection<MediaEntity> Media { get; set; } = [];
 }
 
-public sealed class TicketJson : BaseJsonData {
+public sealed class TicketJson : BaseJson {
 	public string? Title { get; set; }
 	public string? Description { get; set; }
 	public string? Instagram { get; set; }

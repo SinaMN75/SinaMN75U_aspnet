@@ -24,7 +24,7 @@ public sealed class CommentEntity : BaseEntity<TagComment, CommentJson> {
 	public ICollection<MediaEntity> Media { get; set; } = [];
 }
 
-public sealed class CommentJson : BaseJsonData {
+public sealed class CommentJson : BaseJson {
 	public ICollection<CommentReacts> Reacts { get; set; } = [];
 }
 

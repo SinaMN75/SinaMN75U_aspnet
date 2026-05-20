@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Follows")]
-public sealed class FollowEntity : BaseEntity<TagFollow, BaseJsonData> {
+public sealed class FollowEntity : BaseEntity<TagFollow, BaseJson> {
 	public Guid? UserId { get; set; }
 	public UserEntity? User { get; set; }
 

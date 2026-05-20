@@ -59,7 +59,7 @@ public class MediaService(
 			CommentId = p.CommentId,
 			ProductId = p.ProductId,
 			Tags = tags,
-			JsonData = new BaseJsonData {
+			JsonData = new BaseJson {
 				Detail1 = p.Title ?? "",
 				Detail2 = p.Description ?? ""
 			}
@@ -71,7 +71,7 @@ public class MediaService(
 	}
 
 	public async Task<UResponse<IEnumerable<MediaResponse>?>> Read(BaseReadParams<TagMedia> p, CancellationToken ct) {
-		IQueryable<MediaEntity> q = db.Set<MediaEntity>().ApplyReadParams<MediaEntity, TagMedia, BaseJsonData>(p);
+		IQueryable<MediaEntity> q = db.Set<MediaEntity>().ApplyReadParams<MediaEntity, TagMedia, BaseJson>(p);
 
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
 

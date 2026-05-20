@@ -19,7 +19,7 @@ public sealed class CategoryEntity : BaseEntity<TagCategory, CategoryJson> {
 	public ICollection<MediaEntity> Media { get; set; } = [];
 }
 
-public sealed class CategoryJson : BaseJsonData {
+public sealed class CategoryJson : BaseJson {
 	public string? Subtitle { get; set; }
 	public string? Link { get; set; }
 	public string? Location { get; set; }

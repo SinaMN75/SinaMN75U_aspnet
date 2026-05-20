@@ -38,7 +38,7 @@ public sealed class MerchantEntity : BaseEntity<TagMerchant, MerchantJson> {
 	public ICollection<TerminalEntity> Terminals { get; set; } = [];
 }
 
-public sealed class MerchantJson : BaseJsonData {
+public sealed class MerchantJson : BaseJson {
 	public string? BusinessTitle { get; set; } // عنوان کسب و کار
 	public string? Address { get; set; } // آدرس محل پذیرنده (آدرس فروشگاه، قرارگیری ترمینال)
 	public string? OwnerPhoneNumber { get; set; } // شماره موبایل مالک

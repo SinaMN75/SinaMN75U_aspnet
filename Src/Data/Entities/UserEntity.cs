@@ -87,7 +87,7 @@ public sealed class UserEntity : BaseEntity<TagUser, UserJson> {
 	};
 }
 
-public sealed class UserJson : BaseJsonData {
+public sealed class UserJson : BaseJson {
 	public string? FcmToken { get; set; }
 	public string? FatherName { get; set; }
 	public decimal? Weight { get; set; }

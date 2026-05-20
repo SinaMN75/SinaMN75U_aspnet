@@ -19,7 +19,7 @@ public class NotificationService(
 		NotificationEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJsonData { Detail1 = p.Detail1, Detail2 = p.Detail2 },
+			JsonData = new BaseJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
 			Tags = p.Tags,
 			CreatorId = p.CreatorId ?? userData.Id,
 			UserId = p.UserId
@@ -31,7 +31,7 @@ public class NotificationService(
 	}
 
 	public async Task<UResponse<IEnumerable<NotificationResponse>?>> Read(NotificationReadParams p, CancellationToken ct) {
-		IQueryable<NotificationEntity> q = db.Set<NotificationEntity>().ApplyReadParams<NotificationEntity, TagNotification, BaseJsonData>(p);
+		IQueryable<NotificationEntity> q = db.Set<NotificationEntity>().ApplyReadParams<NotificationEntity, TagNotification, BaseJson>(p);
 		
 		if (p.UserId.IsNotNull()) q = q.Where(x => x.UserId == p.UserId);
 		
@@ -46,7 +46,7 @@ public class NotificationService(
 		NotificationEntity? e = await db.Set<NotificationEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("NotificationNotFound"));
 
-		db.Update(e.ApplyUpdateParam<NotificationEntity,TagNotification, BaseJsonData>(p));
+		db.Update(e.ApplyUpdateParam<NotificationEntity,TagNotification, BaseJson>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}

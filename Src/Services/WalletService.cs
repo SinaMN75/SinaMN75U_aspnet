@@ -134,7 +134,7 @@ public class WalletService(
 			SenderId = senderId,
 			ReceiverId = p.ReceiverId,
 			Amount = p.Amount,
-			JsonData = new BaseJsonData { Detail1 = p.Detail1 ?? "" },
+			JsonData = new BaseJson { Detail1 = p.Detail1 ?? "" },
 			Tags = [TagWalletTxn.Transfer]
 		};
 		await db.Set<WalletTxnEntity>().AddAsync(e, ct);

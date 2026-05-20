@@ -7,7 +7,7 @@ namespace SinaMN75U.Data.Entities;
 [Index(nameof(CommentId), Name = "IX_Media_CommentId")]
 [Index(nameof(ProductId), Name = "IX_Media_ProductId")]
 [Index(nameof(TicketId), Name = "IX_Media_TicketId")]
-public sealed class MediaEntity : BaseEntity<TagMedia, BaseJsonData> {
+public sealed class MediaEntity : BaseEntity<TagMedia, BaseJson> {
 	[Required]
 	[MaxLength(200)]
 	public required string Path { get; set; }

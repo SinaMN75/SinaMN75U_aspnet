@@ -20,7 +20,7 @@ public class TxnService(
 			Id = Guid.CreateVersion7(),
 			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJsonData(),
+			JsonData = new BaseJson(),
 			Tags = p.Tags,
 			Amount = p.Amount,
 			TrackingNumber = p.TrackingNumber,
@@ -33,7 +33,7 @@ public class TxnService(
 	}
 
 	public async Task<UResponse<IEnumerable<TxnResponse>?>> Read(TxnReadParams p, CancellationToken ct) {
-		IQueryable<TxnEntity> q = db.Set<TxnEntity>().ApplyReadParams<TxnEntity, TagTxn, BaseJsonData>(p);
+		IQueryable<TxnEntity> q = db.Set<TxnEntity>().ApplyReadParams<TxnEntity, TagTxn, BaseJson>(p);
 		IQueryable<TxnResponse> projected = q.Select(Projections.TxnSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
@@ -44,7 +44,7 @@ public class TxnService(
 
 		TxnEntity e = (await db.Set<TxnEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
 
-		db.Set<TxnEntity>().Update(e.ApplyUpdateParam<TxnEntity,TagTxn, BaseJsonData>(p));
+		db.Set<TxnEntity>().Update(e.ApplyUpdateParam<TxnEntity,TagTxn, BaseJson>(p));
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();

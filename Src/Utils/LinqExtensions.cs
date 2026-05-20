@@ -25,7 +25,7 @@ public static class LinqExtensions {
 	public static IQueryable<TEntity> ApplyReadParams<TEntity, TTag, TJson>(this IQueryable<TEntity> q, BaseReadParams<TTag> p)
 		where TEntity : BaseEntity<TTag, TJson>
 		where TTag : Enum
-		where TJson : BaseJsonData {
+		where TJson : BaseJson {
 		if (p.Ids.Any()) q = q.Where(x => p.Ids.Contains(x.Id));
 		if (p.CreatorId != null) q = q.Where(x => x.CreatorId == p.CreatorId);
 		if (p.FromCreatedAt != null) q = q.Where(x => x.CreatedAt >= p.FromCreatedAt);
@@ -41,7 +41,7 @@ public static class LinqExtensions {
 	public static TEntity ApplyUpdateParam<TEntity, TTag, TJson>(this TEntity e, BaseUpdateParams<TTag> p)
 		where TEntity : BaseEntity<TTag, TJson>
 		where TTag : Enum
-		where TJson : BaseJsonData {
+		where TJson : BaseJson {
 		if (p.Tags.IsNotNullOrEmpty()) e.Tags = p.Tags;
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));

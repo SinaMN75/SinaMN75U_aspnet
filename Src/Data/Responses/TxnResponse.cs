@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Responses;
 
-public sealed class TxnResponse : BaseResponse<TagTxn, BaseJsonData> {
+public sealed class TxnResponse : BaseResponse<TagTxn, BaseJson> {
 	public decimal Amount { get; set; }
 	public string? TrackingNumber { get; set; }
 

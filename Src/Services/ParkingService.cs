@@ -24,7 +24,7 @@ public class ParkingService(
 		ParkingEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJsonData { Detail1 = p.Detail1, Detail2 = p.Detail2 },
+			JsonData = new BaseJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
 			Tags = p.Tags,
 			Title = p.Title,
 			CreatorId = p.CreatorId ?? userData.Id,
@@ -38,7 +38,7 @@ public class ParkingService(
 	}
 
 	public async Task<UResponse<IEnumerable<ParkingResponse>?>> ReadParking(ParkingReadParams p, CancellationToken ct) {
-		IQueryable<ParkingEntity> q = db.Set<ParkingEntity>().ApplyReadParams<ParkingEntity, TagParking, BaseJsonData>(p);
+		IQueryable<ParkingEntity> q = db.Set<ParkingEntity>().ApplyReadParams<ParkingEntity, TagParking, BaseJson>(p);
 		IQueryable<ParkingResponse> projected = q.Select(Projections.ParkingSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
@@ -56,9 +56,9 @@ public class ParkingService(
 		if (p.EntrancePrice.IsNotNull()) e.EntrancePrice = p.EntrancePrice.Value;
 		if (p.HourlyPrice.IsNotNull()) e.HourlyPrice = p.HourlyPrice.Value;
 		if (p.DailyPrice.IsNotNull()) e.DailyPrice = p.DailyPrice.Value;
-		db.Set<ParkingEntity>().Update(e.ApplyUpdateParam<ParkingEntity,TagParking, BaseJsonData>(p));
+		db.Set<ParkingEntity>().Update(e.ApplyUpdateParam<ParkingEntity,TagParking, BaseJson>(p));
 		await db.SaveChangesAsync(ct);
-		return new UResponse<ParkingResponse?>(e.MapToResponse());
+		return new UResponse();
 	}
 
 	public async Task<UResponse> DeleteParking(IdParams p, CancellationToken ct) {
@@ -79,7 +79,7 @@ public class ParkingService(
 			EntityEntry<VehicleEntity> vEntity = await db.Set<VehicleEntity>().AddAsync(new VehicleEntity {
 				Id = p.Id ?? Guid.CreateVersion7(),
 				CreatedAt = DateTime.UtcNow,
-				JsonData = new BaseJsonData(),
+				JsonData = new BaseJson(),
 				Tags = [TagVehicle.Test],
 				LicencePlate = p.NumberPlate,
 				CreatorId = p.CreatorId ?? userData.Id
@@ -94,7 +94,7 @@ public class ParkingService(
 			CreatorId = p.CreatorId ?? userData.Id,
 			VehicleId = vehicle.Id,
 			ParkingId = p.ParkingId,
-			JsonData = new BaseJsonData(),
+			JsonData = new BaseJson(),
 			Tags = [TagParkingReport.Test]
 		};
 		await db.Set<ParkingReportEntity>().AddAsync(e, ct);
@@ -104,7 +104,7 @@ public class ParkingService(
 	}
 
 	public async Task<UResponse<IEnumerable<ParkingReportResponse>?>> ReadParkingReport(ParkingReportReadParams p, CancellationToken ct) {
-		IQueryable<ParkingReportEntity> q = db.Set<ParkingReportEntity>().ApplyReadParams<ParkingReportEntity, TagParkingReport, BaseJsonData>(p);
+		IQueryable<ParkingReportEntity> q = db.Set<ParkingReportEntity>().ApplyReadParams<ParkingReportEntity, TagParkingReport, BaseJson>(p);
 		
 		if (p.EndDate.HasValue) q = q.Where(x => x.EndDate >= p.EndDate);
 		if (p.StartDate.HasValue) q = q.Where(x => x.EndDate <= p.EndDate);
@@ -128,7 +128,7 @@ public class ParkingService(
 		if (p.StartDate != null) e.StartDate = p.StartDate.Value;
 		if (p.EndDate != null) e.EndDate = p.EndDate;
 		if (p.Amount.IsNotNull()) e.Amount = p.Amount.Value;
-		db.Set<ParkingReportEntity>().Update(e.ApplyUpdateParam<ParkingReportEntity,TagParkingReport, BaseJsonData>(p));
+		db.Set<ParkingReportEntity>().Update(e.ApplyUpdateParam<ParkingReportEntity,TagParkingReport, BaseJson>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}

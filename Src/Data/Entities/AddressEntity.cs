@@ -6,7 +6,7 @@ public sealed class AddressEntity : BaseEntity<TagAddress, AddressJson> {
 	public string? ZipCode { get; set; }
 }
 
-public sealed class AddressJson: BaseJsonData {
+public sealed class AddressJson: BaseJson {
 	public string? Title { get; set; }
 	public string? Province { get; set; }
 	public string? Township { get; set; }

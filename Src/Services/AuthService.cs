@@ -36,7 +36,7 @@ public class AuthService(
 			FirstName = p.FirstName,
 			LastName = p.LastName,
 			JsonData = new UserJson(),
-			Wallets = [new WalletEntity { Id = userId, CreatorId = userId, CreatedAt = now, JsonData = new BaseJsonData(), Tags = [TagWallet.Primary], Balance = 0 }]
+			Wallets = [new WalletEntity { Id = userId, CreatorId = userId, CreatedAt = now, JsonData = new BaseJson(), Tags = [TagWallet.Primary], Balance = 0 }]
 		};
 
 		await db.Set<UserEntity>().AddAsync(e, ct);
@@ -145,7 +145,7 @@ public class AuthService(
 			JsonData = new UserJson(),
 			Tags = [],
 			CreatorId = Core.App.Users.SystemAdmin.Id,
-			Wallets = [new WalletEntity { Id = userId, CreatorId = userId, CreatedAt = now, JsonData = new BaseJsonData(), Tags = [TagWallet.Primary], Balance = 0 }]
+			Wallets = [new WalletEntity { Id = userId, CreatorId = userId, CreatedAt = now, JsonData = new BaseJson(), Tags = [TagWallet.Primary], Balance = 0 }]
 		};
 
 		await db.Set<UserEntity>().AddAsync(e, ct);

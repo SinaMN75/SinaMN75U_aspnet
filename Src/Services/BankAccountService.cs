@@ -20,7 +20,7 @@ public class BankAccountService(
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJsonData { Detail1 = p.Detail1, Detail2 = p.Detail2 },
+			JsonData = new BaseJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
 			Tags = p.Tags,
 			CardNumber = p.CardNumber,
 			AccountNumber = p.AccountNumber,
@@ -39,7 +39,7 @@ public class BankAccountService(
 		if (userData == null) return new UResponse<IEnumerable<BankAccountResponse>?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		if (!userData.IsAdmin) return new UResponse<IEnumerable<BankAccountResponse>?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
-		IQueryable<BankAccountEntity> q = db.Set<BankAccountEntity>().ApplyReadParams<BankAccountEntity, TagBankAccount, BaseJsonData>(p);
+		IQueryable<BankAccountEntity> q = db.Set<BankAccountEntity>().ApplyReadParams<BankAccountEntity, TagBankAccount, BaseJson>(p);
 		
 		if (p.CardNumber.IsNotNullOrEmpty()) q = q.Where(x => x.CardNumber == p.CardNumber);
 		if (p.OwnerName.IsNotNullOrEmpty()) q = q.Where(x => x.OwnerName == p.OwnerName);
@@ -65,7 +65,7 @@ public class BankAccountService(
 		if (p.OwnerName.IsNotNullOrEmpty()) e.OwnerName = p.OwnerName;
 		if (p.BankName.IsNotNullOrEmpty()) e.BankName = p.BankName;
 
-		db.Set<BankAccountEntity>().Update(e.ApplyUpdateParam<BankAccountEntity,TagBankAccount, BaseJsonData>(p));
+		db.Set<BankAccountEntity>().Update(e.ApplyUpdateParam<BankAccountEntity,TagBankAccount, BaseJson>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
