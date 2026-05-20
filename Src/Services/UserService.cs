@@ -144,8 +144,8 @@ public class UserService(
 		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound);
 
-		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
-
+		if (!userData.IsAdmin && userData.Id != e.Id) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		
 		if (p.Password.IsNotNullOrEmpty()) e.Password = UPasswordHasher.Hash(p.Password);
 		if (p.FirstName.IsNotNullOrEmpty()) e.FirstName = p.FirstName;
 		if (p.LastName.IsNotNullOrEmpty()) e.LastName = p.LastName;
@@ -160,22 +160,22 @@ public class UserService(
 		if (p.FatherName.IsNotNullOrEmpty()) e.JsonData.FatherName = p.FatherName;
 		if (p.Weight.IsNotNullOrZero()) e.JsonData.Weight = p.Weight;
 		if (p.Height.IsNotNullOrZero()) e.JsonData.Height = p.Height;
-		if (p.NationalCardFront.IsNotNullOrEmpty()) e.NationalCardFront = p.NationalCardFront.FromBase64();
-		if (p.NationalCardBack.IsNotNullOrEmpty()) e.NationalCardBack = p.NationalCardBack.FromBase64();
-		if (p.BirthCertificateFirst.IsNotNullOrEmpty()) e.BirthCertificateFirst = p.BirthCertificateFirst.FromBase64();
-		if (p.BirthCertificateSecond.IsNotNullOrEmpty()) e.BirthCertificateSecond = p.BirthCertificateSecond.FromBase64();
-		if (p.BirthCertificateThird.IsNotNullOrEmpty()) e.BirthCertificateThird = p.BirthCertificateThird.FromBase64();
-		if (p.BirthCertificateForth.IsNotNullOrEmpty()) e.BirthCertificateForth = p.BirthCertificateForth.FromBase64();
-		if (p.BirthCertificateFifth.IsNotNullOrEmpty()) e.BirthCertificateFifth = p.BirthCertificateFifth.FromBase64();
+		if (p.NationalCardFront.IsNotNullOrEmpty()) e.NationalCardFront = ImageCompressor.CompressBase64(p.NationalCardFront);
+		if (p.NationalCardBack.IsNotNullOrEmpty()) e.NationalCardBack = ImageCompressor.CompressBase64(p.NationalCardBack);
+		if (p.BirthCertificateFirst.IsNotNullOrEmpty()) e.BirthCertificateFirst = ImageCompressor.CompressBase64(p.BirthCertificateFirst);
+		if (p.BirthCertificateSecond.IsNotNullOrEmpty()) e.BirthCertificateSecond = ImageCompressor.CompressBase64(p.BirthCertificateSecond);
+		if (p.BirthCertificateThird.IsNotNullOrEmpty()) e.BirthCertificateThird = ImageCompressor.CompressBase64(p.BirthCertificateThird);
+		if (p.BirthCertificateForth.IsNotNullOrEmpty()) e.BirthCertificateForth = ImageCompressor.CompressBase64(p.BirthCertificateForth);
+		if (p.BirthCertificateFifth.IsNotNullOrEmpty()) e.BirthCertificateFifth = ImageCompressor.CompressBase64(p.BirthCertificateFifth);
 		if (p.VisualAuthentication.IsNotNullOrEmpty()) e.VisualAuthentication = p.VisualAuthentication.FromBase64();
-		if (p.ESignature.IsNotNullOrEmpty()) e.ESignature = p.ESignature.FromBase64();
+		if (p.ESignature.IsNotNullOrEmpty()) ImageCompressor.CompressBase64(p.ESignature, 10);
 
 		if (p.Categories.IsNotNullOrEmpty()) {
 			List<CategoryEntity> list = await db.Set<CategoryEntity>().AsTracking().Where(x => p.Categories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct);
 			e.Categories.AddRangeIfNotExist(list);
 		}
 
-		db.Set<UserEntity>().Update(e.ApplyUpdateParam<UserEntity, TagUser, UserJson>(p));
+		e.ApplyUpdateParam<UserEntity, TagUser, UserJson>(p);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();

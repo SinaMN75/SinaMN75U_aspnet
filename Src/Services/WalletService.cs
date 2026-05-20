@@ -96,7 +96,7 @@ public class WalletService(
 		return await Transfer(new WalletTransferParams {
 			ApiKey = p.ApiKey,
 			Token = p.Token,
-			SenderId = Core.App.Users.ITHub.Id,
+			SenderId = Core.App.Users.AvaPlus.Id,
 			ReceiverId = p.UserId,
 			Amount = p.Amount,
 			Detail1 = "chargeWallet",
