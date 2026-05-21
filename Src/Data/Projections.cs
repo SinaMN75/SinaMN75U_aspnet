@@ -47,6 +47,7 @@ public sealed class TerminalSelectorArgs {
 public sealed class MerchantSelectorArgs {
 	public UserSelectorArgs? Creator { get; set; }
 	public UserSelectorArgs? User { get; set; }
+	public TerminalSelectorArgs? Terminal { get; set; }
 }
 
 public sealed class AddressSelectorArgs {
@@ -392,6 +393,7 @@ public static class Projections {
 		Mcc = x.Mcc,
 		MerchantId = x.MerchantId,
 		PhoneNumber = x.PhoneNumber,
+		Terminals = args.Terminal == null ? null : x.Terminals.AsQueryable().Select(TerminalSelector(args.Terminal)).ToList(),
 		User = args.User == null
 			? null
 			: new UserResponse {

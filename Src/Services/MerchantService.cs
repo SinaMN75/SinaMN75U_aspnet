@@ -2,6 +2,7 @@ namespace SinaMN75U.Services;
 
 public interface IMerchantService {
 	Task<UResponse<Guid?>> Create(MerchantCreateParams p, CancellationToken ct);
+	Task<UResponse> Bind(MerchantBindParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<MerchantResponse>?>> Read(MerchantReadParams p, CancellationToken ct);
 	Task<UResponse<MerchantResponse?>> ReadById(IdParams<MerchantSelectorArgs> p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
@@ -16,34 +17,8 @@ public class MerchantService(
 	public async Task<UResponse<Guid?>> Create(MerchantCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-
-		HttpResponseMessage? response = await http.Post(
-			"https://oa.avreenco.com:8080/api/mms/ing/v2/addMerchant",
-			new {
-				accountId = p.BankAccountId,
-				businessTitle = p.BusinessTitle,
-				cityCode = p.CityCode,
-				mcc = p.Mcc,
-				merchantAddress = p.Address,
-				merchantMobileNo = p.PhoneNumber,
-				merchantName = p.Title,
-				merchantOwnerName = p.OwnerName,
-				merchantPhone = p.Landline,
-				nationalId = p.NationalCode,
-				ownerMobileNo = p.OwnerPhoneNumber,
-				postalCode = p.ZipCode,
-				definitionTemplate = 1,
-				settlementCurrency = 364
-			}
-		);
-
-		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<Guid?>(null);
-
-		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
-
+		
 		MerchantEntity e = new() {
-			InsId = data.GetStringOrNull("insId")!,
-			MerchantId = data.GetStringOrNull("merchantId")!,
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
@@ -70,6 +45,44 @@ public class MerchantService(
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse<Guid?>(e.Id);
+	}
+
+	public async Task<UResponse> Bind(MerchantBindParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		if (!userData.IsAdmin) return new UResponse<string?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+
+		MerchantEntity? e = await db.Set<MerchantEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.MerchantId, ct);
+		if (e == null) return new UResponse<MerchantResponse?>(null, Usc.NotFound, ls.Get("MerchantNotFound"));
+		
+		HttpResponseMessage? response = await http.Post(
+			"https://oa.avreenco.com:8080/api/mms/ing/v2/addMerchant",
+			new {
+				accountId = e.BankAccountId,
+				businessTitle = e.JsonData.BusinessTitle,
+				cityCode = e.CityCode,
+				mcc = e.Mcc,
+				merchantAddress = e.JsonData.Address,
+				merchantMobileNo = e.PhoneNumber,
+				merchantName = e.Title,
+				merchantOwnerName = e.JsonData.OwnerName,
+				merchantPhone = e.Landline,
+				nationalId = e.NationalCode,
+				ownerMobileNo = e.JsonData.OwnerPhoneNumber,
+				postalCode = e.ZipCode,
+				definitionTemplate = 1,
+				settlementCurrency = 364
+			}
+		);
+
+		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<Guid?>(null);
+		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
+		
+		e.InsId = data.GetStringOrNull("insId")!;
+		e.MerchantId = data.GetStringOrNull("merchantId")!;
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
 	}
 
 	public async Task<UResponse<IEnumerable<MerchantResponse>?>> Read(MerchantReadParams p, CancellationToken ct) {

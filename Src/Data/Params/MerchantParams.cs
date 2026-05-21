@@ -37,9 +37,9 @@ public class MerchantCreateParams : BaseCreateParams<TagMerchant> {
 	public string? BankAccountId { get; set; }
 }
 
-public class MerchantUpdateParams : BaseUpdateParams<TagMerchant> {
-	public string? ZipCode { get; set; }
-	public string? InsId { get; set; }
+public class MerchantBindParams : BaseParams {
+	public Guid? UserId { get; set; }
+	public Guid? MerchantId { get; set; }
 }
 
 public class MerchantReadParams : BaseReadParams<TagMerchant> {
