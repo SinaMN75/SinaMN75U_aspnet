@@ -204,7 +204,8 @@ public enum TagTerminal {
 	WallCashless = 102,
 	DeskCashless = 103,
 	Verified = 201,
-	Suspended = 202
+	AwaitingVerification = 202,
+	Suspended = 203
 }
 
 public enum TagBankAccount {

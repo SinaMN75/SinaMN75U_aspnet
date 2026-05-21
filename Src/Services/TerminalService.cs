@@ -2,7 +2,7 @@
 
 public interface ITerminalService {
 	Task<UResponse<Guid?>> Create(TerminalCreateParams p, CancellationToken ct);
-	Task<UResponse> Assign(TerminalAssignParams p, CancellationToken ct);
+	Task<UResponse<TerminalResponse?>> Assign(TerminalAssignParams p, CancellationToken ct);
 	Task<UResponse> Bind(TerminalBindParams p, CancellationToken ct);
 	Task<UResponse> BulkCreate(TerminalBulkCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<TerminalResponse>?>> Read(TerminalReadParams p, CancellationToken ct);
@@ -41,24 +41,41 @@ public class TerminalService(
 		return new UResponse<Guid?>(e.Id);
 	}
 
-	public async Task<UResponse> Assign(TerminalAssignParams p, CancellationToken ct) {
+	public async Task<UResponse<TerminalResponse?>> Assign(TerminalAssignParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<TerminalResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		TerminalEntity? terminal = await db.Set<TerminalEntity>().FirstOrDefaultAsync(x => x.Serial == p.Serial && x.SimCardSerial == p.SimCardSerial, ct);
-		if (terminal == null) return new UResponse(Usc.NotFound, ls.Get("TerminalNotFoundCheckDetails"));
-		MerchantResponse? merchant = await db.Set<MerchantEntity>()
-			.Select(Projections.MerchantSelector(new MerchantSelectorArgs {User = new UserSelectorArgs {ESignature = true}}))
+		if (terminal == null) return new UResponse<TerminalResponse?>(null, Usc.NotFound, ls.Get("TerminalNotFoundCheckDetails"));
+		MerchantEntity? merchant = await db.Set<MerchantEntity>()
+			.Include(x => x.User)
 			.FirstOrDefaultAsync(x => x.Id == p.MerchantId, ct);
-		if (merchant == null) return new UResponse(Usc.NotFound, ls.Get("MerchantNotFound"));
+		if (merchant == null) return new UResponse<TerminalResponse?>(null, Usc.NotFound, ls.Get("MerchantNotFound"));
 
+
+		string agreement = await GenerateAgreement(merchant.User, terminal);
+		
 		terminal.JsonData.Detail1 = p.Title ?? "";
 		terminal.MerchantId = p.MerchantId;
+		terminal.Agreement = agreement;
 
 		db.Set<TerminalEntity>().Update(terminal);
 		await db.SaveChangesAsync(ct);
 
-		return new UResponse();
+		return new UResponse<TerminalResponse?>(new TerminalResponse {
+			Id = terminal.Id,
+			CreatedAt = terminal.CreatedAt,
+			JsonData = terminal.JsonData,
+			Tags = terminal.Tags,
+			CreatorId = terminal.CreatorId,
+			Serial = terminal.Serial,
+			SimCardNumber = terminal.SimCardNumber,
+			SimCardSerial = terminal.SimCardSerial,
+			Imei = terminal.Imei,
+			TerminalId = terminal.TerminalId,
+			Agreement = terminal.Agreement,
+			MerchantId = terminal.MerchantId
+		});
 	}
 
 	public async Task<UResponse> Bind(TerminalBindParams p, CancellationToken ct) {
@@ -167,6 +184,28 @@ public class TerminalService(
 
 		return new UResponse<TerminalSupportPasswordResponse?>(
 			new TerminalSupportPasswordResponse { Password = data.GetStringOrNull("supportPassword") }
+		);
+	}
+
+	private async Task<string> GenerateAgreement(UserEntity user, TerminalEntity terminal) {
+		return await WordPdfGenerator.GenerateWithTextsAndImagesAsync(
+			texts: new Dictionary<string, string> {
+				{ "day", PersianDateTime.Now.Day.ToString() },
+				{ "month", PersianDateTime.Now.Month.ToString() },
+				{ "number", "NUMBER" },
+				{ "fullName", $"{user.FirstName ?? ""} {user.LastName ?? ""}" },
+				{ "nationalCode", user.NationalCode ?? "" },
+				{ "birthdate", PersianDateTime.FromDateTime(user.Birthdate ?? DateTime.Now).ToString("yyyy-MM-dd") },
+				{ "address", "ADDRESS" },
+				{ "postalCode", terminal.Merchant?.ZipCode ?? "" },
+				{ "phoneNumber", user.PhoneNumber ?? "" },
+				{ "landLine", user.LandLine ?? "" },
+				{ "fatherName", user.JsonData.FatherName ?? "" }
+			},
+			imagesBase64: new Dictionary<string, string> {
+				{ "customerSignature", user.ESignature!.ToBase64()! }
+			},
+			templatePath: Path.Combine(Directory.GetCurrentDirectory(), "Templates", "atmAgreement.docx")
 		);
 	}
 }
