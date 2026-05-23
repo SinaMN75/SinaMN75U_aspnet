@@ -101,6 +101,8 @@ public class TerminalService(
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
 
+		e.Tags.Add(TagTerminal.Verified);
+		e.Tags.Remove(TagTerminal.AwaitingVerification);
 		e.TerminalId = data.GetStringOrNull("terminalId");
 		e.InsId = data.GetStringOrNull("insId");
 
