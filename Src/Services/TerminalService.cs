@@ -57,7 +57,8 @@ public class TerminalService(
 		
 		terminal.JsonData.Detail1 = p.Title ?? "";
 		terminal.MerchantId = p.MerchantId;
-		terminal.Agreement = agreement;
+		terminal.Agreement = agreement.FromBase64();
+		terminal.Tags.AddRangeIfNotExist([TagTerminal.AwaitingVerification]);
 
 		db.Set<TerminalEntity>().Update(terminal);
 		await db.SaveChangesAsync(ct);
@@ -73,7 +74,7 @@ public class TerminalService(
 			SimCardSerial = terminal.SimCardSerial,
 			Imei = terminal.Imei,
 			TerminalId = terminal.TerminalId,
-			Agreement = terminal.Agreement,
+			Agreement = terminal.Agreement.ToBase64(),
 			MerchantId = terminal.MerchantId
 		});
 	}

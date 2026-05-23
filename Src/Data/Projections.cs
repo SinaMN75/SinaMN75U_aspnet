@@ -41,6 +41,7 @@ public sealed class SimCardSelectorArgs {
 
 public sealed class TerminalSelectorArgs {
 	public UserSelectorArgs? Creator { get; set; }
+	public MerchantSelectorArgs? Merchant { get; set; }
 	public bool Agreement { get; set; }
 }
 
@@ -668,6 +669,71 @@ public static class Projections {
 		SimCardSerial = x.SimCardSerial,
 		SimCardNumber = x.SimCardNumber,
 		Imei = x.Imei,
+		Agreement = args.Agreement ? x.Agreement.ToBase64() : null,
+		Merchant = args.Merchant == null ? null : new MerchantResponse {
+			Id = x.Merchant!.Id,
+			CreatedAt = x.Merchant.CreatedAt,
+			JsonData = x.Merchant.JsonData,
+			Tags = x.Merchant.Tags,
+			CreatorId = x.Merchant.CreatorId,
+			ZipCode = x.Merchant.ZipCode,
+			CityCode = x.Merchant.CityCode,
+			PhoneNumber = x.Merchant.PhoneNumber,
+			Title = x.Merchant.Title,
+			Landline = x.Merchant.Landline,
+			NationalCode = x.Merchant.NationalCode,
+			Mcc = x.Merchant.Mcc,
+			BankAccountId = x.Merchant.BankAccountId,
+			MerchantId = x.Merchant.MerchantId,
+			InsId = x.Merchant.InsId,
+			UserId = x.Merchant.UserId,
+			User = args.Merchant.User == null ? null : new UserResponse {
+				Id = x.Merchant.User.Id,
+				JsonData = x.Merchant.User.JsonData,
+				Tags = x.Merchant.User.Tags,
+				UserName = x.Merchant.User.UserName,
+				PhoneNumber = x.Merchant.User.PhoneNumber,
+				Email = x.Merchant.User.Email,
+				FirstName = x.Merchant.User.FirstName,
+				LastName = x.Merchant.User.LastName,
+				NationalCode = x.Merchant.User.NationalCode,
+				LandLine =  x.Merchant.User.LandLine,
+				Bio =  x.Merchant.User.Bio,
+				Birthdate =  x.Merchant.User.Birthdate,
+				NationalCardFront = args.Merchant.User.NationalCardFront ? x.Merchant.User.NationalCardFront.ToBase64() : null,
+				NationalCardBack = args.Merchant.User.NationalCardFront ? x.Merchant.User.NationalCardBack.ToBase64() : null,
+				BirthCertificateFirst = args.Merchant.User.NationalCardFront ? x.Merchant.User.BirthCertificateFirst.ToBase64() : null,
+				BirthCertificateSecond = args.Merchant.User.NationalCardFront ? x.Merchant.User.BirthCertificateSecond.ToBase64() : null,
+				BirthCertificateThird = args.Merchant.User.NationalCardFront ? x.Merchant.User.BirthCertificateThird.ToBase64() : null,
+				BirthCertificateForth = args.Merchant.User.NationalCardFront ? x.Merchant.User.BirthCertificateForth.ToBase64() : null,
+				BirthCertificateFifth = args.Merchant.User.NationalCardFront ? x.Merchant.User.BirthCertificateFifth.ToBase64() : null,
+				VisualAuthentication = args.Merchant.User.NationalCardFront ? x.Merchant.User.VisualAuthentication.ToBase64() : null,
+				ESignature = args.Merchant.User.NationalCardFront ? x.Merchant.User.ESignature.ToBase64() : null,
+			},
+			Creator = args.Merchant.Creator == null ? null : new UserResponse {
+				Id = x.Merchant.Creator.Id,
+				JsonData = x.Merchant.Creator.JsonData,
+				Tags = x.Merchant.Creator.Tags,
+				UserName = x.Merchant.Creator.UserName,
+				PhoneNumber = x.Merchant.Creator.PhoneNumber,
+				Email = x.Merchant.Creator.Email,
+				FirstName = x.Merchant.Creator.FirstName,
+				LastName = x.Merchant.Creator.LastName,
+				NationalCode = x.Merchant.Creator.NationalCode,
+				LandLine =  x.Merchant.Creator.LandLine,
+				Bio =  x.Merchant.Creator.Bio,
+				Birthdate =  x.Merchant.Creator.Birthdate,
+				NationalCardFront = args.Merchant.Creator.NationalCardFront ? x.Merchant.Creator.NationalCardFront.ToBase64() : null,
+				NationalCardBack = args.Merchant.Creator.NationalCardFront ? x.Merchant.Creator.NationalCardBack.ToBase64() : null,
+				BirthCertificateFirst = args.Merchant.Creator.NationalCardFront ? x.Merchant.Creator.BirthCertificateFirst.ToBase64() : null,
+				BirthCertificateSecond = args.Merchant.Creator.NationalCardFront ? x.Merchant.Creator.BirthCertificateSecond.ToBase64() : null,
+				BirthCertificateThird = args.Merchant.Creator.NationalCardFront ? x.Merchant.Creator.BirthCertificateThird.ToBase64() : null,
+				BirthCertificateForth = args.Merchant.Creator.NationalCardFront ? x.Merchant.Creator.BirthCertificateForth.ToBase64() : null,
+				BirthCertificateFifth = args.Merchant.Creator.NationalCardFront ? x.Merchant.Creator.BirthCertificateFifth.ToBase64() : null,
+				VisualAuthentication = args.Merchant.Creator.NationalCardFront ? x.Merchant.Creator.VisualAuthentication.ToBase64() : null,
+				ESignature = args.Merchant.Creator.NationalCardFront ? x.Merchant.Creator.ESignature.ToBase64() : null,
+			}
+		},
 		Creator = args.Creator == null
 			? null
 			: new UserResponse {
@@ -680,8 +746,6 @@ public static class Projections {
 				FirstName = x.Creator.FirstName,
 				LastName = x.Creator.LastName,
 				NationalCode = x.Creator.NationalCode,
-				Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList(),
-				Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList()
 			}
 	};
 
