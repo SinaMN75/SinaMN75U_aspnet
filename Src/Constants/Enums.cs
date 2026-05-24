@@ -275,27 +275,3 @@ public enum TagSimOperator {
 public enum TagMerchant {
 	Normal = 101
 }
-
-// برای ProcessEntity
-public enum TagProcess {
-	Active,      // فرآیند فعال است
-	Inactive     // فرآیند غیرفعال
-}
-
-// برای UserProcessEntity
-public enum TagUserProcess {
-	InProgress,  // در حال انجام
-	PendingReview, // منتظر تایید ادمین (همه مدارک آپلود شده)
-	Approved,    // تایید نهایی شد
-	Rejected     // رد نهایی شد
-}
-
-// برای UserDocumentEntity
-public enum TagUserDocument {
-	Pending,     // منتظر بررسی ادمین
-	Approved,    // تایید شد
-	Rejected     // رد شد
-}
-
-// برای ProcessStepEntity فعلاً خالی یا در آینده
-public enum TagProcessStep { }
