@@ -62,3 +62,29 @@ public class SmsNotificationService(
 		return true;
 	}
 }
+
+public class SmsNotificationServiceFake(
+	IHttpClientService http,
+	ILocalStorageService cache
+) : ISmsNotificationService {
+	private static async Task Send() {
+		await Task.Delay(1000);
+	}
+
+	public async Task<bool> SendOtpSms(UserResponse user) {
+		if (cache.Get($"otp_{user.Id}") != null) return false;
+		int length = Core.App.BasicSettings.VerificationCodeLenght;
+
+		string otp = Random.Shared.Next((int)Math.Pow(10, length - 1), (int)Math.Pow(10, length)).ToString();
+		cache.Set("otp_" + user.Id, otp, TimeSpan.FromMinutes(1));
+
+		if (user.PhoneNumber.IsNull()) return false;
+		await Send();
+		return true;
+	}
+
+	public async Task<bool> SendSms(SmsNotificationParams p) {
+		await Send();
+		return true;
+	}
+}

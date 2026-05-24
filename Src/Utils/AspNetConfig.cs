@@ -67,7 +67,6 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IUserService, UserService>();
 		builder.Services.AddScoped<IAuthService, AuthService>();
 		builder.Services.AddScoped<ICategoryService, CategoryService>();
-		builder.Services.AddScoped<ISmsNotificationService, SmsNotificationService>();
 		builder.Services.AddScoped<IContentService, ContentService>();
 		builder.Services.AddScoped<IProductService, ProductService>();
 		builder.Services.AddScoped<ICommentService, CommentService>();
@@ -77,7 +76,6 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<ITicketService, TicketService>();
 		builder.Services.AddScoped<IVehicleService, VehicleService>();
 		builder.Services.AddScoped<IParkingService, ParkingService>();
-		builder.Services.AddScoped<IInquiryService, InquiryService>();
 		builder.Services.AddScoped<IAddressService, AddressService>();
 		builder.Services.AddScoped<IWalletService, WalletService>();
 		builder.Services.AddScoped<ITerminalService, TerminalService>();
@@ -89,6 +87,15 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IVasService, VasService>();
 		builder.Services.AddScoped<IChargeInternetService, ChargeInternetService>();
 		builder.Services.AddScoped<IMerchantService, MerchantService>();
+
+		if (Core.App.Test) {
+			builder.Services.AddScoped<IInquiryService, InquiryServiceFake>();
+			builder.Services.AddScoped<ISmsNotificationService, SmsNotificationServiceFake>();
+		}
+		else {
+			builder.Services.AddScoped<IInquiryService, InquiryService>();
+			builder.Services.AddScoped<ISmsNotificationService, SmsNotificationService>();
+		}
 	}
 
 	public static void UseUServices(this WebApplication app) {
