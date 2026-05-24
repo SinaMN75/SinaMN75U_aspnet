@@ -91,7 +91,7 @@ public class TerminalService(
 		if (e.Merchant == null) return new UResponse(Usc.NotFound, ls.Get("MerchantNotFound"));
 
 		HttpResponseMessage? merchantResponse = await http.Post(
-			"https://oa.avreenco.com:8080/api/mms/ing/v2/addMerchant",
+			$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/addMerchant",
 			new {
 				accountId = e.Merchant.BankAccountId,
 				businessTitle = e.Merchant.JsonData.BusinessTitle,
@@ -108,7 +108,7 @@ public class TerminalService(
 				definitionTemplate = 1,
 				settlementCurrency = 364
 			},
-			new Dictionary<string, string> { { "Authorization", "Basic aGFkaTpoYWRp" }, { "Accept", "application/json" } }
+			new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
 		);
 
 		if (merchantResponse is null or { IsSuccessStatusCode: false }) return new UResponse<Guid?>(null);
@@ -119,7 +119,7 @@ public class TerminalService(
 		e.Merchant.MerchantId = merchantData.GetStringOrNull("merchantId")!;
 
 		HttpResponseMessage? terminalResponse = await http.Post(
-			"https://oa.avreenco.com:8080/api/mms/ing/v2/defineAndBindTerminal",
+			$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/defineAndBindTerminal",
 			new {
 				definitionTemplate = 1,
 				merchantId = merchantData.GetStringOrNull("merchantId")!,
@@ -127,7 +127,7 @@ public class TerminalService(
 				terminalSerial = e.Serial,
 				terminalSerial2 = e.SimCardSerial
 			},
-			new Dictionary<string, string> { { "Authorization", "Basic aGFkaTpoYWRp" }, { "Accept", "application/json" } }
+			new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
 		);
 
 		if (terminalResponse is null or { IsSuccessStatusCode: false }) return new UResponse<Guid?>(null);
@@ -226,7 +226,7 @@ public class TerminalService(
 		if (!userData.IsAdmin && userData.Id != e.CreatorId && userData.Id != e.Merchant?.UserId) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		HttpResponseMessage? response = await http.Post(
-			"https://oa.avreenco.com:8080/api/mms/ing/v2/generateSupportPassword",
+			$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/generateSupportPassword",
 			new {
 				insId = e.InsId,
 				merchantId = e.Merchant!.MerchantId,
@@ -234,7 +234,7 @@ public class TerminalService(
 				terminalSerial = e.Serial,
 				terminalSerial2 = e.SimCardSerial
 			},
-			new Dictionary<string, string> { { "Authorization", "Basic aGFkaTpoYWRp" }, { "Accept", "application/json" } }
+			new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
 		);
 
 		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<TerminalSupportPasswordResponse?>(null);

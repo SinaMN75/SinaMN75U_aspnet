@@ -3,6 +3,7 @@ namespace SinaMN75U.Constants;
 public sealed class AppSettings {
 	public required string BaseUrl { get; init; }
 	public required string ApiKey { get; init; }
+	public required bool Test { get; set; }
 	public required ConnectionStrings ConnectionStrings { get; init; }
 	public required Jwt Jwt { get; init; }
 	public required Middleware Middleware { get; init; }
@@ -11,7 +12,7 @@ public sealed class AppSettings {
 	public required Mobtakeran Mobtakeran { get; init; }
 	public required BasicSettings BasicSettings { get; init; }
 	public required Ipg Ipg { get; init; }
-	public required Mpg Mpg { get; init; }
+	public required Avreen Avreen { get; init; }
 	public required DefaultUsers Users { get; init; }
 	public required ApiCallCosts ApiCallCosts { get; set; }
 	public required IEnumerable<ChargeInternet> ChargeInternet { get; set; }
@@ -63,10 +64,9 @@ public sealed class BasicSettings {
 	public required int VerificationCodeLenght { get; set; }
 }
 
-public sealed class Mpg {
-	public required TagIpg Tag { get; set; }
-	public required string Title { get; set; }
-	public required string Token { get; set; }
+public sealed class Avreen {
+	public required string AuthHeader { get; set; }
+	public required string BaseUrl { get; set; }
 }
 
 public sealed class Ipg {
