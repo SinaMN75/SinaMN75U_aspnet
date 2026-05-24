@@ -96,7 +96,8 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "MerchantNotFound", "Merchant Not Found." },
 		{ "TerminalNotFound", "Terminal Not Found." },
 		{ "TerminalNotFoundCheckDetails", "Terminal Not Found. Check Your Details" },
-		{ "UserNotFound", "Account not found. Please check your details." },
+		{ "UserNotFoundCheckYouDetails", "Account not found. Please check your details." },
+		{ "UserNotFound", "Account not found." },
 		{ "WalletNotFound", "Wallet Not Found." },
 
 		// ===== Authentication & Authorization =====
@@ -241,7 +242,8 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "MerchantNotFound", "پذیرنده یافت نشد." },
 		{ "TerminalNotFound", "ترمینال یافت نشد." },
 		{ "TerminalNotFoundCheckDetails", "ترمینال یافت نشد. لطفا اطلاعات خود را بررسی کنید." },
-		{ "UserNotFound", "حساب کاربری یافت نشد. لطفاً جزئیات خود را بررسی کنید." },
+		{ "UserNotFoundCheckYouDetails", "Account not found. Please check your details." },
+		{ "UserNotFound", "Account not found." },
 		{ "WalletNotFound", "کیف پول یافت نشد." },
 
 		// ===== Authentication & Authorization =====

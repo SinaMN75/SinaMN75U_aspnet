@@ -157,7 +157,7 @@ public class AuthService(
 
 	public async Task<UResponse<LoginResponse?>> VerifyCodeForLogin(VerifyMobileForLoginParams p, CancellationToken ct) {
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
-		if (user == null) return new UResponse<LoginResponse?>(null, Usc.UserNotFound);
+		if (user == null) return new UResponse<LoginResponse?>(null, Usc.UserNotFound, ls.Get("UserNotFound"));
 
 		return p.Otp == Core.App.BasicSettings.DefaultVerificationKey || p.Otp == cache.Get(user.Id.ToString())
 			? new UResponse<LoginResponse?>(new LoginResponse {
