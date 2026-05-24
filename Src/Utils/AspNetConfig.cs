@@ -7,7 +7,9 @@ public static partial class AspNetConfig {
 		builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 		builder.Services.AddUSwagger();
 		builder.Services.AddHttpContextAccessor();
-		builder.Services.AddHttpClient();
+		builder.Services.AddHttpClient<IHttpClientService, HttpClientService>().ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler {
+			ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+		});
 		builder.Services.AddURateLimiter();
 		builder.Services.AddMemoryCache();
 		builder.Services.ConfigureHttpJsonOptions(o => {
@@ -59,7 +61,6 @@ public static partial class AspNetConfig {
 		SyncfusionLicenseProvider.RegisterLicense("@32392e302e303b32393bKq35AiUSRDJT5uIaFzRCrJWDo7gKUKH1Rwb6jH+WX4o=");
 		builder.Services.AddScoped<IMediaService, MediaService>();
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
-		builder.Services.AddSingleton<IHttpClientService, HttpClientService>();
 		builder.Services.AddSingleton<ILocalStorageService, UMemoryCacheService>();
 		builder.Services.AddSingleton<IRequestLogger, RequestLogger>();
 		builder.Services.AddScoped<ITokenService, TokenService>();

@@ -3,7 +3,7 @@
 public interface ITerminalService {
 	Task<UResponse<Guid?>> Create(TerminalCreateParams p, CancellationToken ct);
 	Task<UResponse<TerminalResponse?>> Assign(TerminalAssignParams p, CancellationToken ct);
-	Task<UResponse> Bind(TerminalBindParams p, CancellationToken ct);
+	Task<UResponse> Bind(IdParams p, CancellationToken ct);
 	Task<UResponse> BulkCreate(TerminalBulkCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<TerminalResponse>?>> Read(TerminalReadParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
@@ -54,7 +54,7 @@ public class TerminalService(
 
 
 		string agreement = await GenerateAgreement(merchant.User, terminal);
-		
+
 		terminal.JsonData.Detail1 = p.Title ?? "";
 		terminal.MerchantId = p.MerchantId;
 		terminal.Agreement = agreement.FromBase64();
@@ -79,32 +79,65 @@ public class TerminalService(
 		});
 	}
 
-	public async Task<UResponse> Bind(TerminalBindParams p, CancellationToken ct) {
+	public async Task<UResponse> Bind(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		TerminalEntity? e = await db.Set<TerminalEntity>().AsTracking().Include(x => x.Merchant).FirstOrDefaultAsync(x => x.Id == p.TerminalId, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("TerminalNotFoundCheckDetails"));
+		TerminalEntity? e = await db.Set<TerminalEntity>()
+			.Include(x => x.Merchant).ThenInclude(x => x.User)
+			.AsTracking()
+			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("TerminalNotFound"));
+		if (e.Merchant == null) return new UResponse(Usc.NotFound, ls.Get("MerchantNotFound"));
 
-		HttpResponseMessage? response = await http.Post(
+		HttpResponseMessage? merchantResponse = await http.Post(
+			"https://oa.avreenco.com:8080/api/mms/ing/v2/addMerchant",
+			new {
+				accountId = e.Merchant.BankAccountId,
+				businessTitle = e.Merchant.JsonData.BusinessTitle,
+				cityCode = e.Merchant.CityCode,
+				mcc = e.Merchant.Mcc,
+				merchantAddress = e.Merchant.JsonData.Address,
+				merchantMobileNo = e.Merchant.PhoneNumber,
+				merchantName = e.Merchant.Title,
+				merchantOwnerName = e.Merchant.JsonData.OwnerName,
+				merchantPhone = e.Merchant.Landline,
+				nationalId = e.Merchant.NationalCode,
+				ownerMobileNo = e.Merchant.JsonData.OwnerPhoneNumber,
+				postalCode = e.Merchant.ZipCode,
+				definitionTemplate = 1,
+				settlementCurrency = 364
+			},
+			new Dictionary<string, string> { { "Authorization", "Basic aGFkaTpoYWRp" }, { "Accept", "application/json" } }
+		);
+
+		if (merchantResponse is null or { IsSuccessStatusCode: false }) return new UResponse<Guid?>(null);
+
+		JsonElement merchantData = JsonSerializer.Deserialize<JsonElement>(await merchantResponse.Content.ReadAsStringAsync(ct));
+
+		e.Merchant.InsId = merchantData.GetStringOrNull("insId")!;
+		e.Merchant.MerchantId = merchantData.GetStringOrNull("merchantId")!;
+
+		HttpResponseMessage? terminalResponse = await http.Post(
 			"https://oa.avreenco.com:8080/api/mms/ing/v2/defineAndBindTerminal",
 			new {
-				definitionTemplate = 0,
-				merchantId = e.Merchant!.MerchantId,
+				definitionTemplate = 1,
+				merchantId = merchantData.GetStringOrNull("merchantId")!,
 				project = "AvaPlus",
 				terminalSerial = e.Serial,
 				terminalSerial2 = e.SimCardSerial
-			}
+			},
+			new Dictionary<string, string> { { "Authorization", "Basic aGFkaTpoYWRp" }, { "Accept", "application/json" } }
 		);
 
-		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<Guid?>(null);
+		if (terminalResponse is null or { IsSuccessStatusCode: false }) return new UResponse<Guid?>(null);
 
-		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
+		JsonElement terminalData = JsonSerializer.Deserialize<JsonElement>(await terminalResponse.Content.ReadAsStringAsync(ct));
 
 		e.Tags.Add(TagTerminal.Verified);
 		e.Tags.Remove(TagTerminal.AwaitingVerification);
-		e.TerminalId = data.GetStringOrNull("terminalId");
-		e.InsId = data.GetStringOrNull("insId");
+		e.TerminalId = terminalData.GetStringOrNull("terminalId");
+		e.InsId = terminalData.GetStringOrNull("insId");
 
 		db.Set<TerminalEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
@@ -160,7 +193,34 @@ public class TerminalService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		TerminalEntity? e = await db.Set<TerminalEntity>().Include(x => x.Merchant).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		TerminalEntity? e = await db.Set<TerminalEntity>().Select(x => new TerminalEntity {
+			Serial = x.Serial,
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			JsonData = x.JsonData,
+			Tags = x.Tags,
+			CreatorId = x.CreatorId,
+			InsId = x.InsId,
+			TerminalId = x.TerminalId,
+			Merchant = new MerchantEntity {
+				ZipCode = "",
+				CityCode = "",
+				PhoneNumber = "",
+				Title = "",
+				Landline = "",
+				NationalCode = "",
+				Mcc = "",
+				UserId = x.Merchant!.UserId,
+				Id = x.Merchant.Id,
+				CreatedAt = x.Merchant.CreatedAt,
+				JsonData = x.Merchant.JsonData,
+				Tags = x.Merchant.Tags,
+				CreatorId = x.Merchant.CreatorId,
+				InsId = x.InsId,
+				MerchantId = x.Merchant.MerchantId,
+			},
+		}).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+
 		if (e == null) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.NotFound, ls.Get("TerminalNotFound"));
 		if (e.Merchant == null) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.NotFound, ls.Get("MerchantNotFound"));
 		if (!userData.IsAdmin && userData.Id != e.CreatorId && userData.Id != e.Merchant?.UserId) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
@@ -168,11 +228,13 @@ public class TerminalService(
 		HttpResponseMessage? response = await http.Post(
 			"https://oa.avreenco.com:8080/api/mms/ing/v2/generateSupportPassword",
 			new {
+				insId = e.InsId,
 				merchantId = e.Merchant!.MerchantId,
 				terminalId = e.TerminalId,
 				terminalSerial = e.Serial,
 				terminalSerial2 = e.SimCardSerial
-			}
+			},
+			new Dictionary<string, string> { { "Authorization", "Basic aGFkaTpoYWRp" }, { "Accept", "application/json" } }
 		);
 
 		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<TerminalSupportPasswordResponse?>(null);

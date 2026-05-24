@@ -20,11 +20,6 @@ public class TerminalAssignParams : BaseParams {
 	public Guid? MerchantId { get; set; }
 }
 
-public class TerminalBindParams : BaseParams {
-	public Guid TerminalId { get; set; }
-	public Guid MerchantId { get; set; }
-}
-
 public class TerminalBulkCreateParams : BaseParams {
 	public required List<TerminalCreateParams> List { get; set; }
 }

@@ -9,5 +9,6 @@ public static class TerminalRoutes {
 		r.MapPost("Delete", async (IdParams p, ITerminalService s, CancellationToken c) => (await s.Delete(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("ReadSupportPassword", async (IdParams p, ITerminalService s, CancellationToken c) => (await s.ReadSupportPassword(p, c)).ToResult()).Produces<UResponse<TerminalSupportPasswordResponse>>();
 		r.MapPost("Assign", async (TerminalAssignParams p, ITerminalService s, CancellationToken c) => (await s.Assign(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("Bind", async (IdParams p, ITerminalService s, CancellationToken c) => (await s.Bind(p, c)).ToResult()).Produces<UResponse>();
 	}
 }
