@@ -145,7 +145,7 @@ public class UserService(
 		if (e == null) return new UResponse(Usc.NotFound);
 
 		if (!userData.IsAdmin && userData.Id != e.Id) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
-		
+
 		if (p.Password.IsNotNullOrEmpty()) e.Password = UPasswordHasher.Hash(p.Password);
 		if (p.FirstName.IsNotNullOrEmpty()) e.FirstName = p.FirstName;
 		if (p.LastName.IsNotNullOrEmpty()) e.LastName = p.LastName;
@@ -169,6 +169,16 @@ public class UserService(
 		if (p.BirthCertificateFifth.IsNotNullOrEmpty()) e.BirthCertificateFifth = ImageCompressor.CompressBase64(p.BirthCertificateFifth);
 		if (p.VisualAuthentication.IsNotNullOrEmpty()) e.VisualAuthentication = p.VisualAuthentication.FromBase64();
 		if (p.ESignature.IsNotNullOrEmpty()) ImageCompressor.CompressBase64(p.ESignature, 10);
+
+		if (p.NationalCardFrontRejectionReason.IsNotNullOrEmpty()) e.JsonData.NationalCardFrontRejectionReason = p.NationalCardFrontRejectionReason;
+		if (p.NationalCardBackRejectionReason.IsNotNullOrEmpty()) e.JsonData.NationalCardBackRejectionReason = p.NationalCardBackRejectionReason;
+		if (p.BirthCertificateFirstRejectionReason.IsNotNullOrEmpty()) e.JsonData.BirthCertificateFirstRejectionReason = p.BirthCertificateFirstRejectionReason;
+		if (p.BirthCertificateSecondRejectionReason.IsNotNullOrEmpty()) e.JsonData.BirthCertificateSecondRejectionReason = p.BirthCertificateSecondRejectionReason;
+		if (p.BirthCertificateThirdRejectionReason.IsNotNullOrEmpty()) e.JsonData.BirthCertificateThirdRejectionReason = p.BirthCertificateThirdRejectionReason;
+		if (p.BirthCertificateForthRejectionReason.IsNotNullOrEmpty()) e.JsonData.BirthCertificateForthRejectionReason = p.BirthCertificateForthRejectionReason;
+		if (p.BirthCertificateFifthRejectionReason.IsNotNullOrEmpty()) e.JsonData.BirthCertificateFifthRejectionReason = p.BirthCertificateFifthRejectionReason;
+		if (p.VisualAuthenticationRejectionReason.IsNotNullOrEmpty()) e.JsonData.VisualAuthenticationRejectionReason = p.VisualAuthenticationRejectionReason;
+		if (p.ESignatureRejectionReason.IsNotNullOrEmpty()) e.JsonData.ESignatureRejectionReason = p.ESignatureRejectionReason;
 
 		if (p.Categories.IsNotNullOrEmpty()) {
 			List<CategoryEntity> list = await db.Set<CategoryEntity>().AsTracking().Where(x => p.Categories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct);

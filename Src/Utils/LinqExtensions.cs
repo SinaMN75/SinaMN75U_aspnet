@@ -44,7 +44,9 @@ public static class LinqExtensions {
 		where TJson : BaseJson {
 		if (p.Tags.IsNotNullOrEmpty()) e.Tags = p.Tags;
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
-		if (p.RemoveTags.IsNotNullOrEmpty()) e.Tags.RemoveAll(x => p.RemoveTags.Contains(x));
+		if (p.RemoveTags.IsNotNullOrEmpty())
+			foreach (TTag i in p.RemoveTags)
+				e.Tags.Remove(i);
 		if (p.Detail1.IsNotNullOrEmpty()) e.JsonData.Detail1 = p.Detail1;
 		if (p.Detail2.IsNotNullOrEmpty()) e.JsonData.Detail2 = p.Detail2;
 		return e;
