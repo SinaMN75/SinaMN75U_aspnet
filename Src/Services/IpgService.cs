@@ -1,5 +1,3 @@
-using System.Collections.Specialized;
-
 namespace SinaMN75U.Services;
 
 public interface IIpgService {

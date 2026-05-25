@@ -1,14 +1,8 @@
-using LinqKit;
-
 namespace SinaMN75U.Data;
 
 public class BaseSelectorArgs {
 	public UserSelectorArgs? Creator { get; set; }
 }
-
-public sealed class MediaSelectorArgs : BaseSelectorArgs;
-
-public sealed class ParkingSelectorArgs : BaseSelectorArgs { }
 
 public sealed class ParkingReportSelectorArgs : BaseSelectorArgs {
 	public VehicleSelectorArgs? Vehicle { get; set; }
@@ -20,8 +14,6 @@ public sealed class VasSelectorArgs : BaseSelectorArgs {
 	public TxnSelectorArgs? Txn { get; set; }
 }
 
-public sealed class VehicleSelectorArgs : BaseSelectorArgs { }
-
 public sealed class CategorySelectorArgs : BaseSelectorArgs {
 	public MediaSelectorArgs? Media { get; set; }
 	public CategorySelectorArgs? Children { get; set; }
@@ -31,8 +23,6 @@ public sealed class CategorySelectorArgs : BaseSelectorArgs {
 public sealed class ContentSelectorArgs : BaseSelectorArgs {
 	public MediaSelectorArgs? Media { get; set; }
 }
-
-public sealed class BankAccountSelectorArgs : BaseSelectorArgs { }
 
 public sealed class SimCardSelectorArgs : BaseSelectorArgs {
 	public UserSelectorArgs? User { get; set; }
@@ -48,8 +38,6 @@ public sealed class MerchantSelectorArgs : BaseSelectorArgs {
 	public TerminalSelectorArgs? Terminal { get; set; }
 }
 
-public sealed class AddressSelectorArgs : BaseSelectorArgs { }
-
 public sealed class WalletTxnSelectorArgs : BaseSelectorArgs {
 	public UserSelectorArgs? Sender { get; set; }
 	public UserSelectorArgs? Receiver { get; set; }
@@ -59,13 +47,11 @@ public sealed class NotificationSelectorArgs : BaseSelectorArgs {
 	public UserSelectorArgs? User { get; set; }
 }
 
-public sealed class WalletSelectorArgs : BaseSelectorArgs { }
-
 public sealed class TicketSelectorArgs : BaseSelectorArgs {
 	public MediaSelectorArgs? Media { get; set; }
 }
 
-public sealed class UserSelectorArgs : BaseSelectorArgs {
+public sealed class UserSelectorArgs {
 	public CategorySelectorArgs? Category { get; set; }
 	public MediaSelectorArgs? Media { get; set; }
 	public TxnSelectorArgs? Txns { get; set; }
@@ -105,6 +91,18 @@ public sealed class CommentSelectorArgs : BaseSelectorArgs {
 public sealed class TxnSelectorArgs : BaseSelectorArgs {
 	public UserSelectorArgs? User { get; set; }
 }
+
+public sealed class MediaSelectorArgs : BaseSelectorArgs;
+
+public sealed class ParkingSelectorArgs : BaseSelectorArgs;
+
+public sealed class VehicleSelectorArgs : BaseSelectorArgs;
+
+public sealed class BankAccountSelectorArgs : BaseSelectorArgs;
+
+public sealed class AddressSelectorArgs : BaseSelectorArgs;
+
+public sealed class WalletSelectorArgs : BaseSelectorArgs;
 
 public static class Projections {
 	public static Expression<Func<AddressEntity, AddressResponse>> AddressSelector(AddressSelectorArgs args) {
@@ -254,7 +252,6 @@ public static class Projections {
 			Merchants = args.Merchant == null ? null : x.Merchants.AsQueryable().Select(MerchantSelector(args.Merchant)).ToList(),
 			Txns = args.Txns == null ? null : x.Txns.AsQueryable().Select(TxnSelector(args.Txns)).ToList(),
 			Wallets = args.Wallet == null ? null : x.Wallets.AsQueryable().Select(WalletSelector(args.Wallet)).ToList(),
-			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator)
 		};
 	}
 
@@ -412,8 +409,8 @@ public static class Projections {
 			SimCardSerial = x.SimCardSerial,
 			SimCardNumber = x.SimCardNumber,
 			Imei = x.Imei,
-			TerminalId =  x.TerminalId,
-			CreatedAt =  x.CreatedAt,
+			TerminalId = x.TerminalId,
+			CreatedAt = x.CreatedAt,
 			Agreement = args.Agreement ? x.Agreement.ToBase64() : null,
 			Merchant = args.Merchant == null ? null : MerchantSelector(args.Merchant)!.Invoke(x.Merchant),
 			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator)

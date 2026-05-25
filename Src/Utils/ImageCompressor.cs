@@ -1,7 +1,7 @@
 namespace SinaMN75U.Utils;
 
 public static class ImageCompressor {
-	public static byte[] CompressBase64(string base64, long maxKb = 100) {
+	public static byte[] CompressBase64(string base64, long maxKb = 70) {
 		byte[] inputBytes = Convert.FromBase64String(base64);
 		Console.WriteLine($"[Before] Size: {inputBytes.Length} bytes ({inputBytes.Length / 1024} KB)");
 		using Image img = Image.Load(inputBytes);
