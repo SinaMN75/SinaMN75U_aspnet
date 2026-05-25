@@ -2,10 +2,12 @@
 
 public interface ITerminalService {
 	Task<UResponse<Guid?>> Create(TerminalCreateParams p, CancellationToken ct);
-	Task<UResponse<TerminalResponse?>> Assign(TerminalAssignParams p, CancellationToken ct);
-	Task<UResponse> Bind(IdParams p, CancellationToken ct);
 	Task<UResponse> BulkCreate(TerminalBulkCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<TerminalResponse>?>> Read(TerminalReadParams p, CancellationToken ct);
+	Task<UResponse> Update(TerminalUpdateParams p, CancellationToken ct);
+	Task<UResponse> Reject(IdParams p, CancellationToken ct);
+	Task<UResponse<TerminalResponse?>> Assign(TerminalAssignParams p, CancellationToken ct);
+	Task<UResponse> Bind(IdParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	Task<UResponse<TerminalSupportPasswordResponse?>> ReadSupportPassword(IdParams p, CancellationToken ct);
 }
@@ -39,6 +41,43 @@ public class TerminalService(
 		await db.AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
 		return new UResponse<Guid?>(e.Id);
+	}
+
+	public async Task<UResponse> Update(TerminalUpdateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<TerminalResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (!userData.IsAdmin) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+
+		TerminalEntity? e = await db.Set<TerminalEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("TerminalNotFound"));
+		
+		if (p.Serial.IsNotNullOrEmpty()) e.Serial = p.Serial;
+		if (p.Imei.IsNotNullOrEmpty()) e.Imei = p.Imei;
+		if (p.InsId.IsNotNullOrEmpty()) e.InsId = p.InsId;
+		if (p.SimCardNumber.IsNotNullOrEmpty()) e.SimCardNumber = p.SimCardNumber;
+		if (p.SimCardSerial.IsNotNullOrEmpty()) e.SimCardSerial = p.SimCardSerial;
+		if (p.TerminalId.IsNotNullOrEmpty()) e.TerminalId = p.TerminalId;
+		if (p.MerchantId.IsNotNullOrEmpty()) e.MerchantId = p.MerchantId;
+		
+		e.ApplyUpdateParam<TerminalEntity, TagTerminal, BaseJson>(p);
+		
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> Reject(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<TerminalResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (!userData.IsAdmin) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+
+		TerminalEntity? e = await db.Set<TerminalEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("TerminalNotFound"));
+
+		e.Tags.Remove(TagTerminal.AwaitingVerification);
+		e.Tags.Remove(TagTerminal.Verified);
+		e.Tags.Remove(TagTerminal.Verified);
+
+		return new UResponse();
 	}
 
 	public async Task<UResponse<TerminalResponse?>> Assign(TerminalAssignParams p, CancellationToken ct) {

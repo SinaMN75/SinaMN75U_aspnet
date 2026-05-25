@@ -57,6 +57,16 @@ public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {
 	public decimal? Height { get; set; }
 	public DateTime? Birthdate { get; set; }
 	public ICollection<Guid>? Categories { get; set; }
+	
+	public string? NationalCardFrontRejectionReason { get; set; }
+	public string? NationalCardBackRejectionReason { get; set; }
+	public string? BirthCertificateFirstRejectionReason { get; set; }
+	public string? BirthCertificateSecondRejectionReason { get; set; }
+	public string? BirthCertificateThirdRejectionReason { get; set; }
+	public string? BirthCertificateForthRejectionReason { get; set; }
+	public string? BirthCertificateFifthRejectionReason { get; set; }
+	public string? VisualAuthenticationRejectionReason { get; set; }
+	public string? ESignatureRejectionReason { get; set; }
 }
 
 public sealed class UserReadParams : BaseReadParams<TagUser> {

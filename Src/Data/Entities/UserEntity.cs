@@ -8,7 +8,7 @@ namespace SinaMN75U.Data.Entities;
 public sealed class UserEntity : BaseEntity<TagUser, UserJson> {
 	[Required, MaxLength(100)]
 	public required string UserName { get; set; }
-	
+
 	[Required, MaxLength(200)]
 	public required string Password { get; set; }
 
@@ -17,10 +17,10 @@ public sealed class UserEntity : BaseEntity<TagUser, UserJson> {
 
 	[MaxLength(15)]
 	public string? PhoneNumber { get; set; }
-	
+
 	[MaxLength(15)]
 	public string? LandLine { get; set; }
-	
+
 	[MinLength(10), MaxLength(10)]
 	public string? NationalCode { get; set; }
 
@@ -37,7 +37,7 @@ public sealed class UserEntity : BaseEntity<TagUser, UserJson> {
 	public string? Bio { get; set; }
 
 	public DateTime? Birthdate { get; set; }
-	
+
 	public byte[]? NationalCardFront { get; set; }
 	public byte[]? NationalCardBack { get; set; }
 	public byte[]? BirthCertificateFirst { get; set; }
@@ -61,13 +61,13 @@ public sealed class UserEntity : BaseEntity<TagUser, UserJson> {
 
 	[InverseProperty(nameof(WalletEntity.Creator))]
 	public ICollection<WalletEntity> Wallets { get; set; } = [];
-	
+
 	[InverseProperty(nameof(MerchantEntity.User))]
 	public ICollection<MerchantEntity> Merchants { get; set; } = [];
-	
+
 	[InverseProperty(nameof(BankAccountEntity.Creator))]
 	public ICollection<BankAccountEntity> BankAccounts { get; set; } = [];
-	
+
 	[InverseProperty(nameof(SimCardEntity.User))]
 	public ICollection<SimCardEntity> SimCards { get; set; } = [];
 
@@ -92,4 +92,14 @@ public sealed class UserJson : BaseJson {
 	public string? FatherName { get; set; }
 	public decimal? Weight { get; set; }
 	public decimal? Height { get; set; }
+
+	public string? NationalCardFrontRejectionReason { get; set; }
+	public string? NationalCardBackRejectionReason { get; set; }
+	public string? BirthCertificateFirstRejectionReason { get; set; }
+	public string? BirthCertificateSecondRejectionReason { get; set; }
+	public string? BirthCertificateThirdRejectionReason { get; set; }
+	public string? BirthCertificateForthRejectionReason { get; set; }
+	public string? BirthCertificateFifthRejectionReason { get; set; }
+	public string? VisualAuthenticationRejectionReason { get; set; }
+	public string? ESignatureRejectionReason { get; set; }
 }
