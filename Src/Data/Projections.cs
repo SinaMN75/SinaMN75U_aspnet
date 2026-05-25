@@ -221,7 +221,7 @@ public static class Projections {
 		return selector.Expand();
 	}
 
-	private static Expression<Func<UserEntity, UserResponse>> UserSelector(UserSelectorArgs args) {
+	public static Expression<Func<UserEntity, UserResponse>> UserSelector(UserSelectorArgs args) {
 		return x => new UserResponse {
 			Id = x.Id,
 			Tags = x.Tags,
@@ -238,14 +238,14 @@ public static class Projections {
 			LandLine = x.LandLine,
 			CreatorId = x.CreatorId,
 			NationalCardFront = args.NationalCardFront ? x.NationalCardFront.ToBase64() : null,
-			NationalCardBack = args.NationalCardFront ? x.NationalCardBack.ToBase64() : null,
-			BirthCertificateFirst = args.NationalCardFront ? x.BirthCertificateFirst.ToBase64() : null,
-			BirthCertificateSecond = args.NationalCardFront ? x.BirthCertificateSecond.ToBase64() : null,
-			BirthCertificateThird = args.NationalCardFront ? x.BirthCertificateThird.ToBase64() : null,
-			BirthCertificateForth = args.NationalCardFront ? x.BirthCertificateForth.ToBase64() : null,
-			BirthCertificateFifth = args.NationalCardFront ? x.BirthCertificateFifth.ToBase64() : null,
-			VisualAuthentication = args.NationalCardFront ? x.VisualAuthentication.ToBase64() : null,
-			ESignature = args.NationalCardFront ? x.ESignature.ToBase64() : null,
+			NationalCardBack = args.NationalCardBack ? x.NationalCardBack.ToBase64() : null,
+			BirthCertificateFirst = args.BirthCertificateFirst ? x.BirthCertificateFirst.ToBase64() : null,
+			BirthCertificateSecond = args.BirthCertificateSecond ? x.BirthCertificateSecond.ToBase64() : null,
+			BirthCertificateThird = args.BirthCertificateThird ? x.BirthCertificateThird.ToBase64() : null,
+			BirthCertificateForth = args.BirthCertificateForth ? x.BirthCertificateForth.ToBase64() : null,
+			BirthCertificateFifth = args.BirthCertificateFifth ? x.BirthCertificateFifth.ToBase64() : null,
+			VisualAuthentication = args.VisualAuthentication ? x.VisualAuthentication.ToBase64() : null,
+			ESignature = args.ESignature ? x.ESignature.ToBase64() : null,
 			Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 			Addresses = args.Address == null ? null : x.Addresses.AsQueryable().Select(AddressSelector(args.Address)).ToList(),
@@ -332,7 +332,7 @@ public static class Projections {
 				Creator = args.Creator,
 				ChildrenDebt = args.ChildrenDebt - 1
 			});
-		return x => new ProductResponse {
+		Expression<Func<ProductEntity, ProductResponse>> selector = x => new ProductResponse {
 			Id = x.Id,
 			Tags = x.Tags,
 			JsonData = x.JsonData,
@@ -359,6 +359,7 @@ public static class Projections {
 			IsFollowing = args.IsFollowing && args.UserId != null ? x.Followers.Any(f => f.CreatorId == args.UserId) : null,
 			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator)
 		};
+		return selector.Expand();
 	}
 
 	public static Expression<Func<CategoryEntity, CategoryResponse>> CategorySelector(CategorySelectorArgs args) {
@@ -370,7 +371,7 @@ public static class Projections {
 					ChildrenDebt = args.ChildrenDebt - 1
 				}
 			);
-		return x => new CategoryResponse {
+		Expression<Func<CategoryEntity, CategoryResponse>> selector = x => new CategoryResponse {
 			Id = x.Id,
 			Tags = x.Tags,
 			JsonData = x.JsonData,
@@ -384,6 +385,7 @@ public static class Projections {
 			Children = args.Children != null && args.ChildrenDebt > 0 ? x.Children.AsQueryable().Select(childSelector!).ToList() : null,
 			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator)
 		};
+		return selector.Expand();
 	}
 
 	public static Expression<Func<ContentEntity, ContentResponse>> ContentSelector(ContentSelectorArgs args) {
