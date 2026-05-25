@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Vehicles")]
-[Index(nameof(LicencePlate), Name = "IX_Vehicles_NumberPlate", IsUnique = true)]
+[Microsoft.EntityFrameworkCore.Index(nameof(LicencePlate), Name = "IX_Vehicles_NumberPlate", IsUnique = true)]
 public sealed class VehicleEntity : BaseEntity<TagVehicle, BaseJson> {
 	[Required, MinLength(6), MaxLength(10)]
 	public required string LicencePlate { get; set; }

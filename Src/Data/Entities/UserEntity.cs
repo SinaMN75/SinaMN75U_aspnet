@@ -1,10 +1,10 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Users")]
-[Index(nameof(Email), Name = "IX_Users_Email", IsUnique = true)]
-[Index(nameof(UserName), Name = "IX_Users_UserName", IsUnique = true)]
-[Index(nameof(PhoneNumber), Name = "IX_Users_PhoneNumber", IsUnique = true)]
-[Index(nameof(NationalCode), Name = "IX_Users_NationalCode", IsUnique = true)]
+[Microsoft.EntityFrameworkCore.Index(nameof(Email), Name = "IX_Users_Email", IsUnique = true)]
+[Microsoft.EntityFrameworkCore.Index(nameof(UserName), Name = "IX_Users_UserName", IsUnique = true)]
+[Microsoft.EntityFrameworkCore.Index(nameof(PhoneNumber), Name = "IX_Users_PhoneNumber", IsUnique = true)]
+[Microsoft.EntityFrameworkCore.Index(nameof(NationalCode), Name = "IX_Users_NationalCode", IsUnique = true)]
 public sealed class UserEntity : BaseEntity<TagUser, UserJson> {
 	[Required, MaxLength(100)]
 	public required string UserName { get; set; }

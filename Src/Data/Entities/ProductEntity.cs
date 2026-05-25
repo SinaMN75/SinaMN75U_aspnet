@@ -1,9 +1,9 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Products")]
-[Index(nameof(Slug), IsUnique = true, Name = "IX_Products_Slug")]
-[Index(nameof(Code), IsUnique = true, Name = "IX_Products_Code")]
-[Index(nameof(CreatorId))]
+[Microsoft.EntityFrameworkCore.Index(nameof(Slug), IsUnique = true, Name = "IX_Products_Slug")]
+[Microsoft.EntityFrameworkCore.Index(nameof(Code), IsUnique = true, Name = "IX_Products_Code")]
+[Microsoft.EntityFrameworkCore.Index(nameof(CreatorId))]
 public sealed class ProductEntity : BaseEntity<TagProduct, ProductJson> {
 	[Required]
 	[MaxLength(100)]

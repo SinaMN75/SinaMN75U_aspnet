@@ -1,12 +1,12 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Media")]
-[Index(nameof(UserId), Name = "IX_Media_UserId")]
-[Index(nameof(ContentId), Name = "IX_Media_ContentId")]
-[Index(nameof(CategoryId), Name = "IX_Media_CategoryId")]
-[Index(nameof(CommentId), Name = "IX_Media_CommentId")]
-[Index(nameof(ProductId), Name = "IX_Media_ProductId")]
-[Index(nameof(TicketId), Name = "IX_Media_TicketId")]
+[Microsoft.EntityFrameworkCore.Index(nameof(UserId), Name = "IX_Media_UserId")]
+[Microsoft.EntityFrameworkCore.Index(nameof(ContentId), Name = "IX_Media_ContentId")]
+[Microsoft.EntityFrameworkCore.Index(nameof(CategoryId), Name = "IX_Media_CategoryId")]
+[Microsoft.EntityFrameworkCore.Index(nameof(CommentId), Name = "IX_Media_CommentId")]
+[Microsoft.EntityFrameworkCore.Index(nameof(ProductId), Name = "IX_Media_ProductId")]
+[Microsoft.EntityFrameworkCore.Index(nameof(TicketId), Name = "IX_Media_TicketId")]
 public sealed class MediaEntity : BaseEntity<TagMedia, BaseJson> {
 	[Required]
 	[MaxLength(200)]

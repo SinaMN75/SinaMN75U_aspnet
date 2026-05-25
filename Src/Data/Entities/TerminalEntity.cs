@@ -1,9 +1,9 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Terminals")]
-[Index(nameof(TerminalId), IsUnique = true, Name = "IX_Terminal_TerminalId")]
-[Index(nameof(SimCardSerial), IsUnique = true, Name = "IX_Terminal_SimCardSerial")]
-[Index(nameof(Imei), IsUnique = true, Name = "IX_Terminal_Imei")]
+[Microsoft.EntityFrameworkCore.Index(nameof(TerminalId), IsUnique = true, Name = "IX_Terminal_TerminalId")]
+[Microsoft.EntityFrameworkCore.Index(nameof(SimCardSerial), IsUnique = true, Name = "IX_Terminal_SimCardSerial")]
+[Microsoft.EntityFrameworkCore.Index(nameof(Imei), IsUnique = true, Name = "IX_Terminal_Imei")]
 public sealed class TerminalEntity : BaseEntity<TagTerminal, BaseJson> {
 	[Required, MaxLength(40)]
 	public required string Serial { get; set; }
