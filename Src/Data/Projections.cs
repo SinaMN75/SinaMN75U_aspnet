@@ -1,80 +1,71 @@
+using LinqKit;
+
 namespace SinaMN75U.Data;
 
-public sealed class MediaSelectorArgs;
-
-public sealed class ParkingSelectorArgs {
+public class BaseSelectorArgs {
 	public UserSelectorArgs? Creator { get; set; }
 }
 
-public sealed class ParkingReportSelectorArgs {
+public sealed class MediaSelectorArgs : BaseSelectorArgs;
+
+public sealed class ParkingSelectorArgs : BaseSelectorArgs { }
+
+public sealed class ParkingReportSelectorArgs : BaseSelectorArgs {
 	public VehicleSelectorArgs? Vehicle { get; set; }
 	public ParkingSelectorArgs? Parking { get; set; }
 }
 
-public sealed class VasSelectorArgs {
+public sealed class VasSelectorArgs : BaseSelectorArgs {
 	public WalletTxnSelectorArgs? WalletTxn { get; set; }
 	public TxnSelectorArgs? Txn { get; set; }
-	public UserSelectorArgs? Creator { get; set; }
 }
 
-public sealed class VehicleSelectorArgs {
-	public UserSelectorArgs? Creator { get; set; }
-}
+public sealed class VehicleSelectorArgs : BaseSelectorArgs { }
 
-public sealed class CategorySelectorArgs {
+public sealed class CategorySelectorArgs : BaseSelectorArgs {
 	public MediaSelectorArgs? Media { get; set; }
 	public CategorySelectorArgs? Children { get; set; }
 	public int ChildrenDebt { get; set; }
 }
 
-public sealed class ContentSelectorArgs {
+public sealed class ContentSelectorArgs : BaseSelectorArgs {
 	public MediaSelectorArgs? Media { get; set; }
 }
 
-public sealed class BankAccountSelectorArgs {
-	public UserSelectorArgs? Creator { get; set; }
-}
+public sealed class BankAccountSelectorArgs : BaseSelectorArgs { }
 
-public sealed class SimCardSelectorArgs {
+public sealed class SimCardSelectorArgs : BaseSelectorArgs {
 	public UserSelectorArgs? User { get; set; }
 }
 
-public sealed class TerminalSelectorArgs {
-	public UserSelectorArgs? Creator { get; set; }
+public sealed class TerminalSelectorArgs : BaseSelectorArgs {
 	public MerchantSelectorArgs? Merchant { get; set; }
 	public bool Agreement { get; set; }
 }
 
-public sealed class MerchantSelectorArgs {
-	public UserSelectorArgs? Creator { get; set; }
+public sealed class MerchantSelectorArgs : BaseSelectorArgs {
 	public UserSelectorArgs? User { get; set; }
 	public TerminalSelectorArgs? Terminal { get; set; }
 }
 
-public sealed class AddressSelectorArgs {
-	public UserSelectorArgs? Creator { get; set; }
-}
+public sealed class AddressSelectorArgs : BaseSelectorArgs { }
 
-public sealed class WalletTxnSelectorArgs {
+public sealed class WalletTxnSelectorArgs : BaseSelectorArgs {
 	public UserSelectorArgs? Sender { get; set; }
 	public UserSelectorArgs? Receiver { get; set; }
 }
 
-public sealed class NotificationSelectorArgs {
-	public UserSelectorArgs? Creator { get; set; }
+public sealed class NotificationSelectorArgs : BaseSelectorArgs {
 	public UserSelectorArgs? User { get; set; }
 }
 
-public sealed class WalletSelectorArgs {
-	public UserSelectorArgs? User { get; set; }
-}
+public sealed class WalletSelectorArgs : BaseSelectorArgs { }
 
-public sealed class TicketSelectorArgs {
+public sealed class TicketSelectorArgs : BaseSelectorArgs {
 	public MediaSelectorArgs? Media { get; set; }
-	public UserSelectorArgs? User { get; set; }
 }
 
-public sealed class UserSelectorArgs {
+public sealed class UserSelectorArgs : BaseSelectorArgs {
 	public CategorySelectorArgs? Category { get; set; }
 	public MediaSelectorArgs? Media { get; set; }
 	public TxnSelectorArgs? Txns { get; set; }
@@ -94,11 +85,10 @@ public sealed class UserSelectorArgs {
 	public bool ESignature { get; set; }
 }
 
-public sealed class ProductSelectorArgs {
+public sealed class ProductSelectorArgs : BaseSelectorArgs {
 	public Guid? UserId { get; set; }
 	public ProductSelectorArgs? Children { get; set; }
 	public CategorySelectorArgs? Category { get; set; }
-	public UserSelectorArgs? Creator { get; set; }
 	public MediaSelectorArgs? Media { get; set; }
 	public bool ChildrenCount { get; set; }
 	public bool CommentsCount { get; set; }
@@ -106,474 +96,228 @@ public sealed class ProductSelectorArgs {
 	public int ChildrenDebt { get; set; }
 }
 
-public sealed class CommentSelectorArgs {
+public sealed class CommentSelectorArgs : BaseSelectorArgs {
 	public CommentSelectorArgs? Children { get; set; }
 	public UserSelectorArgs? User { get; set; }
-	public UserSelectorArgs? Creator { get; set; }
 	public MediaSelectorArgs? Media { get; set; }
 }
 
-public sealed class TxnSelectorArgs {
+public sealed class TxnSelectorArgs : BaseSelectorArgs {
 	public UserSelectorArgs? User { get; set; }
 }
 
 public static class Projections {
-	public static Expression<Func<AddressEntity, AddressResponse>> AddressSelector(AddressSelectorArgs args) => x => new AddressResponse {
-		Id = x.Id,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		ZipCode = x.ZipCode,
-		CreatorId = x.CreatorId, Creator = args.Creator == null
-			? null
-			: new UserResponse {
-				Id = x.Creator.Id,
-				JsonData = x.Creator.JsonData,
-				Tags = x.Creator.Tags,
-				UserName = x.Creator.UserName,
-				PhoneNumber = x.Creator.PhoneNumber,
-				Email = x.Creator.Email,
-				FirstName = x.Creator.FirstName,
-				LastName = x.Creator.LastName,
-				NationalCode = x.Creator.NationalCode,
-				Bio = x.Creator.Bio,
-				Birthdate = x.Creator.Birthdate,
-				CreatedAt = x.Creator.CreatedAt,
-				CreatorId = x.Creator.CreatorId,
-				Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
-				Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList(),
-				Addresses = args.Creator.Address == null ? null : x.Creator.Addresses.AsQueryable().Select(AddressSelector(args.Creator.Address)).ToList(),
-				BankAccounts = args.Creator.BankAccount == null ? null : x.Creator.BankAccounts.AsQueryable().Select(BankAccountSelector(args.Creator.BankAccount)).ToList(),
-				Merchants = args.Creator.Merchant == null ? null : x.Creator.Merchants.AsQueryable().Select(MerchantSelector(args.Creator.Merchant)).ToList(),
-				Txns = args.Creator.Txns == null ? null : x.Creator.Txns.AsQueryable().Select(TxnSelector(args.Creator.Txns)).ToList(),
-				SimCards = args.Creator.SimCard == null ? null : x.Creator.SimCards.AsQueryable().Select(SimCardSelector(args.Creator.SimCard)).ToList(),
-				Wallets = args.Creator.Wallet == null ? null : x.Creator.Wallets.AsQueryable().Select(WalletSelector(args.Creator.Wallet)).ToList()
-			}
-	};
+	public static Expression<Func<AddressEntity, AddressResponse>> AddressSelector(AddressSelectorArgs args) {
+		Expression<Func<AddressEntity, AddressResponse>> selector = x => new AddressResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			ZipCode = x.ZipCode,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
 
-	public static Expression<Func<WalletTxnEntity, WalletTxnResponse>> WalletTxnSelector(WalletTxnSelectorArgs args) => x => new WalletTxnResponse {
-		Id = x.Id,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		SenderId = x.SenderId,
-		ReceiverId = x.ReceiverId,
-		Amount = x.Amount,
-		Sender = args.Sender == null
-			? null
-			: new UserResponse {
-				Id = x.Sender.Id,
-				JsonData = x.Sender.JsonData,
-				Tags = x.Sender.Tags,
-				UserName = x.Sender.UserName,
-				PhoneNumber = x.Sender.PhoneNumber,
-				Email = x.Sender.Email,
-				FirstName = x.Sender.FirstName,
-				LastName = x.Sender.LastName,
-				NationalCode = x.Sender.NationalCode,
-				Media = args.Sender.Media == null ? null : x.Sender.Media.AsQueryable().Select(MediaSelector()).ToList(),
-				Categories = args.Sender.Category == null ? null : x.Sender.Categories.AsQueryable().Select(CategorySelector(args.Sender.Category)).ToList()
-			},
-		Receiver = args.Receiver == null
-			? null
-			: new UserResponse {
-				Id = x.Receiver.Id,
-				JsonData = x.Receiver.JsonData,
-				Tags = x.Receiver.Tags,
-				UserName = x.Receiver.UserName,
-				PhoneNumber = x.Receiver.PhoneNumber,
-				Email = x.Receiver.Email,
-				FirstName = x.Receiver.FirstName,
-				LastName = x.Receiver.LastName,
-				NationalCode = x.Receiver.NationalCode,
-				Media = args.Receiver.Media == null ? null : x.Receiver.Media.AsQueryable().Select(MediaSelector()).ToList(),
-				Categories = args.Receiver.Category == null ? null : x.Receiver.Categories.AsQueryable().Select(CategorySelector(args.Receiver.Category)).ToList()
-			}
-	};
+	public static Expression<Func<WalletTxnEntity, WalletTxnResponse>> WalletTxnSelector(WalletTxnSelectorArgs args) {
+		Expression<Func<WalletTxnEntity, WalletTxnResponse>> selector = x => new WalletTxnResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			SenderId = x.SenderId,
+			ReceiverId = x.ReceiverId,
+			Amount = x.Amount,
+			CreatedAt = x.CreatedAt,
+			CreatorId = x.CreatorId,
+			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator),
+			Sender = args.Sender == null ? null : UserSelector(args.Sender).Invoke(x.Sender),
+			Receiver = args.Receiver == null ? null : UserSelector(args.Receiver).Invoke(x.Receiver)
+		};
+		return selector.Expand();
+	}
 
-	public static Expression<Func<NotificationEntity, NotificationResponse>> NotificationSelector(NotificationSelectorArgs args) => x => new NotificationResponse {
-		Id = x.Id,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		CreatorId = x.CreatorId,
-		UserId = x.UserId,
-		ZipCode = x.ZipCode,
-		Creator = args.Creator == null
-			? null
-			: new UserResponse {
-				Id = x.Creator.Id,
-				JsonData = x.Creator.JsonData,
-				Tags = x.Creator.Tags,
-				UserName = x.Creator.UserName,
-				PhoneNumber = x.Creator.PhoneNumber,
-				Email = x.Creator.Email,
-				FirstName = x.Creator.FirstName,
-				LastName = x.Creator.LastName,
-				NationalCode = x.Creator.NationalCode,
-				Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
-				Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
-			},
-		User = args.User == null
-			? null
-			: new UserResponse {
-				Id = x.User.Id,
-				JsonData = x.User.JsonData,
-				Tags = x.User.Tags,
-				UserName = x.User.UserName,
-				PhoneNumber = x.User.PhoneNumber,
-				Email = x.User.Email,
-				FirstName = x.User.FirstName,
-				LastName = x.User.LastName,
-				NationalCode = x.User.NationalCode,
-				Media = args.User.Media == null ? null : x.User.Media.AsQueryable().Select(MediaSelector()).ToList(),
-				Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList()
-			}
-	};
+	public static Expression<Func<NotificationEntity, NotificationResponse>> NotificationSelector(NotificationSelectorArgs args) {
+		Expression<Func<NotificationEntity, NotificationResponse>> selector = x => new NotificationResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			UserId = x.UserId,
+			ZipCode = x.ZipCode,
+			CreatedAt = x.CreatedAt,
+			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator),
+			User = args.User == null ? null : UserSelector(args.User).Invoke(x.User)
+		};
+		return selector.Expand();
+	}
 
-	public static Expression<Func<WalletEntity, WalletResponse>> WalletSelector(WalletSelectorArgs args) => x => new WalletResponse {
-		Id = x.Id,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		Balance = x.Balance,
-		CreatorId = x.CreatorId,
-		Creator = args.User == null
-			? null
-			: new UserResponse {
-				Id = x.Creator.Id,
-				JsonData = x.Creator.JsonData,
-				Tags = x.Creator.Tags,
-				UserName = x.Creator.UserName,
-				PhoneNumber = x.Creator.PhoneNumber,
-				Email = x.Creator.Email,
-				FirstName = x.Creator.FirstName,
-				LastName = x.Creator.LastName,
-				NationalCode = x.Creator.NationalCode,
-				Media = args.User.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
-				Categories = args.User.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList()
-			}
-	};
+	public static Expression<Func<WalletEntity, WalletResponse>> WalletSelector(WalletSelectorArgs args) {
+		Expression<Func<WalletEntity, WalletResponse>> selector = x => new WalletResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			Balance = x.Balance,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
 
-	public static Expression<Func<BankAccountEntity, BankAccountResponse>> BankAccountSelector(BankAccountSelectorArgs args) => x => new BankAccountResponse {
-		Id = x.Id,
-		CreatedAt = x.CreatedAt,
-		Tags = x.Tags,
-		CardNumber = x.CardNumber,
-		AccountNumber = x.AccountNumber,
-		IBanNumber = x.IBanNumber,
-		BankName = x.BankName,
-		OwnerName = x.OwnerName,
-		CreatorId = x.CreatorId,
-		JsonData = x.JsonData,
-		Creator = args.Creator == null
-			? null
-			: new UserResponse {
-				Id = x.Creator.Id,
-				JsonData = x.Creator.JsonData,
-				Tags = x.Creator.Tags,
-				UserName = x.Creator.UserName,
-				PhoneNumber = x.Creator.PhoneNumber,
-				Email = x.Creator.Email,
-				FirstName = x.Creator.FirstName,
-				LastName = x.Creator.LastName,
-				NationalCode = x.Creator.NationalCode,
-				Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
-				Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
-			}
-	};
+	public static Expression<Func<BankAccountEntity, BankAccountResponse>> BankAccountSelector(BankAccountSelectorArgs args) {
+		Expression<Func<BankAccountEntity, BankAccountResponse>> selector = x => new BankAccountResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			Tags = x.Tags,
+			CardNumber = x.CardNumber,
+			AccountNumber = x.AccountNumber,
+			IBanNumber = x.IBanNumber,
+			BankName = x.BankName,
+			OwnerName = x.OwnerName,
+			CreatorId = x.CreatorId,
+			JsonData = x.JsonData,
+			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
 
-	public static Expression<Func<SimCardEntity, SimCardResponse>> SimCardSelector(SimCardSelectorArgs args) => x => new SimCardResponse {
-		Id = x.Id,
-		CreatedAt = x.CreatedAt,
-		UserId = x.UserId,
-		JsonData = x.JsonData,
-		Serial = x.Serial,
-		Number = x.Number,
-		Tags = x.Tags,
-		User = args.User == null
-			? null
-			: new UserResponse {
-				Id = x.User.Id,
-				JsonData = x.User.JsonData,
-				Tags = x.User.Tags,
-				UserName = x.User.UserName,
-				PhoneNumber = x.User.PhoneNumber,
-				Email = x.User.Email,
-				FirstName = x.User.FirstName,
-				LastName = x.User.LastName,
-				NationalCode = x.User.NationalCode,
-				Media = args.User.Media == null ? null : x.User.Media.AsQueryable().Select(MediaSelector()).ToList(),
-				Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList()
-			}
-	};
+	public static Expression<Func<SimCardEntity, SimCardResponse>> SimCardSelector(SimCardSelectorArgs args) {
+		Expression<Func<SimCardEntity, SimCardResponse>> selector = x => new SimCardResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			UserId = x.UserId,
+			JsonData = x.JsonData,
+			Serial = x.Serial,
+			Number = x.Number,
+			Tags = x.Tags,
+			CreatorId = x.CreatorId,
+			User = args.User == null ? null : UserSelector(args.User).Invoke(x.User),
+			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
 
-	public static Expression<Func<MediaEntity, MediaResponse>> MediaSelector() => x => new MediaResponse {
-		Id = x.Id,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		Path = x.Path
-	};
+	public static Expression<Func<MediaEntity, MediaResponse>> MediaSelector() {
+		Expression<Func<MediaEntity, MediaResponse>> selector = x => new MediaResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			Path = x.Path
+		};
+		return selector.Expand();
+	}
 
-	public static Expression<Func<UserEntity, UserResponse>> UserSelector(UserSelectorArgs args) => x => new UserResponse {
-		Id = x.Id,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		UserName = x.UserName,
-		PhoneNumber = x.PhoneNumber,
-		Email = x.Email,
-		FirstName = x.FirstName,
-		LastName = x.LastName,
-		Bio = x.Bio,
-		Birthdate = x.Birthdate,
-		NationalCode = x.NationalCode,
-		CreatedAt = x.CreatedAt,
-		NationalCardFront = args.NationalCardFront ? x.NationalCardFront.ToBase64() : null,
-		NationalCardBack = args.NationalCardFront ? x.NationalCardBack.ToBase64() : null,
-		BirthCertificateFirst = args.NationalCardFront ? x.BirthCertificateFirst.ToBase64() : null,
-		BirthCertificateSecond = args.NationalCardFront ? x.BirthCertificateSecond.ToBase64() : null,
-		BirthCertificateThird = args.NationalCardFront ? x.BirthCertificateThird.ToBase64() : null,
-		BirthCertificateForth = args.NationalCardFront ? x.BirthCertificateForth.ToBase64() : null,
-		BirthCertificateFifth = args.NationalCardFront ? x.BirthCertificateFifth.ToBase64() : null,
-		VisualAuthentication = args.NationalCardFront ? x.VisualAuthentication.ToBase64() : null,
-		ESignature = args.NationalCardFront ? x.ESignature.ToBase64() : null,
-		Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
-		Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
-		Addresses = args.Address == null ? null : x.Addresses.AsQueryable().Select(AddressSelector(args.Address)).ToList(),
-		BankAccounts = args.BankAccount == null ? null : x.BankAccounts.AsQueryable().Select(BankAccountSelector(args.BankAccount)).ToList(),
-		SimCards = args.SimCard == null ? null : x.SimCards.AsQueryable().Select(SimCardSelector(args.SimCard)).ToList(),
-		Merchants = args.Merchant == null ? null : x.Merchants.AsQueryable().Select(MerchantSelector(args.Merchant)).ToList(),
-		Txns = args.Txns == null ? null : x.Txns.AsQueryable().Select(TxnSelector(args.Txns)).ToList(),
-		Wallets = args.Wallet == null ? null : x.Wallets.AsQueryable().Select(WalletSelector(args.Wallet)).ToList()
-	};
+	public static Expression<Func<ParkingEntity, ParkingResponse>> ParkingSelector(ParkingSelectorArgs args) {
+		Expression<Func<ParkingEntity, ParkingResponse>> selector = x => new ParkingResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			Title = x.Title,
+			CreatorId = x.CreatorId,
+			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
 
-	public static Expression<Func<ParkingEntity, ParkingResponse>> ParkingSelector(ParkingSelectorArgs args) => x => new ParkingResponse {
-		Id = x.Id,
-		CreatedAt = x.CreatedAt,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		Title = x.Title,
-		CreatorId = x.CreatorId,
-		Creator = args.Creator == null
-			? null
-			: new UserResponse {
-				Id = x.Creator.Id,
-				JsonData = x.Creator.JsonData,
-				Tags = x.Creator.Tags,
-				UserName = x.Creator.UserName,
-				PhoneNumber = x.Creator.PhoneNumber,
-				Email = x.Creator.Email,
-				FirstName = x.Creator.FirstName,
-				LastName = x.Creator.LastName,
-				NationalCode = x.Creator.NationalCode,
-				Bio = x.Creator.Bio,
-				Birthdate = x.Creator.Birthdate,
-				CreatedAt = x.Creator.CreatedAt,
-				CreatorId = x.Creator.CreatorId,
-				Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
-				Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList(),
-				Addresses = args.Creator.Address == null ? null : x.Creator.Addresses.AsQueryable().Select(AddressSelector(args.Creator.Address)).ToList(),
-				BankAccounts = args.Creator.BankAccount == null ? null : x.Creator.BankAccounts.AsQueryable().Select(BankAccountSelector(args.Creator.BankAccount)).ToList(),
-				Merchants = args.Creator.Merchant == null ? null : x.Creator.Merchants.AsQueryable().Select(MerchantSelector(args.Creator.Merchant)).ToList(),
-				Txns = args.Creator.Txns == null ? null : x.Creator.Txns.AsQueryable().Select(TxnSelector(args.Creator.Txns)).ToList(),
-				SimCards = args.Creator.SimCard == null ? null : x.Creator.SimCards.AsQueryable().Select(SimCardSelector(args.Creator.SimCard)).ToList(),
-				Wallets = args.Creator.Wallet == null ? null : x.Creator.Wallets.AsQueryable().Select(WalletSelector(args.Creator.Wallet)).ToList()
-			}
-	};
+	private static Expression<Func<UserEntity, UserResponse>> UserSelector(UserSelectorArgs args) {
+		return x => new UserResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			UserName = x.UserName,
+			PhoneNumber = x.PhoneNumber,
+			Email = x.Email,
+			FirstName = x.FirstName,
+			LastName = x.LastName,
+			Bio = x.Bio,
+			Birthdate = x.Birthdate,
+			NationalCode = x.NationalCode,
+			CreatedAt = x.CreatedAt,
+			LandLine = x.LandLine,
+			CreatorId = x.CreatorId,
+			NationalCardFront = args.NationalCardFront ? x.NationalCardFront.ToBase64() : null,
+			NationalCardBack = args.NationalCardFront ? x.NationalCardBack.ToBase64() : null,
+			BirthCertificateFirst = args.NationalCardFront ? x.BirthCertificateFirst.ToBase64() : null,
+			BirthCertificateSecond = args.NationalCardFront ? x.BirthCertificateSecond.ToBase64() : null,
+			BirthCertificateThird = args.NationalCardFront ? x.BirthCertificateThird.ToBase64() : null,
+			BirthCertificateForth = args.NationalCardFront ? x.BirthCertificateForth.ToBase64() : null,
+			BirthCertificateFifth = args.NationalCardFront ? x.BirthCertificateFifth.ToBase64() : null,
+			VisualAuthentication = args.NationalCardFront ? x.VisualAuthentication.ToBase64() : null,
+			ESignature = args.NationalCardFront ? x.ESignature.ToBase64() : null,
+			Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
+			Addresses = args.Address == null ? null : x.Addresses.AsQueryable().Select(AddressSelector(args.Address)).ToList(),
+			BankAccounts = args.BankAccount == null ? null : x.BankAccounts.AsQueryable().Select(BankAccountSelector(args.BankAccount)).ToList(),
+			SimCards = args.SimCard == null ? null : x.SimCards.AsQueryable().Select(SimCardSelector(args.SimCard)).ToList(),
+			Merchants = args.Merchant == null ? null : x.Merchants.AsQueryable().Select(MerchantSelector(args.Merchant)).ToList(),
+			Txns = args.Txns == null ? null : x.Txns.AsQueryable().Select(TxnSelector(args.Txns)).ToList(),
+			Wallets = args.Wallet == null ? null : x.Wallets.AsQueryable().Select(WalletSelector(args.Wallet)).ToList(),
+			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator)
+		};
+	}
 
-	public static Expression<Func<MerchantEntity, MerchantResponse>> MerchantSelector(MerchantSelectorArgs args) => x => new MerchantResponse {
-		Id = x.Id,
-		CreatedAt = x.CreatedAt,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		CreatorId = x.CreatorId,
-		UserId = x.UserId,
-		ZipCode = x.ZipCode,
-		BankAccountId = x.BankAccountId,
-		NationalCode = x.NationalCode,
-		Title = x.Title,
-		CityCode = x.CityCode,
-		InsId = x.InsId,
-		Landline = x.Landline,
-		Mcc = x.Mcc,
-		MerchantId = x.MerchantId,
-		PhoneNumber = x.PhoneNumber,
-		Terminals = args.Terminal == null ? null : x.Terminals.AsQueryable().Select(TerminalSelector(args.Terminal)).ToList(),
-		User = args.User == null
-			? null
-			: new UserResponse {
-				Id = x.User.Id,
-				JsonData = x.User.JsonData,
-				Tags = x.User.Tags,
-				UserName = x.User.UserName,
-				PhoneNumber = x.User.PhoneNumber,
-				Email = x.User.Email,
-				FirstName = x.User.FirstName,
-				LastName = x.User.LastName,
-				NationalCode = x.User.NationalCode,
-				Bio = x.User.Bio,
-				Birthdate = x.User.Birthdate,
-				CreatedAt = x.User.CreatedAt,
-				CreatorId = x.User.CreatorId,
-				Media = args.User.Media == null
-					? null
-					: x.User.Media.AsQueryable()
-						.Select(MediaSelector())
-						.ToList(),
-				Categories = args.User.Category == null
-					? null
-					: x.User.Categories.AsQueryable()
-						.Select(CategorySelector(args.User.Category))
-						.ToList(),
-				Addresses = args.User.Address == null
-					? null
-					: x.User.Addresses.AsQueryable()
-						.Select(AddressSelector(args.User.Address))
-						.ToList(),
-				BankAccounts = args.User.BankAccount == null
-					? null
-					: x.User.BankAccounts.AsQueryable()
-						.Select(BankAccountSelector(args.User.BankAccount))
-						.ToList(),
-				Merchants = args.User.Merchant == null
-					? null
-					: x.User.Merchants.AsQueryable()
-						.Select(MerchantSelector(args.User.Merchant))
-						.ToList(),
-				Txns = args.User.Txns == null
-					? null
-					: x.User.Txns.AsQueryable()
-						.Select(TxnSelector(args.User.Txns))
-						.ToList(),
-				SimCards = args.User.SimCard == null
-					? null
-					: x.User.SimCards.AsQueryable()
-						.Select(SimCardSelector(args.User.SimCard))
-						.ToList(),
-				Wallets = args.User.Wallet == null
-					? null
-					: x.User.Wallets.AsQueryable()
-						.Select(WalletSelector(args.User.Wallet))
-						.ToList()
-			},
-		Creator = args.Creator == null
-			? null
-			: new UserResponse {
-				Id = x.Creator.Id,
-				JsonData = x.Creator.JsonData,
-				Tags = x.Creator.Tags,
-				UserName = x.Creator.UserName,
-				PhoneNumber = x.Creator.PhoneNumber,
-				Email = x.Creator.Email,
-				FirstName = x.Creator.FirstName,
-				LastName = x.Creator.LastName,
-				NationalCode = x.Creator.NationalCode,
-				Bio = x.Creator.Bio,
-				Birthdate = x.Creator.Birthdate,
-				CreatedAt = x.Creator.CreatedAt,
-				CreatorId = x.Creator.CreatorId,
-				Media = args.Creator.Media == null
-					? null
-					: x.Creator.Media.AsQueryable()
-						.Select(MediaSelector())
-						.ToList(),
-				Categories = args.Creator.Category == null
-					? null
-					: x.Creator.Categories.AsQueryable()
-						.Select(CategorySelector(args.Creator.Category))
-						.ToList(),
-				Addresses = args.Creator.Address == null
-					? null
-					: x.Creator.Addresses.AsQueryable()
-						.Select(AddressSelector(args.Creator.Address))
-						.ToList(),
-				BankAccounts = args.Creator.BankAccount == null
-					? null
-					: x.Creator.BankAccounts.AsQueryable()
-						.Select(BankAccountSelector(args.Creator.BankAccount))
-						.ToList(),
-				Merchants = args.Creator.Merchant == null
-					? null
-					: x.Creator.Merchants.AsQueryable()
-						.Select(MerchantSelector(args.Creator.Merchant))
-						.ToList(),
-				Txns = args.Creator.Txns == null
-					? null
-					: x.Creator.Txns.AsQueryable()
-						.Select(TxnSelector(args.Creator.Txns))
-						.ToList(),
-				SimCards = args.Creator.SimCard == null
-					? null
-					: x.Creator.SimCards.AsQueryable()
-						.Select(SimCardSelector(args.Creator.SimCard))
-						.ToList(),
-				Wallets = args.Creator.Wallet == null
-					? null
-					: x.Creator.Wallets.AsQueryable()
-						.Select(WalletSelector(args.Creator.Wallet))
-						.ToList()
-			}
-	};
+	public static Expression<Func<MerchantEntity, MerchantResponse>> MerchantSelector(MerchantSelectorArgs args) {
+		Expression<Func<MerchantEntity, MerchantResponse>> selector = x => new MerchantResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			UserId = x.UserId,
+			ZipCode = x.ZipCode,
+			BankAccountId = x.BankAccountId,
+			NationalCode = x.NationalCode,
+			Title = x.Title,
+			CityCode = x.CityCode,
+			InsId = x.InsId,
+			Landline = x.Landline,
+			Mcc = x.Mcc,
+			MerchantId = x.MerchantId,
+			PhoneNumber = x.PhoneNumber,
+			Terminals = args.Terminal == null ? null : x.Terminals.AsQueryable().Select(TerminalSelector(args.Terminal)).ToList(),
+			User = args.User == null ? null : UserSelector(args.User).Invoke(x.User),
+			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
 
-	public static Expression<Func<ParkingReportEntity, ParkingReportResponse>> ParkingReportSelector(ParkingReportSelectorArgs args) => x => new ParkingReportResponse {
-		Id = x.Id,
-		CreatedAt = x.CreatedAt,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		CreatorId = x.CreatorId,
-		StartDate = x.StartDate,
-		VehicleId = x.VehicleId,
-		ParkingId = x.ParkingId,
-		Amount = x.Amount,
-		EndDate = x.EndDate,
-		Parking = args.Parking == null
-			? null
-			: new ParkingResponse {
-				Id = x.Parking.Id,
-				CreatedAt = x.Parking.CreatedAt,
-				JsonData = x.Parking.JsonData,
-				Tags = x.Parking.Tags,
-				CreatorId = x.Parking.CreatorId,
-				Title = x.Parking.Title
-			},
-		Vehicle = args.Vehicle == null
-			? null
-			: new VehicleResponse {
-				Id = x.Vehicle.Id,
-				CreatedAt = x.Vehicle.CreatedAt,
-				JsonData = x.Vehicle.JsonData,
-				Tags = x.Vehicle.Tags,
-				CreatorId = x.Vehicle.CreatorId,
-				LicencePlate = x.Vehicle.LicencePlate,
-				Title = x.Vehicle.Title,
-				Brand = x.Vehicle.Brand,
-				Color = x.Vehicle.Color
-			}
-	};
+	public static Expression<Func<ParkingReportEntity, ParkingReportResponse>> ParkingReportSelector(ParkingReportSelectorArgs args) {
+		Expression<Func<ParkingReportEntity, ParkingReportResponse>> selector = x => new ParkingReportResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			StartDate = x.StartDate,
+			VehicleId = x.VehicleId,
+			ParkingId = x.ParkingId,
+			Amount = x.Amount,
+			EndDate = x.EndDate,
+			Parking = args.Parking == null ? null : ParkingSelector(args.Parking).Invoke(x.Parking),
+			Vehicle = args.Vehicle == null ? null : VehicleSelector(args.Vehicle).Invoke(x.Vehicle),
+			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
 
-	public static Expression<Func<VehicleEntity, VehicleResponse>> VehicleSelector(VehicleSelectorArgs args) => x => new VehicleResponse {
-		Id = x.Id,
-		CreatedAt = x.CreatedAt,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		LicencePlate = x.LicencePlate,
-		CreatorId = x.CreatorId,
-		Title = x.Title,
-		Brand = x.Brand,
-		Color = x.Color,
-		Creator = args.Creator == null
-			? null
-			: new UserResponse {
-				Id = x.Creator.Id,
-				JsonData = x.Creator.JsonData,
-				Tags = x.Creator.Tags,
-				UserName = x.Creator.UserName,
-				PhoneNumber = x.Creator.PhoneNumber,
-				Email = x.Creator.Email,
-				FirstName = x.Creator.FirstName,
-				LastName = x.Creator.LastName,
-				NationalCode = x.Creator.NationalCode,
-				Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
-				Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
-			}
-	};
-	
+	public static Expression<Func<VehicleEntity, VehicleResponse>> VehicleSelector(VehicleSelectorArgs args) {
+		Expression<Func<VehicleEntity, VehicleResponse>> selector = x => new VehicleResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			LicencePlate = x.LicencePlate,
+			CreatorId = x.CreatorId,
+			Title = x.Title,
+			Brand = x.Brand,
+			Color = x.Color,
+			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
+
 	public static Expression<Func<ProductEntity, ProductResponse>> ProductSelector(ProductSelectorArgs args) {
 		Expression<Func<ProductEntity, ProductResponse>>? childSelector = null;
 		if (args is { Children: not null, ChildrenDebt: > 0 and < 10 })
@@ -606,27 +350,14 @@ public static class Projections {
 			Order = x.Order,
 			ParentId = x.ParentId,
 			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 			Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
 			Children = args.Children != null && args.ChildrenDebt > 0 ? x.Children.AsQueryable().Select(childSelector!).ToList() : null,
 			CommentCount = args.CommentsCount ? x.Comments.Count : null,
 			ChildrenCount = args.ChildrenCount ? x.Children.Count : null,
 			IsFollowing = args.IsFollowing && args.UserId != null ? x.Followers.Any(f => f.CreatorId == args.UserId) : null,
-			Creator = args.Creator == null
-				? null
-				: new UserResponse {
-					Id = x.Creator.Id,
-					JsonData = x.Creator.JsonData,
-					Tags = x.Creator.Tags,
-					UserName = x.Creator.UserName,
-					PhoneNumber = x.Creator.PhoneNumber,
-					Email = x.Creator.Email,
-					FirstName = x.Creator.FirstName,
-					LastName = x.Creator.LastName,
-					NationalCode = x.Creator.NationalCode,
-					Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
-					Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
-				}
+			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator)
 		};
 	}
 
@@ -647,299 +378,113 @@ public static class Projections {
 			Order = x.Order,
 			Code = x.Code,
 			ParentId = x.ParentId,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
-			Children = args.Children != null && args.ChildrenDebt > 0 ? x.Children.AsQueryable().Select(childSelector!).ToList() : null
+			Children = args.Children != null && args.ChildrenDebt > 0 ? x.Children.AsQueryable().Select(childSelector!).ToList() : null,
+			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator)
 		};
 	}
 
-	public static Expression<Func<ContentEntity, ContentResponse>> ContentSelector(ContentSelectorArgs args) => x => new ContentResponse {
-		Id = x.Id,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList()
-	};
+	public static Expression<Func<ContentEntity, ContentResponse>> ContentSelector(ContentSelectorArgs args) {
+		Expression<Func<ContentEntity, ContentResponse>> selector = x => new ContentResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
+			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
 
-	public static Expression<Func<TerminalEntity, TerminalResponse>> TerminalSelector(TerminalSelectorArgs args) => x => new TerminalResponse {
-		Id = x.Id,
-		Tags = x.Tags,
-		Serial = x.Serial,
-		JsonData = x.JsonData,
-		CreatorId = x.CreatorId,
-		MerchantId = x.MerchantId,
-		SimCardSerial = x.SimCardSerial,
-		SimCardNumber = x.SimCardNumber,
-		Imei = x.Imei,
-		Agreement = args.Agreement ? x.Agreement.ToBase64() : null,
-		Merchant = args.Merchant == null ? null : new MerchantResponse {
-			Id = x.Merchant!.Id,
-			CreatedAt = x.Merchant.CreatedAt,
-			JsonData = x.Merchant.JsonData,
-			Tags = x.Merchant.Tags,
-			CreatorId = x.Merchant.CreatorId,
-			ZipCode = x.Merchant.ZipCode,
-			CityCode = x.Merchant.CityCode,
-			PhoneNumber = x.Merchant.PhoneNumber,
-			Title = x.Merchant.Title,
-			Landline = x.Merchant.Landline,
-			NationalCode = x.Merchant.NationalCode,
-			Mcc = x.Merchant.Mcc,
-			BankAccountId = x.Merchant.BankAccountId,
-			MerchantId = x.Merchant.MerchantId,
-			InsId = x.Merchant.InsId,
-			UserId = x.Merchant.UserId,
-			User = args.Merchant.User == null ? null : new UserResponse {
-				Id = x.Merchant.User.Id,
-				JsonData = x.Merchant.User.JsonData,
-				Tags = x.Merchant.User.Tags,
-				UserName = x.Merchant.User.UserName,
-				PhoneNumber = x.Merchant.User.PhoneNumber,
-				Email = x.Merchant.User.Email,
-				FirstName = x.Merchant.User.FirstName,
-				LastName = x.Merchant.User.LastName,
-				NationalCode = x.Merchant.User.NationalCode,
-				LandLine =  x.Merchant.User.LandLine,
-				Bio =  x.Merchant.User.Bio,
-				Birthdate =  x.Merchant.User.Birthdate,
-				NationalCardFront = args.Merchant.User.NationalCardFront ? x.Merchant.User.NationalCardFront.ToBase64() : null,
-				NationalCardBack = args.Merchant.User.NationalCardFront ? x.Merchant.User.NationalCardBack.ToBase64() : null,
-				BirthCertificateFirst = args.Merchant.User.NationalCardFront ? x.Merchant.User.BirthCertificateFirst.ToBase64() : null,
-				BirthCertificateSecond = args.Merchant.User.NationalCardFront ? x.Merchant.User.BirthCertificateSecond.ToBase64() : null,
-				BirthCertificateThird = args.Merchant.User.NationalCardFront ? x.Merchant.User.BirthCertificateThird.ToBase64() : null,
-				BirthCertificateForth = args.Merchant.User.NationalCardFront ? x.Merchant.User.BirthCertificateForth.ToBase64() : null,
-				BirthCertificateFifth = args.Merchant.User.NationalCardFront ? x.Merchant.User.BirthCertificateFifth.ToBase64() : null,
-				VisualAuthentication = args.Merchant.User.NationalCardFront ? x.Merchant.User.VisualAuthentication.ToBase64() : null,
-				ESignature = args.Merchant.User.NationalCardFront ? x.Merchant.User.ESignature.ToBase64() : null,
-			},
-			Creator = args.Merchant.Creator == null ? null : new UserResponse {
-				Id = x.Merchant.Creator.Id,
-				JsonData = x.Merchant.Creator.JsonData,
-				Tags = x.Merchant.Creator.Tags,
-				UserName = x.Merchant.Creator.UserName,
-				PhoneNumber = x.Merchant.Creator.PhoneNumber,
-				Email = x.Merchant.Creator.Email,
-				FirstName = x.Merchant.Creator.FirstName,
-				LastName = x.Merchant.Creator.LastName,
-				NationalCode = x.Merchant.Creator.NationalCode,
-				LandLine =  x.Merchant.Creator.LandLine,
-				Bio =  x.Merchant.Creator.Bio,
-				Birthdate =  x.Merchant.Creator.Birthdate,
-				NationalCardFront = args.Merchant.Creator.NationalCardFront ? x.Merchant.Creator.NationalCardFront.ToBase64() : null,
-				NationalCardBack = args.Merchant.Creator.NationalCardFront ? x.Merchant.Creator.NationalCardBack.ToBase64() : null,
-				BirthCertificateFirst = args.Merchant.Creator.NationalCardFront ? x.Merchant.Creator.BirthCertificateFirst.ToBase64() : null,
-				BirthCertificateSecond = args.Merchant.Creator.NationalCardFront ? x.Merchant.Creator.BirthCertificateSecond.ToBase64() : null,
-				BirthCertificateThird = args.Merchant.Creator.NationalCardFront ? x.Merchant.Creator.BirthCertificateThird.ToBase64() : null,
-				BirthCertificateForth = args.Merchant.Creator.NationalCardFront ? x.Merchant.Creator.BirthCertificateForth.ToBase64() : null,
-				BirthCertificateFifth = args.Merchant.Creator.NationalCardFront ? x.Merchant.Creator.BirthCertificateFifth.ToBase64() : null,
-				VisualAuthentication = args.Merchant.Creator.NationalCardFront ? x.Merchant.Creator.VisualAuthentication.ToBase64() : null,
-				ESignature = args.Merchant.Creator.NationalCardFront ? x.Merchant.Creator.ESignature.ToBase64() : null,
-			}
-		},
-		Creator = args.Creator == null
-			? null
-			: new UserResponse {
-				Id = x.Creator.Id,
-				JsonData = x.Creator.JsonData,
-				Tags = x.Creator.Tags,
-				UserName = x.Creator.UserName,
-				PhoneNumber = x.Creator.PhoneNumber,
-				Email = x.Creator.Email,
-				FirstName = x.Creator.FirstName,
-				LastName = x.Creator.LastName,
-				NationalCode = x.Creator.NationalCode,
-			}
-	};
+	public static Expression<Func<TerminalEntity, TerminalResponse>> TerminalSelector(TerminalSelectorArgs args) {
+		Expression<Func<TerminalEntity, TerminalResponse>> selector = x => new TerminalResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			Serial = x.Serial,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			MerchantId = x.MerchantId,
+			SimCardSerial = x.SimCardSerial,
+			SimCardNumber = x.SimCardNumber,
+			Imei = x.Imei,
+			TerminalId =  x.TerminalId,
+			CreatedAt =  x.CreatedAt,
+			Agreement = args.Agreement ? x.Agreement.ToBase64() : null,
+			Merchant = args.Merchant == null ? null : MerchantSelector(args.Merchant)!.Invoke(x.Merchant),
+			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
 
-	public static Expression<Func<TxnEntity, TxnResponse>> TxnSelector(TxnSelectorArgs args) => x => new TxnResponse {
-		Id = x.Id,
-		CreatedAt = x.CreatedAt,
-		Tags = x.Tags,
-		Amount = x.Amount,
-		TrackingNumber = x.TrackingNumber,
-		JsonData = x.JsonData,
-		UserId = x.UserId,
-		User = args.User == null
-			? null
-			: new UserResponse {
-				Id = x.User.Id,
-				JsonData = x.User.JsonData,
-				Tags = x.User.Tags,
-				UserName = x.User.UserName,
-				PhoneNumber = x.User.PhoneNumber,
-				Email = x.User.Email,
-				FirstName = x.User.FirstName,
-				LastName = x.User.LastName,
-				NationalCode = x.User.NationalCode,
-				Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList(),
-				Media = args.User.Media == null ? null : x.User.Media.AsQueryable().Select(MediaSelector()).ToList()
-			}
-	};
+	public static Expression<Func<TxnEntity, TxnResponse>> TxnSelector(TxnSelectorArgs args) {
+		Expression<Func<TxnEntity, TxnResponse>> selector = x => new TxnResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			Tags = x.Tags,
+			Amount = x.Amount,
+			TrackingNumber = x.TrackingNumber,
+			JsonData = x.JsonData,
+			UserId = x.UserId,
+			CreatorId = x.CreatorId,
+			User = args.User == null ? null : UserSelector(args.User).Invoke(x.User),
+			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
 
-	public static Expression<Func<TicketEntity, TicketResponse>> TicketSelector(TicketSelectorArgs args) => x => new TicketResponse {
-		Id = x.Id,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		CreatorId = x.CreatorId,
-		Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
-		Creator = args.User == null
-			? null
-			: new UserResponse {
-				Id = x.Creator.Id,
-				JsonData = x.Creator.JsonData,
-				Tags = x.Creator.Tags,
-				UserName = x.Creator.UserName,
-				PhoneNumber = x.Creator.PhoneNumber,
-				Email = x.Creator.Email,
-				FirstName = x.Creator.FirstName,
-				LastName = x.Creator.LastName,
-				NationalCode = x.Creator.NationalCode,
-				Categories = args.User.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList(),
-				Media = args.User.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList()
-			}
-	};
+	public static Expression<Func<TicketEntity, TicketResponse>> TicketSelector(TicketSelectorArgs args) {
+		Expression<Func<TicketEntity, TicketResponse>> selector = x => new TicketResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
+			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
 
-	public static Expression<Func<CommentEntity, CommentResponse>> CommentSelector(CommentSelectorArgs args) => x => new CommentResponse {
-		Id = x.Id,
-		Tags = x.Tags,
-		JsonData = x.JsonData,
-		CreatorId = x.CreatorId,
-		UserId = x.UserId,
-		ProductId = x.ProductId,
-		ParentId = x.ParentId,
-		Score = x.Score,
-		Description = x.Description,
-		Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
-		Children = args.Children == null ? null : x.Children.AsQueryable().Select(CommentSelector(args.Children)).ToList(),
-		User = args.User == null
-			? null
-			: new UserResponse {
-				Id = x.User!.Id,
-				JsonData = x.User.JsonData,
-				Tags = x.User.Tags,
-				UserName = x.User.UserName,
-				PhoneNumber = x.User.PhoneNumber,
-				Email = x.User.Email,
-				FirstName = x.User.FirstName,
-				LastName = x.User.LastName,
-				NationalCode = x.User.NationalCode,
-				Bio = x.User.Bio,
-				Birthdate = x.User.Birthdate,
-				CreatedAt = x.User.CreatedAt,
-				Media = args.User.Media == null ? null : x.User.Media.AsQueryable().Select(MediaSelector()).ToList(),
-				Categories = args.User.Category == null ? null : x.User.Categories.AsQueryable().Select(CategorySelector(args.User.Category)).ToList(),
-				Addresses = args.User.Address == null ? null : x.User.Addresses.AsQueryable().Select(AddressSelector(args.User.Address)).ToList(),
-				BankAccounts = args.User.BankAccount == null ? null : x.User.BankAccounts.AsQueryable().Select(BankAccountSelector(args.User.BankAccount)).ToList(),
-				Merchants = args.User.Merchant == null ? null : x.User.Merchants.AsQueryable().Select(MerchantSelector(args.User.Merchant)).ToList(),
-				Txns = args.User.Txns == null ? null : x.User.Txns.AsQueryable().Select(TxnSelector(args.User.Txns)).ToList(),
-				SimCards = args.User.SimCard == null ? null : x.User.SimCards.AsQueryable().Select(SimCardSelector(args.User.SimCard)).ToList(),
-				Wallets = args.User.Wallet == null ? null : x.User.Wallets.AsQueryable().Select(WalletSelector(args.User.Wallet)).ToList()
-			},
-		Creator = args.Creator == null
-			? null
-			: new UserResponse {
-				Id = x.Creator.Id,
-				JsonData = x.Creator.JsonData,
-				Tags = x.Creator.Tags,
-				UserName = x.Creator.UserName,
-				PhoneNumber = x.Creator.PhoneNumber,
-				Email = x.Creator.Email,
-				FirstName = x.Creator.FirstName,
-				LastName = x.Creator.LastName,
-				NationalCode = x.Creator.NationalCode,
-				Bio = x.Creator.Bio,
-				Birthdate = x.Creator.Birthdate,
-				CreatedAt = x.Creator.CreatedAt,
-				CreatorId = x.Creator.CreatorId,
-				Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
-				Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList(),
-				Addresses = args.Creator.Address == null ? null : x.Creator.Addresses.AsQueryable().Select(AddressSelector(args.Creator.Address)).ToList(),
-				BankAccounts = args.Creator.BankAccount == null ? null : x.Creator.BankAccounts.AsQueryable().Select(BankAccountSelector(args.Creator.BankAccount)).ToList(),
-				Merchants = args.Creator.Merchant == null ? null : x.Creator.Merchants.AsQueryable().Select(MerchantSelector(args.Creator.Merchant)).ToList(),
-				Txns = args.Creator.Txns == null ? null : x.Creator.Txns.AsQueryable().Select(TxnSelector(args.Creator.Txns)).ToList(),
-				SimCards = args.Creator.SimCard == null ? null : x.Creator.SimCards.AsQueryable().Select(SimCardSelector(args.Creator.SimCard)).ToList(),
-				Wallets = args.Creator.Wallet == null ? null : x.Creator.Wallets.AsQueryable().Select(WalletSelector(args.Creator.Wallet)).ToList()
-			}
-	};
+	public static Expression<Func<CommentEntity, CommentResponse>> CommentSelector(CommentSelectorArgs args) {
+		Expression<Func<CommentEntity, CommentResponse>> selector = x => new CommentResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			UserId = x.UserId,
+			ProductId = x.ProductId,
+			ParentId = x.ParentId,
+			Score = x.Score,
+			Description = x.Description,
+			CreatedAt = x.CreatedAt,
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
+			Children = args.Children == null ? null : x.Children.AsQueryable().Select(CommentSelector(args.Children)).ToList(),
+			User = args.User == null ? null : UserSelector(args.User)!.Invoke(x.User),
+			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
 
-	public static Expression<Func<VasEntity, VasResponse>> VasSelector(VasSelectorArgs args) => x => new VasResponse {
-		Id = x.Id,
-		CreatedAt = x.CreatedAt,
-		Tags = x.Tags,
-		CreatorId = x.CreatorId,
-		Amount = x.Amount,
-		AuthorizeCode = x.AuthorizeCode,
-		BillId = x.BillId,
-		PaymentId = x.PaymentId,
-		TxnId = x.TxnId,
-		WalletTxnId = x.WalletTxnId,
-		JsonData = x.JsonData,
-		Creator = args.Creator == null
-			? null
-			: new UserResponse {
-				Id = x.Creator.Id,
-				JsonData = x.Creator.JsonData,
-				Tags = x.Creator.Tags,
-				UserName = x.Creator.UserName,
-				PhoneNumber = x.Creator.PhoneNumber,
-				Email = x.Creator.Email,
-				FirstName = x.Creator.FirstName,
-				LastName = x.Creator.LastName,
-				NationalCode = x.Creator.NationalCode,
-				Media = args.Creator.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
-				Categories = args.Creator.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.Creator.Category)).ToList()
-			},
-		Txn = args.Txn == null
-			? null
-			: new TxnResponse {
-				Id = x.Txn!.Id,
-				CreatedAt = x.Txn.CreatedAt,
-				JsonData = x.Txn.JsonData,
-				Tags = x.Txn.Tags,
-				CreatorId = x.Txn.CreatorId,
-				TrackingNumber = x.Txn.TrackingNumber,
-				UserId = x.Txn.UserId,
-				Amount = x.Txn.Amount
-			},
-		WalletTxn = args.WalletTxn == null
-			? null
-			: new WalletTxnResponse {
-				Id = x.WalletTxn!.Id,
-				CreatedAt = x.WalletTxn.CreatedAt,
-				JsonData = x.WalletTxn.JsonData,
-				Tags = x.WalletTxn.Tags,
-				CreatorId = x.WalletTxn.CreatorId,
-				SenderId = x.WalletTxn.SenderId,
-				ReceiverId = x.WalletTxn.ReceiverId,
-				Amount = x.WalletTxn.Amount,
-				Sender = args.WalletTxn.Sender == null
-					? null
-					: new UserResponse {
-						Id = x.WalletTxn.Creator.Id,
-						JsonData = x.WalletTxn.Creator.JsonData,
-						Tags = x.WalletTxn.Creator.Tags,
-						UserName = x.WalletTxn.Creator.UserName,
-						PhoneNumber = x.WalletTxn.Creator.PhoneNumber,
-						Email = x.WalletTxn.Creator.Email,
-						FirstName = x.WalletTxn.Creator.FirstName,
-						LastName = x.WalletTxn.Creator.LastName,
-						NationalCode = x.WalletTxn.Creator.NationalCode,
-						Media = args.WalletTxn.Sender.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
-						Categories = args.WalletTxn.Sender.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.WalletTxn.Sender.Category)).ToList()
-					},
-				Receiver = args.WalletTxn.Receiver == null
-					? null
-					: new UserResponse {
-						Id = x.WalletTxn.Receiver.Id,
-						JsonData = x.WalletTxn.Receiver.JsonData,
-						Tags = x.WalletTxn.Receiver.Tags,
-						UserName = x.WalletTxn.Receiver.UserName,
-						PhoneNumber = x.WalletTxn.Receiver.PhoneNumber,
-						Email = x.WalletTxn.Receiver.Email,
-						FirstName = x.WalletTxn.Receiver.FirstName,
-						LastName = x.WalletTxn.Receiver.LastName,
-						NationalCode = x.WalletTxn.Receiver.NationalCode,
-						Media = args.WalletTxn.Receiver.Media == null ? null : x.Creator.Media.AsQueryable().Select(MediaSelector()).ToList(),
-						Categories = args.WalletTxn.Receiver.Category == null ? null : x.Creator.Categories.AsQueryable().Select(CategorySelector(args.WalletTxn.Receiver.Category)).ToList()
-					}
-			}
-	};
+	public static Expression<Func<VasEntity, VasResponse>> VasSelector(VasSelectorArgs args) {
+		Expression<Func<VasEntity, VasResponse>> selector = x => new VasResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			Tags = x.Tags,
+			CreatorId = x.CreatorId,
+			Amount = x.Amount,
+			AuthorizeCode = x.AuthorizeCode,
+			BillId = x.BillId,
+			PaymentId = x.PaymentId,
+			TxnId = x.TxnId,
+			WalletTxnId = x.WalletTxnId,
+			JsonData = x.JsonData,
+			Creator = args.Creator == null ? null : UserSelector(args.Creator).Invoke(x.Creator),
+			Txn = args.Txn == null ? null : TxnSelector(args.Txn)!.Invoke(x.Txn),
+			WalletTxn = args.WalletTxn == null ? null : WalletTxnSelector(args.WalletTxn)!.Invoke(x.WalletTxn)
+		};
+		return selector.Expand();
+	}
 }

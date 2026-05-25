@@ -6,7 +6,7 @@ public static class AppSettingsRoutes {
 		r.MapPost("Read", (BaseParams _) => new UResponse<AppSettingsResponse>(
 			new AppSettingsResponse {
 				ApiCallCosts = Core.App.ApiCallCosts,
-				ChargeInternet = Core.App.ChargeInternet,
+				ChargeInternet = Core.App.ChargeInternet
 			}
 		).ToResult()).Produces<UResponse<AppSettingsResponse>>();
 	}

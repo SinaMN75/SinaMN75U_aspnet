@@ -256,8 +256,8 @@ public class TerminalService(
 				Tags = x.Merchant.Tags,
 				CreatorId = x.Merchant.CreatorId,
 				InsId = x.InsId,
-				MerchantId = x.Merchant.MerchantId,
-			},
+				MerchantId = x.Merchant.MerchantId
+			}
 		}).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 
 		if (e == null) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.NotFound, ls.Get("TerminalNotFound"));

@@ -614,7 +614,7 @@ public class InquiryServiceFake(
 			SubLocality = "تست",
 			TownShip = "تست",
 			TraceId = "تست",
-			Village = "تست",
+			Village = "تست"
 		});
 	}
 

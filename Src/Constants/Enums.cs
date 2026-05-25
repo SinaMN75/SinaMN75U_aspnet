@@ -24,7 +24,7 @@ public enum Usc {
 	ShahkarException = 605,
 	ShahkarError = 606,
 
-	BalanceIsLow = 701,
+	BalanceIsLow = 701
 }
 
 public enum TagSmsPanel {
@@ -71,7 +71,7 @@ public enum TagUser {
 	BirthCertificateForthRejected = 606,
 	BirthCertificateFifthRejected = 607,
 	VisualAuthenticationRejected = 608,
-	ESignatureRejected = 609,
+	ESignatureRejected = 609
 }
 
 public enum TagCategory {

@@ -66,7 +66,7 @@ public class IpgService(IHttpClientService http, DbContext db) : IIpgService {
 			CreatorId = Guid.Parse(data.UserId),
 			Amount = data.Amount,
 			TrackingNumber = data.TrackingNumber,
-			UserId = Guid.Parse(data.UserId),
+			UserId = Guid.Parse(data.UserId)
 		}, ct);
 
 		await db.Set<TxnEntity>().AddAsync(new TxnEntity {
