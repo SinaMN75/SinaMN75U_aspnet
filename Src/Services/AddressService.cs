@@ -58,7 +58,7 @@ public class AddressService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		AddressEntity? e = await db.Set<AddressEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		AddressEntity? e = await db.Set<AddressEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("AddressNotFound"));
 		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
@@ -78,7 +78,7 @@ public class AddressService(
 		if (p.SubLocality != null) e.JsonData.SubLocality = p.SubLocality;
 		if (p.Village != null) e.JsonData.Village = p.Village;
 
-		db.Update(e.ApplyUpdateParam<AddressEntity, TagAddress, AddressJson>(p));
+		e.ApplyUpdateParam<AddressEntity, TagAddress, AddressJson>(p);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}

@@ -1,6 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Addresses")]
+[Microsoft.EntityFrameworkCore.Index(nameof(ZipCode), Name = "IX_Addresses_ZipCode")]
 public sealed class AddressEntity : BaseEntity<TagAddress, AddressJson> {
 	[MaxLength(20)]
 	public string? ZipCode { get; set; }

@@ -118,10 +118,7 @@ public class AuthService(
 
 	public async Task<UResponse> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct) {
 		UserResponse? existingUser = await db.Set<UserEntity>().Select(x => new UserResponse {
-			Id = x.Id,
-			UserName = x.UserName,
 			PhoneNumber = x.PhoneNumber,
-			Email = x.Email,
 			JsonData = x.JsonData,
 			Tags = x.Tags
 		}).FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
