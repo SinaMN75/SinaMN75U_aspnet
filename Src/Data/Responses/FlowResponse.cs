@@ -1,12 +1,15 @@
 namespace SinaMN75U.Data.Responses;
 
-// public class UFlowResponse {
-// 	public required int CurrentStep { get; set; }
-// 	public required int TotalSteps { get; set; }
-// 	public required List<UFlowStep> Steps { get; set; }
-// }
+public class UFlowStepSend: BaseParams {
+	public required string Id { get; set; }
+	public required string Title { get; set; }
+	public required string Description { get; set; }
+	public required string Endpoint { get; set; }
+	public required List<UFlowField> Fields { get; set; }
+}
 
 public class UFlowStep {
+	public required string Id { get; set; }
 	public required string Title { get; set; }
 	public required string Description { get; set; }
 	public required string Endpoint { get; set; }

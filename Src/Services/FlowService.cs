@@ -1,7 +1,8 @@
 namespace SinaMN75U.Services;
 
 public interface IFlowService {
-	Task<UResponse<UFlowStep?>> Authentication(BaseParams p, CancellationToken ct);
+	Task<UResponse<UFlowStep?>> AuthenticationGet(BaseParams p, CancellationToken ct);
+	Task<UResponse> AuthenticationSend(UFlowStepSend p, CancellationToken ct);
 }
 
 public class FlowService(
@@ -9,7 +10,7 @@ public class FlowService(
 	ILocalizationService ls,
 	ITokenService ts
 ) : IFlowService {
-	public async Task<UResponse<UFlowStep?>> Authentication(BaseParams p, CancellationToken ct) {
+	public async Task<UResponse<UFlowStep?>> AuthenticationGet(BaseParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<UFlowStep?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
@@ -40,6 +41,7 @@ public class FlowService(
 		)
 			return new UResponse<UFlowStep?>(
 				new UFlowStep {
+					Id = "userDocument",
 					Title = "آپلود مدارک شناسایی",
 					Description = "لطفا مدارک شناسایی خود را آپلود کنید",
 					Endpoint = "User/Update",
@@ -50,9 +52,10 @@ public class FlowService(
 					]
 				}
 			);
-		if (e.VisualAuthentication.IsNullOrEmpty() || e.Tags.Contains(TagUser.VisualAuthenticationVerified))
+		if (e.VisualAuthentication.IsNullOrEmpty() || !e.Tags.Contains(TagUser.VisualAuthenticationVerified))
 			return new UResponse<UFlowStep?>(
 				new UFlowStep {
+					Id = "",
 					Title = "ویدیو احراز هویت",
 					Description = "لطفا مدارک شناسایی خود را آپلود کنید",
 					Endpoint = "User/Update",
@@ -64,6 +67,7 @@ public class FlowService(
 		if (e.ESignature.IsNullOrEmpty() || e.Tags.Contains(TagUser.ESignatureVerified))
 			return new UResponse<UFlowStep?>(
 				new UFlowStep {
+					Id = "Guid.NewGuid()",
 					Title = "امضای دیجیتال",
 					Description = "امضا",
 					Endpoint = "User/Update",
@@ -74,5 +78,24 @@ public class FlowService(
 			);
 
 		return new UResponse<UFlowStep?>(null);
+	}
+
+	public async Task<UResponse> AuthenticationSend(UFlowStepSend p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<UFlowStep?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		UserEntity u = (await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == userData.Id, ct))!;
+		
+		if (p.Id == "userDocument") {
+			
+			UFlowField? nationalCardFront = p.Fields.FirstOrDefault(x => x.Key == "NationalCardFront");
+			if (nationalCardFront == null || nationalCardFront.Required && nationalCardFront.Value.IsNullOrEmpty())
+				return new UResponse(Usc.BadRequest);
+			
+			u.NationalCardFront = nationalCardFront.Value.FromBase64();
+		}
+
+
+		await db.SaveChangesAsync(ct);
+		return new UResponse<UFlowStep?>(null, Usc.Success, ls.Get("Success"));
 	}
 }
