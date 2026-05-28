@@ -275,3 +275,14 @@ public enum TagSimOperator {
 public enum TagMerchant {
 	Normal = 101
 }
+
+public enum TagFieldType {
+	Number,
+	Text,
+	PhoneNumber,
+	DropDown,
+	Image,
+	Video,
+	SelfieVideo,
+	ESignature
+}

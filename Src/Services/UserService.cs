@@ -8,6 +8,7 @@ public interface IUserService {
 	public Task<UResponse> Update(UserUpdateParams p, CancellationToken ct);
 	public Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	public Task<UResponse<string?>> DownloadUserData(IdParams p, CancellationToken ct);
+	public Task<UResponse<bool?>> IsUserAuthenticated(BaseParams p, CancellationToken ct);
 }
 
 public class UserService(
@@ -256,5 +257,42 @@ public class UserService(
 		string downloadUrl = $"{Core.App.BaseUrl}/api/download/{downloadToken}";
 
 		return new UResponse<string?>(downloadUrl, Usc.Success, "Download link generated");
+	}
+
+	public async Task<UResponse<bool?>> IsUserAuthenticated(BaseParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<bool?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		UserResponse? e = await db.Set<UserEntity>()
+			.Select(Projections.UserSelector(new UserSelectorArgs {
+				Wallet = new WalletSelectorArgs(),
+				NationalCardFront = true,
+				NationalCardBack = true,
+				BirthCertificateFirst = true,
+				BirthCertificateSecond = true,
+				BirthCertificateThird = true,
+				BirthCertificateForth = true,
+				BirthCertificateFifth = true,
+				VisualAuthentication = true,
+				ESignature = true
+			}))
+			.FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
+		
+		if (e == null) return new UResponse<bool?>(null, Usc.NotFound, ls.Get("UserNotFound"));
+
+		if (
+			e.NationalCardFront.IsNullOrEmpty() ||
+			e.Tags.Contains(TagUser.NationalCardFrontVerified) ||
+			e.NationalCardBack.IsNullOrEmpty() ||
+			e.Tags.Contains(TagUser.NationalCardBackVerified) ||
+			e.BirthCertificateFirst.IsNullOrEmpty() ||
+			e.Tags.Contains(TagUser.BirthCertificateFirstVerified) ||
+			e.VisualAuthentication.IsNullOrEmpty() ||
+			e.Tags.Contains(TagUser.VisualAuthenticationVerified) ||
+			e.ESignature.IsNullOrEmpty() ||
+			e.Tags.Contains(TagUser.ESignatureVerified)
+		) return new UResponse<bool?>(true);
+		
+		return new UResponse<bool?>(false);
 	}
 }
