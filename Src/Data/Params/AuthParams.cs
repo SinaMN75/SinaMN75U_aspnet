@@ -26,7 +26,7 @@ public sealed class RegisterParams : BaseParams {
 	public string Password { get; set; } = null!;
 
 	[UValidationMinCollectionLength(1, "TagsRequired")]
-	public List<TagUser> Tags { get; set; } = null!;
+	public HashSet<TagUser> Tags { get; set; } = null!;
 	
 	public string? Email { get; set; }
 	public string? PhoneNumber { get; set; }
