@@ -45,7 +45,7 @@ public class MediaService(
 
 		string name = $"{folderName}/{Guid.CreateVersion7() + Path.GetExtension(p.File.FileName)}";
 
-		HashSet<TagMedia> tags = [p.Tag1];
+		ICollection<TagMedia> tags = [p.Tag1];
 		if (p.Tag2 != null) tags.Add(p.Tag2.Value);
 		if (p.Tag3 != null) tags.Add(p.Tag3.Value);
 		MediaEntity e = new() {

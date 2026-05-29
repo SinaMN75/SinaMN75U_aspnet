@@ -277,16 +277,16 @@ public enum TagMerchant {
 }
 
 public enum TagFieldType {
-	Number,
-	Text,
-	PhoneNumber,
-	DropDown,
-	Date,
-	DateTime,
-	Time,
-	PersianDate,
-	Image,
-	Video,
-	SelfieVideo,
-	ESignature
+	Number = 101,
+	Text = 102,
+	PhoneNumber = 103,
+	DropDown = 104,
+	Date = 105,
+	DateTime = 106,
+	Time = 107,
+	PersianDate = 108,
+	Image = 109,
+	Video = 111,
+	SelfieVideo = 112,
+	ESignature = 113
 }

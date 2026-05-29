@@ -8,7 +8,7 @@ public sealed class TicketCreateParams : BaseParams {
 	public string Description { get; set; } = null!;
 	
 	[UValidationMinCollectionLength(1, "TagsRequired")]
-	public HashSet<TagTicket> Tags { get; set; } = null!;
+	public ICollection<TagTicket> Tags { get; set; } = null!;
 
 	public string? Instagram { get; set; }
 	public string? Telegram { get; set; }

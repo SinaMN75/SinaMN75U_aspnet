@@ -48,7 +48,7 @@ public class BaseUpdateParams<T> : BaseParams {
 
 	public ICollection<T>? AddTags { get; set; }
 	public ICollection<T>? RemoveTags { get; set; }
-	public HashSet<T>? Tags { get; set; }
+	public ICollection<T>? Tags { get; set; }
 }
 
 public class BaseCreateParams<T> : BaseParams {
@@ -56,7 +56,7 @@ public class BaseCreateParams<T> : BaseParams {
 	public string Detail2 { get; set; } = "";
 	
 	[UValidationRequired("TagsRequired"), UValidationMinCollectionLength(1, "TagsRequired")]
-	public HashSet<T> Tags { get; set; } = [];
+	public ICollection<T> Tags { get; set; } = [];
 
 	public Guid? Id { get; set; }
 	public Guid? CreatorId { get; set; }

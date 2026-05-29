@@ -11,7 +11,7 @@ public class BaseEntity<T, TJ> where T : Enum where TJ : BaseJson {
 	public required TJ JsonData { get; set; }
 
 	[Required]
-	public required HashSet<T> Tags { get; set; }
+	public required ICollection<T> Tags { get; set; }
 
 	public required Guid CreatorId { get; set; }
 	public UserEntity Creator { get; set; } = null!;

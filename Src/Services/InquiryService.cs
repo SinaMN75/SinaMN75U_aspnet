@@ -453,7 +453,7 @@ public class InquiryService(
 		await db.SaveChangesAsync(ct);
 	}
 
-	private async Task CreateZipCodeToAddressHistory(string responseBody, HashSet<TagInquiryHistory> tags, string message, ZipCodeToAddressDetailParams p, CancellationToken ct) {
+	private async Task CreateZipCodeToAddressHistory(string responseBody, ICollection<TagInquiryHistory> tags, string message, ZipCodeToAddressDetailParams p, CancellationToken ct) {
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
 			CreatorId = Core.App.Users.SystemAdmin.Id,
@@ -466,7 +466,7 @@ public class InquiryService(
 		await db.SaveChangesAsync(ct);
 	}
 
-	private async Task CreateVehicleViolationsDetailHistory(string responseBody, HashSet<TagInquiryHistory> tags, string message, VehicleViolationDetailParams p, CancellationToken ct) {
+	private async Task CreateVehicleViolationsDetailHistory(string responseBody, ICollection<TagInquiryHistory> tags, string message, VehicleViolationDetailParams p, CancellationToken ct) {
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
 			CreatorId = Core.App.Users.SystemAdmin.Id,
@@ -481,7 +481,7 @@ public class InquiryService(
 		await db.SaveChangesAsync(ct);
 	}
 
-	private async Task CreateDrivingLicenceStatusHistory(string responseBody, HashSet<TagInquiryHistory> tags, string message, DrivingLicenceDetailParams p, CancellationToken ct) {
+	private async Task CreateDrivingLicenceStatusHistory(string responseBody, ICollection<TagInquiryHistory> tags, string message, DrivingLicenceDetailParams p, CancellationToken ct) {
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
 			CreatorId = Core.App.Users.SystemAdmin.Id,
@@ -495,7 +495,7 @@ public class InquiryService(
 		await db.SaveChangesAsync(ct);
 	}
 
-	private async Task CreateLicencePlateStatusHistory(string responseBody, HashSet<TagInquiryHistory> tags, string message, LicencePlateDetailParams p, CancellationToken ct) {
+	private async Task CreateLicencePlateStatusHistory(string responseBody, ICollection<TagInquiryHistory> tags, string message, LicencePlateDetailParams p, CancellationToken ct) {
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
 			CreatorId = Core.App.Users.SystemAdmin.Id,
@@ -509,7 +509,7 @@ public class InquiryService(
 		await db.SaveChangesAsync(ct);
 	}
 
-	private async Task CreateDrivingLicenceNegativePointHistory(string responseBody, HashSet<TagInquiryHistory> tags, string message, DrivingLicenceNegativePointParams p, CancellationToken ct) {
+	private async Task CreateDrivingLicenceNegativePointHistory(string responseBody, ICollection<TagInquiryHistory> tags, string message, DrivingLicenceNegativePointParams p, CancellationToken ct) {
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
 			CreatorId = Core.App.Users.SystemAdmin.Id,
@@ -524,7 +524,7 @@ public class InquiryService(
 		await db.SaveChangesAsync(ct);
 	}
 
-	private async Task CreateIBanToBankAccountDetailHistory(string responseBody, HashSet<TagInquiryHistory> tags, string message, IBanToBankAccountDetailParams p, CancellationToken ct) {
+	private async Task CreateIBanToBankAccountDetailHistory(string responseBody, ICollection<TagInquiryHistory> tags, string message, IBanToBankAccountDetailParams p, CancellationToken ct) {
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
 			CreatorId = Core.App.Users.SystemAdmin.Id,
@@ -537,7 +537,7 @@ public class InquiryService(
 		await db.SaveChangesAsync(ct);
 	}
 
-	private async Task CreateFreewayTollsHistory(string responseBody, HashSet<TagInquiryHistory> tags, string message, FreewayTollsParams p, CancellationToken ct) {
+	private async Task CreateFreewayTollsHistory(string responseBody, ICollection<TagInquiryHistory> tags, string message, FreewayTollsParams p, CancellationToken ct) {
 		await db.Set<InquiryHistoryEntity>().AddAsync(new InquiryHistoryEntity {
 			Id = Guid.CreateVersion7(),
 			CreatorId = Core.App.Users.SystemAdmin.Id,
