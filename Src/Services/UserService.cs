@@ -171,15 +171,15 @@ public class UserService(
 		if (p.VisualAuthentication.IsNotNullOrEmpty()) e.VisualAuthentication = p.VisualAuthentication.FromBase64();
 		if (p.ESignature.IsNotNullOrEmpty()) ImageCompressor.CompressBase64(p.ESignature, 10);
 
-		if (p.NationalCardFrontRejectionReason.IsNotNullOrEmpty()) e.JsonData.NationalCardFrontRejectionReason = p.NationalCardFrontRejectionReason;
-		if (p.NationalCardBackRejectionReason.IsNotNullOrEmpty()) e.JsonData.NationalCardBackRejectionReason = p.NationalCardBackRejectionReason;
-		if (p.BirthCertificateFirstRejectionReason.IsNotNullOrEmpty()) e.JsonData.BirthCertificateFirstRejectionReason = p.BirthCertificateFirstRejectionReason;
-		if (p.BirthCertificateSecondRejectionReason.IsNotNullOrEmpty()) e.JsonData.BirthCertificateSecondRejectionReason = p.BirthCertificateSecondRejectionReason;
-		if (p.BirthCertificateThirdRejectionReason.IsNotNullOrEmpty()) e.JsonData.BirthCertificateThirdRejectionReason = p.BirthCertificateThirdRejectionReason;
-		if (p.BirthCertificateForthRejectionReason.IsNotNullOrEmpty()) e.JsonData.BirthCertificateForthRejectionReason = p.BirthCertificateForthRejectionReason;
-		if (p.BirthCertificateFifthRejectionReason.IsNotNullOrEmpty()) e.JsonData.BirthCertificateFifthRejectionReason = p.BirthCertificateFifthRejectionReason;
-		if (p.VisualAuthenticationRejectionReason.IsNotNullOrEmpty()) e.JsonData.VisualAuthenticationRejectionReason = p.VisualAuthenticationRejectionReason;
-		if (p.ESignatureRejectionReason.IsNotNullOrEmpty()) e.JsonData.ESignatureRejectionReason = p.ESignatureRejectionReason;
+		if (p.NationalCardFrontRejectionReason != null) e.JsonData.NationalCardFrontRejectionReason = p.NationalCardFrontRejectionReason;
+		if (p.NationalCardBackRejectionReason != null) e.JsonData.NationalCardBackRejectionReason = p.NationalCardBackRejectionReason;
+		if (p.BirthCertificateFirstRejectionReason != null) e.JsonData.BirthCertificateFirstRejectionReason = p.BirthCertificateFirstRejectionReason;
+		if (p.BirthCertificateSecondRejectionReason != null) e.JsonData.BirthCertificateSecondRejectionReason = p.BirthCertificateSecondRejectionReason;
+		if (p.BirthCertificateThirdRejectionReason != null) e.JsonData.BirthCertificateThirdRejectionReason = p.BirthCertificateThirdRejectionReason;
+		if (p.BirthCertificateForthRejectionReason != null) e.JsonData.BirthCertificateForthRejectionReason = p.BirthCertificateForthRejectionReason;
+		if (p.BirthCertificateFifthRejectionReason  != null) e.JsonData.BirthCertificateFifthRejectionReason = p.BirthCertificateFifthRejectionReason;
+		if (p.VisualAuthenticationRejectionReason != null) e.JsonData.VisualAuthenticationRejectionReason = p.VisualAuthenticationRejectionReason;
+		if (p.ESignatureRejectionReason != null) e.JsonData.ESignatureRejectionReason = p.ESignatureRejectionReason;
 
 		if (p.Categories.IsNotNullOrEmpty()) {
 			List<CategoryEntity> list = await db.Set<CategoryEntity>().AsTracking().Where(x => p.Categories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct);
