@@ -44,6 +44,14 @@ public class MerchantService(
 		await db.Set<MerchantEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
 
+
+		await Bind(new MerchantBindParams {
+			ApiKey = p.ApiKey,
+			Token = p.Token,
+			UserId = userData.Id,
+			MerchantId = e.Id
+		}, ct);
+
 		return new UResponse<Guid?>(e.Id);
 	}
 
