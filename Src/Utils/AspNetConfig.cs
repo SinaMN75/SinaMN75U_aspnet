@@ -87,7 +87,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IVasService, VasService>();
 		builder.Services.AddScoped<IChargeInternetService, ChargeInternetService>();
 		builder.Services.AddScoped<IMerchantService, MerchantService>();
-		builder.Services.AddScoped<IFlowService, FlowService>();
+		builder.Services.AddScoped<IProcessService, ProcessService>();
 
 		if (Core.App.Test) {
 			builder.Services.AddScoped<IInquiryService, InquiryServiceFake>();

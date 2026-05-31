@@ -290,3 +290,10 @@ public enum TagFieldType {
 	SelfieVideo = 112,
 	ESignature = 113
 }
+
+public enum TagProcessStatus {
+	Available = 102,
+	ComingSoon = 101,
+	Disabled = 103,
+	Hidden = 104
+}

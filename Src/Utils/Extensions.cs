@@ -21,6 +21,13 @@ public static class UExtensions {
 
 	public static IEnumerable<IdTitleParams> GetValues<T>() where T : Enum => Enum.GetValues(typeof(T)).Cast<int>().Select(item => new IdTitleParams { Title = Enum.GetName(typeof(T), item), Id = item }).ToList();
 
+	public static bool ContainsAny<T>(this IEnumerable<T>? source, params T[]? values) {
+		if (source == null || values == null || values.Length == 0) return false;
+
+		HashSet<T> set = new(source);
+		return values.Any(set.Contains);
+	}
+
 	public static void AddRangeIfNotExist<T>(this ICollection<T>? collection, IEnumerable<T>? items) {
 		if (collection == null || items == null) return;
 		foreach (T item in items)

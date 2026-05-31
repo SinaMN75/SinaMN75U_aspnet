@@ -35,3 +35,18 @@ public static class UConstants {
 	public static readonly Guid AvaPlusUserId = Guid.Parse("019d9545-4e5c-719f-838d-fb27b9321279");
 	public static readonly Guid MobtakeranUserId = Guid.Parse("019d9545-4e5c-719f-838d-fb27b9321267");
 }
+
+public static class ProcessStepIds {
+	public const string AdminApproval = "AdminApproval";
+	public const string UserData = "userData";
+	public const string UserDocument = "userDocument";
+	public const string UserSelfieVideo = "userSelfieVideo";
+	public const string UserESignature = "userESignature";
+}
+
+public static class ProcessIds {
+	public const string Terminal = "terminal";
+	public const string Charge = "charge";
+	public const string Internet = "internet";
+	public const string VehicleService = "vehicleService";
+}
