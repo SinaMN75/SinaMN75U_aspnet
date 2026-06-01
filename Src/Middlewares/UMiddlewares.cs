@@ -108,10 +108,10 @@ public sealed class UMiddleware(
 	}
 
 	private async Task<(string? Processed, string? Decoded)> PreProcessRequestAsync(HttpContext ctx, string raw) {
-		if (raw.Length > 100_000) {
-			await WriteErrorAsync(ctx, Usc.PayloadTooLarge, "RequestTooLarge");
-			return (null, raw);
-		}
+		// if (raw.Length > 100_000_000) {
+		// 	await WriteErrorAsync(ctx, Usc.PayloadTooLarge, ls.Get("RequestTooLarge"));
+		// 	return (null, raw);
+		// }
 
 		string decoded = raw;
 		string processed = raw;
