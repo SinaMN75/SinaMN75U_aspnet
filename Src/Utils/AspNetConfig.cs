@@ -138,6 +138,7 @@ public static partial class AspNetConfig {
 		app.MapChargeInternetRoutes(RouteTags.ChargeInternet);
 		app.MapMerchantRoutes(RouteTags.Merchant);
 		app.MapAppSettingsRoutes(RouteTags.AppSettings);
+		app.MapProcessRoutes(RouteTags.Process);
 	}
 
 	private static string CleanAndFormatSql(string sql) {

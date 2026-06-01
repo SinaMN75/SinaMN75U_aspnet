@@ -27,6 +27,7 @@ public static class RouteTags {
 	public const string ChargeInternet = "api/ChargeInternet/";
 	public const string Merchant = "api/Merchant/";
 	public const string AppSettings = "api/AppSettings/";
+	public const string Process = "api/Process/";
 }
 
 public static class UConstants {
