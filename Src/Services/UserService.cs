@@ -24,6 +24,9 @@ public class UserService(
 
 		Guid userId = p.Id ?? Guid.CreateVersion7();
 		DateTime now = DateTime.UtcNow;
+		List<CategoryEntity>? categories = null;
+		if (p.Categories.IsNotNullOrEmpty()) categories = await db.Set<CategoryEntity>().Where(x => p.Categories!.Contains(x.Id)).ToListAsync(ct);
+
 		UserEntity e = new() {
 			Id = userId,
 			CreatorId = p.CreatorId ?? userData.Id,
@@ -42,26 +45,17 @@ public class UserService(
 			Bio = p.Bio,
 			Birthdate = p.Birthdate,
 			NationalCardFront = p.NationalCardFront.FromBase64(),
-			NationalCardBack = p.NationalCardFront.FromBase64(),
-			BirthCertificateFirst = p.NationalCardFront.FromBase64(),
-			BirthCertificateSecond = p.NationalCardFront.FromBase64(),
-			BirthCertificateThird = p.NationalCardFront.FromBase64(),
-			BirthCertificateForth = p.NationalCardFront.FromBase64(),
-			BirthCertificateFifth = p.NationalCardFront.FromBase64(),
-			ESignature = p.NationalCardFront.FromBase64(),
-			VisualAuthentication = p.NationalCardFront.FromBase64(),
+			NationalCardBack = p.NationalCardBack.FromBase64(),
+			BirthCertificateFirst = p.BirthCertificateFirst.FromBase64(),
+			BirthCertificateSecond = p.BirthCertificateSecond.FromBase64(),
+			BirthCertificateThird = p.BirthCertificateThird.FromBase64(),
+			BirthCertificateForth = p.BirthCertificateForth.FromBase64(),
+			BirthCertificateFifth = p.BirthCertificateFifth.FromBase64(),
+			ESignature = p.ESignature.FromBase64(),
+			VisualAuthentication = p.VisualAuthentication.FromBase64(),
+			Categories = categories ?? [],
 			Wallets = [new WalletEntity { Id = userId, CreatorId = userId, CreatedAt = now, JsonData = new WalletJson(), Tags = [TagWallet.Primary], Balance = 0 }]
 		};
-
-		if (p.Categories.IsNotNullOrEmpty()) {
-			List<CategoryEntity> list = [];
-			foreach (Guid item in p.Categories!) {
-				CategoryEntity? c = await db.Set<CategoryEntity>().FirstOrDefaultAsync(x => x.Id == item, ct);
-				if (c != null) list.Add(c);
-			}
-
-			e.Categories = list;
-		}
 
 		await db.Set<UserEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
@@ -114,7 +108,7 @@ public class UserService(
 
 		if (p.UserName.IsNotNullOrEmpty()) q = q.Where(u => u.UserName.Contains(p.UserName!));
 		if (p.FirstName.IsNotNullOrEmpty()) q = q.Where(u => (u.FirstName ?? "").Contains(p.FirstName!));
-		if (p.LastName.IsNotNullOrEmpty()) q = q.Where(u => (u.LastName ?? "").Contains(p.UserName!));
+		if (p.LastName.IsNotNullOrEmpty()) q = q.Where(u => (u.LastName ?? "").Contains(p.LastName!));
 		if (p.PhoneNumber.IsNotNullOrEmpty()) q = q.Where(u => u.PhoneNumber == p.PhoneNumber);
 		if (p.LandLine.IsNotNullOrEmpty()) q = q.Where(u => u.LandLine == p.LandLine);
 		if (p.Email.IsNotNullOrEmpty()) q = q.Where(u => u.Email == p.Email);

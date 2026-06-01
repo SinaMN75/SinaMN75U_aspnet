@@ -33,7 +33,8 @@ public class ProcessService(
 			if (birthdate == null || (birthdate.Required && birthdate.Value.IsNullOrEmpty())) return new UResponse<UProcessStepGet?>(null, Usc.BadRequest, ls.Get("BirthDateRequired"));
 
 			u.JsonData.FatherName = fatherName.Value;
-			u.Birthdate = DateTime.Parse(birthdate.Value!);
+			if (!DateTime.TryParse(birthdate.Value!, out DateTime parsedDate)) return new UResponse<UProcessStepGet?>(null, Usc.BadRequest, ls.Get("InvalidDateFormat"));
+			u.Birthdate = parsedDate;
 		}
 		else if (p.Id == ProcessStepIds.UserDocument) {
 			UProcessField? nationalCardFront = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.NationalCardFront));
