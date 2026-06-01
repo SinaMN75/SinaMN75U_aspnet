@@ -10,8 +10,6 @@ public static class UserRoutes {
 		r.MapPost("Update", async (UserUpdateParams d, IUserService s, CancellationToken c) => (await s.Update(d, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("Delete", async (IdParams d, IUserService s, CancellationToken c) => (await s.Delete(d, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("DownloadUserData", async (IdParams d, IUserService s, CancellationToken c) => (await s.DownloadUserData(d, c)).ToResult()).Produces<UResponse<string>>();
-		r.MapPost("AuthenticationGet", async (BaseParams d, IProcessService s, CancellationToken c) => (await s.AuthenticationGet(d, c)).ToResult()).Produces<UResponse<UProcessStepGet>>();
-		r.MapPost("AuthenticationSend", async (UProcessStepSend d, IProcessService s, CancellationToken c) => (await s.AuthenticationSend(d, c)).ToResult()).Produces<UResponse>();
 
 		app.MapGet("/api/download/{token}", (string token, IMemoryCache cache) => {
 			if (!cache.TryGetValue(token, out byte[]? zipBytes)) return Results.NotFound("Download link expired or invalid");
