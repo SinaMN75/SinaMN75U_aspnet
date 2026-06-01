@@ -10,6 +10,11 @@ public sealed class IdParams : BaseParams {
 	public Guid Id { get; set; }
 }
 
+public sealed class IdStringParams : BaseParams {
+	[UValidationRequired("IdRequired")]
+	public required string Id { get; set; }
+}
+
 public sealed class IdParams<T> : BaseParams where T : new() {
 	[UValidationRequired("IdRequired")]
 	public Guid Id { get; set; }

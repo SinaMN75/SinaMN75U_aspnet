@@ -45,6 +45,7 @@ public static class ProcessStepIds {
 }
 
 public static class ProcessIds {
+	public const string Kyc = "kyc";
 	public const string Terminal = "terminal";
 	public const string Charge = "charge";
 	public const string Internet = "internet";

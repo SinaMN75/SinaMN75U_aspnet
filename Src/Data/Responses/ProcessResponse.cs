@@ -9,11 +9,10 @@ public class UProcess {
 	public required ICollection<UProcessItem> MainProcesses { get; set; }
 }
 
-public class UProcessGetParams: BaseParams {
+public class UProcessGetParams : BaseParams {
 	public required string ProcessId { get; set; }
 	public bool Intro { get; set; }
 }
-
 
 public class UProcessItem {
 	public required string Id { get; set; }
@@ -45,15 +44,14 @@ public class UProcessField {
 }
 
 public class UTextFieldConfig {
+	public required TagTextFieldType Type { get; set; }
 	public int? MinLength { get; set; }
 	public int? MaxLength { get; set; }
 }
 
 public class UFileConfig {
+	public required TagFileFieldType Type { get; set; }
 	public ICollection<string>? AllowedExtensions { get; set; }
-	public bool IsImage { get; set; }
-	public bool IsVideo { get; set; }
-	public bool IsPdf { get; set; }
 	public bool IsCamera { get; set; }
 	public bool IsSelfieCamera { get; set; }
 }

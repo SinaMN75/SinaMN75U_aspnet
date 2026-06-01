@@ -17,7 +17,7 @@ public class WalletService(
 ) : IWalletService {
 	public async Task<UResponse> Purchase(WalletPurchaseParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<TagTxnErrorCodes>(TagTxnErrorCodes.UnAuthorized, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<TagTxnErrorCodes>(TagTxnErrorCodes.Unauthorized, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		Guid receiverId;
 		decimal amount;

@@ -11,6 +11,5 @@ public static class TerminalRoutes {
 		r.MapPost("Assign", async (TerminalAssignParams p, ITerminalService s, CancellationToken c) => (await s.Assign(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("Bind", async (IdParams p, ITerminalService s, CancellationToken c) => (await s.Bind(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("Update", async (TerminalUpdateParams p, ITerminalService s, CancellationToken c) => (await s.Update(p, c)).ToResult()).Produces<UResponse>();
-		r.MapPost("Reject", async (IdParams p, ITerminalService s, CancellationToken c) => (await s.Reject(p, c)).ToResult()).Produces<UResponse>();
 	}
 }

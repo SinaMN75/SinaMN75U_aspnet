@@ -17,7 +17,7 @@ public class MerchantService(
 	public async Task<UResponse<Guid?>> Create(MerchantCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		
+
 		MerchantEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatorId = p.CreatorId ?? userData.Id,
@@ -44,14 +44,6 @@ public class MerchantService(
 		await db.Set<MerchantEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
 
-
-		await Bind(new MerchantBindParams {
-			ApiKey = p.ApiKey,
-			Token = p.Token,
-			UserId = userData.Id,
-			MerchantId = e.Id
-		}, ct);
-
 		return new UResponse<Guid?>(e.Id);
 	}
 
@@ -59,11 +51,9 @@ public class MerchantService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		if (!userData.IsAdmin) return new UResponse<string?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
-
 		MerchantEntity? e = await db.Set<MerchantEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.MerchantId, ct);
 		if (e == null) return new UResponse<MerchantResponse?>(null, Usc.NotFound, ls.Get("MerchantNotFound"));
-		
+
 		HttpResponseMessage? response = await http.Post(
 			"https://oa.avreenco.com:8080/api/mms/ing/v2/addMerchant",
 			new {
@@ -81,12 +71,13 @@ public class MerchantService(
 				postalCode = e.ZipCode,
 				definitionTemplate = 1,
 				settlementCurrency = 364
-			}
+			},
+			new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
 		);
 
 		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<Guid?>(null);
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
-		
+
 		e.InsId = data.GetStringOrNull("insId")!;
 		e.MerchantId = data.GetStringOrNull("merchantId")!;
 		await db.SaveChangesAsync(ct);

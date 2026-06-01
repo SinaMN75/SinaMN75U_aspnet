@@ -113,7 +113,35 @@ public class TerminalService(
 			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("TerminalNotFound"));
 		if (e.Merchant == null) return new UResponse(Usc.NotFound, ls.Get("MerchantNotFound"));
+		
+		
+		HttpResponseMessage? response = await http.Post(
+			"https://oa.avreenco.com:8080/api/mms/ing/v2/addMerchant",
+			new {
+				accountId = e.Merchant.BankAccountId,
+				businessTitle = e.Merchant.JsonData.BusinessTitle,
+				cityCode = e.Merchant.CityCode,
+				mcc = e.Merchant.Mcc,
+				merchantAddress = e.Merchant.JsonData.Address,
+				merchantMobileNo = e.Merchant.PhoneNumber,
+				merchantName = e.Merchant.Title,
+				merchantOwnerName = e.Merchant.JsonData.OwnerName,
+				merchantPhone = e.Merchant.Landline,
+				nationalId = e.Merchant.NationalCode,
+				ownerMobileNo = e.Merchant.JsonData.OwnerPhoneNumber,
+				postalCode = e.Merchant.ZipCode,
+				definitionTemplate = 1,
+				settlementCurrency = 364
+			},
+			new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
+		);
 
+		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<Guid?>(null);
+		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
+
+		e.Merchant.InsId = data.GetStringOrNull("insId")!;
+		e.Merchant.MerchantId = data.GetStringOrNull("merchantId")!;
+		
 		HttpResponseMessage? merchantResponse = await http.Post(
 			$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/addMerchant",
 			new {

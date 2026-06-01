@@ -131,7 +131,7 @@ public enum TagComment {
 
 public enum TagReaction {
 	Like = 101,
-	DisLike = 102
+	Dislike = 102
 }
 
 public enum TagFollow {
@@ -239,19 +239,13 @@ public enum TagInquiryHistory {
 	ItHub = 701
 }
 
-public enum TagAgreement {
-	TerminalRequest = 101,
-	Signed = 201,
-	Verified = 202
-}
-
 public enum TagNotification {
 	Test = 999
 }
 
 public enum TagTxnErrorCodes {
 	LowBalance = 101,
-	UnAuthorized = 102,
+	Unauthorized = 102,
 	SenderWalletNotFound = 103,
 	ReceiverWalletNotFound = 104,
 	SecurityError = 105,
@@ -277,23 +271,34 @@ public enum TagMerchant {
 }
 
 public enum TagFieldType {
-	Number = 101,
-	Text = 102,
-	PhoneNumber = 103,
-	DropDown = 104,
-	Date = 105,
-	DateTime = 106,
-	Time = 107,
-	PersianDate = 108,
-	Image = 109,
-	Video = 111,
-	SelfieVideo = 112,
-	ESignature = 113
+	Text = 101,
+	DropDown = 102,
+	File = 103,
+	ESignature = 105
+}
+
+public enum TagTextFieldType {
+	Text = 101,
+	MultilineText = 102,
+	NumberDecimal = 201,
+	PhoneNumber = 301,
+	PhoneNumberWithCountryCode = 302,
+	Date = 401,
+	DateTime = 402,
+	PersianDate = 403,
+	PersianDateTime = 404
+}
+
+public enum TagFileFieldType {
+	Image = 101,
+	Video = 102,
+	Pdf = 103,
+	Text = 104
 }
 
 public enum TagProcessStatus {
-	Available = 102,
-	ComingSoon = 101,
+	Available = 101,
+	ComingSoon = 102,
 	Disabled = 103,
 	Hidden = 104
 }
