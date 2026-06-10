@@ -187,20 +187,17 @@ public class PnService(
 	public async Task<UResponse<Guid?>> CreateTerminal(PnTerminalCreateParams p, CancellationToken ct) {
 		if (p.ApiKey != ApiKey) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("InvalidAPIKey"));
 
-		TerminalEntity? e = await db.Set<TerminalEntity>().FirstOrDefaultAsync(x => x.Serial == p.Serial && x.SimCardSerial == p.SimCardSerial, ct);
-		if (e == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("TerminalNotFoundCheckDetails"));
-		MerchantEntity? merchant = await db.Set<MerchantEntity>().FirstOrDefaultAsync(x => x.Id == p.MerchantId, ct);
+		TerminalEntity? terminal = await db.Set<TerminalEntity>().AsTracking().FirstOrDefaultAsync(x => x.Serial == p.Serial && x.SimCardSerial == p.SimCardSerial, ct);
+		if (terminal == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("TerminalNotFoundCheckDetails"));
+		MerchantEntity? merchant = await db.Set<MerchantEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.MerchantId, ct);
 		if (merchant == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("MerchantNotFound"));
 
-		string agreement = await GenerateAgreement(merchant.User, e, merchant);
-		e.MerchantId = p.MerchantId;
-		e.Agreement = agreement.FromBase64();
-
-		db.Set<TerminalEntity>().Update(e);
-		await db.SaveChangesAsync(ct);
-
+		string agreement = await GenerateAgreement(merchant.User, terminal, merchant);
+		terminal.MerchantId = p.MerchantId;
+		terminal.Agreement = agreement.FromBase64();
+		
 		HttpResponseMessage? response = await http.Post(
-			"https://oa.avreenco.com:8080/api/mms/ing/v2/addMerchant",
+			$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/addMerchant",
 			new {
 				accountId = merchant.BankAccountId,
 				businessTitle = merchant.JsonData.BusinessTitle,
@@ -232,8 +229,8 @@ public class PnService(
 				definitionTemplate = 1,
 				merchantId = merchant.MerchantId,
 				project = "AvaPlus",
-				terminalSerial = e.Serial,
-				terminalSerial2 = e.SimCardSerial
+				terminalSerial = terminal.Serial,
+				terminalSerial2 = terminal.SimCardSerial
 			},
 			new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
 		);
@@ -242,18 +239,18 @@ public class PnService(
 
 		JsonElement terminalData = JsonSerializer.Deserialize<JsonElement>(await terminalResponse.Content.ReadAsStringAsync(ct));
 
-		e.Tags.Add(TagTerminal.Verified);
-		e.Tags.Remove(TagTerminal.AwaitingVerification);
-		e.TerminalId = terminalData.GetStringOrNull("terminalId");
-		e.InsId = terminalData.GetStringOrNull("insId");
+		terminal.Tags.Add(TagTerminal.Verified);
+		terminal.Tags.Remove(TagTerminal.AwaitingVerification);
+		terminal.TerminalId = terminalData.GetStringOrNull("terminalId");
+		terminal.InsId = terminalData.GetStringOrNull("insId");
 
-		db.Set<TerminalEntity>().Update(e);
+		db.Set<TerminalEntity>().Update(terminal);
 		await db.SaveChangesAsync(ct);
 
-		return new UResponse<Guid?>(e.Id);
+		return new UResponse<Guid?>(terminal.Id);
 	}
 
-	private async Task<string> GenerateAgreement(UserEntity user, TerminalEntity terminal, MerchantEntity merchant) {
+	private static async Task<string> GenerateAgreement(UserEntity user, TerminalEntity terminal, MerchantEntity merchant) {
 		return await WordPdfGenerator.GenerateWithTextsAndImagesAsync(
 			texts: new Dictionary<string, string> {
 				{ "day", PersianDateTime.Now.Day.ToString() },
