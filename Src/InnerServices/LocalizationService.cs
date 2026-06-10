@@ -136,6 +136,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "UserAlreadyExist", "Account already exists. Would you like to log in?" },
 		{ "WalletForThisUserAlreadyExists", "User Already has Wallet." },
 		{ "ZipCodeMustBe10CharactersLong", "Zip Code must be 10 Characters Long." },
+		{ "ProcessCompleted", "Process is AlreadyCompleted." },
 
 		// ===== System / API =====
 		{ "InternalServerError", "Internal server error" },
@@ -282,6 +283,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "UserAlreadyExist", "حساب کاربری از قبل وجود دارد. آیا مایل به ورود هستید؟" },
 		{ "WalletForThisUserAlreadyExists", "کاربر از قبل کیف پول دارد." },
 		{ "ZipCodeMustBe10CharactersLong", "کد پستی باید 10 کاراکتر باشد." },
+		{ "ProcessCompleted", "فرایند تکمیل شده است." },
 
 		// ===== System / API =====
 		{ "InternalServerError", "خطای داخلی سرور" },

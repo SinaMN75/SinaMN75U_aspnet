@@ -4,6 +4,7 @@ public enum Usc {
 	Success = 200,
 	Created = 201,
 	Deleted = 211,
+	ProcessCompleted = 212,
 
 	BadRequest = 400,
 	UnAuthorized = 401,

@@ -14,7 +14,7 @@ public class ProcessService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<UProcessStepGet?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		if (p.Id == ProcessIds.Kyc) return await AuthenticationGet(new BaseParams {Token = p.Token, ApiKey = p.ApiKey}, ct);
+		if (p.Id == ProcessIds.Kyc) return await AuthenticationGet(new BaseParams { Token = p.Token, ApiKey = p.ApiKey }, ct);
 		throw new NotImplementedException();
 	}
 
@@ -74,8 +74,8 @@ public class ProcessService(
 
 		return await AuthenticationGet(new BaseParams { ApiKey = p.ApiKey, Token = p.Token }, ct);
 	}
-	
-		private async Task<UResponse<UProcessStepGet?>> AuthenticationGet(BaseParams p, CancellationToken ct) {
+
+	private async Task<UResponse<UProcessStepGet?>> AuthenticationGet(BaseParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<UProcessStepGet?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
@@ -92,7 +92,24 @@ public class ProcessService(
 			.FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
 		if (e == null) return new UResponse<UProcessStepGet?>(null, Usc.NotFound, ls.Get("UserNotFound"));
 
-		if (e.JsonData.FatherName == null || e.Birthdate == null) {
+		if (e is { FirstName: not null, LastName: not null, JsonData.FatherName: not null, Birthdate: not null } &&
+		    e.NationalCardFront.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.NationalCardFrontVerified) &&
+		    e.NationalCardBack.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.NationalCardBackVerified) &&
+		    e.BirthCertificateFirst.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.BirthCertificateFirstVerified) &&
+		    e.VisualAuthentication.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.VisualAuthenticationVerified) &&
+		    e.ESignature.IsNullOrEmpty() && !e.Tags.Contains(TagUser.ESignatureVerified)
+		   )
+			return new UResponse<UProcessStepGet?>(
+				new UProcessStepGet {
+					Id = ProcessStepIds.AuthCompleted,
+					Title = "فرایند احراز هویت تکمیل شده است",
+					Description = "فرایند احراز هویت تکمیل شده است",
+					Message = "فرایند احراز هویت تکمیل شده است"
+				},
+				Usc.ProcessCompleted, ls.Get("ProcessCompleted")
+			);
+
+		if (e.FirstName == null || e.LastName == null || e.JsonData.FatherName == null || e.Birthdate == null)
 			return new UResponse<UProcessStepGet?>(
 				new UProcessStepGet {
 					Id = ProcessStepIds.UserData,
@@ -108,8 +125,8 @@ public class ProcessService(
 							TextFieldConfig = new UTextFieldConfig {
 								Type = TagTextFieldType.Text,
 								MaxLength = 40,
-								MinLength = 2,
-							},
+								MinLength = 2
+							}
 						},
 						new UProcessField {
 							Label = "نام خانوادگی",
@@ -120,8 +137,8 @@ public class ProcessService(
 							TextFieldConfig = new UTextFieldConfig {
 								Type = TagTextFieldType.Text,
 								MaxLength = 40,
-								MinLength = 2,
-							},
+								MinLength = 2
+							}
 						},
 						new UProcessField {
 							Label = "نام پدر",
@@ -132,30 +149,27 @@ public class ProcessService(
 							TextFieldConfig = new UTextFieldConfig {
 								Type = TagTextFieldType.Text,
 								MaxLength = 40,
-								MinLength = 2,
-							},
+								MinLength = 2
+							}
 						},
 						new UProcessField {
 							Label = "تاریخ تولد",
 							Value = e.Birthdate?.ToString(),
 							Type = TagFieldType.Text,
-							Required = true, Key = nameof(UserEntity.Birthdate),
+							Required = true,
+							Key = nameof(UserEntity.Birthdate),
 							TextFieldConfig = new UTextFieldConfig {
-								Type = TagTextFieldType.PersianDate,
-							},
-						},
+								Type = TagTextFieldType.PersianDate
+							}
+						}
 					]
 				}
 			);
-		}
 
 		if (
-			e.NationalCardFront.IsNullOrEmpty() ||
-			!e.Tags.ContainsAny(TagUser.NationalCardFrontVerified, TagUser.NationalCardFrontAwaitingVerification) ||
-			e.NationalCardBack.IsNullOrEmpty() ||
-			!e.Tags.ContainsAny(TagUser.NationalCardBackVerified, TagUser.NationalCardBackAwaitingVerification) ||
-			e.BirthCertificateFirst.IsNullOrEmpty() ||
-			!e.Tags.ContainsAny(TagUser.BirthCertificateFirstVerified, TagUser.BirthCertificateFirstAwaitingVerification)
+			e.NationalCardFront.IsNullOrEmpty() || !e.Tags.ContainsAny(TagUser.NationalCardFrontVerified, TagUser.NationalCardFrontAwaitingVerification) ||
+			e.NationalCardBack.IsNullOrEmpty() || !e.Tags.ContainsAny(TagUser.NationalCardBackVerified, TagUser.NationalCardBackAwaitingVerification) ||
+			e.BirthCertificateFirst.IsNullOrEmpty() || !e.Tags.ContainsAny(TagUser.BirthCertificateFirstVerified, TagUser.BirthCertificateFirstAwaitingVerification)
 		)
 			return new UResponse<UProcessStepGet?>(
 				new UProcessStepGet {
@@ -172,7 +186,7 @@ public class ProcessService(
 							FileConfig = new UFileConfig {
 								Type = TagFileFieldType.Image,
 								IsCamera = true
-							},
+							}
 						},
 						new UProcessField {
 							Label = "پشت کارت ملی",
@@ -183,7 +197,7 @@ public class ProcessService(
 							FileConfig = new UFileConfig {
 								Type = TagFileFieldType.Image,
 								IsCamera = true
-							},
+							}
 						},
 						new UProcessField {
 							Label = "صفحه اول شناسنامه",
@@ -194,7 +208,7 @@ public class ProcessService(
 							FileConfig = new UFileConfig {
 								Type = TagFileFieldType.Image,
 								IsCamera = true
-							},
+							}
 						}
 					]
 				}

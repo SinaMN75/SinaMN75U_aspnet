@@ -44,6 +44,7 @@ public static class ProcessStepIds {
 	public const string UserDocument = "userDocument";
 	public const string UserSelfieVideo = "userSelfieVideo";
 	public const string UserESignature = "userESignature";
+	public const string AuthCompleted = "authCompleted";
 }
 
 public static class ProcessIds {
