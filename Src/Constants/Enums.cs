@@ -41,6 +41,7 @@ public enum TagUser {
 	Guest = 202,
 	SystemAdmin = 203,
 	SystemUser = 204,
+	SunUser = 205,
 	AwaitingVerification = 301,
 	Verified = 302,
 	NationalCardFrontVerified = 401,
@@ -62,16 +63,7 @@ public enum TagUser {
 	BirthCertificateFifthAwaitingVerification = 507,
 	VisualAuthenticationAwaitingVerification = 508,
 	ESignatureAwaitingVerification = 509,
-
-	NationalCardFrontRejected = 601,
-	NationalCardBackRejected = 602,
-	BirthCertificateFirstRejected = 603,
-	BirthCertificateSecondRejected = 604,
-	BirthCertificateThirdRejected = 605,
-	BirthCertificateForthRejected = 606,
-	BirthCertificateFifthRejected = 607,
-	VisualAuthenticationRejected = 608,
-	ESignatureRejected = 609
+	
 }
 
 public enum TagCategory {

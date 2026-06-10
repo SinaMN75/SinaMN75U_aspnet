@@ -163,7 +163,7 @@ public class UserService(
 		if (p.BirthCertificateForth.IsNotNullOrEmpty()) e.BirthCertificateForth = ImageCompressor.CompressBase64(p.BirthCertificateForth);
 		if (p.BirthCertificateFifth.IsNotNullOrEmpty()) e.BirthCertificateFifth = ImageCompressor.CompressBase64(p.BirthCertificateFifth);
 		if (p.VisualAuthentication.IsNotNullOrEmpty()) e.VisualAuthentication = p.VisualAuthentication.FromBase64();
-		if (p.ESignature.IsNotNullOrEmpty()) ImageCompressor.CompressBase64(p.ESignature, 10);
+		if (p.ESignature.IsNotNullOrEmpty()) e.ESignature = ImageCompressor.CompressBase64(p.ESignature, 10);
 
 		if (p.NationalCardFrontRejectionReason != null) e.JsonData.NationalCardFrontRejectionReason = p.NationalCardFrontRejectionReason;
 		if (p.NationalCardBackRejectionReason != null) e.JsonData.NationalCardBackRejectionReason = p.NationalCardBackRejectionReason;
