@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore.Storage;
+
 namespace SinaMN75U.Services;
 
 public class PnUserStatusResponse {
@@ -82,7 +84,7 @@ public class PnService(
 				CreatedAt = DateTime.UtcNow,
 				CreatorId = UConstants.PnUserId,
 				RefreshToken = Guid.NewGuid().ToString(),
-				Password = p.PhoneNumber,
+				Password = UPasswordHasher.Hash(p.PhoneNumber),
 				UserName = p.PhoneNumber,
 				PhoneNumber = p.PhoneNumber,
 				NationalCode = p.NationalCode,
@@ -157,65 +159,73 @@ public class PnService(
 
 		TerminalEntity? terminal = await db.Set<TerminalEntity>().AsTracking().FirstOrDefaultAsync(x => x.Serial == p.Serial && x.SimCardSerial == p.SimCardSerial, ct);
 		if (terminal == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("TerminalNotFoundCheckDetails"));
-		MerchantEntity? merchant = await db.Set<MerchantEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.MerchantId, ct);
+		MerchantEntity? merchant = await db.Set<MerchantEntity>().AsTracking().Include(x => x.User).FirstOrDefaultAsync(x => x.Id == p.MerchantId, ct);
 		if (merchant == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("MerchantNotFound"));
 
 		string agreement = await GenerateAgreement(merchant.User, merchant);
 		terminal.MerchantId = p.MerchantId;
 		terminal.Agreement = agreement.FromBase64();
 
-		HttpResponseMessage? response = await http.Post(
-			$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/addMerchant",
-			new {
-				accountId = merchant.BankAccountId,
-				businessTitle = merchant.JsonData.BusinessTitle,
-				cityCode = merchant.CityCode,
-				mcc = merchant.Mcc,
-				merchantAddress = merchant.JsonData.Address,
-				merchantMobileNo = merchant.PhoneNumber,
-				merchantName = merchant.Title,
-				merchantOwnerName = merchant.JsonData.OwnerName,
-				merchantPhone = merchant.Landline,
-				nationalId = merchant.NationalCode,
-				ownerMobileNo = merchant.JsonData.OwnerPhoneNumber,
-				postalCode = merchant.ZipCode,
-				definitionTemplate = 1,
-				settlementCurrency = 364
-			},
-			new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
-		);
+		await using IDbContextTransaction transaction = await db.Database.BeginTransactionAsync(ct);
+		try {
+			HttpResponseMessage? response = await http.Post(
+				$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/addMerchant",
+				new {
+					accountId = merchant.BankAccountId,
+					businessTitle = merchant.JsonData.BusinessTitle,
+					cityCode = merchant.CityCode,
+					mcc = merchant.Mcc,
+					merchantAddress = merchant.JsonData.Address,
+					merchantMobileNo = merchant.PhoneNumber,
+					merchantName = merchant.Title,
+					merchantOwnerName = merchant.JsonData.OwnerName,
+					merchantPhone = merchant.Landline,
+					nationalId = merchant.NationalCode,
+					ownerMobileNo = merchant.JsonData.OwnerPhoneNumber,
+					postalCode = merchant.ZipCode,
+					definitionTemplate = 1,
+					settlementCurrency = 364
+				},
+				new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
+			);
 
-		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<Guid?>(null);
-		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
+			if (response is null or { IsSuccessStatusCode: false }) return new UResponse<Guid?>(null);
+			JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
 
-		merchant.InsId = data.GetStringOrNull("insId")!;
-		merchant.MerchantId = data.GetStringOrNull("merchantId")!;
+			merchant.InsId = data.GetStringOrNull("insId")!;
+			merchant.MerchantId = data.GetStringOrNull("merchantId")!;
 
-		HttpResponseMessage? terminalResponse = await http.Post(
-			$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/defineAndBindTerminal",
-			new {
-				definitionTemplate = 1,
-				merchantId = merchant.MerchantId,
-				project = "AvaPlus",
-				terminalSerial = terminal.Serial,
-				terminalSerial2 = terminal.SimCardSerial
-			},
-			new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
-		);
+			HttpResponseMessage? terminalResponse = await http.Post(
+				$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/defineAndBindTerminal",
+				new {
+					definitionTemplate = 1,
+					merchantId = merchant.MerchantId,
+					project = "AvaPlus",
+					terminalSerial = terminal.Serial,
+					terminalSerial2 = terminal.SimCardSerial
+				},
+				new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
+			);
 
-		if (terminalResponse is null or { IsSuccessStatusCode: false }) return new UResponse<Guid?>(null);
+			if (terminalResponse is null or { IsSuccessStatusCode: false }) return new UResponse<Guid?>(null);
 
-		JsonElement terminalData = JsonSerializer.Deserialize<JsonElement>(await terminalResponse.Content.ReadAsStringAsync(ct));
+			JsonElement terminalData = JsonSerializer.Deserialize<JsonElement>(await terminalResponse.Content.ReadAsStringAsync(ct));
 
-		terminal.Tags.Add(TagTerminal.Verified);
-		terminal.Tags.Remove(TagTerminal.AwaitingVerification);
-		terminal.TerminalId = terminalData.GetStringOrNull("terminalId");
-		terminal.InsId = terminalData.GetStringOrNull("insId");
+			terminal.Tags.Add(TagTerminal.Verified);
+			terminal.Tags.Remove(TagTerminal.AwaitingVerification);
+			terminal.TerminalId = terminalData.GetStringOrNull("terminalId");
+			terminal.InsId = terminalData.GetStringOrNull("insId");
 
-		db.Set<TerminalEntity>().Update(terminal);
-		await db.SaveChangesAsync(ct);
+			db.Set<TerminalEntity>().Update(terminal);
+			await db.SaveChangesAsync(ct);
+			await transaction.CommitAsync(ct);
 
-		return new UResponse<Guid?>(terminal.Id);
+			return new UResponse<Guid?>(terminal.Id);
+		}
+		catch {
+			await transaction.RollbackAsync(ct);
+			return new UResponse<Guid?>(null);
+		}
 	}
 
 	public async Task<UResponse<PnUserStatusResponse?>> UserStatus(PnPhoneNumberParams p, CancellationToken ct) {
@@ -276,7 +286,7 @@ public class PnService(
 				{ "nationalCode", user.NationalCode ?? "" },
 				{ "birthdate", PersianDateTime.FromDateTime(user.Birthdate ?? DateTime.Now).ToString("yyyy-MM-dd") },
 				{ "address", "ADDRESS" },
-				{ "postalCode", merchant.ZipCode ?? "" },
+				{ "postalCode", merchant.ZipCode },
 				{ "phoneNumber", user.PhoneNumber ?? "" },
 				{ "landLine", user.LandLine ?? "" },
 				{ "fatherName", user.JsonData.FatherName ?? "" }
