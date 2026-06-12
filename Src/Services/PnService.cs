@@ -1,53 +1,22 @@
 namespace SinaMN75U.Services;
 
-public class PnUserStatusParams : BaseParams {
+public class PnUserStatusResponse {
+	public PnUserStatusItem NationalCardFront { get; set; } = null!;
+	public PnUserStatusItem NationalCardBack { get; set; } = null!;
+	public PnUserStatusItem BirthCertificateFirst { get; set; } = null!;
+	public PnUserStatusItem VisualAuthentication { get; set; } = null!;
+	public PnUserStatusItem ESignature { get; set; } = null!;
+	public IEnumerable<MerchantResponse> Merchants { get; set; } = [];
+}
+
+public class PnPhoneNumberParams : BaseParams {
 	public string PhoneNumber { get; set; } = null!;
 }
 
-public class PnUserInquiryResponse {
-	public UserDetails User { get; set; } = null!;
-	public List<MerchantDetails> Merchants { get; set; } = [];
-	public bool IsProfileCompleted { get; set; }
-}
-
-public class UserDetails {
-	public Guid Id { get; set; }
-	public string? PhoneNumber { get; set; }
-	public string? FirstName { get; set; }
-	public string? LastName { get; set; }
-	public string? FatherName { get; set; }
-	public string? NationalCode { get; set; }
-	public string? Email { get; set; }
-	public DateTime? Birthdate { get; set; }
-	public bool HasNationalCardFront { get; set; }
-	public bool HasNationalCardBack { get; set; }
-	public bool HasBirthCertificateFirst { get; set; }
-	public bool HasVisualAuthentication { get; set; }
-	public bool HasESignature { get; set; }
-}
-
-public class MerchantDetails {
-	public Guid Id { get; set; }
-	public string Title { get; set; } = null!;
-	public string? BusinessTitle { get; set; }
-	public string PhoneNumber { get; set; } = null!;
-	public string? Landline { get; set; }
-	public string NationalCode { get; set; } = null!;
-	public string Mcc { get; set; } = null!;
-	public string? Address { get; set; }
-	public string? ZipCode { get; set; }
-	public string? CityCode { get; set; }
-	public List<TerminalDetails> Terminals { get; set; } = [];
-}
-
-public class TerminalDetails {
-	public Guid Id { get; set; }
-	public string Serial { get; set; } = null!;
-	public string SimCardSerial { get; set; } = null!;
-	public string Imei { get; set; } = null!;
-	public string? TerminalId { get; set; }
-	public string? InsId { get; set; }
+public class PnUserStatusItem {
+	public bool IsUploaded { get; set; }
 	public bool IsVerified { get; set; }
+	public string? RejectionReason { get; set; }
 }
 
 public class PnAuthParams : BaseParams {
@@ -92,11 +61,10 @@ public interface IPnService {
 	Task<UResponse> Auth(PnAuthParams p, CancellationToken ct);
 	Task<UResponse<Guid?>> CreateMerchant(PnMerchantCreateParams p, CancellationToken ct);
 	Task<UResponse<Guid?>> CreateTerminal(PnTerminalCreateParams p, CancellationToken ct);
-	Task<UResponse<PnUserInquiryResponse?>> InquiryUserByPhoneNumber(PnUserStatusParams p, CancellationToken ct);
+	Task<UResponse<PnUserStatusResponse?>> UserStatus(PnPhoneNumberParams p, CancellationToken ct);
 }
 
 public class PnService(
-	ITokenService ts,
 	ILocalizationService ls,
 	DbContext db,
 	IHttpClientService http
@@ -192,10 +160,10 @@ public class PnService(
 		MerchantEntity? merchant = await db.Set<MerchantEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.MerchantId, ct);
 		if (merchant == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("MerchantNotFound"));
 
-		string agreement = await GenerateAgreement(merchant.User, terminal, merchant);
+		string agreement = await GenerateAgreement(merchant.User, merchant);
 		terminal.MerchantId = p.MerchantId;
 		terminal.Agreement = agreement.FromBase64();
-		
+
 		HttpResponseMessage? response = await http.Post(
 			$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/addMerchant",
 			new {
@@ -250,7 +218,55 @@ public class PnService(
 		return new UResponse<Guid?>(terminal.Id);
 	}
 
-	private static async Task<string> GenerateAgreement(UserEntity user, TerminalEntity terminal, MerchantEntity merchant) {
+	public async Task<UResponse<PnUserStatusResponse?>> UserStatus(PnPhoneNumberParams p, CancellationToken ct) {
+		if (p.ApiKey != ApiKey) return new UResponse<PnUserStatusResponse?>(null, Usc.UnAuthorized, ls.Get("InvalidAPIKey"));
+
+		PnUserStatusResponse response = new();
+
+		UserResponse? e = await db.Set<UserEntity>()
+			.Select(Projections.UserSelector(new UserSelectorArgs {
+				Merchant = new MerchantSelectorArgs { Terminal = new TerminalSelectorArgs() },
+				NationalCardFront = true,
+				NationalCardBack = true,
+				BirthCertificateFirst = true,
+				VisualAuthentication = true,
+				ESignature = true
+			}))
+			.FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
+		if (e == null) return new UResponse<PnUserStatusResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
+
+		response.BirthCertificateFirst = new PnUserStatusItem {
+			IsUploaded = e.BirthCertificateFirst.IsNotNullOrEmpty(),
+			IsVerified = e.Tags.Contains(TagUser.BirthCertificateFirstVerified),
+			RejectionReason = e.JsonData.BirthCertificateFirstRejectionReason
+		};
+		response.NationalCardFront = new PnUserStatusItem {
+			IsUploaded = e.NationalCardFront.IsNotNullOrEmpty(),
+			IsVerified = e.Tags.Contains(TagUser.NationalCardFrontVerified),
+			RejectionReason = e.JsonData.NationalCardFrontRejectionReason
+		};
+		response.NationalCardBack = new PnUserStatusItem {
+			IsUploaded = e.NationalCardBack.IsNotNullOrEmpty(),
+			IsVerified = e.Tags.Contains(TagUser.NationalCardBackVerified),
+			RejectionReason = e.JsonData.NationalCardBackRejectionReason
+		};
+		response.VisualAuthentication = new PnUserStatusItem {
+			IsUploaded = e.VisualAuthentication.IsNotNullOrEmpty(),
+			IsVerified = e.Tags.Contains(TagUser.VisualAuthenticationVerified),
+			RejectionReason = e.JsonData.VisualAuthenticationRejectionReason
+		};
+		response.ESignature = new PnUserStatusItem {
+			IsUploaded = e.ESignature.IsNotNullOrEmpty(),
+			IsVerified = e.Tags.Contains(TagUser.ESignatureVerified),
+			RejectionReason = e.JsonData.ESignatureRejectionReason
+		};
+
+		response.Merchants = e.Merchants ?? [];
+		
+		return new UResponse<PnUserStatusResponse?>(response);
+	}
+
+	private static async Task<string> GenerateAgreement(UserEntity user, MerchantEntity merchant) {
 		return await WordPdfGenerator.GenerateWithTextsAndImagesAsync(
 			texts: new Dictionary<string, string> {
 				{ "day", PersianDateTime.Now.Day.ToString() },
@@ -270,79 +286,5 @@ public class PnService(
 			},
 			templatePath: Path.Combine(Directory.GetCurrentDirectory(), "Templates", "atmAgreement.docx")
 		);
-	}
-
-	public async Task<UResponse<PnUserInquiryResponse?>> InquiryUserByPhoneNumber(PnUserStatusParams p, CancellationToken ct) {
-		if (p.ApiKey != ApiKey) return new UResponse<PnUserInquiryResponse?>(null, Usc.UnAuthorized, ls.Get("InvalidAPIKey"));
-
-		UserEntity? user = await db.Set<UserEntity>()
-			.Include(x => x.Merchants)
-			.ThenInclude(x => x.Terminals)
-			.FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
-
-		if (user == null)
-			return new UResponse<PnUserInquiryResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
-
-		PnUserInquiryResponse response = new() {
-			User = new UserDetails {
-				Id = user.Id,
-				PhoneNumber = user.PhoneNumber,
-				FirstName = user.FirstName,
-				LastName = user.LastName,
-				FatherName = user.JsonData?.FatherName,
-				NationalCode = user.NationalCode,
-				Email = user.Email,
-				Birthdate = user.Birthdate,
-				HasNationalCardFront = user.NationalCardFront.IsNotNullOrEmpty(),
-				HasNationalCardBack = user.NationalCardBack.IsNotNullOrEmpty(),
-				HasBirthCertificateFirst = user.BirthCertificateFirst.IsNotNullOrEmpty(),
-				HasVisualAuthentication = user.VisualAuthentication.IsNotNullOrEmpty(),
-				HasESignature = user.ESignature.IsNotNullOrEmpty()
-			},
-			Merchants = user.Merchants?.Select(m => new MerchantDetails {
-				Id = m.Id,
-				Title = m.Title,
-				BusinessTitle = m.JsonData?.BusinessTitle,
-				PhoneNumber = m.PhoneNumber,
-				Landline = m.Landline,
-				NationalCode = m.NationalCode,
-				Mcc = m.Mcc,
-				Address = m.JsonData?.Address,
-				ZipCode = m.ZipCode,
-				CityCode = m.CityCode,
-				Terminals = m.Terminals.Select(t => new TerminalDetails {
-					Id = t.Id,
-					Serial = t.Serial,
-					SimCardSerial = t.SimCardSerial,
-					Imei = t.Imei,
-					TerminalId = t.TerminalId,
-					InsId = t.InsId,
-					IsVerified = t.Tags?.Contains(TagTerminal.Verified) ?? false
-				}).ToList() ?? []
-			}).ToList() ?? []
-		};
-
-		// Check if user profile is completed
-		response.IsProfileCompleted = IsUserProfileCompleted(response.User);
-
-		return new UResponse<PnUserInquiryResponse?>(response);
-	}
-
-	private static bool IsUserProfileCompleted(UserDetails user) {
-		List<bool> requiredFields = [
-			!string.IsNullOrEmpty(user.FirstName),
-			!string.IsNullOrEmpty(user.LastName),
-			!string.IsNullOrEmpty(user.FatherName),
-			!string.IsNullOrEmpty(user.NationalCode),
-			!string.IsNullOrEmpty(user.Email),
-			user.Birthdate.HasValue,
-			user.HasNationalCardFront,
-			user.HasNationalCardBack,
-			user.HasBirthCertificateFirst,
-			user.HasVisualAuthentication,
-			user.HasESignature
-		];
-
-		return requiredFields.All(field => field);
 	}
 }
