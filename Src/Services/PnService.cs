@@ -112,11 +112,37 @@ public class PnService(
 		if (p.Birthdate.HasValue) e.Birthdate = p.Birthdate;
 		if (p.NationalCode.IsNotNullOrEmpty()) e.NationalCode = p.NationalCode;
 		if (p.FatherName.IsNotNullOrEmpty()) e.JsonData.FatherName = p.FatherName;
-		if (p.NationalCardFront.IsNotNullOrEmpty()) e.NationalCardFront = ImageCompressor.CompressBase64(p.NationalCardFront);
-		if (p.NationalCardBack.IsNotNullOrEmpty()) e.NationalCardBack = ImageCompressor.CompressBase64(p.NationalCardBack);
-		if (p.BirthCertificateFirst.IsNotNullOrEmpty()) e.BirthCertificateFirst = ImageCompressor.CompressBase64(p.BirthCertificateFirst);
-		if (p.VisualAuthentication.IsNotNullOrEmpty()) e.VisualAuthentication = p.VisualAuthentication.FromBase64();
-		if (p.ESignature.IsNotNullOrEmpty()) e.ESignature = ImageCompressor.CompressBase64(p.ESignature, 10);
+
+		// FIX: Re-uploading a verified field resets its verification tag so admin must re-approve
+		if (p.NationalCardFront.IsNotNullOrEmpty()) {
+			e.NationalCardFront = ImageCompressor.CompressBase64(p.NationalCardFront);
+			e.Tags.Remove(TagUser.NationalCardFrontVerified);
+			e.JsonData.NationalCardFrontRejectionReason = null;
+		}
+
+		if (p.NationalCardBack.IsNotNullOrEmpty()) {
+			e.NationalCardBack = ImageCompressor.CompressBase64(p.NationalCardBack);
+			e.Tags.Remove(TagUser.NationalCardBackVerified);
+			e.JsonData.NationalCardBackRejectionReason = null;
+		}
+
+		if (p.BirthCertificateFirst.IsNotNullOrEmpty()) {
+			e.BirthCertificateFirst = ImageCompressor.CompressBase64(p.BirthCertificateFirst);
+			e.Tags.Remove(TagUser.BirthCertificateFirstVerified);
+			e.JsonData.BirthCertificateFirstRejectionReason = null;
+		}
+
+		if (p.VisualAuthentication.IsNotNullOrEmpty()) {
+			e.VisualAuthentication = p.VisualAuthentication.FromBase64();
+			e.Tags.Remove(TagUser.VisualAuthenticationVerified);
+			e.JsonData.VisualAuthenticationRejectionReason = null;
+		}
+
+		if (p.ESignature.IsNotNullOrEmpty()) {
+			e.ESignature = ImageCompressor.CompressBase64(p.ESignature, 10);
+			e.Tags.Remove(TagUser.ESignatureVerified);
+			e.JsonData.ESignatureRejectionReason = null;
+		}
 
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
@@ -127,6 +153,17 @@ public class PnService(
 
 		UserResponse? user = await db.Set<UserEntity>().Select(Projections.UserSelector(new UserSelectorArgs())).FirstOrDefaultAsync(x => x.PhoneNumber == p.UserPhoneNumber, ct);
 		if (user == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("UserNotFound"));
+
+		bool fullyVerified =
+			user.Tags.Contains(TagUser.NationalCardFrontVerified) &&
+			user.Tags.Contains(TagUser.NationalCardBackVerified) &&
+			user.Tags.Contains(TagUser.BirthCertificateFirstVerified) &&
+			user.Tags.Contains(TagUser.VisualAuthenticationVerified) &&
+			user.Tags.Contains(TagUser.ESignatureVerified);
+		if (!fullyVerified) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("UserNotFullyVerified"));
+
+		bool duplicate = await db.Set<MerchantEntity>().AnyAsync(x => x.UserId == user.Id && x.NationalCode == p.NationalCode, ct);
+		if (duplicate) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("MerchantAlreadyExists"));
 
 		MerchantEntity e = new() {
 			Id = Guid.CreateVersion7(),
@@ -159,8 +196,14 @@ public class PnService(
 
 		TerminalEntity? terminal = await db.Set<TerminalEntity>().AsTracking().FirstOrDefaultAsync(x => x.Serial == p.Serial && x.SimCardSerial == p.SimCardSerial, ct);
 		if (terminal == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("TerminalNotFoundCheckDetails"));
+
+		if (terminal.MerchantId != null) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("TerminalAlreadyBound"));
+
 		MerchantEntity? merchant = await db.Set<MerchantEntity>().AsTracking().Include(x => x.User).FirstOrDefaultAsync(x => x.Id == p.MerchantId, ct);
 		if (merchant == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("MerchantNotFound"));
+
+		if (merchant.MerchantId.IsNotNullOrEmpty()) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("MerchantAlreadyRegisteredWithAvreen"));
+		if (merchant.User.ESignature == null) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("UserESignatureMissing"));
 
 		string agreement = await GenerateAgreement(merchant.User, merchant);
 		terminal.MerchantId = p.MerchantId;
@@ -189,11 +232,19 @@ public class PnService(
 				new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
 			);
 
-			if (response is null or { IsSuccessStatusCode: false }) return new UResponse<Guid?>(null);
-			JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
+			if (response is null or { IsSuccessStatusCode: false }) {
+				await transaction.RollbackAsync(ct);
+				return new UResponse<Guid?>(null, Usc.InternalServerError, ls.Get("AvreenAddMerchantFailed"));
+			}
 
+			JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
 			merchant.InsId = data.GetStringOrNull("insId")!;
 			merchant.MerchantId = data.GetStringOrNull("merchantId")!;
+
+			if (merchant.MerchantId.IsNullOrEmpty()) {
+				await transaction.RollbackAsync(ct);
+				return new UResponse<Guid?>(null, Usc.InternalServerError, ls.Get("AvreenMerchantIdMissing"));
+			}
 
 			HttpResponseMessage? terminalResponse = await http.Post(
 				$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/defineAndBindTerminal",
@@ -207,7 +258,10 @@ public class PnService(
 				new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
 			);
 
-			if (terminalResponse is null or { IsSuccessStatusCode: false }) return new UResponse<Guid?>(null);
+			if (terminalResponse is null or { IsSuccessStatusCode: false }) {
+				await transaction.RollbackAsync(ct);
+				return new UResponse<Guid?>(null, Usc.InternalServerError, ls.Get("AvreenBindTerminalFailed"));
+			}
 
 			JsonElement terminalData = JsonSerializer.Deserialize<JsonElement>(await terminalResponse.Content.ReadAsStringAsync(ct));
 
@@ -224,7 +278,7 @@ public class PnService(
 		}
 		catch {
 			await transaction.RollbackAsync(ct);
-			return new UResponse<Guid?>(null);
+			return new UResponse<Guid?>(null, Usc.InternalServerError, ls.Get("UnexpectedError"));
 		}
 	}
 
@@ -272,7 +326,7 @@ public class PnService(
 		};
 
 		response.Merchants = e.Merchants ?? [];
-		
+
 		return new UResponse<PnUserStatusResponse?>(response);
 	}
 

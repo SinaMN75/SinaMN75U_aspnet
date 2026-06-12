@@ -28,6 +28,7 @@ public static class RouteTags {
 	public const string Merchant = "api/Merchant/";
 	public const string AppSettings = "api/AppSettings/";
 	public const string Process = "api/Process/";
+	public const string Pn = "api/Pn/";
 }
 
 public static class UConstants {
