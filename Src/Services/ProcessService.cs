@@ -14,8 +14,8 @@ public class ProcessService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<UProcessStepGet?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		if (p.Id == ProcessIds.Kyc) return await AuthenticationGet(new BaseParams { Token = p.Token, ApiKey = p.ApiKey }, ct);
-		throw new NotImplementedException();
+		if (p.Id == ProcessIds.Kyc) return await AuthenticationGet(userData, ct);
+		return new UResponse<UProcessStepGet?>(null, Usc.NotFound, ls.Get("ProcessNotFound"));
 	}
 
 	public async Task<UResponse<UProcessStepGet?>> Send(UProcessStepSend p, CancellationToken ct) {
@@ -72,13 +72,10 @@ public class ProcessService(
 
 		await db.SaveChangesAsync(ct);
 
-		return await AuthenticationGet(new BaseParams { ApiKey = p.ApiKey, Token = p.Token }, ct);
+		return await AuthenticationGet(userData, ct);
 	}
 
-	private async Task<UResponse<UProcessStepGet?>> AuthenticationGet(BaseParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<UProcessStepGet?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-
+	private async Task<UResponse<UProcessStepGet?>> AuthenticationGet(JwtClaimData userData, CancellationToken ct) {
 		UserResponse? e = await db.Set<UserEntity>()
 			.Select(Projections.UserSelector(new UserSelectorArgs {
 				Wallet = new WalletSelectorArgs(),
@@ -236,7 +233,7 @@ public class ProcessService(
 				}
 			);
 
-		if (e.ESignature.IsNullOrEmpty() || !e.Tags.ContainsAny(TagUser.ESignatureVerified, TagUser.ESignatureAwaitingVerification))
+		if (e.ESignature.IsNotNullOrEmpty() || !e.Tags.ContainsAny(TagUser.ESignatureVerified, TagUser.ESignatureAwaitingVerification))
 			return new UResponse<UProcessStepGet?>(
 				new UProcessStepGet {
 					Id = ProcessStepIds.UserESignature,

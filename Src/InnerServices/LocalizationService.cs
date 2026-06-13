@@ -99,6 +99,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "UserNotFoundCheckYouDetails", "Account not found. Please check your details." },
 		{ "UserNotFound", "Account not found." },
 		{ "WalletNotFound", "Wallet Not Found." },
+		{ "ProcessNotFound", "Process Not Found." },
 
 		// ===== Authentication & Authorization =====
 		{ "AuthorizationRequired", "Please sign in to continue." },
@@ -256,6 +257,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "UserNotFoundCheckYouDetails", "کاربری با این اطلاعات یافت نشد. لطفاً اطلاعات خود را بررسی کنید." },
 		{ "UserNotFound", "کاربر یافت نشد." },
 		{ "WalletNotFound", "کیف پول یافت نشد." },
+		{ "ProcessNotFound", "فرایند یافت نشد" },
 
 		// ===== Authentication & Authorization =====
 		{ "AuthorizationRequired", "لطفاً برای ادامه وارد شوید." },
