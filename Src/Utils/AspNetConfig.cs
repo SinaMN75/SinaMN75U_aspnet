@@ -29,10 +29,10 @@ public static partial class AspNetConfig {
 				o.EnableRetryOnFailure(5, TimeSpan.FromSeconds(30), null);
 			});
 			if (builder.Environment.IsDevelopment())
-				b.LogTo(message => {
-						if (message.Contains("Executed DbCommand")) {
-							Match timeMatch = MyRegex3().Match(message);
-							Match queryMatch = MyRegex4().Match(message);
+				b.LogTo(x => {
+						if (x.Contains("Executed DbCommand")) {
+							Match timeMatch = MyRegex3().Match(x);
+							Match queryMatch = MyRegex4().Match(x);
 
 							if (timeMatch.Success && queryMatch.Success) {
 								string cleanSql = CleanAndFormatSql(queryMatch.Value);

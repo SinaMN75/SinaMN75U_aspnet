@@ -147,7 +147,17 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "SecurityError", "Security Error." },
 		{ "SystemError", "System Error" },
 		{ "ThirdPartyError", "Third Party Service Error." },
-		{ "YouDoNotHaveClearanceToDoThisAction", "You Do Not have Clearance to do this Action." }
+		{ "YouDoNotHaveClearanceToDoThisAction", "You Do Not have Clearance to do this Action." },
+		
+		// Not Sorted
+		{ "UserNotFullyVerified", "User identity verification is not completed." },
+		{ "TerminalAlreadyBound", "Terminal is already assigned to a merchant." },
+		{ "MerchantAlreadyRegisteredWithAvreen", "Merchant is already registered with Avreen." },
+		{ "UserESignatureMissing", "User electronic signature is missing." },
+		{ "AvreenAddMerchantFailed", "Failed to register merchant in Avreen." },
+		{ "AvreenMerchantIdMissing", "Merchant registration succeeded but merchant identifier was not returned by Avreen." },
+		{ "AvreenBindTerminalFailed", "Failed to bind terminal to merchant in Avreen." },
+		{ "UnexpectedError", "An unexpected error occurred. Please try again later." }
 	};
 
 	private readonly Dictionary<string, string> _fa = new() {
@@ -243,8 +253,8 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "MerchantNotFound", "پذیرنده یافت نشد." },
 		{ "TerminalNotFound", "ترمینال یافت نشد." },
 		{ "TerminalNotFoundCheckDetails", "ترمینال یافت نشد. لطفا اطلاعات خود را بررسی کنید." },
-		{ "UserNotFoundCheckYouDetails", "Account not found. Please check your details." },
-		{ "UserNotFound", "Account not found." },
+		{ "UserNotFoundCheckYouDetails", "کاربری با این اطلاعات یافت نشد. لطفاً اطلاعات خود را بررسی کنید." },
+		{ "UserNotFound", "کاربر یافت نشد." },
 		{ "WalletNotFound", "کیف پول یافت نشد." },
 
 		// ===== Authentication & Authorization =====
@@ -294,7 +304,17 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "SecurityError", "خطای امنیتی" },
 		{ "SystemError", "خطای سیستم" },
 		{ "ThirdPartyError", "خطای سامانه مرجع" },
-		{ "YouDoNotHaveClearanceToDoThisAction", "شما مجاز به انجام این عملیات نیستید." }
+		{ "YouDoNotHaveClearanceToDoThisAction", "شما مجاز به انجام این عملیات نیستید." },
+
+		// Not Sorted
+		{ "UserNotFullyVerified", "احراز هویت کاربر به طور کامل تأیید نشده است." },
+		{ "TerminalAlreadyBound", "این ترمینال قبلاً به یک پذیرنده اختصاص داده شده است." },
+		{ "MerchantAlreadyRegisteredWithAvreen", "این پذیرنده قبلاً در آورین ثبت شده است." },
+		{ "UserESignatureMissing", "امضای الکترونیکی کاربر ثبت نشده است." },
+		{ "AvreenAddMerchantFailed", "ثبت پذیرنده در سامانه آورین با خطا مواجه شد." },
+		{ "AvreenMerchantIdMissing", "ثبت پذیرنده انجام شد اما شناسه پذیرنده از سامانه آورین دریافت نشد." },
+		{ "AvreenBindTerminalFailed", "اتصال ترمینال به پذیرنده در سامانه آورین با خطا مواجه شد." },
+		{ "UnexpectedError", "خطای غیرمنتظره‌ای رخ داد. لطفاً مجدداً تلاش کنید." }
 	};
 
 	public string Get(string key, string? locale = null) {
