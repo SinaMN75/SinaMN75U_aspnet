@@ -94,7 +94,7 @@ public class ProcessService(
 		    e.NationalCardBack.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.NationalCardBackVerified) &&
 		    e.BirthCertificateFirst.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.BirthCertificateFirstVerified) &&
 		    e.VisualAuthentication.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.VisualAuthenticationVerified) &&
-		    e.ESignature.IsNotNullOrEmpty() && !e.Tags.Contains(TagUser.ESignatureVerified)
+		    e.ESignature.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.ESignatureVerified)
 		   )
 			return new UResponse<UProcessStepGet?>(
 				new UProcessStepGet {
