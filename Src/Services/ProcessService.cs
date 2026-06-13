@@ -1,17 +1,5 @@
 namespace SinaMN75U.Services;
 
-
-// ─────────────────────────────────────────────────────────────────────────────
-// DTOs & Models
-// ─────────────────────────────────────────────────────────────────────────────
-
-public enum TagProcessStepStatus {
-	NotStarted,
-	Current,
-	AwaitingVerification,
-	Verified
-}
-
 public class UProcessStepStatus {
 	public string Id { get; set; } = "";
 	public string Title { get; set; } = "";
@@ -54,28 +42,11 @@ public class UProcessStepSend : BaseParams {
 	public List<UProcessField> Fields { get; set; } = [];
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Process handler abstraction — implement one per process type
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// <summary>
-/// Implement this interface for each process (KYC, merchant onboarding, etc).
-/// ProcessService discovers handlers by ProcessId and delegates all logic here.
-/// </summary>
 public interface IProcessHandler {
-	/// <summary>The process ID this handler owns, e.g. ProcessIds.Kyc</summary>
 	string ProcessId { get; }
-
-	/// <summary>Returns the current step the user should act on, plus full step statuses.</summary>
 	Task<UResponse<UProcessStepGet?>> GetAsync(JwtClaimData userData, CancellationToken ct);
-
-	/// <summary>Validates and persists one step's submitted fields, then returns the new current step.</summary>
 	Task<UResponse<UProcessStepGet?>> SendAsync(JwtClaimData userData, UProcessStepSend p, CancellationToken ct);
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Generic ProcessService — just a router, zero business logic
-// ─────────────────────────────────────────────────────────────────────────────
 
 public interface IProcessService {
 	Task<UResponse<UProcessStepGet?>> Get(IdStringParams p, CancellationToken ct);
@@ -87,7 +58,6 @@ public class ProcessService(
 	ILocalizationService ls,
 	ITokenService ts
 ) : IProcessService {
-	// Build a lookup once at startup: processId -> handler
 	private readonly Dictionary<string, IProcessHandler> _handlers =
 		handlers.ToDictionary(h => h.ProcessId, h => h);
 
@@ -107,8 +77,6 @@ public class ProcessService(
 		if (userData == null)
 			return new UResponse<UProcessStepGet?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		// p.Id here is a step ID (e.g. ProcessStepIds.UserData), not a process ID.
-		// We find the handler that owns this step.
 		IProcessHandler? handler = _handlers.Values.FirstOrDefault(h => h.OwnsStep(p.Id));
 		if (handler == null)
 			return new UResponse<UProcessStepGet?>(null, Usc.BadRequest, ls.Get("InvalidStep"));
@@ -117,15 +85,7 @@ public class ProcessService(
 	}
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// IProcessHandler extension — step ownership
-// ─────────────────────────────────────────────────────────────────────────────
-
 public static class ProcessHandlerExtensions {
-	/// <summary>
-	/// Handlers declare which step IDs they own so the router can match Send calls.
-	/// Default implementation returns false; override in each handler.
-	/// </summary>
 	public static bool OwnsStep(this IProcessHandler handler, string stepId) =>
 		handler is IStepOwner owner && owner.StepIds.Contains(stepId);
 }
@@ -133,10 +93,6 @@ public static class ProcessHandlerExtensions {
 public interface IStepOwner {
 	IReadOnlySet<string> StepIds { get; }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// KYC process handler
-// ─────────────────────────────────────────────────────────────────────────────
 
 public class KycProcessHandler(
 	DbContext db,
@@ -151,52 +107,42 @@ public class KycProcessHandler(
 		ProcessStepIds.UserESignature
 	};
 
-	// ── Get ──────────────────────────────────────────────────────────────────
-
 	public async Task<UResponse<UProcessStepGet?>> GetAsync(JwtClaimData userData, CancellationToken ct) =>
 		await ResolveCurrentStep(userData.Id, ct);
 
-	// ── Send ─────────────────────────────────────────────────────────────────
-
 	public async Task<UResponse<UProcessStepGet?>> SendAsync(JwtClaimData userData, UProcessStepSend p, CancellationToken ct) {
-		UserEntity? u = await db.Set<UserEntity>()
-			.AsTracking()
-			.FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
+		UserEntity? u = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
 		if (u == null)
 			return new UResponse<UProcessStepGet?>(null, Usc.NotFound, ls.Get("UserNotFound"));
 
-		UResponse<UProcessStepGet?>? validationError = p.Id switch {
+		UResponse<UProcessStepGet?>? error = p.Id switch {
 			ProcessStepIds.UserData => ApplyUserData(u, p),
 			ProcessStepIds.UserDocument => ApplyUserDocument(u, p),
 			ProcessStepIds.UserSelfieVideo => ApplyUserSelfieVideo(u, p),
 			ProcessStepIds.UserESignature => ApplyUserESignature(u, p),
-			_ => new UResponse<UProcessStepGet?>(null, Usc.BadRequest, ls.Get("InvalidStep"))
+			_ => Fail(ls.Get("InvalidStep"))
 		};
 
-		if (validationError != null) return validationError;
+		if (error != null) return error;
 
 		await db.SaveChangesAsync(ct);
 		return await ResolveCurrentStep(userData.Id, ct);
 	}
 
-	// ── Step apply methods (return null = success, non-null = early error) ───
+	// ── Apply methods ────────────────────────────────────────────────────────
 
 	private UResponse<UProcessStepGet?>? ApplyUserData(UserEntity u, UProcessStepSend p) {
 		UProcessField? fatherName = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.JsonData.FatherName));
-		if (fatherName?.Value.IsNullOrEmpty() != false)
-			return Fail(ls.Get("FatherNameRequired"));
+		if (fatherName?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("FatherNameRequired"));
 
 		UProcessField? birthdate = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.Birthdate));
-		if (birthdate?.Value.IsNullOrEmpty() != false)
-			return Fail(ls.Get("BirthDateRequired"));
+		if (birthdate?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("BirthDateRequired"));
 
-		if (!DateTime.TryParse(birthdate.Value!, out DateTime parsedDate))
-			return Fail(ls.Get("InvalidDateFormat"));
+		if (!DateTime.TryParse(birthdate.Value!, out DateTime parsedDate)) return Fail(ls.Get("InvalidDateFormat"));
 
 		u.JsonData.FatherName = fatherName.Value;
 		u.Birthdate = parsedDate;
 
-		// Optional fields — only update if client sent a non-empty value
 		UProcessField? firstName = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.FirstName));
 		if (firstName?.Value.IsNotNullOrEmpty() == true) u.FirstName = firstName.Value;
 
@@ -267,7 +213,7 @@ public class KycProcessHandler(
 
 		List<UProcessStepStatus> steps = BuildStepStatuses(e);
 
-		// Completed
+		// ── Fully verified by admin ───────────────────────────────────────────
 		if (e is { JsonData.FatherName: not null, Birthdate: not null } &&
 		    e.NationalCardFront.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.NationalCardFrontVerified) &&
 		    e.NationalCardBack.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.NationalCardBackVerified) &&
@@ -277,15 +223,16 @@ public class KycProcessHandler(
 			return new UResponse<UProcessStepGet?>(
 				new UProcessStepGet {
 					Id = ProcessStepIds.AuthCompleted,
-					Title = "فرایند احراز هویت تکمیل شده است",
-					Description = "فرایند احراز هویت تکمیل شده است",
-					Message = "فرایند احراز هویت تکمیل شده است",
+					Title = "احراز هویت تکمیل شد",
+					Description = "فرایند احراز هویت با موفقیت تکمیل شده است",
+					Message = "فرایند احراز هویت با موفقیت تکمیل شده است",
 					Steps = steps
 				},
 				Usc.ProcessCompleted, ls.Get("ProcessCompleted")
 			);
 
-		// Step 1 — personal data
+		// ── Step 1: personal data ─────────────────────────────────────────────
+		// Required: FatherName + Birthdate. FirstName/LastName are optional.
 		if (e.JsonData.FatherName == null || e.Birthdate == null)
 			return Ok(new UProcessStepGet {
 				Id = ProcessStepIds.UserData,
@@ -316,10 +263,14 @@ public class KycProcessHandler(
 				]
 			});
 
-		// Step 2 — documents
-		if (e.NationalCardFront.IsNullOrEmpty() || !e.Tags.ContainsAny(TagUser.NationalCardFrontVerified, TagUser.NationalCardFrontAwaitingVerification) ||
-		    e.NationalCardBack.IsNullOrEmpty() || !e.Tags.ContainsAny(TagUser.NationalCardBackVerified, TagUser.NationalCardBackAwaitingVerification) ||
-		    e.BirthCertificateFirst.IsNullOrEmpty() || !e.Tags.ContainsAny(TagUser.BirthCertificateFirstVerified, TagUser.BirthCertificateFirstAwaitingVerification))
+		// ── Step 2: documents ─────────────────────────────────────────────────
+		// Move past this step once ALL THREE are submitted (Verified or AwaitingVerification)
+		bool documentsSubmitted =
+			e.NationalCardFront.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.NationalCardFrontVerified, TagUser.NationalCardFrontAwaitingVerification) &&
+			e.NationalCardBack.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.NationalCardBackVerified, TagUser.NationalCardBackAwaitingVerification) &&
+			e.BirthCertificateFirst.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.BirthCertificateFirstVerified, TagUser.BirthCertificateFirstAwaitingVerification);
+
+		if (!documentsSubmitted)
 			return Ok(new UProcessStepGet {
 				Id = ProcessStepIds.UserDocument,
 				Title = "آپلود مدارک شناسایی",
@@ -344,8 +295,12 @@ public class KycProcessHandler(
 				]
 			});
 
-		// Step 3 — selfie video
-		if (e.VisualAuthentication.IsNullOrEmpty() || !e.Tags.ContainsAny(TagUser.VisualAuthenticationVerified, TagUser.VisualAuthenticationAwaitingVerification))
+		// ── Step 3: selfie video ──────────────────────────────────────────────
+		bool selfieSubmitted =
+			e.VisualAuthentication.IsNotNullOrEmpty() &&
+			e.Tags.ContainsAny(TagUser.VisualAuthenticationVerified, TagUser.VisualAuthenticationAwaitingVerification);
+
+		if (!selfieSubmitted)
 			return Ok(new UProcessStepGet {
 				Id = ProcessStepIds.UserSelfieVideo,
 				Title = "ویدیو احراز هویت",
@@ -360,8 +315,12 @@ public class KycProcessHandler(
 				]
 			});
 
-		// Step 4 — e-signature
-		if (e.ESignature.IsNullOrEmpty() || !e.Tags.ContainsAny(TagUser.ESignatureVerified, TagUser.ESignatureAwaitingVerification))
+		// ── Step 4: e-signature ───────────────────────────────────────────────
+		bool signatureSubmitted =
+			e.ESignature.IsNotNullOrEmpty() &&
+			e.Tags.ContainsAny(TagUser.ESignatureVerified, TagUser.ESignatureAwaitingVerification);
+
+		if (!signatureSubmitted)
 			return Ok(new UProcessStepGet {
 				Id = ProcessStepIds.UserESignature,
 				Title = "امضای دیجیتال",
@@ -375,28 +334,40 @@ public class KycProcessHandler(
 				]
 			});
 
-		// All submitted, awaiting admin review
+		// ── All submitted — waiting for admin review ───────────────────────────
+		// No fields, just a message. Flutter hides the submit button when fields is empty.
 		return Ok(new UProcessStepGet {
 			Id = ProcessStepIds.AdminApproval,
-			Title = "",
-			Description = "",
-			Message = "اطلاعات شما در دست بررسی است.",
+			Title = "در انتظار تایید",
+			Description = "مدارک شما با موفقیت ارسال شد",
+			Message = "مدارک شما دریافت شد و در حال بررسی است. نتیجه از طریق پیامک اطلاع‌رسانی خواهد شد.",
 			Steps = steps
+			// Fields intentionally empty — Flutter shows no submit button
 		});
 	}
 
 	// ── Step status computation ───────────────────────────────────────────────
 
 	/// <summary>
-	/// Builds the full ordered status list for all KYC steps.
-	/// Steps are evaluated in sequence — a step is NotStarted until the previous one is Verified.
-	/// AwaitingVerification means submitted but not yet reviewed by admin.
+	/// Computes status for the 4 user-action steps only.
+	/// AdminApproval / AuthCompleted are process-level states, not steps.
+	///
+	/// Sequencing rule: a step is unlocked (not NotStarted) only after the
+	/// previous step is Verified OR AwaitingVerification — i.e. the user has
+	/// nothing left to do for it, regardless of admin review.
 	/// </summary>
 	private static List<UProcessStepStatus> BuildStepStatuses(UserResponse e) {
 		TagProcessStepStatus userData = ResolveUserDataStatus(e);
-		TagProcessStepStatus documents = userData == TagProcessStepStatus.Verified ? ResolveDocumentStatus(e) : TagProcessStepStatus.NotStarted;
-		TagProcessStepStatus selfie = documents == TagProcessStepStatus.Verified ? ResolveSelfieVideoStatus(e) : TagProcessStepStatus.NotStarted;
-		TagProcessStepStatus signature = selfie == TagProcessStepStatus.Verified ? ResolveESignatureStatus(e) : TagProcessStepStatus.NotStarted;
+
+		// Each step unlocks when the previous is done (Verified or AwaitingVerification)
+		bool userDataDone = userData is TagProcessStepStatus.Verified; // UserData has no AwaitingVerification
+		TagProcessStepStatus documents = userDataDone ? ResolveDocumentStatus(e) : TagProcessStepStatus.NotStarted;
+
+		bool documentsDone = documents is TagProcessStepStatus.Verified or TagProcessStepStatus.AwaitingVerification;
+		TagProcessStepStatus selfie = documentsDone ? ResolveSelfieVideoStatus(e) : TagProcessStepStatus.NotStarted;
+
+		bool selfieDone = selfie is TagProcessStepStatus.Verified or TagProcessStepStatus.AwaitingVerification;
+		TagProcessStepStatus signature = selfieDone ? ResolveESignatureStatus(e) : TagProcessStepStatus.NotStarted;
 
 		MarkCurrentStep(ref userData, ref documents, ref selfie, ref signature);
 
@@ -408,39 +379,47 @@ public class KycProcessHandler(
 		];
 	}
 
+	/// UserData: only FatherName + Birthdate are required (FirstName/LastName are optional)
 	private static TagProcessStepStatus ResolveUserDataStatus(UserResponse e) =>
 		e.JsonData.FatherName != null && e.Birthdate != null
 			? TagProcessStepStatus.Verified
 			: TagProcessStepStatus.NotStarted;
-	// Note: personal data has no AwaitingVerification — it's trusted immediately
+	// No AwaitingVerification for UserData — personal text fields are trusted immediately
 
+	/// Documents: ALL three must be uploaded. AwaitingVerification once all three are submitted.
 	private static TagProcessStepStatus ResolveDocumentStatus(UserResponse e) {
-		if (e.NationalCardFront.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.NationalCardFrontVerified) &&
-		    e.NationalCardBack.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.NationalCardBackVerified) &&
-		    e.BirthCertificateFirst.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.BirthCertificateFirstVerified))
-			return TagProcessStepStatus.Verified;
+		bool allVerified =
+			e.NationalCardFront.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.NationalCardFrontVerified) &&
+			e.NationalCardBack.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.NationalCardBackVerified) &&
+			e.BirthCertificateFirst.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.BirthCertificateFirstVerified);
+		if (allVerified) return TagProcessStepStatus.Verified;
 
-		if (e.NationalCardFront.IsNotNullOrEmpty() || e.NationalCardBack.IsNotNullOrEmpty() || e.BirthCertificateFirst.IsNotNullOrEmpty())
-			return TagProcessStepStatus.AwaitingVerification;
+		// All three uploaded (even if only awaiting) = AwaitingVerification
+		bool allSubmitted =
+			e.NationalCardFront.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.NationalCardFrontVerified, TagUser.NationalCardFrontAwaitingVerification) &&
+			e.NationalCardBack.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.NationalCardBackVerified, TagUser.NationalCardBackAwaitingVerification) &&
+			e.BirthCertificateFirst.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.BirthCertificateFirstVerified, TagUser.BirthCertificateFirstAwaitingVerification);
+		if (allSubmitted) return TagProcessStepStatus.AwaitingVerification;
 
 		return TagProcessStepStatus.NotStarted;
 	}
 
 	private static TagProcessStepStatus ResolveSelfieVideoStatus(UserResponse e) {
 		if (e.VisualAuthentication.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.VisualAuthenticationVerified)) return TagProcessStepStatus.Verified;
-		if (e.VisualAuthentication.IsNotNullOrEmpty()) return TagProcessStepStatus.AwaitingVerification;
+		if (e.VisualAuthentication.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.VisualAuthenticationAwaitingVerification)) return TagProcessStepStatus.AwaitingVerification;
 		return TagProcessStepStatus.NotStarted;
 	}
 
 	private static TagProcessStepStatus ResolveESignatureStatus(UserResponse e) {
 		if (e.ESignature.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.ESignatureVerified)) return TagProcessStepStatus.Verified;
-		if (e.ESignature.IsNotNullOrEmpty()) return TagProcessStepStatus.AwaitingVerification;
+		if (e.ESignature.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.ESignatureAwaitingVerification)) return TagProcessStepStatus.AwaitingVerification;
 		return TagProcessStepStatus.NotStarted;
 	}
 
 	/// <summary>
 	/// Marks the first NotStarted step as Current.
-	/// AwaitingVerification steps are left alone — user is waiting on admin.
+	/// If nothing is NotStarted (all Verified or AwaitingVerification),
+	/// nothing gets marked Current — correct for AdminApproval state.
 	/// </summary>
 	private static void MarkCurrentStep(
 		ref TagProcessStepStatus userData,
@@ -464,26 +443,9 @@ public class KycProcessHandler(
 		}
 
 		if (signature == TagProcessStepStatus.NotStarted) signature = TagProcessStepStatus.Current;
+		// Fall-through: everything submitted — no step is Current (AdminApproval state)
 	}
 
-	// ── Helpers ──────────────────────────────────────────────────────────────
-
-	private static UResponse<UProcessStepGet?> Ok(UProcessStepGet step) =>
-		new(step);
-
-	private static UResponse<UProcessStepGet?> Fail(string message) =>
-		new(null, Usc.BadRequest, message);
+	private static UResponse<UProcessStepGet?> Ok(UProcessStepGet step) => new(step);
+	private static UResponse<UProcessStepGet?> Fail(string message) => new(null, Usc.BadRequest, message);
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// DI Registration — in Program.cs / Startup.cs
-// ─────────────────────────────────────────────────────────────────────────────
-//
-// builder.Services.AddScoped<IProcessService, ProcessService>();
-// builder.Services.AddScoped<IProcessHandler, KycProcessHandler>();
-//
-// To add a new process later, just implement IProcessHandler + IStepOwner
-// and register it — ProcessService picks it up automatically.
-//
-// Example:
-//   builder.Services.AddScoped<IProcessHandler, MerchantOnboardingProcessHandler>();

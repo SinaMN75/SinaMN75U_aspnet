@@ -64,7 +64,6 @@ public enum TagUser {
 	BirthCertificateFifthAwaitingVerification = 507,
 	VisualAuthenticationAwaitingVerification = 508,
 	ESignatureAwaitingVerification = 509,
-	
 }
 
 public enum TagCategory {
@@ -289,9 +288,9 @@ public enum TagFileFieldType {
 	Text = 104
 }
 
-public enum TagProcessStatus {
-	Available = 101,
-	ComingSoon = 102,
-	Disabled = 103,
-	Hidden = 104
+public enum TagProcessStepStatus {
+	NotStarted = 101,
+	Current = 102,
+	AwaitingVerification = 103,
+	Verified = 104
 }
