@@ -46,6 +46,14 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "UserIdRequired", "User is Required" },
 		{ "UserNameRequired", "UserName is required." },
 		{ "ZipCodeRequired", "ZipCode Is Required." },
+		{ "FatherNameRequired", "Father Name Required." },
+		{ "BirthDateRequired", "BirthDate Required." },
+		{ "InvalidDateFormat", "Invalid Date Format." },
+		{ "NationalCardFrontRequired", "National Card Front Required." },
+		{ "NationalCardBackRequired", "National Card Back Required." },
+		{ "BirthCertificateFirstRequired", "Birth Certificate First Required." },
+		{ "VisualAuthenticationRequired", "Visual Authentication Required." },
+		{ "SignatureRequired", "Signature Required." },
 
 		// ===== Invalid =====
 		{ "AddressNotValid", "Address is Not Valid." },
@@ -119,6 +127,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "UnfollowSuccess", "You are no longer following " },
 		{ "UserDeleted", "Account deleted successfully." },
 		{ "YourDetailSubmittedSuccessfully", "Your Detail Submitted Successfully." },
+		{ "ProcessCompleted", "Process Completed." },
 
 		// ===== Business Logic =====
 		{ "AddressWithThisZipCodeAlreadyExists", "Address with this ZipCode already exists." },
@@ -203,6 +212,14 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "UserIdRequired", "کاربر الزامی است" },
 		{ "UserNameRequired", "نام کاربری الزامی است." },
 		{ "ZipCodeRequired", "کد پستی الزامی است." },
+		{ "FatherNameRequired", "نام پدر الزامی است." },
+		{ "BirthDateRequired", "تاریخ تولد الزامی است." },
+		{ "InvalidDateFormat", "فرمت تاریخ صحیح نیست." },
+		{ "NationalCardFrontRequired", "روی کارت ملی الزامی است." },
+		{ "NationalCardBackRequired", "پشت کارت ملی الزامی است." },
+		{ "BirthCertificateFirstRequired", "صفحه اول شناسنامه الزامی است." },
+		{ "VisualAuthenticationRequired", "احراز هویت تصویری الزامی است." },
+		{ "SignatureRequired", "امضا الزامی است." },
 
 		// ===== Invalid =====
 		{ "AddressNotValid", "آدرس صحیح نیست." },
@@ -277,6 +294,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "UnfollowSuccess", "شما دیگر فالو نمی‌کنید، " },
 		{ "UserDeleted", "حساب کاربری با موفقیت حذف شد." },
 		{ "YourDetailSubmittedSuccessfully", "جزئیات شما با موفقیت ارسال شد." },
+		{ "ProcessCompleted", "فرایند با موفقیت تکمیل شد" },
 
 		// ===== Business Logic =====
 		{ "AddressWithThisZipCodeAlreadyExists", "آدرسی با این کد پستی از قبل وجود دارد." },

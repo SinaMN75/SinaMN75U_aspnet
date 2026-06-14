@@ -18,8 +18,7 @@ public class KycProcessService(
 
 	public async Task<UResponse<UProcessStepGetResponse?>> Send(JwtClaimData userData, UProcessStepSend p, CancellationToken ct) {
 		UserEntity? u = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
-		if (u == null)
-			return new UResponse<UProcessStepGetResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
+		if (u == null) return new UResponse<UProcessStepGetResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
 
 		UResponse<UProcessStepGetResponse?>? error = p.Id switch {
 			ProcessStepIds.UserData => ApplyUserData(u, p),
@@ -34,9 +33,7 @@ public class KycProcessService(
 		await db.SaveChangesAsync(ct);
 		return await ResolveCurrentStep(userData.Id, ct);
 	}
-
-	// ── Apply methods ────────────────────────────────────────────────────────
-
+	
 	private UResponse<UProcessStepGetResponse?>? ApplyUserData(UserEntity u, UProcessStepSend p) {
 		UProcessField? fatherName = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.JsonData.FatherName));
 		if (fatherName?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("FatherNameRequired"));
@@ -81,7 +78,7 @@ public class KycProcessService(
 
 	private UResponse<UProcessStepGetResponse?>? ApplyUserSelfieVideo(UserEntity u, UProcessStepSend p) {
 		UProcessField? video = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.VisualAuthentication));
-		if (video?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("VideoRequired"));
+		if (video?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("VisualAuthenticationRequired"));
 
 		u.VisualAuthentication = video.Value.FromBase64();
 		u.Tags.Add(TagUser.VisualAuthenticationAwaitingVerification);
