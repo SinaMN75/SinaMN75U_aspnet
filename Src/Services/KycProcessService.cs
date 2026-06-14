@@ -1,60 +1,9 @@
 namespace SinaMN75U.Services;
 
-public interface IProcessHandler {
-	string ProcessId { get; }
-	Task<UResponse<UProcessStepGetResponse?>> Get(JwtClaimData userData, CancellationToken ct);
-	Task<UResponse<UProcessStepGetResponse?>> Send(JwtClaimData userData, UProcessStepSend p, CancellationToken ct);
-}
-
-public interface IProcessService {
-	Task<UResponse<UProcessStepGetResponse?>> Get(IdStringParams p, CancellationToken ct);
-	Task<UResponse<UProcessStepGetResponse?>> Send(UProcessStepSend p, CancellationToken ct);
-}
-
-public class ProcessService(
-	IEnumerable<IProcessHandler> handlers,
-	ILocalizationService ls,
-	ITokenService ts
-) : IProcessService {
-	private readonly Dictionary<string, IProcessHandler> _handlers = handlers.ToDictionary(h => h.ProcessId, h => h);
-
-	public async Task<UResponse<UProcessStepGetResponse?>> Get(IdStringParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null)
-			return new UResponse<UProcessStepGetResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-
-		if (!_handlers.TryGetValue(p.Id, out IProcessHandler? handler))
-			return new UResponse<UProcessStepGetResponse?>(null, Usc.NotFound, ls.Get("ProcessNotFound"));
-
-		return await handler.Get(userData, ct);
-	}
-
-	public async Task<UResponse<UProcessStepGetResponse?>> Send(UProcessStepSend p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null)
-			return new UResponse<UProcessStepGetResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-
-		IProcessHandler? handler = _handlers.Values.FirstOrDefault(h => h.OwnsStep(p.Id));
-		if (handler == null)
-			return new UResponse<UProcessStepGetResponse?>(null, Usc.BadRequest, ls.Get("InvalidStep"));
-
-		return await handler.Send(userData, p, ct);
-	}
-}
-
-public static class ProcessHandlerExtensions {
-	public static bool OwnsStep(this IProcessHandler handler, string stepId) =>
-		handler is IStepOwner owner && owner.StepIds.Contains(stepId);
-}
-
-public interface IStepOwner {
-	IReadOnlySet<string> StepIds { get; }
-}
-
-public class KycProcessHandler(
+public class KycProcessService(
 	DbContext db,
 	ILocalizationService ls
-) : IProcessHandler, IStepOwner {
+) : IProcessHandlerService, IStepOwner {
 	public string ProcessId => ProcessIds.Kyc;
 
 	public IReadOnlySet<string> StepIds { get; } = new HashSet<string> {
