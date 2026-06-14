@@ -10,11 +10,11 @@ public class KycProcessService(
 		ProcessStepIds.UserData,
 		ProcessStepIds.UserDocument,
 		ProcessStepIds.UserSelfieVideo,
-		ProcessStepIds.UserESignature
+		ProcessStepIds.UserESignature,
+		ProcessStepIds.AwaitingVerification
 	};
 
-	public async Task<UResponse<UProcessStepGetResponse?>> Get(JwtClaimData userData, CancellationToken ct) =>
-		await ResolveCurrentStep(userData.Id, ct);
+	public async Task<UResponse<UProcessStepGetResponse?>> Get(JwtClaimData userData, CancellationToken ct) => await ResolveCurrentStep(userData.Id, ct);
 
 	public async Task<UResponse<UProcessStepGetResponse?>> Send(JwtClaimData userData, UProcessStepSend p, CancellationToken ct) {
 		UserEntity? u = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
@@ -33,7 +33,7 @@ public class KycProcessService(
 		await db.SaveChangesAsync(ct);
 		return await ResolveCurrentStep(userData.Id, ct);
 	}
-	
+
 	private UResponse<UProcessStepGetResponse?>? ApplyUserData(UserEntity u, UProcessStepSend p) {
 		UProcessField? fatherName = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.JsonData.FatherName));
 		if (fatherName?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("FatherNameRequired"));
@@ -111,8 +111,7 @@ public class KycProcessService(
 			}))
 			.FirstOrDefaultAsync(x => x.Id == userId, ct);
 
-		if (e == null)
-			return new UResponse<UProcessStepGetResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
+		if (e == null) return new UResponse<UProcessStepGetResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
 
 		List<UProcessStepStatusResponse> steps = BuildStepStatuses(e);
 
@@ -135,7 +134,6 @@ public class KycProcessService(
 			);
 
 		// ── Step 1: personal data ─────────────────────────────────────────────
-		// Required: FatherName + Birthdate. FirstName/LastName are optional.
 		if (e.JsonData.FatherName == null || e.Birthdate == null)
 			return Ok(new UProcessStepGetResponse {
 				Id = ProcessStepIds.UserData,
@@ -167,7 +165,6 @@ public class KycProcessService(
 			});
 
 		// ── Step 2: documents ─────────────────────────────────────────────────
-		// Move past this step once ALL THREE are submitted (Verified or AwaitingVerification)
 		bool documentsSubmitted =
 			e.NationalCardFront.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.NationalCardFrontVerified, TagUser.NationalCardFrontAwaitingVerification) &&
 			e.NationalCardBack.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.NationalCardBackVerified, TagUser.NationalCardBackAwaitingVerification) &&
@@ -219,9 +216,7 @@ public class KycProcessService(
 			});
 
 		// ── Step 4: e-signature ───────────────────────────────────────────────
-		bool signatureSubmitted =
-			e.ESignature.IsNotNullOrEmpty() &&
-			e.Tags.ContainsAny(TagUser.ESignatureVerified, TagUser.ESignatureAwaitingVerification);
+		bool signatureSubmitted = e.ESignature.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.ESignatureVerified, TagUser.ESignatureAwaitingVerification);
 
 		if (!signatureSubmitted)
 			return Ok(new UProcessStepGetResponse {
@@ -238,14 +233,14 @@ public class KycProcessService(
 			});
 
 		// ── All submitted — waiting for admin review ───────────────────────────
-		// No fields, just a message. Flutter hides the submit button when fields is empty.
 		return Ok(new UProcessStepGetResponse {
 			Id = ProcessStepIds.AdminApproval,
-			Title = "در انتظار تایید",
-			Description = "مدارک شما با موفقیت ارسال شد",
-			Message = "مدارک شما دریافت شد و در حال بررسی است. نتیجه از طریق پیامک اطلاع‌رسانی خواهد شد.",
-			Steps = steps
-			// Fields intentionally empty — Flutter shows no submit button
+			Steps = steps,
+			MessageBox = new UMessageBox {
+				Title = "در انتظار تایید",
+				Description = "مدارک شما دریافت شد و در حال بررسی است. نتیجه از طریق پیامک اطلاع‌رسانی خواهد شد.",
+				SvgIcon = USvgs.ShieldInfo
+			}
 		});
 	}
 
@@ -272,13 +267,17 @@ public class KycProcessService(
 		bool selfieDone = selfie is TagProcessStepStatus.Verified or TagProcessStepStatus.AwaitingVerification;
 		TagProcessStepStatus signature = selfieDone ? ResolveESignatureStatus(e) : TagProcessStepStatus.NotStarted;
 
-		MarkCurrentStep(ref userData, ref documents, ref selfie, ref signature);
+		bool signatureDone = selfie is TagProcessStepStatus.Verified or TagProcessStepStatus.AwaitingVerification;
+		TagProcessStepStatus awaitingVerification = signatureDone ? ResolveESignatureStatus(e) : TagProcessStepStatus.NotStarted;
+
+		MarkCurrentStep(ref userData, ref documents, ref selfie, ref signature, ref awaitingVerification);
 
 		return [
 			new UProcessStepStatusResponse { Id = ProcessStepIds.UserData, Title = "اطلاعات هویتی", Status = userData },
 			new UProcessStepStatusResponse { Id = ProcessStepIds.UserDocument, Title = "مدارک شناسایی", Status = documents },
 			new UProcessStepStatusResponse { Id = ProcessStepIds.UserSelfieVideo, Title = "ویدیو احراز هویت", Status = selfie },
-			new UProcessStepStatusResponse { Id = ProcessStepIds.UserESignature, Title = "امضای دیجیتال", Status = signature }
+			new UProcessStepStatusResponse { Id = ProcessStepIds.UserESignature, Title = "امضای دیجیتال", Status = signature },
+			new UProcessStepStatusResponse { Id = ProcessStepIds.AwaitingVerification, Title = "در انتظار تایید ادمین", Status = awaitingVerification }
 		];
 	}
 
@@ -328,7 +327,8 @@ public class KycProcessService(
 		ref TagProcessStepStatus userData,
 		ref TagProcessStepStatus documents,
 		ref TagProcessStepStatus selfie,
-		ref TagProcessStepStatus signature
+		ref TagProcessStepStatus signature,
+		ref TagProcessStepStatus awaitingVerification
 	) {
 		if (userData == TagProcessStepStatus.NotStarted) {
 			userData = TagProcessStepStatus.Current;
@@ -345,8 +345,17 @@ public class KycProcessService(
 			return;
 		}
 
-		if (signature == TagProcessStepStatus.NotStarted) signature = TagProcessStepStatus.Current;
-		// Fall-through: everything submitted — no step is Current (AdminApproval state)
+		if (signature == TagProcessStepStatus.NotStarted) {
+			signature = TagProcessStepStatus.Current;
+			return;
+		}
+
+		if (awaitingVerification == TagProcessStepStatus.NotStarted) {
+			awaitingVerification = TagProcessStepStatus.Current;
+			return;
+		}
+
+		if (awaitingVerification == TagProcessStepStatus.NotStarted) awaitingVerification = TagProcessStepStatus.Current;
 	}
 
 	private static UResponse<UProcessStepGetResponse?> Ok(UProcessStepGetResponse step) => new(step);
