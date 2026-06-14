@@ -128,7 +128,12 @@ public class KycProcessService(
 					Title = "احراز هویت تکمیل شد",
 					Description = "فرایند احراز هویت با موفقیت تکمیل شده است",
 					Message = "فرایند احراز هویت با موفقیت تکمیل شده است",
-					Steps = steps
+					Steps = steps,
+					MessageBox = new UMessageBox {
+						Title = "در انتظار تایید",
+						Description = "مدارک شما دریافت شد و در حال بررسی است. نتیجه از طریق پیامک اطلاع‌رسانی خواهد شد.",
+						SvgIcon = USvgs.ShieldInfo
+					}
 				},
 				Usc.ProcessCompleted, ls.Get("ProcessCompleted")
 			);
