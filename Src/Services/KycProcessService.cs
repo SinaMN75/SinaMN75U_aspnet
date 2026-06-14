@@ -115,7 +115,6 @@ public class KycProcessService(
 
 		List<UProcessStepStatusResponse> steps = BuildStepStatuses(e);
 
-		// ── Fully verified by admin ───────────────────────────────────────────
 		if (e is { JsonData.FatherName: not null, Birthdate: not null } &&
 		    e.NationalCardFront.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.NationalCardFrontVerified) &&
 		    e.NationalCardBack.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.NationalCardBackVerified) &&
