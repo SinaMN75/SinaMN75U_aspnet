@@ -89,7 +89,6 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IMerchantService, MerchantService>();
 		builder.Services.AddScoped<IPnService, PnService>();
 		builder.Services.AddScoped<IProcessService, ProcessService>();
-		builder.Services.AddScoped<IProcessHandlerService, KycProcessService>();
 
 		if (Core.App.Test) {
 			builder.Services.AddScoped<IInquiryService, InquiryServiceFake>();
