@@ -1,56 +1,14 @@
 namespace SinaMN75U.Services;
 
-public class UProcessStepStatus {
-	public string Id { get; set; } = "";
-	public string Title { get; set; } = "";
-	public TagProcessStepStatus Status { get; set; }
-}
-
-public class UProcessField {
-	public string Key { get; set; } = "";
-	public string Label { get; set; } = "";
-	public string? Value { get; set; }
-	public bool Required { get; set; }
-	public TagFieldType Type { get; set; }
-	public UTextFieldConfig? TextFieldConfig { get; set; }
-	public UFileConfig? FileConfig { get; set; }
-}
-
-public class UTextFieldConfig {
-	public TagTextFieldType Type { get; set; }
-	public int? MaxLength { get; set; }
-	public int? MinLength { get; set; }
-}
-
-public class UFileConfig {
-	public TagFileFieldType Type { get; set; }
-	public bool IsCamera { get; set; }
-	public bool IsSelfieCamera { get; set; }
-}
-
-public class UProcessStepGet {
-	public string Id { get; set; } = "";
-	public string Title { get; set; } = "";
-	public string Description { get; set; } = "";
-	public string? Message { get; set; }
-	public List<UProcessField> Fields { get; set; } = [];
-	public List<UProcessStepStatus> Steps { get; set; } = [];
-}
-
-public class UProcessStepSend : BaseParams {
-	public string Id { get; set; } = "";
-	public List<UProcessField> Fields { get; set; } = [];
-}
-
 public interface IProcessHandler {
 	string ProcessId { get; }
-	Task<UResponse<UProcessStepGet?>> GetAsync(JwtClaimData userData, CancellationToken ct);
-	Task<UResponse<UProcessStepGet?>> SendAsync(JwtClaimData userData, UProcessStepSend p, CancellationToken ct);
+	Task<UResponse<UProcessStepGetResponse?>> Get(JwtClaimData userData, CancellationToken ct);
+	Task<UResponse<UProcessStepGetResponse?>> Send(JwtClaimData userData, UProcessStepSend p, CancellationToken ct);
 }
 
 public interface IProcessService {
-	Task<UResponse<UProcessStepGet?>> Get(IdStringParams p, CancellationToken ct);
-	Task<UResponse<UProcessStepGet?>> Send(UProcessStepSend p, CancellationToken ct);
+	Task<UResponse<UProcessStepGetResponse?>> Get(IdStringParams p, CancellationToken ct);
+	Task<UResponse<UProcessStepGetResponse?>> Send(UProcessStepSend p, CancellationToken ct);
 }
 
 public class ProcessService(
@@ -58,30 +16,29 @@ public class ProcessService(
 	ILocalizationService ls,
 	ITokenService ts
 ) : IProcessService {
-	private readonly Dictionary<string, IProcessHandler> _handlers =
-		handlers.ToDictionary(h => h.ProcessId, h => h);
+	private readonly Dictionary<string, IProcessHandler> _handlers = handlers.ToDictionary(h => h.ProcessId, h => h);
 
-	public async Task<UResponse<UProcessStepGet?>> Get(IdStringParams p, CancellationToken ct) {
+	public async Task<UResponse<UProcessStepGetResponse?>> Get(IdStringParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null)
-			return new UResponse<UProcessStepGet?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+			return new UResponse<UProcessStepGetResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		if (!_handlers.TryGetValue(p.Id, out IProcessHandler? handler))
-			return new UResponse<UProcessStepGet?>(null, Usc.NotFound, ls.Get("ProcessNotFound"));
+			return new UResponse<UProcessStepGetResponse?>(null, Usc.NotFound, ls.Get("ProcessNotFound"));
 
-		return await handler.GetAsync(userData, ct);
+		return await handler.Get(userData, ct);
 	}
 
-	public async Task<UResponse<UProcessStepGet?>> Send(UProcessStepSend p, CancellationToken ct) {
+	public async Task<UResponse<UProcessStepGetResponse?>> Send(UProcessStepSend p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null)
-			return new UResponse<UProcessStepGet?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+			return new UResponse<UProcessStepGetResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		IProcessHandler? handler = _handlers.Values.FirstOrDefault(h => h.OwnsStep(p.Id));
 		if (handler == null)
-			return new UResponse<UProcessStepGet?>(null, Usc.BadRequest, ls.Get("InvalidStep"));
+			return new UResponse<UProcessStepGetResponse?>(null, Usc.BadRequest, ls.Get("InvalidStep"));
 
-		return await handler.SendAsync(userData, p, ct);
+		return await handler.Send(userData, p, ct);
 	}
 }
 
@@ -107,15 +64,15 @@ public class KycProcessHandler(
 		ProcessStepIds.UserESignature
 	};
 
-	public async Task<UResponse<UProcessStepGet?>> GetAsync(JwtClaimData userData, CancellationToken ct) =>
+	public async Task<UResponse<UProcessStepGetResponse?>> Get(JwtClaimData userData, CancellationToken ct) =>
 		await ResolveCurrentStep(userData.Id, ct);
 
-	public async Task<UResponse<UProcessStepGet?>> SendAsync(JwtClaimData userData, UProcessStepSend p, CancellationToken ct) {
+	public async Task<UResponse<UProcessStepGetResponse?>> Send(JwtClaimData userData, UProcessStepSend p, CancellationToken ct) {
 		UserEntity? u = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
 		if (u == null)
-			return new UResponse<UProcessStepGet?>(null, Usc.NotFound, ls.Get("UserNotFound"));
+			return new UResponse<UProcessStepGetResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
 
-		UResponse<UProcessStepGet?>? error = p.Id switch {
+		UResponse<UProcessStepGetResponse?>? error = p.Id switch {
 			ProcessStepIds.UserData => ApplyUserData(u, p),
 			ProcessStepIds.UserDocument => ApplyUserDocument(u, p),
 			ProcessStepIds.UserSelfieVideo => ApplyUserSelfieVideo(u, p),
@@ -131,7 +88,7 @@ public class KycProcessHandler(
 
 	// ── Apply methods ────────────────────────────────────────────────────────
 
-	private UResponse<UProcessStepGet?>? ApplyUserData(UserEntity u, UProcessStepSend p) {
+	private UResponse<UProcessStepGetResponse?>? ApplyUserData(UserEntity u, UProcessStepSend p) {
 		UProcessField? fatherName = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.JsonData.FatherName));
 		if (fatherName?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("FatherNameRequired"));
 
@@ -152,7 +109,7 @@ public class KycProcessHandler(
 		return null;
 	}
 
-	private UResponse<UProcessStepGet?>? ApplyUserDocument(UserEntity u, UProcessStepSend p) {
+	private UResponse<UProcessStepGetResponse?>? ApplyUserDocument(UserEntity u, UProcessStepSend p) {
 		UProcessField? front = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.NationalCardFront));
 		if (front?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("NationalCardFrontRequired"));
 
@@ -173,7 +130,7 @@ public class KycProcessHandler(
 		return null;
 	}
 
-	private UResponse<UProcessStepGet?>? ApplyUserSelfieVideo(UserEntity u, UProcessStepSend p) {
+	private UResponse<UProcessStepGetResponse?>? ApplyUserSelfieVideo(UserEntity u, UProcessStepSend p) {
 		UProcessField? video = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.VisualAuthentication));
 		if (video?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("VideoRequired"));
 
@@ -183,7 +140,7 @@ public class KycProcessHandler(
 		return null;
 	}
 
-	private UResponse<UProcessStepGet?>? ApplyUserESignature(UserEntity u, UProcessStepSend p) {
+	private UResponse<UProcessStepGetResponse?>? ApplyUserESignature(UserEntity u, UProcessStepSend p) {
 		UProcessField? signature = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.ESignature));
 		if (signature?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("SignatureRequired"));
 
@@ -195,7 +152,7 @@ public class KycProcessHandler(
 
 	// ── Step resolution ───────────────────────────────────────────────────────
 
-	private async Task<UResponse<UProcessStepGet?>> ResolveCurrentStep(Guid userId, CancellationToken ct) {
+	private async Task<UResponse<UProcessStepGetResponse?>> ResolveCurrentStep(Guid userId, CancellationToken ct) {
 		UserResponse? e = await db.Set<UserEntity>()
 			.Select(Projections.UserSelector(new UserSelectorArgs {
 				Wallet = new WalletSelectorArgs(),
@@ -209,9 +166,9 @@ public class KycProcessHandler(
 			.FirstOrDefaultAsync(x => x.Id == userId, ct);
 
 		if (e == null)
-			return new UResponse<UProcessStepGet?>(null, Usc.NotFound, ls.Get("UserNotFound"));
+			return new UResponse<UProcessStepGetResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
 
-		List<UProcessStepStatus> steps = BuildStepStatuses(e);
+		List<UProcessStepStatusResponse> steps = BuildStepStatuses(e);
 
 		// ── Fully verified by admin ───────────────────────────────────────────
 		if (e is { JsonData.FatherName: not null, Birthdate: not null } &&
@@ -220,8 +177,8 @@ public class KycProcessHandler(
 		    e.BirthCertificateFirst.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.BirthCertificateFirstVerified) &&
 		    e.VisualAuthentication.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.VisualAuthenticationVerified) &&
 		    e.ESignature.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.ESignatureVerified))
-			return new UResponse<UProcessStepGet?>(
-				new UProcessStepGet {
+			return new UResponse<UProcessStepGetResponse?>(
+				new UProcessStepGetResponse {
 					Id = ProcessStepIds.AuthCompleted,
 					Title = "احراز هویت تکمیل شد",
 					Description = "فرایند احراز هویت با موفقیت تکمیل شده است",
@@ -234,7 +191,7 @@ public class KycProcessHandler(
 		// ── Step 1: personal data ─────────────────────────────────────────────
 		// Required: FatherName + Birthdate. FirstName/LastName are optional.
 		if (e.JsonData.FatherName == null || e.Birthdate == null)
-			return Ok(new UProcessStepGet {
+			return Ok(new UProcessStepGetResponse {
 				Id = ProcessStepIds.UserData,
 				Title = "اطلاعات هویتی",
 				Description = "اطلاعات خود را تکمیل کنید.",
@@ -271,7 +228,7 @@ public class KycProcessHandler(
 			e.BirthCertificateFirst.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.BirthCertificateFirstVerified, TagUser.BirthCertificateFirstAwaitingVerification);
 
 		if (!documentsSubmitted)
-			return Ok(new UProcessStepGet {
+			return Ok(new UProcessStepGetResponse {
 				Id = ProcessStepIds.UserDocument,
 				Title = "آپلود مدارک شناسایی",
 				Description = "لطفا مدارک شناسایی خود را آپلود کنید",
@@ -301,7 +258,7 @@ public class KycProcessHandler(
 			e.Tags.ContainsAny(TagUser.VisualAuthenticationVerified, TagUser.VisualAuthenticationAwaitingVerification);
 
 		if (!selfieSubmitted)
-			return Ok(new UProcessStepGet {
+			return Ok(new UProcessStepGetResponse {
 				Id = ProcessStepIds.UserSelfieVideo,
 				Title = "ویدیو احراز هویت",
 				Description = "لطفا ویدیو احراز هویت خود را آپلود کنید",
@@ -321,7 +278,7 @@ public class KycProcessHandler(
 			e.Tags.ContainsAny(TagUser.ESignatureVerified, TagUser.ESignatureAwaitingVerification);
 
 		if (!signatureSubmitted)
-			return Ok(new UProcessStepGet {
+			return Ok(new UProcessStepGetResponse {
 				Id = ProcessStepIds.UserESignature,
 				Title = "امضای دیجیتال",
 				Description = "امضا",
@@ -336,7 +293,7 @@ public class KycProcessHandler(
 
 		// ── All submitted — waiting for admin review ───────────────────────────
 		// No fields, just a message. Flutter hides the submit button when fields is empty.
-		return Ok(new UProcessStepGet {
+		return Ok(new UProcessStepGetResponse {
 			Id = ProcessStepIds.AdminApproval,
 			Title = "در انتظار تایید",
 			Description = "مدارک شما با موفقیت ارسال شد",
@@ -356,7 +313,7 @@ public class KycProcessHandler(
 	/// previous step is Verified OR AwaitingVerification — i.e. the user has
 	/// nothing left to do for it, regardless of admin review.
 	/// </summary>
-	private static List<UProcessStepStatus> BuildStepStatuses(UserResponse e) {
+	private static List<UProcessStepStatusResponse> BuildStepStatuses(UserResponse e) {
 		TagProcessStepStatus userData = ResolveUserDataStatus(e);
 
 		// Each step unlocks when the previous is done (Verified or AwaitingVerification)
@@ -372,10 +329,10 @@ public class KycProcessHandler(
 		MarkCurrentStep(ref userData, ref documents, ref selfie, ref signature);
 
 		return [
-			new UProcessStepStatus { Id = ProcessStepIds.UserData, Title = "اطلاعات هویتی", Status = userData },
-			new UProcessStepStatus { Id = ProcessStepIds.UserDocument, Title = "مدارک شناسایی", Status = documents },
-			new UProcessStepStatus { Id = ProcessStepIds.UserSelfieVideo, Title = "ویدیو احراز هویت", Status = selfie },
-			new UProcessStepStatus { Id = ProcessStepIds.UserESignature, Title = "امضای دیجیتال", Status = signature }
+			new UProcessStepStatusResponse { Id = ProcessStepIds.UserData, Title = "اطلاعات هویتی", Status = userData },
+			new UProcessStepStatusResponse { Id = ProcessStepIds.UserDocument, Title = "مدارک شناسایی", Status = documents },
+			new UProcessStepStatusResponse { Id = ProcessStepIds.UserSelfieVideo, Title = "ویدیو احراز هویت", Status = selfie },
+			new UProcessStepStatusResponse { Id = ProcessStepIds.UserESignature, Title = "امضای دیجیتال", Status = signature }
 		];
 	}
 
@@ -446,6 +403,6 @@ public class KycProcessHandler(
 		// Fall-through: everything submitted — no step is Current (AdminApproval state)
 	}
 
-	private static UResponse<UProcessStepGet?> Ok(UProcessStepGet step) => new(step);
-	private static UResponse<UProcessStepGet?> Fail(string message) => new(null, Usc.BadRequest, message);
+	private static UResponse<UProcessStepGetResponse?> Ok(UProcessStepGetResponse step) => new(step);
+	private static UResponse<UProcessStepGetResponse?> Fail(string message) => new(null, Usc.BadRequest, message);
 }
