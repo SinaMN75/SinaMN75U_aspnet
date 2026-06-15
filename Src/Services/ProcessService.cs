@@ -19,11 +19,13 @@ public class ProcessService(DbContext db, ILocalizationService ls, ITokenService
 	public async Task<UResponse<UProcessStepGetResponse?>> Send(UProcessStepSend p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<UProcessStepGetResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		
+		
 
 		UserEntity? u = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
 		if (u == null) return new UResponse<UProcessStepGetResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
 
-		UResponse<UProcessStepGetResponse?>? error = p.Id switch {
+		UResponse<UProcessStepGetResponse?>? error = p.StepId switch {
 			ProcessStepIds.UserData => ApplyUserData(u, p),
 			ProcessStepIds.UserDocument => ApplyUserDocument(u, p),
 			ProcessStepIds.UserSelfieVideo => ApplyUserSelfieVideo(u, p),
@@ -42,8 +44,12 @@ public class ProcessService(DbContext db, ILocalizationService ls, ITokenService
 	private async Task<UResponse<UProcessStepGetResponse?>> KycGet(Guid userId, CancellationToken ct) {
 		UserResponse? e = await db.Set<UserEntity>()
 			.Select(Projections.UserSelector(new UserSelectorArgs {
-				Wallet = new WalletSelectorArgs(), Merchant = new MerchantSelectorArgs { Terminal = new TerminalSelectorArgs() },
-				NationalCardFront = true, NationalCardBack = true, BirthCertificateFirst = true, VisualAuthentication = true, ESignature = true
+				Wallet = new WalletSelectorArgs(),
+				Merchant = new MerchantSelectorArgs { Terminal = new TerminalSelectorArgs() },
+				NationalCardFront = true, 
+				NationalCardBack = true,
+				BirthCertificateFirst = true, 
+				VisualAuthentication = true, ESignature = true
 			}))
 			.FirstOrDefaultAsync(x => x.Id == userId, ct);
 		if (e == null) return new UResponse<UProcessStepGetResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
