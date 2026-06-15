@@ -14,12 +14,20 @@ public sealed class UProcessStepGetResponse {
 	public UMessageBox? MessageBox { get; set; }
 	public List<UProcessField> Fields { get; set; } = [];
 	public List<UProcessStepStatusResponse> Steps { get; set; } = [];
+
+	[JsonIgnore]
+	public bool IsSubmitted { get; set; }
+
+	[JsonIgnore]
+	public bool IsVerified { get; set; }
 }
 
 public sealed class UProcessField {
 	public string Key { get; set; } = "";
 	public string Label { get; set; } = "";
 	public string? Value { get; set; }
+	public string? RejectionReason { get; set; }
+	public string? Text1 { get; set; }
 	public bool Required { get; set; }
 	public TagFieldType Type { get; set; }
 	public UTextFieldConfig? TextFieldConfig { get; set; }

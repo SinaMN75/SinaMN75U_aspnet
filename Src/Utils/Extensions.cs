@@ -19,6 +19,8 @@ public static class UExtensions {
 	public static byte[]? FromBase64(this string? s) => s == null ? null : Convert.FromBase64String(s);
 	public static T FromJson<T>(this string json) => JsonSerializer.Deserialize<T>(json, Core.Default)!;
 
+	public static T Random<T>(this List<T> list) => list[new Random().Next(list.Count)];
+
 	public static IEnumerable<IdTitleParams> GetValues<T>() where T : Enum => Enum.GetValues(typeof(T)).Cast<int>().Select(item => new IdTitleParams { Title = Enum.GetName(typeof(T), item), Id = item }).ToList();
 
 	public static bool ContainsAny<T>(this IEnumerable<T>? source, params T[]? values) {

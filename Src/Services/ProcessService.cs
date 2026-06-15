@@ -19,8 +19,7 @@ public class ProcessService(DbContext db, ILocalizationService ls, ITokenService
 	public async Task<UResponse<UProcessStepGetResponse?>> Send(UProcessStepSend p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<UProcessStepGetResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		
-		
+
 
 		UserEntity? u = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
 		if (u == null) return new UResponse<UProcessStepGetResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
@@ -39,70 +38,85 @@ public class ProcessService(DbContext db, ILocalizationService ls, ITokenService
 		return await KycGet(userData.Id, ct);
 	}
 
-	// ── KYC ──────────────────────────────────────────────────────────────────
-
 	private async Task<UResponse<UProcessStepGetResponse?>> KycGet(Guid userId, CancellationToken ct) {
 		UserResponse? e = await db.Set<UserEntity>()
 			.Select(Projections.UserSelector(new UserSelectorArgs {
 				Wallet = new WalletSelectorArgs(),
 				Merchant = new MerchantSelectorArgs { Terminal = new TerminalSelectorArgs() },
-				NationalCardFront = true, 
+				NationalCardFront = true,
 				NationalCardBack = true,
-				BirthCertificateFirst = true, 
-				VisualAuthentication = true, ESignature = true
+				BirthCertificateFirst = true,
+				VisualAuthentication = true,
+				ESignature = true
 			}))
 			.FirstOrDefaultAsync(x => x.Id == userId, ct);
 		if (e == null) return new UResponse<UProcessStepGetResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
 
-		// Each step: (fields, isSubmitted, isVerified)
-		// Fields and status logic live together — add a new step by adding a new entry here
-		List<(string Id, string Title, string Desc, Func<List<UProcessField>> Fields, bool IsSubmitted, bool IsVerified)> steps = [
-			(
-				ProcessStepIds.UserData, "اطلاعات هویتی", "اطلاعات خود را تکمیل کنید.",
-				Fields: () => [
+		List<UProcessStepGetResponse> steps = [
+			new() {
+				Id = ProcessStepIds.UserData,
+				Title = "اطلاعات هویتی",
+				Description = "اطلاعات خود را تکمیل کنید.",
+				IsSubmitted = e.JsonData.FatherName != null && e.Birthdate != null,
+				IsVerified = e.JsonData.FatherName != null && e.Birthdate != null,
+				Fields = [
 					new UProcessField { Key = nameof(UserEntity.FirstName), Label = "نام", Type = TagFieldType.Text, Required = false, Value = e.FirstName, TextFieldConfig = new UTextFieldConfig { Type = TagTextFieldType.Text, MaxLength = 40, MinLength = 2 } },
 					new UProcessField { Key = nameof(UserEntity.LastName), Label = "نام خانوادگی", Type = TagFieldType.Text, Required = false, Value = e.LastName, TextFieldConfig = new UTextFieldConfig { Type = TagTextFieldType.Text, MaxLength = 40, MinLength = 2 } },
 					new UProcessField { Key = nameof(UserEntity.JsonData.FatherName), Label = "نام پدر", Type = TagFieldType.Text, Required = true, Value = e.JsonData.FatherName, TextFieldConfig = new UTextFieldConfig { Type = TagTextFieldType.Text, MaxLength = 40, MinLength = 2 } },
 					new UProcessField { Key = nameof(UserEntity.Birthdate), Label = "تاریخ تولد", Type = TagFieldType.Text, Required = true, Value = e.Birthdate?.ToString(), TextFieldConfig = new UTextFieldConfig { Type = TagTextFieldType.PersianDate } }
-				],
-				IsSubmitted: e.JsonData.FatherName != null && e.Birthdate != null,
-				IsVerified: e.JsonData.FatherName != null && e.Birthdate != null
-			),
-			(
-				ProcessStepIds.UserDocument, "آپلود مدارک شناسایی", "لطفا مدارک شناسایی خود را آپلود کنید",
-				Fields: () => [
-					new UProcessField { Key = nameof(UserEntity.NationalCardFront), Label = "روی کارت ملی", Type = TagFieldType.File, Required = true, Value = e.NationalCardFront, FileConfig = new UFileConfig { Type = TagFileFieldType.Image, IsCamera = true } },
-					new UProcessField { Key = nameof(UserEntity.NationalCardBack), Label = "پشت کارت ملی", Type = TagFieldType.File, Required = true, Value = e.NationalCardBack, FileConfig = new UFileConfig { Type = TagFileFieldType.Image, IsCamera = true } },
-					new UProcessField { Key = nameof(UserEntity.BirthCertificateFirst), Label = "صفحه اول شناسنامه", Type = TagFieldType.File, Required = true, Value = e.BirthCertificateFirst, FileConfig = new UFileConfig { Type = TagFileFieldType.Image, IsCamera = true } }
-				],
-				IsSubmitted:
-				e.NationalCardFront.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.NationalCardFrontVerified, TagUser.NationalCardFrontAwaitingVerification) &&
-				e.NationalCardBack.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.NationalCardBackVerified, TagUser.NationalCardBackAwaitingVerification) &&
-				e.BirthCertificateFirst.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.BirthCertificateFirstVerified, TagUser.BirthCertificateFirstAwaitingVerification),
-				IsVerified:
-				e.NationalCardFront.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.NationalCardFrontVerified) &&
-				e.NationalCardBack.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.NationalCardBackVerified) &&
-				e.BirthCertificateFirst.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.BirthCertificateFirstVerified)
-			),
-			(
-				ProcessStepIds.UserSelfieVideo, "ویدیو احراز هویت", "لطفا ویدیو احراز هویت خود را آپلود کنید",
-				Fields: () => [
-					new UProcessField { Key = nameof(UserEntity.VisualAuthentication), Label = "ویدیو", Type = TagFieldType.File, Required = true, Value = e.VisualAuthentication, FileConfig = new UFileConfig { Type = TagFileFieldType.Video, IsSelfieCamera = true } }
-				],
-				IsSubmitted: e.VisualAuthentication.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.VisualAuthenticationVerified, TagUser.VisualAuthenticationAwaitingVerification),
-				IsVerified: e.VisualAuthentication.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.VisualAuthenticationVerified)
-			),
-			(
-				ProcessStepIds.UserESignature, "امضای دیجیتال", "امضا",
-				Fields: () => [
-					new UProcessField { Key = nameof(UserEntity.ESignature), Label = "امضا دیجیتال", Type = TagFieldType.ESignature, Required = true, Value = e.ESignature }
-				],
-				IsSubmitted: e.ESignature.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.ESignatureVerified, TagUser.ESignatureAwaitingVerification),
-				IsVerified: e.ESignature.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.ESignatureVerified)
-			)
+				]
+			},
+			new() {
+				Id = ProcessStepIds.UserDocument,
+				Title = "آپلود مدارک شناسایی",
+				Description = "لطفا مدارک شناسایی خود را آپلود کنید",
+				IsSubmitted =
+					e.NationalCardFront.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.NationalCardFrontVerified, TagUser.NationalCardFrontAwaitingVerification) &&
+					e.NationalCardBack.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.NationalCardBackVerified, TagUser.NationalCardBackAwaitingVerification) &&
+					e.BirthCertificateFirst.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.BirthCertificateFirstVerified, TagUser.BirthCertificateFirstAwaitingVerification),
+				IsVerified =
+					e.NationalCardFront.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.NationalCardFrontVerified) &&
+					e.NationalCardBack.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.NationalCardBackVerified) &&
+					e.BirthCertificateFirst.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.BirthCertificateFirstVerified),
+				Fields = [
+					new UProcessField { Key = nameof(UserEntity.NationalCardFront), Label = "روی کارت ملی", Type = TagFieldType.File, Required = true, Value = e.NationalCardFront, FileConfig = new UFileConfig { Type = TagFileFieldType.Image, IsCamera = true }, RejectionReason = e.JsonData.NationalCardFrontRejectionReason },
+					new UProcessField { Key = nameof(UserEntity.NationalCardBack), Label = "پشت کارت ملی", Type = TagFieldType.File, Required = true, Value = e.NationalCardBack, FileConfig = new UFileConfig { Type = TagFileFieldType.Image, IsCamera = true }, RejectionReason = e.JsonData.NationalCardBackRejectionReason },
+					new UProcessField { Key = nameof(UserEntity.BirthCertificateFirst), Label = "صفحه اول شناسنامه", Type = TagFieldType.File, Required = true, Value = e.BirthCertificateFirst, FileConfig = new UFileConfig { Type = TagFileFieldType.Image, IsCamera = true }, RejectionReason = e.JsonData.NationalCardBackRejectionReason }
+				]
+			},
+			new() {
+				Id = ProcessStepIds.UserSelfieVideo,
+				Title = "ویدیو احراز هویت",
+				Description = "لطفا ویدیو احراز هویت خود را آپلود کنید",
+				IsSubmitted = e.VisualAuthentication.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.VisualAuthenticationVerified, TagUser.VisualAuthenticationAwaitingVerification),
+				IsVerified = e.VisualAuthentication.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.VisualAuthenticationVerified),
+				Fields = [
+					new UProcessField { Key = nameof(UserEntity.VisualAuthentication), Label = "ویدیو", Type = TagFieldType.File, Required = true, Value = e.VisualAuthentication, FileConfig = new UFileConfig { Type = TagFileFieldType.Video, IsSelfieCamera = true }, Text1 = RandomTexts.Sentences.Random(), RejectionReason = e.JsonData.VisualAuthenticationRejectionReason }
+				]
+			},
+			new() {
+				Id = ProcessStepIds.UserESignature,
+				Title = "امضای دیجیتال",
+				Description = "امضا",
+				IsSubmitted = e.ESignature.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.ESignatureVerified, TagUser.ESignatureAwaitingVerification),
+				IsVerified = e.ESignature.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.ESignatureVerified),
+				Fields = [
+					new UProcessField { Key = nameof(UserEntity.ESignature), Label = "امضا دیجیتال", Type = TagFieldType.ESignature, Required = true, Value = e.ESignature, RejectionReason = e.JsonData.ESignatureRejectionReason }
+				]
+			},
+			new() {
+				Id = ProcessStepIds.UserESignature,
+				Title = "تایید ادمین",
+				Description = "",
+				IsSubmitted = e.ESignature.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.ESignatureVerified, TagUser.ESignatureAwaitingVerification),
+				IsVerified = e.ESignature.IsNotNullOrEmpty() && e.Tags.Contains(TagUser.ESignatureVerified),
+				MessageBox = new UMessageBox {
+					Title = "تایید ادمین",
+					Description = "لطفا منتظر تایید توسط ادمین باشید"
+				}
+			}
 		];
 
-		// Build step statuses — a step is locked until the previous one is submitted
 		bool previousSubmitted = true;
 		List<UProcessStepStatusResponse> stepStatuses = steps.Select(s => {
 			TagProcessStepStatus status = previousSubmitted
@@ -114,39 +128,39 @@ public class ProcessService(DbContext db, ILocalizationService ls, ITokenService
 			return new UProcessStepStatusResponse { Id = s.Id, Title = s.Title, Status = status };
 		}).ToList();
 
-		// First NotStarted → Current
-		UProcessStepStatusResponse? current = stepStatuses.FirstOrDefault(s => s.Status == TagProcessStepStatus.NotStarted);
-		if (current != null) current.Status = TagProcessStepStatus.Current;
+		UProcessStepStatusResponse? currentStatus = stepStatuses.FirstOrDefault(s => s.Status == TagProcessStepStatus.NotStarted);
+		if (currentStatus != null) currentStatus.Status = TagProcessStepStatus.Current;
 
-		// All verified → completed
 		if (steps.All(s => s.IsVerified))
 			return new UResponse<UProcessStepGetResponse?>(
 				new UProcessStepGetResponse {
-					Id = ProcessStepIds.AuthCompleted, Title = "احراز هویت تکمیل شد",
+					Id = ProcessStepIds.AuthCompleted,
+					Title = "احراز هویت تکمیل شد",
 					Description = "فرایند احراز هویت با موفقیت تکمیل شده است",
-					Message = "فرایند احراز هویت با موفقیت تکمیل شده است", Steps = stepStatuses,
+					Message = "فرایند احراز هویت با موفقیت تکمیل شده است",
+					Steps = stepStatuses,
 					MessageBox = new UMessageBox { Title = "تکمیل شد", Description = "فرایند احراز هویت با موفقیت انجام شد.", SvgIcon = USvgs.ShieldInfo }
 				},
 				Usc.ProcessCompleted, ls.Get("ProcessCompleted")
 			);
 
-		// First unsubmitted step → show its form
-		var active = steps.FirstOrDefault(s => !s.IsSubmitted);
+		UProcessStepGetResponse? active = steps.FirstOrDefault(s => !s.IsSubmitted);
 
-		// All submitted, not all verified → admin review
-		if (active == default)
+		if (active == null)
 			return new UResponse<UProcessStepGetResponse?>(new UProcessStepGetResponse {
-				Id = ProcessStepIds.AdminApproval, Title = "در انتظار تایید", Steps = stepStatuses,
-				MessageBox = new UMessageBox { Title = "در انتظار تایید", Description = "مدارک شما دریافت شد و در حال بررسی است. نتیجه از طریق پیامک اطلاع‌رسانی خواهد شد.", SvgIcon = USvgs.ShieldInfo }
+				Id = ProcessStepIds.AdminApproval,
+				Title = "در انتظار تایید",
+				Steps = stepStatuses,
+				MessageBox = new UMessageBox {
+					Title = "در انتظار تایید",
+					Description = "مدارک شما دریافت شد و در حال بررسی است. نتیجه از طریق پیامک اطلاع‌رسانی خواهد شد.",
+					SvgIcon = USvgs.ShieldInfo
+				}
 			});
 
-		return new UResponse<UProcessStepGetResponse?>(new UProcessStepGetResponse {
-			Id = active.Id, Title = active.Title, Description = active.Desc,
-			Steps = stepStatuses, Fields = active.Fields()
-		});
+		active.Steps = stepStatuses;
+		return new UResponse<UProcessStepGetResponse?>(active);
 	}
-
-	// ── Apply methods ─────────────────────────────────────────────────────────
 
 	private UResponse<UProcessStepGetResponse?>? ApplyUserData(UserEntity u, UProcessStepSend p) {
 		UProcessField? fatherName = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.JsonData.FatherName));
