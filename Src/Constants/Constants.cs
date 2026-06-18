@@ -21,7 +21,7 @@ public static class RouteTags {
 	public const string Terminal = "api/terminal/";
 	public const string BankAccount = "api/bankAccount/";
 	public const string Ipg = "api/Ipg/";
-	public const string SimCard = "api/SimCard/";
+	public const string Sim = "api/Sim/";
 	public const string Notification = "api/Notification/";
 	public const string Bed = "api/Bed/";
 	public const string ChargeInternet = "api/ChargeInternet/";

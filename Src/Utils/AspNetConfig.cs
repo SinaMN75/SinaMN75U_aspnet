@@ -136,7 +136,7 @@ public static partial class AspNetConfig {
 		app.MapTerminalRoutes(RouteTags.Terminal);
 		app.MapBankAccountRoutes(RouteTags.BankAccount);
 		app.MapIpgRoutes(RouteTags.Ipg);
-		app.MapSimCardRoutes(RouteTags.SimCard);
+		app.MapSimCardRoutes(RouteTags.Sim);
 		app.MapNotificationRoutes(RouteTags.Notification);
 		app.MapDataSeedRoutes(RouteTags.DataSeeder);
 		app.MapChargeInternetRoutes(RouteTags.ChargeInternet);
