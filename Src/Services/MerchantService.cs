@@ -2,7 +2,6 @@ namespace SinaMN75U.Services;
 
 public interface IMerchantService {
 	Task<UResponse<Guid?>> Create(MerchantCreateParams p, CancellationToken ct);
-	Task<UResponse> Bind(MerchantBindParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<MerchantResponse>?>> Read(MerchantReadParams p, CancellationToken ct);
 	Task<UResponse<MerchantResponse?>> ReadById(IdParams<MerchantSelectorArgs> p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
@@ -11,13 +10,16 @@ public interface IMerchantService {
 public class MerchantService(
 	DbContext db,
 	ILocalizationService ls,
-	ITokenService ts,
-	IHttpClientService http
+	ITokenService ts
 ) : IMerchantService {
 	public async Task<UResponse<Guid?>> Create(MerchantCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
+		bool paidViaGateway = await db.Set<TxnEntity>().AnyAsync(x => x.UserId == userData.Id && x.Tags.Contains(TagTxn.MerchantCreationFee), ct);
+		bool paidViaWallet = await db.Set<WalletTxnEntity>().AnyAsync(x => x.SenderId == userData.Id && x.Tags.Contains(TagWalletTxn.MerchantCreationFee), ct);
+		if (!paidViaGateway && !paidViaWallet) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("MerchantCreationFeeRequired"));
+		
 		MerchantEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatorId = p.CreatorId ?? userData.Id,
@@ -46,44 +48,7 @@ public class MerchantService(
 
 		return new UResponse<Guid?>(e.Id);
 	}
-
-	public async Task<UResponse> Bind(MerchantBindParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-
-		MerchantEntity? e = await db.Set<MerchantEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.MerchantId, ct);
-		if (e == null) return new UResponse<MerchantResponse?>(null, Usc.NotFound, ls.Get("MerchantNotFound"));
-
-		HttpResponseMessage? response = await http.Post(
-			"https://oa.avreenco.com:8080/api/mms/ing/v2/addMerchant",
-			new {
-				accountId = e.BankAccountId,
-				businessTitle = e.JsonData.BusinessTitle,
-				cityCode = e.CityCode,
-				mcc = e.Mcc,
-				merchantAddress = e.JsonData.Address,
-				merchantMobileNo = e.PhoneNumber,
-				merchantName = e.Title,
-				merchantOwnerName = e.JsonData.OwnerName,
-				merchantPhone = e.Landline,
-				nationalId = e.NationalCode,
-				ownerMobileNo = e.JsonData.OwnerPhoneNumber,
-				postalCode = e.ZipCode,
-				definitionTemplate = 1,
-				settlementCurrency = 364
-			},
-			new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
-		);
-
-		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<Guid?>(null);
-		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
-
-		e.InsId = data.GetStringOrNull("insId")!;
-		e.MerchantId = data.GetStringOrNull("merchantId")!;
-		await db.SaveChangesAsync(ct);
-		return new UResponse();
-	}
-
+	
 	public async Task<UResponse<IEnumerable<MerchantResponse>?>> Read(MerchantReadParams p, CancellationToken ct) {
 		IQueryable<MerchantEntity> q = db.Set<MerchantEntity>().ApplyReadParams<MerchantEntity, TagMerchant, MerchantJson>(p);
 

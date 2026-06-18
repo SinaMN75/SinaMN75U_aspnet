@@ -9,6 +9,7 @@ public sealed class WalletJson : BaseJson {
 	public bool AllowMinusBalance { get; set; } = false;
 }
 
+[Table("WalletTxns")]
 public sealed class WalletTxnEntity : BaseEntity<TagWalletTxn, BaseJson> {
 	public UserEntity Sender { get; set; } = null!;
 	public required Guid SenderId { get; set; }

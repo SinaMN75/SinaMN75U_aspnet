@@ -150,7 +150,8 @@ public enum TagTxn {
 	Paid = 202,
 	Failed = 203,
 	Refunded = 204,
-	ChargeWallet = 301
+	ChargeWallet = 301,
+	MerchantCreationFee = 302
 }
 
 public enum TagParking {
@@ -185,6 +186,7 @@ public enum TagWalletTxn {
 	DrivingLicenceNegativePoint = 206,
 	IBanToBankAccountDetail = 207,
 	FreewayTolls = 208,
+	MerchantCreationFee = 209,
 
 	ChargeSimPin = 301,
 	ChargeSimTopup = 302,
@@ -194,10 +196,7 @@ public enum TagWalletTxn {
 public enum TagTerminal {
 	Atm = 101,
 	WallCashless = 102,
-	DeskCashless = 103,
-	Verified = 201,
-	AwaitingVerification = 202,
-	Suspended = 203
+	DeskCashless = 103
 }
 
 public enum TagBankAccount {
@@ -313,5 +312,5 @@ public enum TagInvoice {
 }
 
 public enum TagBed {
-	
+	Test = 999
 }

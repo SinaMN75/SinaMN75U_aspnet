@@ -6,7 +6,6 @@ public interface ITerminalService {
 	Task<UResponse<IEnumerable<TerminalResponse>?>> Read(TerminalReadParams p, CancellationToken ct);
 	Task<UResponse> Update(TerminalUpdateParams p, CancellationToken ct);
 	Task<UResponse<TerminalResponse?>> Assign(TerminalAssignParams p, CancellationToken ct);
-	Task<UResponse> Bind(IdParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	Task<UResponse<TerminalSupportPasswordResponse?>> ReadSupportPassword(IdParams p, CancellationToken ct);
 }
@@ -68,25 +67,66 @@ public class TerminalService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<TerminalResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		TerminalEntity? terminal = await db.Set<TerminalEntity>().FirstOrDefaultAsync(x => x.Serial == p.Serial && x.SimCardSerial == p.SimCardSerial, ct);
+		TerminalEntity? terminal = await db.Set<TerminalEntity>().AsTracking().FirstOrDefaultAsync(x => x.Serial == p.Serial && x.SimCardSerial == p.SimCardSerial, ct);
 		if (terminal == null) return new UResponse<TerminalResponse?>(null, Usc.NotFound, ls.Get("TerminalNotFoundCheckDetails"));
-		MerchantEntity? merchant = await db.Set<MerchantEntity>()
-			.Include(x => x.User)
-			.FirstOrDefaultAsync(x => x.Id == p.MerchantId, ct);
+		MerchantEntity? merchant = await db.Set<MerchantEntity>().AsTracking().Include(x => x.User).FirstOrDefaultAsync(x => x.Id == p.MerchantId, ct);
 		if (merchant == null) return new UResponse<TerminalResponse?>(null, Usc.NotFound, ls.Get("MerchantNotFound"));
-
-
+		
 		string agreement = await GenerateAgreement(merchant.User, terminal);
 
 		terminal.JsonData.Detail1 = p.Title ?? "";
 		terminal.MerchantId = p.MerchantId;
 		terminal.Agreement = agreement.FromBase64();
-		terminal.Tags.AddRangeIfNotExist([TagTerminal.AwaitingVerification]);
 
-		db.Set<TerminalEntity>().Update(terminal);
+		HttpResponseMessage? response = await http.Post(
+			$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/addMerchant",
+			new {
+				accountId = merchant.BankAccountId,
+				businessTitle = merchant.JsonData.BusinessTitle,
+				cityCode = merchant.CityCode,
+				mcc = merchant.Mcc,
+				merchantAddress = merchant.JsonData.Address,
+				merchantMobileNo = merchant.PhoneNumber,
+				merchantName = merchant.Title,
+				merchantOwnerName = merchant.JsonData.OwnerName,
+				merchantPhone = merchant.Landline,
+				nationalId = merchant.NationalCode,
+				ownerMobileNo = merchant.JsonData.OwnerPhoneNumber,
+				postalCode = merchant.ZipCode,
+				definitionTemplate = 1,
+				settlementCurrency = 364
+			},
+			new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
+		);
+		
+		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<TerminalResponse?>(null);
+		JsonElement merchantData = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
+		if (merchantData.GetStringOrNull("insId") == null) return new UResponse<TerminalResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+		
+		merchant.InsId = merchantData.GetStringOrNull("insId")!;
+		merchant.MerchantId = merchantData.GetStringOrNull("merchantId")!;
+
+		HttpResponseMessage? terminalResponse = await http.Post(
+			$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/defineAndBindTerminal",
+			new {
+				definitionTemplate = 1,
+				merchantId = merchant.MerchantId,
+				project = "AvaPlus",
+				terminalSerial = terminal.Serial,
+				terminalSerial2 = terminal.SimCardSerial
+			},
+			new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
+		);
+
+		if (terminalResponse is null or { IsSuccessStatusCode: false }) return new UResponse<TerminalResponse?>(null);
+		JsonElement terminalData = JsonSerializer.Deserialize<JsonElement>(await terminalResponse.Content.ReadAsStringAsync(ct));
+		if (terminalData.GetStringOrNull("insId") == null) return new UResponse<TerminalResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+
+		terminal.TerminalId = terminalData.GetStringOrNull("terminalId");
+		terminal.InsId = terminalData.GetStringOrNull("insId");
+		
 		await db.SaveChangesAsync(ct);
-
-		await Bind(new IdParams { ApiKey = p.ApiKey, Token = p.Token, Id = terminal.Id }, ct);
+		
 		return new UResponse<TerminalResponse?>(new TerminalResponse {
 			Id = terminal.Id,
 			CreatedAt = terminal.CreatedAt,
@@ -101,100 +141,6 @@ public class TerminalService(
 			Agreement = terminal.Agreement.ToBase64(),
 			MerchantId = terminal.MerchantId
 		});
-	}
-
-	public async Task<UResponse> Bind(IdParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-
-		TerminalEntity? e = await db.Set<TerminalEntity>()
-			.Include(x => x.Merchant).ThenInclude(x => x.User)
-			.AsTracking()
-			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("TerminalNotFound"));
-		if (e.Merchant == null) return new UResponse(Usc.NotFound, ls.Get("MerchantNotFound"));
-		
-		
-		HttpResponseMessage? response = await http.Post(
-			"https://oa.avreenco.com:8080/api/mms/ing/v2/addMerchant",
-			new {
-				accountId = e.Merchant.BankAccountId,
-				businessTitle = e.Merchant.JsonData.BusinessTitle,
-				cityCode = e.Merchant.CityCode,
-				mcc = e.Merchant.Mcc,
-				merchantAddress = e.Merchant.JsonData.Address,
-				merchantMobileNo = e.Merchant.PhoneNumber,
-				merchantName = e.Merchant.Title,
-				merchantOwnerName = e.Merchant.JsonData.OwnerName,
-				merchantPhone = e.Merchant.Landline,
-				nationalId = e.Merchant.NationalCode,
-				ownerMobileNo = e.Merchant.JsonData.OwnerPhoneNumber,
-				postalCode = e.Merchant.ZipCode,
-				definitionTemplate = 1,
-				settlementCurrency = 364
-			},
-			new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
-		);
-
-		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<Guid?>(null);
-		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
-
-		e.Merchant.InsId = data.GetStringOrNull("insId")!;
-		e.Merchant.MerchantId = data.GetStringOrNull("merchantId")!;
-		
-		HttpResponseMessage? merchantResponse = await http.Post(
-			$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/addMerchant",
-			new {
-				accountId = e.Merchant.BankAccountId,
-				businessTitle = e.Merchant.JsonData.BusinessTitle,
-				cityCode = e.Merchant.CityCode,
-				mcc = e.Merchant.Mcc,
-				merchantAddress = e.Merchant.JsonData.Address,
-				merchantMobileNo = e.Merchant.PhoneNumber,
-				merchantName = e.Merchant.Title,
-				merchantOwnerName = e.Merchant.JsonData.OwnerName,
-				merchantPhone = e.Merchant.Landline,
-				nationalId = e.Merchant.NationalCode,
-				ownerMobileNo = e.Merchant.JsonData.OwnerPhoneNumber,
-				postalCode = e.Merchant.ZipCode,
-				definitionTemplate = 1,
-				settlementCurrency = 364
-			},
-			new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
-		);
-
-		if (merchantResponse is null or { IsSuccessStatusCode: false }) return new UResponse<Guid?>(null);
-
-		JsonElement merchantData = JsonSerializer.Deserialize<JsonElement>(await merchantResponse.Content.ReadAsStringAsync(ct));
-
-		e.Merchant.InsId = merchantData.GetStringOrNull("insId")!;
-		e.Merchant.MerchantId = merchantData.GetStringOrNull("merchantId")!;
-
-		HttpResponseMessage? terminalResponse = await http.Post(
-			$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/defineAndBindTerminal",
-			new {
-				definitionTemplate = 1,
-				merchantId = merchantData.GetStringOrNull("merchantId")!,
-				project = "AvaPlus",
-				terminalSerial = e.Serial,
-				terminalSerial2 = e.SimCardSerial
-			},
-			new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
-		);
-
-		if (terminalResponse is null or { IsSuccessStatusCode: false }) return new UResponse<Guid?>(null);
-
-		JsonElement terminalData = JsonSerializer.Deserialize<JsonElement>(await terminalResponse.Content.ReadAsStringAsync(ct));
-
-		e.Tags.Add(TagTerminal.Verified);
-		e.Tags.Remove(TagTerminal.AwaitingVerification);
-		e.TerminalId = terminalData.GetStringOrNull("terminalId");
-		e.InsId = terminalData.GetStringOrNull("insId");
-
-		db.Set<TerminalEntity>().Update(e);
-		await db.SaveChangesAsync(ct);
-
-		return new UResponse();
 	}
 
 	public async Task<UResponse> BulkCreate(TerminalBulkCreateParams p, CancellationToken ct) {

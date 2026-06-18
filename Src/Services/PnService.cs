@@ -435,10 +435,7 @@ public class PnService(
 
 			string terminalResponseContent = await terminalResponse.Content.ReadAsStringAsync(ct);
 			JsonElement terminalData = JsonSerializer.Deserialize<JsonElement>(terminalResponseContent);
-
-			// Update terminal
-			terminal.Tags.Add(TagTerminal.Verified);
-			terminal.Tags.Remove(TagTerminal.AwaitingVerification);
+			
 			terminal.TerminalId = terminalData.GetStringOrNull("terminalId");
 			terminal.InsId = terminalData.GetStringOrNull("insId");
 			ULog.Debug($"Terminal updated - TerminalId: {terminal.TerminalId}, InsId: {terminal.InsId}, Tags: Verified added, AwaitingVerification removed");
