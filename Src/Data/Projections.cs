@@ -4,6 +4,23 @@ public class BaseSelectorArgs {
 	public UserSelectorArgs? Creator { get; set; }
 }
 
+public sealed class ContractSelectorArgs: BaseSelectorArgs {
+	public UserSelectorArgs? User { get; set; }
+	public BedSelectorArgs? Bed { get; set; }
+	public InvoiceSelectorArgs? Invoice { get; set; }
+}
+
+public sealed class InvoiceSelectorArgs: BaseSelectorArgs {
+	public ContractSelectorArgs? Contract { get; set; }
+}
+
+public sealed class BedSelectorArgs: BaseSelectorArgs {
+	public ContractSelectorArgs? Contract { get; set; }
+	public BedSelectorArgs? Children { get; set; }
+	public MediaSelectorArgs? Media { get; set; }
+	public int ChildrenDebt { get; set; }
+}
+
 public sealed class ParkingReportSelectorArgs : BaseSelectorArgs {
 	public VehicleSelectorArgs? Vehicle { get; set; }
 	public ParkingSelectorArgs? Parking { get; set; }
@@ -358,6 +375,30 @@ public static class Projections {
 		};
 		return selector.Expand();
 	}
+	
+	public static Expression<Func<BedEntity, BedResponse>> BedSelector(BedSelectorArgs args) {
+		Expression<Func<BedEntity, BedResponse>>? childSelector = null;
+		if (args is { Children: not null, ChildrenDebt: > 0 and < 10 })
+			childSelector = BedSelector(new BedSelectorArgs {
+				Media = args.Media,
+				Children = args.Children,
+				Creator = args.Creator,
+				ChildrenDebt = args.ChildrenDebt - 1
+			});
+		Expression<Func<BedEntity, BedResponse>> selector = x => new BedResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			ParentId = x.ParentId,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Media = (args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList())!,
+			Children = (args.Children != null && args.ChildrenDebt > 0 ? x.Children.AsQueryable().Select(childSelector!).ToList() : null)!,
+			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+			Contracts = (args.Contract == null ? null : x.Contracts.AsQueryable().Select(ContractSelector(args.Contract)).ToList())!,
+		};
+		return selector.Expand();
+	}
 
 	public static Expression<Func<CategoryEntity, CategoryResponse>> CategorySelector(CategorySelectorArgs args) {
 		Expression<Func<CategoryEntity, CategoryResponse>>? childSelector = null;
@@ -483,6 +524,45 @@ public static class Projections {
 			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
 			Txn = (args.Txn != null ? TxnSelector(args.Txn) : t => null!).Invoke(x.Txn!),
 			WalletTxn = (args.WalletTxn != null ? WalletTxnSelector(args.WalletTxn) : w => null!).Invoke(x.WalletTxn!)
+		};
+		return selector.Expand();
+	}
+	
+	public static Expression<Func<ContractEntity, ContractResponse>> ContractSelector(ContractSelectorArgs args) {
+		Expression<Func<ContractEntity, ContractResponse>> selector = x => new ContractResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			StartDate = x.StartDate,
+			EndDate = x.EndDate,
+			Deposit = x.Deposit,
+			Rent = x.Rent,
+			UserId = x.UserId,
+			CreatorId = x.CreatorId,
+			BedId = x.BedId,
+			CreatedAt = x.CreatedAt,
+			Invoices = args.Invoice == null ? null : x.Invoices.AsQueryable().Select(InvoiceSelector(args.Invoice)).ToList(),
+			Bed = (args.Bed != null ? BedSelector(args.Bed) : t => null!).Invoke(x.Bed),
+			User = (args.User != null ? UserSelector(args.User) : t => null!).Invoke(x.User),
+			Creator = (args.Creator != null ? UserSelector(args.Creator) : t => null!).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}	
+	
+	public static Expression<Func<InvoiceEntity, InvoiceResponse>> InvoiceSelector(InvoiceSelectorArgs args) {
+		Expression<Func<InvoiceEntity, InvoiceResponse>> selector = x => new InvoiceResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			CreditorAmount = x.CreditorAmount,
+			PaidAmount = x.PaidAmount,
+			PenaltyAmount = x.PenaltyAmount,
+			DueDate = x.DueDate,
+			DebtAmount =  x.DebtAmount,
+			Contract = (args.Contract != null ? ContractSelector(args.Contract) : t => null!)!.Invoke(x.Contract),
+			Creator = (args.Creator != null ? UserSelector(args.Creator) : t => null!).Invoke(x.Creator)
 		};
 		return selector.Expand();
 	}

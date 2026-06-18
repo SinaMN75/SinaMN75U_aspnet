@@ -89,6 +89,9 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IMerchantService, MerchantService>();
 		builder.Services.AddScoped<IPnService, PnService>();
 		builder.Services.AddScoped<IProcessService, ProcessService>();
+		builder.Services.AddScoped<IBedService, BedService>();
+		builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+		builder.Services.AddScoped<IContractService, ContractService>();
 
 		if (Core.App.Test) {
 			builder.Services.AddScoped<IInquiryService, InquiryServiceFake>();
@@ -141,6 +144,9 @@ public static partial class AspNetConfig {
 		app.MapAppSettingsRoutes(RouteTags.AppSettings);
 		app.MapProcessRoutes(RouteTags.Process);
 		app.MapPnRoutes(RouteTags.Pn);
+		app.MapBedRoutes(RouteTags.Bed);
+		app.MapInvoiceRoutes(RouteTags.Invoice);
+		app.MapContractRoutes(RouteTags.Contract);
 	}
 
 	private static string CleanAndFormatSql(string sql) {

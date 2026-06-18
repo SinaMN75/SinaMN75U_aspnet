@@ -47,9 +47,9 @@ public class PnMerchantCreateParams : BaseParams {
 	public string OwnerPhoneNumber { get; set; } = null!;
 	public string OwnerName { get; set; } = null!;
 	public string Mcc { get; set; } = null!;
+	public string Address { get; set; } = null!;
 	public string? BusinessTitle { get; set; }
 	public string? BankAccountId { get; set; }
-	public string? Address { get; set; }
 }
 
 public class PnTerminalCreateParams : BaseCreateParams<TagTerminal> {

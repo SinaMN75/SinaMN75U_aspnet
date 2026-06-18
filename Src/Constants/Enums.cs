@@ -294,3 +294,24 @@ public enum TagProcessStepStatus {
 	AwaitingVerification = 103,
 	Verified = 104
 }
+
+public enum TagContract {
+	Daily = 101,
+	Weekly = 102,
+	Monthly = 103,
+	Yearly = 104,
+	SingleInvoice = 201
+}
+
+public enum TagInvoice {
+	Deposit = 101,
+	Rent = 102,
+	Paid = 201,
+	PaidOnline = 202,
+	PaidManual = 203,
+	NotPaid = 204
+}
+
+public enum TagBed {
+	
+}

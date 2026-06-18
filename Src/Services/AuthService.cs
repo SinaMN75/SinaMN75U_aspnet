@@ -156,7 +156,7 @@ public class AuthService(
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
 		if (user == null) return new UResponse<LoginResponse?>(null, Usc.UserNotFound, ls.Get("UserNotFound"));
 
-		return p.Otp == Core.App.BasicSettings.DefaultVerificationKey || p.Otp == cache.Get(user.Id.ToString())
+		return p.Otp == Core.App.BasicSettings.DefaultVerificationKey || p.Otp == cache.Get("otp_" + user.Id)
 			? new UResponse<LoginResponse?>(new LoginResponse {
 					Token = ts.GenerateJwt(user),
 					RefreshToken = user.RefreshToken,

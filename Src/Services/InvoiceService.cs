@@ -1,0 +1,151 @@
+﻿namespace SinaMN75U.Services;
+
+public interface IInvoiceService {
+	Task<UResponse<Guid?>> Create(InvoiceCreateParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<InvoiceResponse>?>> Read(InvoiceReadParams p, CancellationToken ct);
+	Task<UResponse> Update(InvoiceUpdateParams p, CancellationToken ct);
+	Task<UResponse> Delete(IdParams p, CancellationToken ct);
+	Task<UResponse> Pay(IdParams p, CancellationToken ct);
+
+	public Task<UResponse<IEnumerable<InvoiceChartResponse>?>> ReadChartData(BaseParams p, CancellationToken ct);
+}
+
+public class InvoiceService(
+	DbContext db,
+	ILocalizationService ls,
+	ITokenService ts
+) : IInvoiceService {
+	public async Task<UResponse<Guid?>> Create(InvoiceCreateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		EntityEntry<InvoiceEntity> e = await db.AddAsync(new InvoiceEntity {
+			Id = p.Id ?? Guid.CreateVersion7(),
+			CreatorId = p.CreatorId ?? userData.Id,
+			CreatedAt = DateTime.UtcNow,
+			Tags = p.Tags,
+			DebtAmount = p.DebtAmount,
+			CreditorAmount = p.CreditorAmount,
+			PaidAmount = p.PaidAmount,
+			PenaltyAmount = p.PenaltyAmount,
+			ContractId = p.ContractId,
+			DueDate = p.DueDate,
+			JsonData = new InvoiceJson {
+				Detail1 = p.Detail1,
+				Detail2 = p.Detail2,
+				PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
+			}
+		}, ct);
+		await db.SaveChangesAsync(ct);
+
+		return new UResponse<Guid?>(e.Entity.Id);
+	}
+
+	public async Task<UResponse<IEnumerable<InvoiceResponse>?>> Read(InvoiceReadParams p, CancellationToken ct) {
+		IQueryable<InvoiceEntity> q = db.Set<InvoiceEntity>().Include(x => x.Contract).ApplyReadParams<InvoiceEntity, TagInvoice, InvoiceJson>(p);
+
+		if (p.UserId.IsNotNull()) q = q.Where(x => x.Contract.UserId == p.UserId);
+		if (p.ContractId.IsNotNull()) q = q.Where(x => x.ContractId == p.ContractId);
+		
+		UResponse<IEnumerable<InvoiceResponse>?> response = await q.Select(Projections.InvoiceSelector(p.SelectorArgs)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		List<Guid> ids = response.Result!.Select(x => x.Id).ToList();
+		List<InvoiceEntity> entities = await db.Set<InvoiceEntity>().Where(x => ids.Contains(x.Id)).ToListAsync(ct);
+
+		bool anyChanges = false;
+
+		foreach (InvoiceResponse dto in response.Result!) {
+			InvoiceEntity? entity = entities.FirstOrDefault(x => x.Id == dto.Id);
+			if (entity == null || entity.JsonData.PenaltyPrecentEveryDate <= 0) continue;
+			int daysLate = Math.Max(0, (DateTime.UtcNow - entity.DueDate).Days);
+			decimal expectedPenalty = entity.DebtAmount * (entity.JsonData.PenaltyPrecentEveryDate / 100m) * daysLate;
+
+			bool needsPenaltyUpdate =
+				entity.PaidAmount < entity.DebtAmount + entity.PenaltyAmount &&
+				entity.DueDate <= DateTime.UtcNow &&
+				entity.PenaltyAmount < expectedPenalty;
+
+			if (needsPenaltyUpdate) {
+				entity.PenaltyAmount = expectedPenalty;
+				dto.PenaltyAmount = expectedPenalty;
+				anyChanges = true;
+			}
+		}
+
+		if (anyChanges) await db.SaveChangesAsync(ct);
+
+		return response;
+	}
+
+	public async Task<UResponse> Update(InvoiceUpdateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		InvoiceEntity e = (await db.Set<InvoiceEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
+		if (p.CreditorAmount.IsNotNull()) e.CreditorAmount = p.CreditorAmount.Value;
+		if (p.DebtAmount.IsNotNull()) e.DebtAmount = p.DebtAmount.Value;
+		if (p.PenaltyAmount.IsNotNull()) e.PenaltyAmount = p.PenaltyAmount.Value;
+		if (p.PaidAmount.IsNotNull()) e.PaidAmount = p.PaidAmount.Value;
+		if (p.DueDate.HasValue) e.DueDate = p.DueDate.Value;
+		if (p.ContractId.HasValue) e.ContractId = p.ContractId.Value;
+		if (p.PenaltyPrecentEveryDate.IsNotNull()) e.JsonData.PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate.Value;
+
+		db.Set<InvoiceEntity>().Update(e.ApplyUpdateParam<InvoiceEntity,TagInvoice, InvoiceJson>(p));
+		await db.SaveChangesAsync(ct);
+
+		return new UResponse();
+	}
+
+	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		await db.Set<InvoiceEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
+
+		return new UResponse();
+	}
+
+	public async Task<UResponse> Pay(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		InvoiceEntity? e = await db.Set<InvoiceEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("InvoiceNotFound"));
+
+		e.PaidAmount = e.DebtAmount - e.CreditorAmount;
+		e.Tags = [TagInvoice.PaidOnline];
+		db.Update(e);
+
+		await db.SaveChangesAsync(ct);
+
+		return new UResponse();
+	}
+
+	public async Task<UResponse<IEnumerable<InvoiceChartResponse>?>> ReadChartData(BaseParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<InvoiceChartResponse>?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		var rawData = await db.Set<InvoiceEntity>()
+			.GroupBy(x => x.CreatedAt.Month)
+			.Select(g => new {
+				MonthNumber = g.Key,
+				TotalDebt = g.Sum(x => x.DebtAmount),
+				TotalPaid = g.Sum(x => x.PaidAmount),
+				TotalPenalty = g.Sum(x => x.PenaltyAmount),
+				TotalRemaining = g.Sum(x => x.DebtAmount - x.PaidAmount),
+				InvoiceCount = g.Count()
+			})
+			.OrderBy(x => x.MonthNumber)
+			.ToListAsync(ct);
+
+		List<InvoiceChartResponse> chartData = rawData.Select(item => new InvoiceChartResponse {
+			Month = new DateTime(1, item.MonthNumber, 1).ToString("MMM"),
+			TotalDebt = item.TotalDebt,
+			TotalPaid = item.TotalPaid,
+			TotalPenalty = item.TotalPenalty,
+			TotalRemaining = item.TotalRemaining,
+			InvoiceCount = item.InvoiceCount
+		}).ToList();
+
+		return new UResponse<IEnumerable<InvoiceChartResponse>?>(chartData);
+	}
+}

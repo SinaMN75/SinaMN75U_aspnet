@@ -23,12 +23,14 @@ public static class RouteTags {
 	public const string Ipg = "api/Ipg/";
 	public const string SimCard = "api/SimCard/";
 	public const string Notification = "api/Notification/";
-	public const string Agreement = "api/Agreement/";
+	public const string Bed = "api/Bed/";
 	public const string ChargeInternet = "api/ChargeInternet/";
 	public const string Merchant = "api/Merchant/";
 	public const string AppSettings = "api/AppSettings/";
 	public const string Process = "api/Process/";
 	public const string Pn = "api/Pn/";
+	public const string Contract = "api/Contract/";
+	public const string Invoice = "api/Invoice/";
 }
 
 public static class UConstants {
