@@ -11,6 +11,11 @@ public sealed class MediaCreateParams: BaseParams {
 	public Guid? CommentId { get; set; }
 	public Guid? CategoryId { get; set; }
 	public Guid? ProductId { get; set; }
+	public Guid? HotelId { get; set; }
+	public Guid? HotelRoomId { get; set; }
+	public Guid? DormId { get; set; }
+	public Guid? DormRoomId { get; set; }
+	public Guid? DormBedId { get; set; }
 	public string? Title { get; set; }
 	public string? Description { get; set; }
 }
@@ -23,4 +28,9 @@ public sealed class MediaUpdateParams : BaseUpdateParams<TagMedia> {
 	public Guid? CommentId { get; set; }
 	public Guid? CategoryId { get; set; }
 	public Guid? ProductId { get; set; }
+	public Guid? HotelId { get; set; }
+	public Guid? HotelRoomId { get; set; }
+	public Guid? DormId { get; set; }
+	public Guid? DormRoomId { get; set; }
+	public Guid? DormBedId { get; set; }
 }

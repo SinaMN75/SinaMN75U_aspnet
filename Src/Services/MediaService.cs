@@ -26,21 +26,16 @@ public class MediaService(
 			return new UResponse<Guid?>(null, Usc.MediaTypeNotSupported);
 
 		string folderName;
-		if (p.UserId != null) {
-			folderName = "users";
-		}
-		else if (p.CategoryId != null) {
-			folderName = "categories";
-		}
-		else if (p.CommentId != null) {
-			folderName = "comments";
-		}
-		else if (p.ContentId != null) {
-			folderName = "contents";
-		}
-		else if (p.ProductId != null) {
-			folderName = "products";
-		}
+		if (p.UserId != null) folderName = "users";
+		else if (p.CategoryId != null) folderName = "categories";
+		else if (p.CommentId != null) folderName = "comments";
+		else if (p.ContentId != null) folderName = "contents";
+		else if (p.ProductId != null) folderName = "products";
+		else if (p.HotelId != null) folderName = "hotels";
+		else if (p.HotelRoomId != null) folderName = "hotelRooms";
+		else if (p.DormId != null) folderName = "dorms";
+		else if (p.DormRoomId != null) folderName = "dormRooms";
+		else if (p.DormBedId != null) folderName = "dormBeds";
 		else folderName = "generic";
 
 		string name = $"{folderName}/{Guid.CreateVersion7() + Path.GetExtension(p.File.FileName)}";
@@ -58,6 +53,11 @@ public class MediaService(
 			ContentId = p.ContentId,
 			CommentId = p.CommentId,
 			ProductId = p.ProductId,
+			HotelId = p.HotelId,
+			HotelRoomId = p.HotelRoomId,
+			DormId = p.DormId,
+			DormRoomId = p.DormRoomId,
+			DormBedId = p.DormBedId,
 			Tags = tags,
 			JsonData = new BaseJson {
 				Detail1 = p.Title ?? "",

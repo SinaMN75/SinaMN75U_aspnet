@@ -27,6 +27,21 @@ public sealed class MediaEntity : BaseEntity<TagMedia, BaseJson> {
 	public Guid? ProductId { get; set; }
 	public ProductEntity? Product { get; set; }
 
+	public Guid? HotelId { get; set; }
+	public HotelEntity? Hotel { get; set; }
+	
+	public Guid? HotelRoomId { get; set; }
+	public HotelRoomEntity? HotelRoom { get; set; }
+	
+	public Guid? DormId { get; set; }
+	public DormEntity? Dorm { get; set; }
+	
+	public Guid? DormRoomId { get; set; }
+	public DormRoomEntity? DormRoom { get; set; }
+	
+	public Guid? DormBedId { get; set; }
+	public DormBedEntity? DormBed { get; set; }
+	
 	public Guid? TicketId { get; set; }
 	public TicketEntity? Ticket { get; set; }
 }

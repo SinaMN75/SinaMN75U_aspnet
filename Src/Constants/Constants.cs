@@ -31,6 +31,7 @@ public static class RouteTags {
 	public const string Pn = "api/Pn/";
 	public const string Contract = "api/Contract/";
 	public const string Invoice = "api/Invoice/";
+	public const string Hotel = "api/Hotel/";
 }
 
 public static class UConstants {

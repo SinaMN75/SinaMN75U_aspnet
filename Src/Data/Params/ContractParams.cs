@@ -12,8 +12,8 @@ public sealed class ContractCreateParams : BaseCreateParams<TagContract> {
 
 	[UValidationRequired("UserIdRequired")]
 	public Guid UserId { get; set; }
-	
-	[UValidationRequired("ProductRequired")]
+
+	[UValidationRequired("BedIdRequired")]
 	public Guid BedId { get; set; }
 
 	public int PenaltyPrecentEveryDate { get; set; }

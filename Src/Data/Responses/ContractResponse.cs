@@ -9,7 +9,7 @@ public sealed class ContractResponse : BaseResponse<TagContract, BaseJson> {
 	public UserResponse? User { get; set; }
 	public required Guid UserId { get; set; }
 
-	public BedResponse? Bed { get; set; }
+	public DormBedResponse? Bed { get; set; }
 	public required Guid BedId { get; set; }
 
 	public IEnumerable<InvoiceResponse>? Invoices { get; set; }

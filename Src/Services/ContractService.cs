@@ -16,9 +16,9 @@ public class ContractService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		BedEntity? bed = await db.Set<BedEntity>().Include(x => x.Contracts).FirstOrDefaultAsync(x => x.Id == p.BedId, ct);
-		if (bed == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("ProductNotFound"));
-		if (bed.Contracts.Any(y => y.EndDate >= DateTime.UtcNow)) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("ProductHasActiveContract"));
+		DormBedEntity? bed = await db.Set<DormBedEntity>().Include(x => x.Contracts).FirstOrDefaultAsync(x => x.Id == p.BedId, ct);
+		if (bed == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("DormBedNotFound"));
+		if (bed.Contracts.Any(y => y.EndDate >= DateTime.UtcNow)) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("BedHasActiveContract"));
 
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
 		if (user == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("UserNotFound"));
@@ -30,11 +30,11 @@ public class ContractService(
 			StartDate = p.StartDate,
 			EndDate = p.EndDate,
 			Deposit = p.Deposit ?? bed.Deposit,
-			Rent = p.Rent ?? bed.Rent,
+			Rent = p.Rent ?? bed.MonthlyRent,
 			UserId = user.Id,
 			CreatorId = p.CreatorId ?? userData.Id,
 			BedId = bed.Id,
-			JsonData = new BaseJson { Detail2 = p.Detail2},
+			JsonData = new BaseJson(),
 			Tags = p.Tags
 		};
 		await db.Set<ContractEntity>().AddAsync(e, ct);
@@ -51,7 +51,7 @@ public class ContractService(
 				PenaltyAmount = 0,
 				ContractId = contractId,
 				DueDate = p.StartDate,
-				JsonData = new InvoiceJson { Detail1 = "", PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate }
+				JsonData = new InvoiceJson { PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate }
 			}, ct);
 
 			await db.SaveChangesAsync(ct);
@@ -70,16 +70,13 @@ public class ContractService(
 				PenaltyAmount = 0,
 				ContractId = contractId,
 				DueDate = p.StartDate,
-				JsonData = new InvoiceJson {
-					Detail1 = "ودیعه",
-					PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
-				}
+				JsonData = new InvoiceJson { PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate }
 			}, ct);
 
 		PersianDateTime startDate = e.StartDate.ToPersian();
 		PersianDateTime endDate = e.EndDate.ToPersian();
 
-		decimal rent = bed.Rent;
+		decimal rent = bed.MonthlyRent;
 
 		int totalMonths = (endDate.Year - startDate.Year) * 12 + (endDate.Month - startDate.Month);
 		if (endDate.Day < startDate.Day) totalMonths--;
@@ -95,10 +92,7 @@ public class ContractService(
 			PenaltyAmount = 0,
 			ContractId = contractId,
 			DueDate = startDate.ToDateTime(),
-			JsonData = new InvoiceJson {
-				Detail2 = "قسط اول - قیمت کامل",
-				PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
-			}
+			JsonData = new InvoiceJson { PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate }
 		}, ct);
 
 		if (totalMonths >= 1) {
@@ -117,10 +111,7 @@ public class ContractService(
 				PenaltyAmount = 0,
 				ContractId = contractId,
 				DueDate = startDate.AddMonths(1).ToDateTime(),
-				JsonData = new InvoiceJson {
-					Detail2 = $"قسط دوم - قیمت متناسب ({remainingDaysInFirstMonth} روز از {totalDaysInFirstMonth} روز)",
-					PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
-				}
+				JsonData = new InvoiceJson { PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate }
 			}, ct);
 		}
 
@@ -138,10 +129,7 @@ public class ContractService(
 				PenaltyAmount = 0,
 				ContractId = contractId,
 				DueDate = firstOfMonth.ToDateTime(),
-				JsonData = new InvoiceJson {
-					Detail2 = $"قسط {i + 1} - قیمت کامل",
-					PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
-				}
+				JsonData = new InvoiceJson { PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate }
 			}, ct);
 		}
 
@@ -167,14 +155,15 @@ public class ContractService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		ContractEntity? e = (await db.Set<ContractEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct));
-		if (e == null) return new UResponse(Usc.UnAuthorized, ls.Get("ContractRequired"));
-		
+		ContractEntity? e = await db.Set<ContractEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ContractNotFound"));
+
 		if (p.Deposit.HasValue) e.Deposit = p.Deposit.Value;
 		if (p.Rent.HasValue) e.Rent = p.Rent.Value;
 		if (p.StartDate.HasValue) e.StartDate = p.StartDate.Value;
 		if (p.EndDate.HasValue) e.EndDate = p.EndDate.Value;
-		db.Set<ContractEntity>().Update(e.ApplyUpdateParam<ContractEntity,TagContract, BaseJson>(p));
+
+		e.ApplyUpdateParam<ContractEntity, TagContract, BaseJson>(p);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();

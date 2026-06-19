@@ -4,17 +4,43 @@ public class BaseSelectorArgs {
 	public UserSelectorArgs? Creator { get; set; }
 }
 
-public sealed class ContractSelectorArgs: BaseSelectorArgs {
+public sealed class HotelSelectorArgs : BaseSelectorArgs {
+	public HotelRoomSelectorArgs? Rooms { get; set; }
+	public MediaSelectorArgs? Media { get; set; }
+}
+
+public sealed class HotelRoomSelectorArgs : BaseSelectorArgs {
+	public HotelSelectorArgs? Hotel { get; set; }
+	public MediaSelectorArgs? Media { get; set; }
+}
+
+public sealed class DormSelectorArgs : BaseSelectorArgs {
+	public DormRoomSelectorArgs? Rooms { get; set; }
+	public MediaSelectorArgs? Media { get; set; }
+}
+
+public sealed class DormRoomSelectorArgs : BaseSelectorArgs {
+	public DormSelectorArgs? Dorm { get; set; }
+	public DormBedSelectorArgs? Beds { get; set; }
+	public MediaSelectorArgs? Media { get; set; }
+}
+
+public sealed class DormBedSelectorArgs : BaseSelectorArgs {
+	public DormRoomSelectorArgs? Room { get; set; }
+	public MediaSelectorArgs? Media { get; set; }
+}
+
+public sealed class ContractSelectorArgs : BaseSelectorArgs {
 	public UserSelectorArgs? User { get; set; }
-	public BedSelectorArgs? Bed { get; set; }
+	public DormBedSelectorArgs? Bed { get; set; }
 	public InvoiceSelectorArgs? Invoice { get; set; }
 }
 
-public sealed class InvoiceSelectorArgs: BaseSelectorArgs {
+public sealed class InvoiceSelectorArgs : BaseSelectorArgs {
 	public ContractSelectorArgs? Contract { get; set; }
 }
 
-public sealed class BedSelectorArgs: BaseSelectorArgs {
+public sealed class BedSelectorArgs : BaseSelectorArgs {
 	public ContractSelectorArgs? Contract { get; set; }
 	public BedSelectorArgs? Children { get; set; }
 	public MediaSelectorArgs? Media { get; set; }
@@ -333,8 +359,12 @@ public static class Projections {
 	}
 
 	public static Expression<Func<ProductEntity, ProductResponse>> ProductSelector(ProductSelectorArgs args) {
+		Expression<Func<MediaEntity, MediaResponse>>? mediaSelector = args.Media != null ? MediaSelector() : null;
+		Expression<Func<CategoryEntity, CategoryResponse>>? categorySelector = args.Category != null ? CategorySelector(args.Category) : null;
+		Expression<Func<UserEntity, UserResponse>>? creatorSelector = args.Creator != null ? UserSelector(args.Creator) : null;
 		Expression<Func<ProductEntity, ProductResponse>>? childSelector = null;
-		if (args is { Children: not null, ChildrenDebt: > 0 and < 10 })
+
+		if (args is { Children: not null, ChildrenDebt: > 0 })
 			childSelector = ProductSelector(new ProductSelectorArgs {
 				UserId = args.UserId,
 				Media = args.Media,
@@ -346,6 +376,7 @@ public static class Projections {
 				Creator = args.Creator,
 				ChildrenDebt = args.ChildrenDebt - 1
 			});
+
 		Expression<Func<ProductEntity, ProductResponse>> selector = x => new ProductResponse {
 			Id = x.Id,
 			Tags = x.Tags,
@@ -365,50 +396,29 @@ public static class Projections {
 			ParentId = x.ParentId,
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,
-			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
-			Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
-			Children = args.Children != null && args.ChildrenDebt > 0 ? x.Children.AsQueryable().Select(childSelector!).ToList() : null,
+			Media = mediaSelector != null ? x.Media.AsQueryable().Select(mediaSelector).ToList() : null,
+			Categories = categorySelector != null ? x.Categories.AsQueryable().Select(categorySelector).ToList() : null,
+			Children = childSelector != null ? x.Children.AsQueryable().Select(childSelector).ToList() : null,
 			CommentCount = args.CommentsCount ? x.Comments.Count : null,
 			ChildrenCount = args.ChildrenCount ? x.Children.Count : null,
 			IsFollowing = args.IsFollowing && args.UserId != null ? x.Followers.Any(f => f.CreatorId == args.UserId) : null,
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+			Creator = creatorSelector != null ? creatorSelector.Invoke(x.Creator) : null,
 		};
-		return selector.Expand();
-	}
-	
-	public static Expression<Func<BedEntity, BedResponse>> BedSelector(BedSelectorArgs args) {
-		Expression<Func<BedEntity, BedResponse>>? childSelector = null;
-		if (args is { Children: not null, ChildrenDebt: > 0 and < 10 })
-			childSelector = BedSelector(new BedSelectorArgs {
-				Media = args.Media,
-				Children = args.Children,
-				Creator = args.Creator,
-				ChildrenDebt = args.ChildrenDebt - 1
-			});
-		Expression<Func<BedEntity, BedResponse>> selector = x => new BedResponse {
-			Id = x.Id,
-			Tags = x.Tags,
-			JsonData = x.JsonData,
-			ParentId = x.ParentId,
-			CreatorId = x.CreatorId,
-			CreatedAt = x.CreatedAt,
-			Media = (args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList())!,
-			Children = (args.Children != null && args.ChildrenDebt > 0 ? x.Children.AsQueryable().Select(childSelector!).ToList() : null)!,
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
-			Contracts = (args.Contract == null ? null : x.Contracts.AsQueryable().Select(ContractSelector(args.Contract)).ToList())!,
-		};
-		return selector.Expand();
+
+		return selector;
 	}
 
 	public static Expression<Func<CategoryEntity, CategoryResponse>> CategorySelector(CategorySelectorArgs args) {
+		Expression<Func<MediaEntity, MediaResponse>>? mediaSelector = args.Media != null ? MediaSelector() : null;
+		Expression<Func<UserEntity, UserResponse>>? creatorSelector = args.Creator != null ? UserSelector(args.Creator) : null;
 		Expression<Func<CategoryEntity, CategoryResponse>>? childSelector = null;
-		if (args is { Children: not null, ChildrenDebt: > 0 and < 10 })
+		if (args is { Children: not null, ChildrenDebt: > 0 })
 			childSelector = CategorySelector(new CategorySelectorArgs {
-					Media = args.Media,
-					Children = args.Children,
-					ChildrenDebt = args.ChildrenDebt - 1
-				}
-			);
+				Media = args.Media,
+				Creator = args.Creator,
+				Children = args.Children,
+				ChildrenDebt = args.ChildrenDebt - 1
+			});
 		Expression<Func<CategoryEntity, CategoryResponse>> selector = x => new CategoryResponse {
 			Id = x.Id,
 			Tags = x.Tags,
@@ -419,11 +429,11 @@ public static class Projections {
 			ParentId = x.ParentId,
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,
-			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
-			Children = args.Children != null && args.ChildrenDebt > 0 ? x.Children.AsQueryable().Select(childSelector!).ToList() : null,
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+			Media = mediaSelector != null ? x.Media.AsQueryable().Select(mediaSelector).ToList() : null,
+			Children = childSelector != null ? x.Children.AsQueryable().Select(childSelector).ToList() : null,
+			Creator = creatorSelector != null ? creatorSelector.Invoke(x.Creator) : null,
 		};
-		return selector.Expand();
+		return selector;
 	}
 
 	public static Expression<Func<ContentEntity, ContentResponse>> ContentSelector(ContentSelectorArgs args) {
@@ -527,7 +537,7 @@ public static class Projections {
 		};
 		return selector.Expand();
 	}
-	
+
 	public static Expression<Func<ContractEntity, ContractResponse>> ContractSelector(ContractSelectorArgs args) {
 		Expression<Func<ContractEntity, ContractResponse>> selector = x => new ContractResponse {
 			Id = x.Id,
@@ -542,13 +552,13 @@ public static class Projections {
 			BedId = x.BedId,
 			CreatedAt = x.CreatedAt,
 			Invoices = args.Invoice == null ? null : x.Invoices.AsQueryable().Select(InvoiceSelector(args.Invoice)).ToList(),
-			Bed = (args.Bed != null ? BedSelector(args.Bed) : t => null!).Invoke(x.Bed),
 			User = (args.User != null ? UserSelector(args.User) : t => null!).Invoke(x.User),
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : t => null!).Invoke(x.Creator)
+			Creator = (args.Creator != null ? UserSelector(args.Creator) : t => null!).Invoke(x.Creator),
+			Bed = (args.Bed != null ? DormBedSelector(args.Bed) : t => null!).Invoke(x.Bed)
 		};
 		return selector.Expand();
-	}	
-	
+	}
+
 	public static Expression<Func<InvoiceEntity, InvoiceResponse>> InvoiceSelector(InvoiceSelectorArgs args) {
 		Expression<Func<InvoiceEntity, InvoiceResponse>> selector = x => new InvoiceResponse {
 			Id = x.Id,
@@ -560,9 +570,98 @@ public static class Projections {
 			PaidAmount = x.PaidAmount,
 			PenaltyAmount = x.PenaltyAmount,
 			DueDate = x.DueDate,
-			DebtAmount =  x.DebtAmount,
+			DebtAmount = x.DebtAmount,
 			Contract = (args.Contract != null ? ContractSelector(args.Contract) : t => null!)!.Invoke(x.Contract),
 			Creator = (args.Creator != null ? UserSelector(args.Creator) : t => null!).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
+	
+		public static Expression<Func<HotelEntity, HotelResponse>> HotelSelector(HotelSelectorArgs args) {
+		Expression<Func<HotelEntity, HotelResponse>> selector = x => new HotelResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			Title = x.Title,
+			City = x.City,
+			Country = x.Country,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Rooms = args.Rooms == null ? null : x.Rooms.AsQueryable().Select(HotelRoomSelector(args.Rooms)).ToList(),
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
+			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<HotelRoomEntity, HotelRoomResponse>> HotelRoomSelector(HotelRoomSelectorArgs args) {
+		Expression<Func<HotelRoomEntity, HotelRoomResponse>> selector = x => new HotelRoomResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			Title = x.Title,
+			Capacity = x.Capacity,
+			PricePerNight = x.PricePerNight,
+			IsAvailable = x.IsAvailable,
+			HotelId = x.HotelId,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Hotel = (args.Hotel != null ? HotelSelector(args.Hotel) : h => null!).Invoke(x.HotelEntity),
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
+			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<DormEntity, DormResponse>> DormSelector(DormSelectorArgs args) {
+		Expression<Func<DormEntity, DormResponse>> selector = x => new DormResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			Title = x.Title,
+			City = x.City,
+			Country = x.Country,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Rooms = args.Rooms == null ? null : x.Rooms.AsQueryable().Select(DormRoomSelector(args.Rooms)).ToList(),
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
+			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<DormRoomEntity, DormRoomResponse>> DormRoomSelector(DormRoomSelectorArgs args) {
+		Expression<Func<DormRoomEntity, DormRoomResponse>> selector = x => new DormRoomResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			Title = x.Title,
+			DormId = x.DormId,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Dorm = (args.Dorm != null ? DormSelector(args.Dorm) : d => null!).Invoke(x.DormEntity),
+			Beds = (args.Beds == null ? null : x.Beds.AsQueryable().Select(DormBedSelector(args.Beds)).ToList())!,
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
+			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<DormBedEntity, DormBedResponse>> DormBedSelector(DormBedSelectorArgs args) {
+		Expression<Func<DormBedEntity, DormBedResponse>> selector = x => new DormBedResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			Title = x.Title,
+			IsAvailable = x.IsAvailable,
+			Deposit = x.Deposit,
+			MonthlyRent = x.MonthlyRent,
+			RoomId = x.RoomId,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Room = (args.Room != null ? DormRoomSelector(args.Room) : r => null!).Invoke(x.RoomEntity),
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
+			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
 		};
 		return selector.Expand();
 	}

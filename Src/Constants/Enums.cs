@@ -314,3 +314,21 @@ public enum TagInvoice {
 public enum TagBed {
 	Test = 999
 }
+
+public enum TagHotel {
+	Test = 999
+}
+
+public enum TagDorm {
+	Test = 999
+}
+
+public enum TagRoom {
+	Test = 999
+}
+public enum TagDormRoom {
+	Test = 999
+}
+public enum TagDormBed {
+	Test = 999
+}
