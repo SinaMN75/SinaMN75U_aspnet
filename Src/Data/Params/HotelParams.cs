@@ -23,9 +23,8 @@ public sealed class HotelReadParams : BaseReadParams<TagHotel> {
 	public string? Title { get; set; }
 	public string? City { get; set; }
 	public string? Country { get; set; }
-	public bool OrderByTitle { get; set; }
-	public bool OrderByTitleDesc { get; set; }
-	public bool ShowRooms { get; set; }
+
+	public HotelSelectorArgs SelectorArgs { get; set; } = new();
 }
 
 // ---------------- HotelRoom ----------------
@@ -89,9 +88,8 @@ public sealed class DormReadParams : BaseReadParams<TagDorm> {
 	public string? Title { get; set; }
 	public string? City { get; set; }
 	public string? Country { get; set; }
-	public bool OrderByTitle { get; set; }
-	public bool OrderByTitleDesc { get; set; }
-	public bool ShowRooms { get; set; }
+
+	public DormSelectorArgs SelectorArgs { get; set; } = new();
 }
 
 // ---------------- DormRoom ----------------
@@ -112,9 +110,8 @@ public sealed class DormRoomUpdateParams : BaseUpdateParams<TagDormRoom> {
 public sealed class DormRoomReadParams : BaseReadParams<TagDormRoom> {
 	public string? Title { get; set; }
 	public Guid? DormId { get; set; }
-	public bool ShowBeds { get; set; }
-	public bool OrderByTitle { get; set; }
-	public bool OrderByTitleDesc { get; set; }
+
+	public DormRoomSelectorArgs SelectorArgs { get; set; } = new();
 }
 
 // ---------------- DormBed ----------------

@@ -40,13 +40,6 @@ public sealed class InvoiceSelectorArgs : BaseSelectorArgs {
 	public ContractSelectorArgs? Contract { get; set; }
 }
 
-public sealed class BedSelectorArgs : BaseSelectorArgs {
-	public ContractSelectorArgs? Contract { get; set; }
-	public BedSelectorArgs? Children { get; set; }
-	public MediaSelectorArgs? Media { get; set; }
-	public int ChildrenDebt { get; set; }
-}
-
 public sealed class ParkingReportSelectorArgs : BaseSelectorArgs {
 	public VehicleSelectorArgs? Vehicle { get; set; }
 	public ParkingSelectorArgs? Parking { get; set; }

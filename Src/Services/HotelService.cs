@@ -70,11 +70,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 		if (p.City.IsNotNullOrEmpty()) q = q.Where(x => x.City.Contains(p.City!));
 		if (p.Country.IsNotNullOrEmpty()) q = q.Where(x => x.Country.Contains(p.Country!));
 
-		if (p.OrderByTitle) q = q.OrderBy(x => x.Title);
-		if (p.OrderByTitleDesc) q = q.OrderByDescending(x => x.Title);
-
-		HotelSelectorArgs selectorArgs = new() { Rooms = p.ShowRooms ? new HotelRoomSelectorArgs() : null };
-		IQueryable<HotelResponse> projected = q.Select(Projections.HotelSelector(selectorArgs));
+		IQueryable<HotelResponse> projected = q.Select(Projections.HotelSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
@@ -231,12 +227,8 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.City.IsNotNullOrEmpty()) q = q.Where(x => x.City.Contains(p.City!));
 		if (p.Country.IsNotNullOrEmpty()) q = q.Where(x => x.Country.Contains(p.Country!));
-
-		if (p.OrderByTitle) q = q.OrderBy(x => x.Title);
-		if (p.OrderByTitleDesc) q = q.OrderByDescending(x => x.Title);
-
-		DormSelectorArgs selectorArgs = new() { Rooms = p.ShowRooms ? new DormRoomSelectorArgs() : null };
-		IQueryable<DormResponse> projected = q.Select(Projections.DormSelector(selectorArgs));
+		
+		IQueryable<DormResponse> projected = q.Select(Projections.DormSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
@@ -308,12 +300,8 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.DormId.HasValue) q = q.Where(x => x.DormId == p.DormId);
-
-		if (p.OrderByTitle) q = q.OrderBy(x => x.Title);
-		if (p.OrderByTitleDesc) q = q.OrderByDescending(x => x.Title);
-
-		DormRoomSelectorArgs selectorArgs = new() { Beds = p.ShowBeds ? new DormBedSelectorArgs() : null };
-		IQueryable<DormRoomResponse> projected = q.Select(Projections.DormRoomSelector(selectorArgs));
+		
+		IQueryable<DormRoomResponse> projected = q.Select(Projections.DormRoomSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
