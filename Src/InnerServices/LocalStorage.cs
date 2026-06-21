@@ -7,21 +7,13 @@ public interface ILocalStorageService {
 
 public sealed class UMemoryCacheService : ILocalStorageService {
 	private const int MaxSize = 10_000;
-	private readonly MemoryCache _cache;
-	private readonly ConcurrentDictionary<string, byte> _keys;
-	private readonly ObjectPool<MemoryCacheEntryOptions> _optionsPool;
 
-	public UMemoryCacheService() {
-		_cache = new MemoryCache(new MemoryCacheOptions {
-			SizeLimit = null,
-			ExpirationScanFrequency = TimeSpan.FromHours(1)
-		});
+	private readonly MemoryCache _cache = new(new MemoryCacheOptions {
+		SizeLimit = null,
+		ExpirationScanFrequency = TimeSpan.FromHours(1)
+	});
 
-		_keys = new ConcurrentDictionary<string, byte>();
-
-		DefaultObjectPoolProvider provider = new();
-		_optionsPool = provider.Create<MemoryCacheEntryOptions>();
-	}
+	private readonly ConcurrentDictionary<string, byte> _keys = new();
 
 	public void Set(string key, string value, TimeSpan expireTime) {
 		if (_keys.Count >= MaxSize)
@@ -30,18 +22,13 @@ public sealed class UMemoryCacheService : ILocalStorageService {
 				break;
 			}
 
-		MemoryCacheEntryOptions options = _optionsPool.Get();
-		options.AbsoluteExpirationRelativeToNow = expireTime;
-
+		MemoryCacheEntryOptions options = new() { AbsoluteExpirationRelativeToNow = expireTime };
 		_cache.Set(key, value, options);
-		_optionsPool.Return(options);
 
 		_keys[key] = 0;
 	}
 
-	public string? Get(string key) {
-		return _cache.TryGetValue(key, out string? value) ? value : null;
-	}
+	public string? Get(string key) => _cache.TryGetValue(key, out string? value) ? value : null;
 
 	private void Delete(string key) {
 		_cache.Remove(key);

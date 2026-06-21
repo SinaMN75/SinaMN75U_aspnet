@@ -77,7 +77,7 @@ public class ParkingService(
 		VehicleEntity? vehicle = await db.Set<VehicleEntity>().FirstOrDefaultAsync(x => x.LicencePlate == p.NumberPlate, ct);
 		if (vehicle == null) {
 			EntityEntry<VehicleEntity> vEntity = await db.Set<VehicleEntity>().AddAsync(new VehicleEntity {
-				Id = p.Id ?? Guid.CreateVersion7(),
+				Id = Guid.CreateVersion7(),
 				CreatedAt = DateTime.UtcNow,
 				JsonData = new BaseJson(),
 				Tags = [TagVehicle.Test],
@@ -107,7 +107,7 @@ public class ParkingService(
 		IQueryable<ParkingReportEntity> q = db.Set<ParkingReportEntity>().ApplyReadParams<ParkingReportEntity, TagParkingReport, BaseJson>(p);
 		
 		if (p.EndDate.HasValue) q = q.Where(x => x.EndDate >= p.EndDate);
-		if (p.StartDate.HasValue) q = q.Where(x => x.EndDate <= p.EndDate);
+		if (p.StartDate.HasValue) q = q.Where(x => x.StartDate >= p.StartDate);
 		if (p.ParkingId.IsNotNull()) q = q.Where(x => x.ParkingId == p.ParkingId);
 		if (p.VehicleId.IsNotNull()) q = q.Where(x => x.VehicleId == p.VehicleId);
 		

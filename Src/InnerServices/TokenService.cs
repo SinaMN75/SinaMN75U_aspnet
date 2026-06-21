@@ -26,7 +26,7 @@ public class TokenService : ITokenService {
 				new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName ?? ""),
 				new Claim(JwtRegisteredClaimNames.NameId, user.NationalCode ?? ""),
 				new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()),
-				new Claim(ClaimTypes.Expiration, DateTime.UtcNow.Add(TimeSpan.FromSeconds(60)).ToString(CultureInfo.InvariantCulture)),
+				new Claim(ClaimTypes.Expiration, DateTime.UtcNow.AddMinutes(60).ToString(CultureInfo.InvariantCulture)),
 				new Claim(ClaimTypes.Role, string.Join(",", user.Tags.Select(x => (int)x)))
 			],
 			expires: DateTime.UtcNow.AddMinutes(60),

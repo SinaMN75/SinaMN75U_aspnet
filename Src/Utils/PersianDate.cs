@@ -492,8 +492,12 @@ public static class PersianDate {
 	}
 
 	public static string GetStartOfYear(string persianDate) => $"{Year(Parse(persianDate)):0000}/01/01";
-
-	public static string GetEndOfYear(string persianDate) => $"{Year(Parse(persianDate)):0000}/12/29";
+	
+	public static string GetEndOfYear(string persianDate) {
+		int y = Year(Parse(persianDate));
+		int lastDay = Pc.GetDaysInMonth(y, 12);
+		return $"{y:0000}/12/{lastDay:00}";
+	}
 
 	public static bool IsBefore(string p1, string p2) => Parse(p1) < Parse(p2);
 
