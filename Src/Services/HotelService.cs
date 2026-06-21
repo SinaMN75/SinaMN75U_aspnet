@@ -398,7 +398,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 		if (p.OrderByMonthlyRent) q = q.OrderBy(x => x.MonthlyRent);
 		if (p.OrderByMonthlyRentDesc) q = q.OrderByDescending(x => x.MonthlyRent);
 
-		IQueryable<DormBedResponse> projected = q.Select(Projections.DormBedSelector(new DormBedSelectorArgs()));
+		IQueryable<DormBedResponse> projected = q.Select(Projections.DormBedSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
@@ -450,7 +450,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 
 		DormBedEntity? bed = await db.Set<DormBedEntity>().Include(x => x.Contracts).FirstOrDefaultAsync(x => x.Id == p.BedId, ct);
 		if (bed == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("DormBedNotFound"));
-		if (bed.Contracts.Any(y => y.EndDate >= DateTime.UtcNow)) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("BedHasActiveContract"));
+		if (bed.Contracts.Any(y => y.EndDate >= DateTime.UtcNow)) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("BedHasActiveContract"));
 
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
 		if (user == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("UserNotFound"));
@@ -664,6 +664,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 			if (needsPenaltyUpdate) {
 				entity.PenaltyAmount = expectedPenalty;
 				dto.PenaltyAmount = expectedPenalty;
+				db.Set<DormBedInvoiceEntity>().Update(entity);
 				anyChanges = true;
 			}
 		}
@@ -677,7 +678,8 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		DormBedInvoiceEntity e = (await db.Set<DormBedInvoiceEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
+		DormBedInvoiceEntity? e = await db.Set<DormBedInvoiceEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("InvoiceNotFound"));
 		if (p.CreditorAmount.IsNotNull()) e.CreditorAmount = p.CreditorAmount.Value;
 		if (p.DebtAmount.IsNotNull()) e.DebtAmount = p.DebtAmount.Value;
 		if (p.PenaltyAmount.IsNotNull()) e.PenaltyAmount = p.PenaltyAmount.Value;
@@ -686,7 +688,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 		if (p.ContractId.HasValue) e.ContractId = p.ContractId.Value;
 		if (p.PenaltyPrecentEveryDate.IsNotNull()) e.JsonData.PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate.Value;
 
-		db.Set<DormBedInvoiceEntity>().Update(e.ApplyUpdateParam<DormBedInvoiceEntity, TagDormBedInvoice, DormBedInvoiceJson>(p));
+		e.ApplyUpdateParam<DormBedInvoiceEntity, TagDormBedInvoice, DormBedInvoiceJson>(p);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();

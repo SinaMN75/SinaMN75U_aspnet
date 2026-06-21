@@ -2,7 +2,7 @@ namespace SinaMN75U.Data.Params;
 
 public class BaseParams {
 	public string ApiKey { get; set; } = null!;
-	public string Token { get; set; } = null!;
+	public string? Token { get; set; }
 }
 
 public sealed class IdParams : BaseParams {

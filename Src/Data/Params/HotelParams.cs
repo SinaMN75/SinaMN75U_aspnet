@@ -150,6 +150,7 @@ public sealed class DormBedReadParams : BaseReadParams<TagDormBed> {
 	public decimal? MaxMonthlyRent { get; set; }
 	public bool OrderByMonthlyRent { get; set; }
 	public bool OrderByMonthlyRentDesc { get; set; }
+	public DormBedSelectorArgs SelectorArgs { get; set; } = new();
 }
 
 // ---------------- DormBedContract ----------------

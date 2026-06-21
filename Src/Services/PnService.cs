@@ -12,6 +12,8 @@ public class PnUserStatusResponse {
 }
 
 public class PnPhoneNumberParams : BaseParams {
+	[UValidationRequired("PhoneNumberRequired")]
+	[UValidationRegex(@"^09\d{9}$", "InvalidPhoneNumber")]
 	public string PhoneNumber { get; set; } = null!;
 }
 
@@ -22,10 +24,13 @@ public class PnUserStatusItem {
 }
 
 public class PnAuthParams : BaseParams {
+	[UValidationRequired("PhoneNumberRequired")]
+	[UValidationRegex(@"^09\d{9}$", "InvalidPhoneNumber")]
 	public string PhoneNumber { get; set; } = null!;
 	public string? FirstName { get; set; }
 	public string? LastName { get; set; }
 	public string? FatherName { get; set; }
+	[UValidationStringLength(10, 10, "InvalidNationalCode")]
 	public string? NationalCode { get; set; }
 	public string? NationalCardFront { get; set; }
 	public string? NationalCardBack { get; set; }
@@ -37,25 +42,60 @@ public class PnAuthParams : BaseParams {
 }
 
 public class PnMerchantCreateParams : BaseParams {
+	[UValidationRequired("PhoneNumberRequired")]
+	[UValidationRegex(@"^09\d{9}$", "InvalidPhoneNumber")]
 	public string UserPhoneNumber { get; set; } = null!;
+
+	[UValidationRequired("ZipCodeRequired")]
+	[UValidationRegex(@"^\d{10}$", "InvalidZipCode")]
 	public string ZipCode { get; set; } = null!;
+
+	[UValidationRequired("CityCodeRequired")]
 	public string CityCode { get; set; } = null!;
+
+	[UValidationRequired("PhoneNumberRequired")]
+	[UValidationRegex(@"^09\d{9}$", "InvalidPhoneNumber")]
 	public string PhoneNumber { get; set; } = null!;
+
+	[UValidationRequired("TitleRequired")]
 	public string Title { get; set; } = null!;
+
+	[UValidationRequired("LandlineRequired")]
+	[UValidationStringLength(6, 12, "InvalidLandline")]
 	public string Landline { get; set; } = null!;
+
+	[UValidationRequired("NationalCodeRequired")]
+	[UValidationRegex(@"^\d{10}$", "InvalidNationalCode")]
 	public string NationalCode { get; set; } = null!;
+
+	[UValidationRequired("PhoneNumberRequired")]
+	[UValidationRegex(@"^09\d{9}$", "InvalidPhoneNumber")]
 	public string OwnerPhoneNumber { get; set; } = null!;
+
+	[UValidationRequired("OwnerNameRequired")]
 	public string OwnerName { get; set; } = null!;
+
+	[UValidationRequired("MccRequired")]
 	public string Mcc { get; set; } = null!;
+
+	[UValidationRequired("AddressRequired")]
 	public string Address { get; set; } = null!;
+
 	public string? BusinessTitle { get; set; }
 	public string? BankAccountId { get; set; }
 }
 
-public class PnTerminalCreateParams : BaseCreateParams<TagTerminal> {
+public class PnTerminalCreateParams : BaseParams {
+	[UValidationRequired("SerialRequired")]
 	public string Serial { get; set; } = null!;
+
+	[UValidationRequired("SimCardSerialRequired")]
 	public string SimCardSerial { get; set; } = null!;
+
+	[UValidationRequired("ImeiRequired")]
+	[UValidationRegex(@"^\d{15}$", "InvalidImei")]
 	public string Imei { get; set; } = null!;
+
 	public Guid MerchantId { get; set; }
 }
 
@@ -69,16 +109,16 @@ public interface IPnService {
 public class PnService(
 	ILocalizationService ls,
 	DbContext db,
-	IHttpClientService http
+	IHttpClientService http,
+	IWebHostEnvironment env
 ) : IPnService {
-	private const string ApiKey = "123";
 
 	public async Task<UResponse> Auth(PnAuthParams p, CancellationToken ct) {
 		ULog.Info($"Auth method called for phone number: {p.PhoneNumber}");
-		ULog.Debug($"Auth params - FirstName: {p.FirstName}, LastName: {p.LastName}, NationalCode: {p.NationalCode}, Email: {p.Email}");
+		ULog.Debug($"Auth params - FirstName: {p.FirstName}, LastName: {p.LastName}");
 
 		// API Key validation
-		if (p.ApiKey != ApiKey) {
+		if (p.ApiKey != Core.App.Pn.ApiKey) {
 			ULog.Warning($"Auth failed: Invalid API key provided for phone {p.PhoneNumber}");
 			return new UResponse(Usc.UnAuthorized, ls.Get("InvalidAPIKey"));
 		}
@@ -234,7 +274,7 @@ public class PnService(
 		ULog.Debug($"Merchant params - Title: {p.Title}, NationalCode: {p.NationalCode}, Mcc: {p.Mcc}, CityCode: {p.CityCode}");
 
 		// API Key validation
-		if (p.ApiKey != ApiKey) {
+		if (p.ApiKey != Core.App.Pn.ApiKey) {
 			ULog.Warning($"CreateMerchant failed: Invalid API key for user {p.UserPhoneNumber}");
 			return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("InvalidAPIKey"));
 		}
@@ -310,7 +350,7 @@ public class PnService(
 		ULog.Debug($"Terminal params - Serial: {p.Serial}, SimCardSerial: {p.SimCardSerial}, Imei: {p.Imei}");
 
 		// API Key validation
-		if (p.ApiKey != ApiKey) {
+		if (p.ApiKey != Core.App.Pn.ApiKey) {
 			ULog.Warning($"CreateTerminal failed: Invalid API key for merchant {p.MerchantId}");
 			return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("InvalidAPIKey"));
 		}
@@ -354,17 +394,25 @@ public class PnService(
 
 		ULog.Debug("User has ESignature present");
 
-		// Generate agreement
+		// Generate agreement before making any external calls — fail fast if template is missing
 		ULog.Info($"Generating agreement for merchant {merchant.Id}");
-		string agreement = await GenerateAgreement(merchant.User, merchant);
-		terminal.MerchantId = p.MerchantId;
-		terminal.Agreement = agreement.FromBase64();
-		ULog.Debug($"Agreement generated and assigned to terminal {terminal.Id}");
+		string agreement;
+		try {
+			agreement = await GenerateAgreement(merchant.User, merchant, env.ContentRootPath);
+		}
+		catch (Exception ex) {
+			ULog.Error(ex, $"Agreement generation failed for merchant {merchant.Id}");
+			return new UResponse<Guid?>(null, Usc.InternalServerError, ls.Get("AgreementGenerationFailed"));
+		}
+
+		ULog.Debug($"Agreement generated for terminal {terminal.Id}");
 
 		// Start transaction for Avreen integration
 		ULog.Info($"Starting transaction for Avreen integration for terminal {terminal.Id}");
 		await using IDbContextTransaction transaction = await db.Database.BeginTransactionAsync(ct);
 		try {
+			terminal.MerchantId = p.MerchantId;
+			terminal.Agreement = agreement.FromBase64();
 			// Register merchant with Avreen
 			ULog.Debug("Calling Avreen API to add merchant...");
 			HttpResponseMessage? response = await http.Post(
@@ -459,7 +507,7 @@ public class PnService(
 		ULog.Info($"UserStatus called for phone number: {p.PhoneNumber}");
 
 		// API Key validation
-		if (p.ApiKey != ApiKey) {
+		if (p.ApiKey != Core.App.Pn.ApiKey) {
 			ULog.Warning($"UserStatus failed: Invalid API key for phone {p.PhoneNumber}");
 			return new UResponse<PnUserStatusResponse?>(null, Usc.UnAuthorized, ls.Get("InvalidAPIKey"));
 		}
@@ -528,7 +576,7 @@ public class PnService(
 		return new UResponse<PnUserStatusResponse?>(response);
 	}
 
-	private static async Task<string> GenerateAgreement(UserEntity user, MerchantEntity merchant) {
+	private static async Task<string> GenerateAgreement(UserEntity user, MerchantEntity merchant, string contentRootPath) {
 		ULog.Debug($"Generating agreement for user {user.Id}, merchant {merchant.Id}");
 		return await WordPdfGenerator.GenerateWithTextsAndImagesAsync(
 			texts: new Dictionary<string, string> {
@@ -547,7 +595,7 @@ public class PnService(
 			imagesBase64: new Dictionary<string, string> {
 				{ "customerSignature", user.ESignature!.ToBase64()! }
 			},
-			templatePath: Path.Combine(Directory.GetCurrentDirectory(), "Templates", "atmAgreement.docx")
+			templatePath: Path.Combine(contentRootPath, "Templates", "atmAgreement.docx")
 		);
 	}
 }

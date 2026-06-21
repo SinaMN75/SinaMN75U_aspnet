@@ -42,7 +42,7 @@ public sealed class UValidationEmailAttribute(string key) : UValidationAttribute
 }
 
 public sealed class UValidationGuidAttribute(string key) : UValidationAttribute(key) {
-	protected override ValidationResult? IsValid(object? value, ValidationContext context) => value is string str && str.IsGuid() ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
+	protected override ValidationResult? IsValid(object? value, ValidationContext context) => value is string str && !str.IsGuid() ? new ValidationResult(GetErrorMessage(context)) : ValidationResult.Success;
 }
 
 public sealed class UValidationRegexAttribute(string pattern, string key) : UValidationAttribute(key) {

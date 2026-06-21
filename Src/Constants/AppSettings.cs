@@ -13,6 +13,7 @@ public sealed class AppSettings {
 	public required BasicSettings BasicSettings { get; init; }
 	public required Ipg Ipg { get; init; }
 	public required Avreen Avreen { get; init; }
+	public required Pn Pn { get; init; }
 	public required DefaultUsers Users { get; init; }
 	public required ApiCallCosts ApiCallCosts { get; set; }
 	public required IEnumerable<ChargeInternet> ChargeInternet { get; set; }
@@ -67,6 +68,10 @@ public sealed class BasicSettings {
 public sealed class Avreen {
 	public required string AuthHeader { get; set; }
 	public required string BaseUrl { get; set; }
+}
+
+public sealed class Pn {
+	public required string ApiKey { get; init; }
 }
 
 public sealed class Ipg {
