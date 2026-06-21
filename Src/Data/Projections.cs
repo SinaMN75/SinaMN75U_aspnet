@@ -30,14 +30,14 @@ public sealed class DormBedSelectorArgs : BaseSelectorArgs {
 	public MediaSelectorArgs? Media { get; set; }
 }
 
-public sealed class ContractSelectorArgs : BaseSelectorArgs {
+public sealed class DormBedContractSelectorArgs : BaseSelectorArgs {
 	public UserSelectorArgs? User { get; set; }
 	public DormBedSelectorArgs? Bed { get; set; }
-	public InvoiceSelectorArgs? Invoice { get; set; }
+	public DormBedInvoiceSelectorArgs? Invoice { get; set; }
 }
 
-public sealed class InvoiceSelectorArgs : BaseSelectorArgs {
-	public ContractSelectorArgs? Contract { get; set; }
+public sealed class DormBedInvoiceSelectorArgs : BaseSelectorArgs {
+	public DormBedContractSelectorArgs? Contract { get; set; }
 }
 
 public sealed class ParkingReportSelectorArgs : BaseSelectorArgs {
@@ -531,8 +531,8 @@ public static class Projections {
 		return selector.Expand();
 	}
 
-	public static Expression<Func<ContractEntity, ContractResponse>> ContractSelector(ContractSelectorArgs args) {
-		Expression<Func<ContractEntity, ContractResponse>> selector = x => new ContractResponse {
+	public static Expression<Func<DormBedContractEntity, DormBedContractResponse>> DormBedContractSelector(DormBedContractSelectorArgs args) {
+		Expression<Func<DormBedContractEntity, DormBedContractResponse>> selector = x => new DormBedContractResponse {
 			Id = x.Id,
 			Tags = x.Tags,
 			JsonData = x.JsonData,
@@ -544,7 +544,7 @@ public static class Projections {
 			CreatorId = x.CreatorId,
 			BedId = x.BedId,
 			CreatedAt = x.CreatedAt,
-			Invoices = args.Invoice == null ? null : x.Invoices.AsQueryable().Select(InvoiceSelector(args.Invoice)).ToList(),
+			Invoices = args.Invoice == null ? null : x.Invoices.AsQueryable().Select(DormBedInvoiceSelector(args.Invoice)).ToList(),
 			User = (args.User != null ? UserSelector(args.User) : t => null!).Invoke(x.User),
 			Creator = (args.Creator != null ? UserSelector(args.Creator) : t => null!).Invoke(x.Creator),
 			Bed = (args.Bed != null ? DormBedSelector(args.Bed) : t => null!).Invoke(x.Bed)
@@ -552,8 +552,8 @@ public static class Projections {
 		return selector.Expand();
 	}
 
-	public static Expression<Func<InvoiceEntity, InvoiceResponse>> InvoiceSelector(InvoiceSelectorArgs args) {
-		Expression<Func<InvoiceEntity, InvoiceResponse>> selector = x => new InvoiceResponse {
+	public static Expression<Func<DormBedInvoiceEntity, DormBedInvoiceResponse>> DormBedInvoiceSelector(DormBedInvoiceSelectorArgs args) {
+		Expression<Func<DormBedInvoiceEntity, DormBedInvoiceResponse>> selector = x => new DormBedInvoiceResponse {
 			Id = x.Id,
 			Tags = x.Tags,
 			JsonData = x.JsonData,
@@ -564,7 +564,7 @@ public static class Projections {
 			PenaltyAmount = x.PenaltyAmount,
 			DueDate = x.DueDate,
 			DebtAmount = x.DebtAmount,
-			Contract = (args.Contract != null ? ContractSelector(args.Contract) : t => null!)!.Invoke(x.Contract),
+			Contract = (args.Contract != null ? DormBedContractSelector(args.Contract) : t => null!)!.Invoke(x.Contract),
 			Creator = (args.Creator != null ? UserSelector(args.Creator) : t => null!).Invoke(x.Creator)
 		};
 		return selector.Expand();

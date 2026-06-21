@@ -36,6 +36,20 @@ public interface IHotelService {
 	public Task<UResponse<DormBedResponse?>> ReadDormBedById(IdParams<DormBedSelectorArgs> p, CancellationToken ct);
 	public Task<UResponse> UpdateDormBed(DormBedUpdateParams p, CancellationToken ct);
 	public Task<UResponse> DeleteDormBed(IdParams p, CancellationToken ct);
+
+	// DormBedContract
+	public Task<UResponse<Guid?>> CreateDormBedContract(DormBedContractCreateParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<DormBedContractResponse>?>> ReadDormBedContracts(DormBedContractReadParams p, CancellationToken ct);
+	public Task<UResponse> UpdateDormBedContract(DormBedContractUpdateParams p, CancellationToken ct);
+	public Task<UResponse> DeleteDormBedContract(IdParams p, CancellationToken ct);
+
+	// DormBedInvoice
+	public Task<UResponse<Guid?>> CreateDormBedInvoice(DormBedInvoiceCreateParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<DormBedInvoiceResponse>?>> ReadDormBedInvoices(DormBedInvoiceReadParams p, CancellationToken ct);
+	public Task<UResponse> UpdateDormBedInvoice(DormBedInvoiceUpdateParams p, CancellationToken ct);
+	public Task<UResponse> DeleteDormBedInvoice(IdParams p, CancellationToken ct);
+	public Task<UResponse> PayDormBedInvoice(IdParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<DormBedInvoiceChartResponse>?>> ReadDormBedInvoiceChartData(BaseParams p, CancellationToken ct);
 }
 
 public class HotelService(DbContext db, ILocalizationService ls, ITokenService ts) : IHotelService {
@@ -426,5 +440,309 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 		db.Set<DormBedEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
+	}
+
+	// ===================== DormBedContract =====================
+
+	public async Task<UResponse<Guid?>> CreateDormBedContract(DormBedContractCreateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		DormBedEntity? bed = await db.Set<DormBedEntity>().Include(x => x.Contracts).FirstOrDefaultAsync(x => x.Id == p.BedId, ct);
+		if (bed == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("DormBedNotFound"));
+		if (bed.Contracts.Any(y => y.EndDate >= DateTime.UtcNow)) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("BedHasActiveContract"));
+
+		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
+		if (user == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("UserNotFound"));
+
+		Guid contractId = Guid.CreateVersion7();
+		DormBedContractEntity e = new() {
+			Id = contractId,
+			CreatedAt = DateTime.UtcNow,
+			StartDate = p.StartDate,
+			EndDate = p.EndDate,
+			Deposit = p.Deposit ?? bed.Deposit,
+			Rent = p.Rent ?? bed.MonthlyRent,
+			UserId = user.Id,
+			CreatorId = p.CreatorId ?? userData.Id,
+			BedId = bed.Id,
+			JsonData = new BaseJson(),
+			Tags = p.Tags
+		};
+		await db.Set<DormBedContractEntity>().AddAsync(e, ct);
+
+		if (p.Tags.Contains(TagDormBedContract.SingleInvoice)) {
+			await db.Set<DormBedInvoiceEntity>().AddAsync(new DormBedInvoiceEntity {
+				Id = Guid.CreateVersion7(),
+				CreatorId = p.CreatorId ?? userData.Id,
+				CreatedAt = DateTime.UtcNow,
+				Tags = [TagDormBedInvoice.NotPaid],
+				DebtAmount = e.Deposit + e.Rent,
+				CreditorAmount = 0,
+				PaidAmount = 0,
+				PenaltyAmount = 0,
+				ContractId = contractId,
+				DueDate = p.StartDate,
+				JsonData = new DormBedInvoiceJson { PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate }
+			}, ct);
+
+			await db.SaveChangesAsync(ct);
+			return new UResponse<Guid?>(e.Id);
+		}
+
+		if (e.Deposit >= 1)
+			await db.Set<DormBedInvoiceEntity>().AddAsync(new DormBedInvoiceEntity {
+				Id = Guid.CreateVersion7(),
+				CreatorId = p.CreatorId ?? userData.Id,
+				CreatedAt = DateTime.UtcNow,
+				Tags = [TagDormBedInvoice.NotPaid, TagDormBedInvoice.Deposit],
+				DebtAmount = e.Deposit,
+				CreditorAmount = 0,
+				PaidAmount = 0,
+				PenaltyAmount = 0,
+				ContractId = contractId,
+				DueDate = p.StartDate,
+				JsonData = new DormBedInvoiceJson { PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate }
+			}, ct);
+
+		PersianDateTime startDate = e.StartDate.ToPersian();
+		PersianDateTime endDate = e.EndDate.ToPersian();
+
+		decimal rent = bed.MonthlyRent;
+
+		int totalMonths = (endDate.Year - startDate.Year) * 12 + (endDate.Month - startDate.Month);
+		if (endDate.Day < startDate.Day) totalMonths--;
+
+		await db.Set<DormBedInvoiceEntity>().AddAsync(new DormBedInvoiceEntity {
+			Id = Guid.CreateVersion7(),
+			CreatorId = p.CreatorId ?? userData.Id,
+			CreatedAt = DateTime.UtcNow,
+			Tags = [TagDormBedInvoice.NotPaid, TagDormBedInvoice.Rent],
+			DebtAmount = rent,
+			CreditorAmount = 0,
+			PaidAmount = 0,
+			PenaltyAmount = 0,
+			ContractId = contractId,
+			DueDate = startDate.ToDateTime(),
+			JsonData = new DormBedInvoiceJson { PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate }
+		}, ct);
+
+		if (totalMonths >= 1) {
+			int remainingDaysInFirstMonth = PersianDateTime.DaysInMonth(startDate.Year, startDate.Month) - startDate.Day + 1;
+			int totalDaysInFirstMonth = PersianDateTime.DaysInMonth(startDate.Year, startDate.Month);
+			decimal proportionalPrice = remainingDaysInFirstMonth / (decimal)totalDaysInFirstMonth * rent;
+
+			await db.Set<DormBedInvoiceEntity>().AddAsync(new DormBedInvoiceEntity {
+				Id = Guid.CreateVersion7(),
+				CreatorId = p.CreatorId ?? userData.Id,
+				CreatedAt = DateTime.UtcNow,
+				Tags = [TagDormBedInvoice.NotPaid, TagDormBedInvoice.Rent],
+				DebtAmount = Math.Round(proportionalPrice, 2),
+				CreditorAmount = 0,
+				PaidAmount = 0,
+				PenaltyAmount = 0,
+				ContractId = contractId,
+				DueDate = startDate.AddMonths(1).ToDateTime(),
+				JsonData = new DormBedInvoiceJson { PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate }
+			}, ct);
+		}
+
+		for (int i = 2; i <= totalMonths; i++) {
+			PersianDateTime firstOfMonth = startDate.AddMonths(i).StartOfMonth;
+
+			await db.Set<DormBedInvoiceEntity>().AddAsync(new DormBedInvoiceEntity {
+				Id = Guid.CreateVersion7(),
+				CreatorId = p.CreatorId ?? userData.Id,
+				CreatedAt = DateTime.UtcNow,
+				Tags = [TagDormBedInvoice.NotPaid, TagDormBedInvoice.Rent],
+				DebtAmount = rent,
+				CreditorAmount = 0,
+				PaidAmount = 0,
+				PenaltyAmount = 0,
+				ContractId = contractId,
+				DueDate = firstOfMonth.ToDateTime(),
+				JsonData = new DormBedInvoiceJson { PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate }
+			}, ct);
+		}
+
+		await db.SaveChangesAsync(ct);
+		return new UResponse<Guid?>(e.Id);
+	}
+
+	public async Task<UResponse<IEnumerable<DormBedContractResponse>?>> ReadDormBedContracts(DormBedContractReadParams p, CancellationToken ct) {
+		IQueryable<DormBedContractEntity> q = db.Set<DormBedContractEntity>().ApplyReadParams<DormBedContractEntity, TagDormBedContract, BaseJson>(p);
+
+		if (p.UserId.IsNotNull()) q = q.Where(u => u.UserId == p.UserId);
+		if (p.BedId.IsNotNull()) q = q.Where(u => u.BedId == p.BedId);
+		if (p.UserName.IsNotNullOrEmpty()) q = q.Include(x => x.User).Where(x => x.User.UserName.Contains(p.UserName));
+		if (p.StartDate.HasValue) q = q.Where(u => u.StartDate <= p.StartDate);
+		if (p.EndDate.HasValue) q = q.Where(u => u.EndDate >= p.EndDate);
+
+		IQueryable<DormBedContractResponse> list = q.Select(Projections.DormBedContractSelector(p.SelectorArgs));
+
+		return await list.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	}
+
+	public async Task<UResponse> UpdateDormBedContract(DormBedContractUpdateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		DormBedContractEntity? e = await db.Set<DormBedContractEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ContractNotFound"));
+
+		if (p.Deposit.HasValue) e.Deposit = p.Deposit.Value;
+		if (p.Rent.HasValue) e.Rent = p.Rent.Value;
+		if (p.StartDate.HasValue) e.StartDate = p.StartDate.Value;
+		if (p.EndDate.HasValue) e.EndDate = p.EndDate.Value;
+
+		e.ApplyUpdateParam<DormBedContractEntity, TagDormBedContract, BaseJson>(p);
+		await db.SaveChangesAsync(ct);
+
+		return new UResponse();
+	}
+
+	public async Task<UResponse> DeleteDormBedContract(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		await db.Set<DormBedContractEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
+
+		return new UResponse();
+	}
+
+	// ===================== DormBedInvoice =====================
+
+	public async Task<UResponse<Guid?>> CreateDormBedInvoice(DormBedInvoiceCreateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		EntityEntry<DormBedInvoiceEntity> e = await db.AddAsync(new DormBedInvoiceEntity {
+			Id = p.Id ?? Guid.CreateVersion7(),
+			CreatorId = p.CreatorId ?? userData.Id,
+			CreatedAt = DateTime.UtcNow,
+			Tags = p.Tags,
+			DebtAmount = p.DebtAmount,
+			CreditorAmount = p.CreditorAmount,
+			PaidAmount = p.PaidAmount,
+			PenaltyAmount = p.PenaltyAmount,
+			ContractId = p.ContractId,
+			DueDate = p.DueDate,
+			JsonData = new DormBedInvoiceJson {
+				Detail1 = p.Detail1,
+				Detail2 = p.Detail2,
+				PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
+			}
+		}, ct);
+		await db.SaveChangesAsync(ct);
+
+		return new UResponse<Guid?>(e.Entity.Id);
+	}
+
+	public async Task<UResponse<IEnumerable<DormBedInvoiceResponse>?>> ReadDormBedInvoices(DormBedInvoiceReadParams p, CancellationToken ct) {
+		IQueryable<DormBedInvoiceEntity> q = db.Set<DormBedInvoiceEntity>().Include(x => x.Contract).ApplyReadParams<DormBedInvoiceEntity, TagDormBedInvoice, DormBedInvoiceJson>(p);
+
+		if (p.UserId.IsNotNull()) q = q.Where(x => x.Contract.UserId == p.UserId);
+		if (p.ContractId.IsNotNull()) q = q.Where(x => x.ContractId == p.ContractId);
+
+		UResponse<IEnumerable<DormBedInvoiceResponse>?> response = await q.Select(Projections.DormBedInvoiceSelector(p.SelectorArgs)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		List<Guid> ids = response.Result!.Select(x => x.Id).ToList();
+		List<DormBedInvoiceEntity> entities = await db.Set<DormBedInvoiceEntity>().Where(x => ids.Contains(x.Id)).ToListAsync(ct);
+
+		bool anyChanges = false;
+
+		foreach (DormBedInvoiceResponse dto in response.Result!) {
+			DormBedInvoiceEntity? entity = entities.FirstOrDefault(x => x.Id == dto.Id);
+			if (entity == null || entity.JsonData.PenaltyPrecentEveryDate <= 0) continue;
+			int daysLate = Math.Max(0, (DateTime.UtcNow - entity.DueDate).Days);
+			decimal expectedPenalty = entity.DebtAmount * (entity.JsonData.PenaltyPrecentEveryDate / 100m) * daysLate;
+
+			bool needsPenaltyUpdate =
+				entity.PaidAmount < entity.DebtAmount + entity.PenaltyAmount &&
+				entity.DueDate <= DateTime.UtcNow &&
+				entity.PenaltyAmount < expectedPenalty;
+
+			if (needsPenaltyUpdate) {
+				entity.PenaltyAmount = expectedPenalty;
+				dto.PenaltyAmount = expectedPenalty;
+				anyChanges = true;
+			}
+		}
+
+		if (anyChanges) await db.SaveChangesAsync(ct);
+
+		return response;
+	}
+
+	public async Task<UResponse> UpdateDormBedInvoice(DormBedInvoiceUpdateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		DormBedInvoiceEntity e = (await db.Set<DormBedInvoiceEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
+		if (p.CreditorAmount.IsNotNull()) e.CreditorAmount = p.CreditorAmount.Value;
+		if (p.DebtAmount.IsNotNull()) e.DebtAmount = p.DebtAmount.Value;
+		if (p.PenaltyAmount.IsNotNull()) e.PenaltyAmount = p.PenaltyAmount.Value;
+		if (p.PaidAmount.IsNotNull()) e.PaidAmount = p.PaidAmount.Value;
+		if (p.DueDate.HasValue) e.DueDate = p.DueDate.Value;
+		if (p.ContractId.HasValue) e.ContractId = p.ContractId.Value;
+		if (p.PenaltyPrecentEveryDate.IsNotNull()) e.JsonData.PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate.Value;
+
+		db.Set<DormBedInvoiceEntity>().Update(e.ApplyUpdateParam<DormBedInvoiceEntity, TagDormBedInvoice, DormBedInvoiceJson>(p));
+		await db.SaveChangesAsync(ct);
+
+		return new UResponse();
+	}
+
+	public async Task<UResponse> DeleteDormBedInvoice(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		await db.Set<DormBedInvoiceEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
+
+		return new UResponse();
+	}
+
+	public async Task<UResponse> PayDormBedInvoice(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		DormBedInvoiceEntity? e = await db.Set<DormBedInvoiceEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("InvoiceNotFound"));
+
+		e.PaidAmount = e.DebtAmount - e.CreditorAmount;
+		e.Tags = [TagDormBedInvoice.PaidOnline];
+		db.Update(e);
+
+		await db.SaveChangesAsync(ct);
+
+		return new UResponse();
+	}
+
+	public async Task<UResponse<IEnumerable<DormBedInvoiceChartResponse>?>> ReadDormBedInvoiceChartData(BaseParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<DormBedInvoiceChartResponse>?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		var rawData = await db.Set<DormBedInvoiceEntity>()
+			.GroupBy(x => x.CreatedAt.Month)
+			.Select(g => new {
+				MonthNumber = g.Key,
+				TotalDebt = g.Sum(x => x.DebtAmount),
+				TotalPaid = g.Sum(x => x.PaidAmount),
+				TotalPenalty = g.Sum(x => x.PenaltyAmount),
+				TotalRemaining = g.Sum(x => x.DebtAmount - x.PaidAmount),
+				InvoiceCount = g.Count()
+			})
+			.OrderBy(x => x.MonthNumber)
+			.ToListAsync(ct);
+
+		List<DormBedInvoiceChartResponse> chartData = rawData.Select(item => new DormBedInvoiceChartResponse {
+			Month = new DateTime(1, item.MonthNumber, 1).ToString("MMM"),
+			TotalDebt = item.TotalDebt,
+			TotalPaid = item.TotalPaid,
+			TotalPenalty = item.TotalPenalty,
+			TotalRemaining = item.TotalRemaining,
+			InvoiceCount = item.InvoiceCount
+		}).ToList();
+
+		return new UResponse<IEnumerable<DormBedInvoiceChartResponse>?>(chartData);
 	}
 }

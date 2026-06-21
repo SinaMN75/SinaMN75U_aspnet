@@ -294,7 +294,7 @@ public enum TagProcessStepStatus {
 	Verified = 104
 }
 
-public enum TagContract {
+public enum TagDormBedContract {
 	Daily = 101,
 	Weekly = 102,
 	Monthly = 103,
@@ -302,7 +302,7 @@ public enum TagContract {
 	SingleInvoice = 201
 }
 
-public enum TagInvoice {
+public enum TagDormBedInvoice {
 	Deposit = 101,
 	Rent = 102,
 	Paid = 201,

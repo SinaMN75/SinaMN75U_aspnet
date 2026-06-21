@@ -151,3 +151,82 @@ public sealed class DormBedReadParams : BaseReadParams<TagDormBed> {
 	public bool OrderByMonthlyRent { get; set; }
 	public bool OrderByMonthlyRentDesc { get; set; }
 }
+
+// ---------------- DormBedContract ----------------
+
+public sealed class DormBedContractCreateParams : BaseCreateParams<TagDormBedContract> {
+	[UValidationRequired("StartDateRequired")]
+	public DateTime StartDate { get; set; }
+
+	[UValidationRequired("EndDateRequired")]
+	public DateTime EndDate { get; set; }
+
+	public decimal? Deposit { get; set; }
+	public decimal? Rent { get; set; }
+
+	[UValidationRequired("UserIdRequired")]
+	public Guid UserId { get; set; }
+
+	[UValidationRequired("BedIdRequired")]
+	public Guid BedId { get; set; }
+
+	public int PenaltyPrecentEveryDate { get; set; }
+}
+
+public sealed class DormBedContractUpdateParams : BaseUpdateParams<TagDormBedContract> {
+	public DateTime? StartDate { get; set; }
+	public DateTime? EndDate { get; set; }
+	public decimal? Deposit { get; set; }
+	public decimal? Rent { get; set; }
+}
+
+public sealed class DormBedContractReadParams : BaseReadParams<TagDormBedContract> {
+	public Guid? UserId { get; set; }
+	public string? UserName { get; set; }
+	public Guid? BedId { get; set; }
+	public DateTime? StartDate { get; set; }
+	public DateTime? EndDate { get; set; }
+	public DormBedContractSelectorArgs SelectorArgs { get; set; } = new();
+}
+
+// ---------------- DormBedInvoice ----------------
+
+public sealed class DormBedInvoiceCreateParams : BaseCreateParams<TagDormBedInvoice> {
+	[UValidationRequired("PriceRequired")]
+	public decimal DebtAmount { get; set; }
+
+	[UValidationRequired("PriceRequired")]
+	public decimal CreditorAmount { get; set; }
+
+	[UValidationRequired("PriceRequired")]
+	public decimal PaidAmount { get; set; }
+
+	[UValidationRequired("PriceRequired")]
+	public decimal PenaltyAmount { get; set; }
+
+	public int PenaltyPrecentEveryDate { get; set; }
+
+	[UValidationRequired("ContractIdRequired")]
+	public Guid ContractId { get; set; }
+
+	[UValidationRequired("DateRequired")]
+	public DateTime DueDate { get; set; }
+}
+
+public sealed class DormBedInvoiceUpdateParams : BaseUpdateParams<TagDormBedInvoice> {
+	public decimal? DebtAmount { get; set; }
+	public decimal? CreditorAmount { get; set; }
+	public decimal? PaidAmount { get; set; }
+	public decimal? PenaltyAmount { get; set; }
+	public int? PenaltyPrecentEveryDate { get; set; }
+	public DateTime? DueDate { get; set; }
+	public Guid? UserId { get; set; }
+	public Guid? ContractId { get; set; }
+}
+
+public sealed class DormBedInvoiceReadParams : BaseReadParams<TagDormBedInvoice> {
+	public DormBedInvoiceSelectorArgs SelectorArgs { get; set; } = new();
+
+	public Guid? ContractId { get; set; }
+	public Guid? UserId { get; set; }
+}

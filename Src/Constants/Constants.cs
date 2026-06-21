@@ -29,8 +29,6 @@ public static class RouteTags {
 	public const string AppSettings = "api/AppSettings/";
 	public const string Process = "api/Process/";
 	public const string Pn = "api/Pn/";
-	public const string Contract = "api/Contract/";
-	public const string Invoice = "api/Invoice/";
 	public const string Hotel = "api/Hotel/";
 }
 

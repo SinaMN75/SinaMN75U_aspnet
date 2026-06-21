@@ -77,5 +77,42 @@ public class DormBedEntity : BaseEntity<TagDormBed, BaseJson> {
     public DormRoomEntity RoomEntity { get; set; } = null!;
     
     public ICollection<MediaEntity> Media { get; set; } = [];
-    public ICollection<ContractEntity> Contracts { get; set; } = [];
+    public ICollection<DormBedContractEntity> Contracts { get; set; } = [];
+}
+
+[Table("Contracts")]
+public sealed class DormBedContractEntity : BaseEntity<TagDormBedContract, BaseJson> {
+    public required DateTime StartDate { get; set; }
+    public required DateTime EndDate { get; set; }
+
+    [Required, Column(TypeName = "decimal(24,2)")]
+    public required decimal Deposit { get; set; }
+
+    [Required, Column(TypeName = "decimal(24,2)")]
+    public required decimal Rent { get; set; }
+
+    public required Guid UserId { get; set; }
+    public UserEntity User { get; set; } = null!;
+
+    public required Guid BedId { get; set; }
+    public DormBedEntity Bed { get; set; } = null!;
+
+    public ICollection<DormBedInvoiceEntity> Invoices { get; set; } = [];
+}
+
+[Table("Invoices")]
+public sealed class DormBedInvoiceEntity : BaseEntity<TagDormBedInvoice, DormBedInvoiceJson> {
+    public required decimal DebtAmount { get; set; }
+    public required decimal CreditorAmount { get; set; }
+    public required decimal PaidAmount { get; set; }
+    public required decimal PenaltyAmount { get; set; }
+
+    public required DateTime DueDate { get; set; }
+
+    public Guid? ContractId { get; set; }
+    public DormBedContractEntity? Contract { get; set; }
+}
+
+public sealed class DormBedInvoiceJson : BaseJson {
+    public int PenaltyPrecentEveryDate { get; set; }
 }

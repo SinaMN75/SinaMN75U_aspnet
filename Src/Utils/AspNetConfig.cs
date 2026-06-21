@@ -89,8 +89,6 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IMerchantService, MerchantService>();
 		builder.Services.AddScoped<IPnService, PnService>();
 		builder.Services.AddScoped<IProcessService, ProcessService>();
-		builder.Services.AddScoped<IInvoiceService, InvoiceService>();
-		builder.Services.AddScoped<IContractService, ContractService>();
 		builder.Services.AddScoped<IHotelService, HotelService>();
 
 		if (Core.App.Test) {
@@ -144,8 +142,6 @@ public static partial class AspNetConfig {
 		app.MapAppSettingsRoutes(RouteTags.AppSettings);
 		app.MapProcessRoutes(RouteTags.Process);
 		app.MapPnRoutes(RouteTags.Pn);
-		app.MapInvoiceRoutes(RouteTags.Invoice);
-		app.MapContractRoutes(RouteTags.Contract);
 		app.MapHotelRoutes(RouteTags.Hotel);
 	}
 
