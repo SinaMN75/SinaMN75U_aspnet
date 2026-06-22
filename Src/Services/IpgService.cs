@@ -5,7 +5,7 @@ public interface IIpgService {
 	Task IpgCallBack(string token, short status, string? cardNumberMasked, long? rrn, CancellationToken ct);
 }
 
-public class IpgService(IHttpClientService http, DbContext db) : IIpgService {
+public class IpgService(IHttpClientService http, DbContext db, ILocalizationService ls) : IIpgService {
 	public async Task<UResponse<string?>> GetSaleIpgLink(IpgSaleParams p, CancellationToken ct) {
 		try {
 			HttpResponseMessage? response = await http.Post("https://pna.shaparak.ir/mhipg/api/Payment/NormalSale", new {
@@ -30,7 +30,7 @@ public class IpgService(IHttpClientService http, DbContext db) : IIpgService {
 			return new UResponse<string?>(null);
 		}
 		catch (Exception) {
-			return new UResponse<string?>(null, Usc.InternalServerError);
+			return new UResponse<string?>(null, Usc.InternalServerError, ls.Get("InternalServerError"));
 		}
 	}
 

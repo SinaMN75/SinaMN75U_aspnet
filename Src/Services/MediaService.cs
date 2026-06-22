@@ -22,8 +22,7 @@ public class MediaService(
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		
 		IEnumerable<string> allowedExtensions = [".png", ".gif", ".jpg", ".jpeg", ".svg", ".webp", ".mp4", ".mov", ".mp3", ".pdf", ".aac", ".apk", ".zip", ".rar", ".mkv"];
-		if (!allowedExtensions.Contains(Path.GetExtension(p.File.FileName.ToLower())))
-			return new UResponse<Guid?>(null, Usc.MediaTypeNotSupported);
+		if (!allowedExtensions.Contains(Path.GetExtension(p.File.FileName.ToLower()))) return new UResponse<Guid?>(null, Usc.MediaTypeNotSupported, ls.Get("MediaTypeNotSupported"));
 
 		string folderName;
 		if (p.UserId != null) folderName = "users";
@@ -80,7 +79,7 @@ public class MediaService(
 
 	public async Task<UResponse> Update(MediaUpdateParams p, CancellationToken ct) {
 		MediaEntity? e = await db.Set<MediaEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.BadRequest);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("MediaNotFound"));
 		if (p.Title != null) e.JsonData.Detail1 = p.Title;
 		if (p.Description != null) e.JsonData.Detail2 = p.Description;
 		if (p.CategoryId != null) e.CategoryId = p.CategoryId;

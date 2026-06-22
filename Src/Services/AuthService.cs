@@ -55,7 +55,7 @@ public class AuthService(
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("UserNotFound"));
 		
 		if (!userData.IsAdmin && userData.Id != e.Id) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 		
@@ -99,7 +99,7 @@ public class AuthService(
 
 	public async Task<UResponse<LoginResponse?>> RefreshToken(RefreshTokenParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<LoginResponse?>(null, Usc.UnAuthorized);
+		if (userData == null) return new UResponse<LoginResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(u => u.RefreshToken == p.RefreshToken && u.Id == userData.Id, ct);
 		if (user == null) return new UResponse<LoginResponse?>(null, Usc.UnAuthorized, ls.Get("UserNotFound"));

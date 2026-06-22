@@ -137,7 +137,7 @@ public class UserService(
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
 		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("UserNotFound"));
 
 		if (!userData.IsAdmin && userData.Id != e.Id) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
@@ -207,7 +207,7 @@ public class UserService(
 		if (!userData.IsAdmin) return new UResponse<string?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		UserEntity? e = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse<string?>(null, Usc.NotFound);
+		if (e == null) return new UResponse<string?>(null, Usc.NotFound, ls.Get("UserNotFound"));
 
 		string firstName = e.FirstName ?? "---";
 		string lastName = e.LastName ?? "---";

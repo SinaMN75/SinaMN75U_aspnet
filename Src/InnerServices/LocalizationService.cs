@@ -32,6 +32,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "NumberRequired", "Number Required." },
 		{ "OtpRequired", "Otp is Required" },
 		{ "OwnerNameRequired", "Owner Name is Required." },
+		{ "OwnerPhoneNumberRequired", "Owner Phone Number is Required." },
 		{ "PasswordRequired", "Please enter a password." },
 		{ "PhoneNumberRequired", "Phone number is required." },
 		{ "PriceRequired", "Price is Required" },
@@ -67,9 +68,10 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "LastNameInvalid", "Last Name is Invalid" },
 		{ "LicencePlateInvalid", "LicencePlate Is Invalid." },
 		{ "MerchantTitleNotValid", "Merchant Name is Not Valid." },
-		{ "MccNotValid", "Mcc is Required." },
+		{ "MccNotValid", "Mcc is Not Valid." },
 		{ "NationalCodeInvalid", "National Code is Invalid" },
 		{ "OwnerNameNotValid", "Owner Name is Not Valid." },
+		{ "OwnerPhoneNumberNotValid", "Owner Phone Number is Not Valid." },
 		{ "PasswordInvalid", "Password must be 6-100 characters." },
 		{ "PhoneNumberInvalid", "Please enter a valid phone number." },
 		{ "PhoneNumberNotValid", "Phone number is not valid." },
@@ -79,19 +81,19 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "ZipCodeNotValid", "ZipCode Is Not Valid." },
 
 		// ===== Duplicate =====
-		{ "CodeIsDuplicated", "This Code already exist." },
-		{ "EmailIsDuplicated", "This Email is already exist." },
-		{ "IdIsDuplicated", "This Id is already exist." },
-		{ "ImeiIsDuplicated", "This Imei is already exist." },
-		{ "NationalCodeIsDuplicated", "This National Code is already exist." },
-		{ "PhoneNumberIsDuplicated", "This Phone Number is already exist." },
-		{ "SimCardNumberIsDuplicated", "This Sim Card Number is already exist." },
-		{ "SimCardSerialIsDuplicated", "This Sim Card Serial is already exist." },
-		{ "SlugIsDuplicated", "This Slug is already exist." },
-		{ "TerminalIdIsDuplicated", "This Terminal Id is already exist." },
-		{ "TrackingNumberIsDuplicated", "This Tracking Number is already exist." },
-		{ "NumberPlateIsDuplicated", "This Number Plate is already exist." },
-		{ "UserNameIsDuplicated", "This UserName is already exist." },
+		{ "CodeIsDuplicated", "This Code already exists." },
+		{ "EmailIsDuplicated", "This Email already exists." },
+		{ "IdIsDuplicated", "This Id already exists." },
+		{ "ImeiIsDuplicated", "This IMEI already exists." },
+		{ "NationalCodeIsDuplicated", "This National Code already exists." },
+		{ "PhoneNumberIsDuplicated", "This Phone Number already exists." },
+		{ "SimCardNumberIsDuplicated", "This Sim Card Number already exists." },
+		{ "SimCardSerialIsDuplicated", "This Sim Card Serial already exists." },
+		{ "SlugIsDuplicated", "This Slug already exists." },
+		{ "TerminalIdIsDuplicated", "This Terminal Id already exists." },
+		{ "TrackingNumberIsDuplicated", "This Tracking Number already exists." },
+		{ "NumberPlateIsDuplicated", "This Number Plate already exists." },
+		{ "UserNameIsDuplicated", "This UserName already exists." },
 		{ "DuplicateEntry", "This record already exists." },
 
 		// ===== Not Found =====
@@ -125,7 +127,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		// ===== Success =====
 		{ "AddressDeletedSuccessfully", "Address Deleted Successfully" },
 		{ "AddressUpdatedSuccessfully", "Address Updated Successfully" },
-		{ "FollowSuccess", "Your now Following " },
+		{ "FollowSuccess", "You are now following " },
 		{ "ProductDeleted", "Product removed successfully." },
 		{ "TransferMoneyDone", "Transfer Money Successful" },
 		{ "UnfollowSuccess", "You are no longer following " },
@@ -165,6 +167,36 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "InvalidValue", "One of the submitted values is invalid." },
 		{ "ValueTooLong", "One of the submitted values is too long." },
 		{ "ConcurrencyConflict", "This record was modified by another operation. Please retry." },
+		{ "MediaTypeNotSupported", "This file type is not supported." },
+		{ "ValidationError", "Validation failed. Please check your input." },
+		{ "AgreementGenerationFailed", "Failed to generate the agreement. Please try again later." },
+		{ "InvalidStep", "Invalid step." },
+
+		// ===== Not Found (additional) =====
+		{ "ContractNotFound", "Contract Not Found." },
+		{ "DormNotFound", "Dorm Not Found." },
+		{ "DormRoomNotFound", "Dorm Room Not Found." },
+		{ "DormBedNotFound", "Dorm Bed Not Found." },
+		{ "HotelNotFound", "Hotel Not Found." },
+		{ "HotelRoomNotFound", "Hotel Room Not Found." },
+		{ "InvoiceNotFound", "Invoice Not Found." },
+		{ "MediaNotFound", "Media Not Found." },
+		{ "NotificationNotFound", "Notification Not Found." },
+		{ "ParkingNotFound", "Parking Not Found." },
+		{ "ParkingReportNotFound", "Parking Report Not Found." },
+		{ "ReceiverWalletNotFound", "Receiver Wallet Not Found." },
+		{ "SimCardNotFound", "Sim Card Not Found." },
+		{ "VehicleNotFound", "Vehicle Not Found." },
+
+		// ===== Business Logic (additional) =====
+		{ "BedHasActiveContract", "This bed has an active contract." },
+		{ "MerchantAlreadyExists", "This merchant already exists." },
+		{ "MerchantCreationFeeRequired", "Merchant creation fee is required." },
+
+		// ===== Success (additional) =====
+		{ "BankAccountDeletedSuccessfully", "Bank Account deleted successfully." },
+		{ "OtpSent", "Verification code sent." },
+		{ "VehicleCreated", "Vehicle created successfully." },
 
 		// Not Sorted
 		{ "UserNotFullyVerified", "User identity verification is not completed." },
@@ -339,6 +371,36 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "InvalidValue", "یکی از مقادیر ارسال‌شده نامعتبر است." },
 		{ "ValueTooLong", "یکی از مقادیر ارسال‌شده بیش از حد طولانی است." },
 		{ "ConcurrencyConflict", "این رکورد توسط عملیات دیگری تغییر کرده است. لطفاً دوباره تلاش کنید." },
+		{ "MediaTypeNotSupported", "این نوع فایل پشتیبانی نمی‌شود." },
+		{ "ValidationError", "اعتبارسنجی ناموفق بود. لطفاً ورودی خود را بررسی کنید." },
+		{ "AgreementGenerationFailed", "ایجاد قرارداد با خطا مواجه شد. لطفاً بعداً دوباره تلاش کنید." },
+		{ "InvalidStep", "مرحله نامعتبر است." },
+
+		// ===== Not Found (additional) =====
+		{ "ContractNotFound", "قرارداد یافت نشد." },
+		{ "DormNotFound", "خوابگاه یافت نشد." },
+		{ "DormRoomNotFound", "اتاق خوابگاه یافت نشد." },
+		{ "DormBedNotFound", "تخت خوابگاه یافت نشد." },
+		{ "HotelNotFound", "هتل یافت نشد." },
+		{ "HotelRoomNotFound", "اتاق هتل یافت نشد." },
+		{ "InvoiceNotFound", "فاکتور یافت نشد." },
+		{ "MediaNotFound", "رسانه یافت نشد." },
+		{ "NotificationNotFound", "اعلان یافت نشد." },
+		{ "ParkingNotFound", "پارکینگ یافت نشد." },
+		{ "ParkingReportNotFound", "گزارش پارکینگ یافت نشد." },
+		{ "ReceiverWalletNotFound", "کیف پول گیرنده یافت نشد." },
+		{ "SimCardNotFound", "سیمکارت یافت نشد." },
+		{ "VehicleNotFound", "خودرو یافت نشد." },
+
+		// ===== Business Logic (additional) =====
+		{ "BedHasActiveContract", "این تخت دارای قرارداد فعال است." },
+		{ "MerchantAlreadyExists", "این پذیرنده از قبل وجود دارد." },
+		{ "MerchantCreationFeeRequired", "پرداخت هزینه ایجاد پذیرنده الزامی است." },
+
+		// ===== Success (additional) =====
+		{ "BankAccountDeletedSuccessfully", "حساب بانکی با موفقیت حذف شد." },
+		{ "OtpSent", "کد تایید ارسال شد." },
+		{ "VehicleCreated", "خودرو با موفقیت ایجاد شد." },
 
 		// Not Sorted
 		{ "UserNotFullyVerified", "احراز هویت کاربر به طور کامل تأیید نشده است." },
