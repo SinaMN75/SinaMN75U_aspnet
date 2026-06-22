@@ -569,8 +569,8 @@ public static class Projections {
 		};
 		return selector.Expand();
 	}
-	
-		public static Expression<Func<HotelEntity, HotelResponse>> HotelSelector(HotelSelectorArgs args) {
+
+	public static Expression<Func<HotelEntity, HotelResponse>> HotelSelector(HotelSelectorArgs args) {
 		Expression<Func<HotelEntity, HotelResponse>> selector = x => new HotelResponse {
 			Id = x.Id,
 			Tags = x.Tags,
@@ -599,7 +599,7 @@ public static class Projections {
 			HotelId = x.HotelId,
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,
-			Hotel = (args.Hotel != null ? HotelSelector(args.Hotel) : h => null!).Invoke(x.HotelEntity),
+			Hotel = (args.Hotel != null ? HotelSelector(args.Hotel) : h => null!).Invoke(x.Hotel),
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
 		};
@@ -632,7 +632,7 @@ public static class Projections {
 			DormId = x.DormId,
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,
-			Dorm = (args.Dorm != null ? DormSelector(args.Dorm) : d => null!).Invoke(x.DormEntity),
+			Dorm = (args.Dorm != null ? DormSelector(args.Dorm) : d => null!).Invoke(x.Dorm),
 			Beds = (args.Beds == null ? null : x.Beds.AsQueryable().Select(DormBedSelector(args.Beds)).ToList())!,
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
@@ -652,7 +652,7 @@ public static class Projections {
 			RoomId = x.RoomId,
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,
-			Room = (args.Room != null ? DormRoomSelector(args.Room) : r => null!).Invoke(x.RoomEntity),
+			Room = (args.Room != null ? DormRoomSelector(args.Room) : r => null!).Invoke(x.Room),
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
 		};
