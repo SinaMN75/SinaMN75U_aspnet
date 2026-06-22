@@ -316,19 +316,25 @@ public enum TagBed {
 }
 
 public enum TagHotel {
-	Test = 999
+	Hotel = 101,
 }
 
 public enum TagDorm {
-	Test = 999
+	Girls = 101,
+	Boys = 102
 }
 
 public enum TagRoom {
-	Test = 999
+	Single = 101,
+	Double = 102,
+	Triple = 103
 }
 public enum TagDormRoom {
-	Test = 999
+	Single = 101,
+	Double = 102,
+	Dorm = 103
 }
 public enum TagDormBed {
-	Test = 999
+	Single = 101,
+	Double = 102
 }

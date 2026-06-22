@@ -88,8 +88,11 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "SimCardNumberIsDuplicated", "This Sim Card Number is already exist." },
 		{ "SimCardSerialIsDuplicated", "This Sim Card Serial is already exist." },
 		{ "SlugIsDuplicated", "This Slug is already exist." },
+		{ "TerminalIdIsDuplicated", "This Terminal Id is already exist." },
 		{ "TrackingNumberIsDuplicated", "This Tracking Number is already exist." },
+		{ "NumberPlateIsDuplicated", "This Number Plate is already exist." },
 		{ "UserNameIsDuplicated", "This UserName is already exist." },
+		{ "DuplicateEntry", "This record already exists." },
 
 		// ===== Not Found =====
 		{ "AddressNotFound", "Address Not Found" },
@@ -108,6 +111,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "UserNotFound", "Account not found." },
 		{ "WalletNotFound", "Wallet Not Found." },
 		{ "ProcessNotFound", "Process Not Found." },
+		{ "RelatedRecordNotFound", "A related record was not found." },
 
 		// ===== Authentication & Authorization =====
 		{ "AuthorizationRequired", "Please sign in to continue." },
@@ -157,7 +161,11 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "SystemError", "System Error" },
 		{ "ThirdPartyError", "Third Party Service Error." },
 		{ "YouDoNotHaveClearanceToDoThisAction", "You Do Not have Clearance to do this Action." },
-		
+		{ "RequiredFieldMissing", "A required field is missing." },
+		{ "InvalidValue", "One of the submitted values is invalid." },
+		{ "ValueTooLong", "One of the submitted values is too long." },
+		{ "ConcurrencyConflict", "This record was modified by another operation. Please retry." },
+
 		// Not Sorted
 		{ "UserNotFullyVerified", "User identity verification is not completed." },
 		{ "TerminalAlreadyBound", "Terminal is already assigned to a merchant." },
@@ -254,8 +262,11 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "SimCardNumberIsDuplicated", "شماره سیمکارت تکراری است." },
 		{ "SimCardSerialIsDuplicated", "سریال سیمکارت تکراری است." },
 		{ "SlugIsDuplicated", "اسلاگ تکراری است." },
+		{ "TerminalIdIsDuplicated", "شناسه ترمینال تکراری است." },
 		{ "TrackingNumberIsDuplicated", "کد رهگیری تکراری است." },
+		{ "NumberPlateIsDuplicated", "شماره پلاک تکراری است." },
 		{ "UserNameIsDuplicated", "نام کاربری تکراری است." },
+		{ "DuplicateEntry", "این رکورد از قبل وجود دارد." },
 
 		// ===== Not Found =====
 		{ "AddressNotFound", "آدرس یافت نشد" },
@@ -274,6 +285,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "UserNotFound", "کاربر یافت نشد." },
 		{ "WalletNotFound", "کیف پول یافت نشد." },
 		{ "ProcessNotFound", "فرایند یافت نشد" },
+		{ "RelatedRecordNotFound", "رکورد مرتبط یافت نشد." },
 
 		// ===== Authentication & Authorization =====
 		{ "AuthorizationRequired", "لطفاً برای ادامه وارد شوید." },
@@ -323,6 +335,10 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "SystemError", "خطای سیستم" },
 		{ "ThirdPartyError", "خطای سامانه مرجع" },
 		{ "YouDoNotHaveClearanceToDoThisAction", "شما مجاز به انجام این عملیات نیستید." },
+		{ "RequiredFieldMissing", "یکی از فیلدهای الزامی وارد نشده است." },
+		{ "InvalidValue", "یکی از مقادیر ارسال‌شده نامعتبر است." },
+		{ "ValueTooLong", "یکی از مقادیر ارسال‌شده بیش از حد طولانی است." },
+		{ "ConcurrencyConflict", "این رکورد توسط عملیات دیگری تغییر کرده است. لطفاً دوباره تلاش کنید." },
 
 		// Not Sorted
 		{ "UserNotFullyVerified", "احراز هویت کاربر به طور کامل تأیید نشده است." },
