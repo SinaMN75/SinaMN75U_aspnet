@@ -42,7 +42,8 @@ public class TxnService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		TxnEntity e = (await db.Set<TxnEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
+		TxnEntity? e = await db.Set<TxnEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("TxnNotFound"));
 
 		db.Set<TxnEntity>().Update(e.ApplyUpdateParam<TxnEntity,TagTxn, BaseJson>(p));
 		await db.SaveChangesAsync(ct);

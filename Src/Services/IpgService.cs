@@ -2,7 +2,7 @@ namespace SinaMN75U.Services;
 
 public interface IIpgService {
 	Task<UResponse<string?>> GetSaleIpgLink(IpgSaleParams p, CancellationToken ct);
-	Task IpgCallBack(string token, short status, string? cardNumberMasked, long? rrn, CancellationToken ct);
+	Task IpgCallBack(string token, short status, string? cardNumberMasked, long? rrn, string? additionalData, CancellationToken ct);
 }
 
 public class IpgService(IHttpClientService http, DbContext db, ILocalizationService ls) : IIpgService {
@@ -34,7 +34,7 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 		}
 	}
 
-	public async Task IpgCallBack(string token, short status, string? cardNumberMasked, long? rrn, CancellationToken ct) {
+	public async Task IpgCallBack(string token, short status, string? cardNumberMasked, long? rrn, string? additionalData, CancellationToken ct) {
 		if (status != 0) return;
 
 		HttpResponseMessage? confirmResponse = await http.Post("https://pna.shaparak.ir/mhipg/api/Payment/confirm", new {
@@ -49,8 +49,7 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 		short confirmStatus = confirmData.GetProperty("Status").GetInt16();
 		if (confirmStatus != 0) return;
 
-		NameValueCollection queryParams = System.Web.HttpUtility.ParseQueryString(new Uri(Core.App.Ipg.CallBackUrl).Query);
-		string? additionalData = queryParams["additionalData"];
+		// BUG FIX: use additionalData from the incoming callback instead of parsing the static config URL (which never contained it)
 		if (string.IsNullOrEmpty(additionalData)) return;
 
 		string jsonString = Encoding.UTF8.GetString(Convert.FromBase64String(additionalData));
@@ -89,7 +88,8 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 			Amount = data.Amount
 		}, ct);
 
-		WalletEntity wallet = (await db.Set<WalletEntity>().FirstOrDefaultAsync(x => x.CreatorId == Guid.Parse(data.UserId), ct))!;
+		WalletEntity? wallet = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == Guid.Parse(data.UserId), ct);
+		if (wallet == null) return;
 		wallet.Balance += data.Amount;
 		db.Update(wallet);
 

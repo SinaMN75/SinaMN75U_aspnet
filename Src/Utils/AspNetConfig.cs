@@ -105,15 +105,16 @@ public static partial class AspNetConfig {
 		app.UseLeanResponses();
 		app.UseStaticFiles();
 		app.UseCors();
-		app.UseDeveloperExceptionPage();
 		app.UseUSwagger();
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
 		if (app.Environment.IsProduction()) {
 			app.UseMiddleware<UMiddleware>();
+			app.UseMiddleware<DbExceptionMiddleware>();
 		}
-
-		app.UseMiddleware<DbExceptionMiddleware>();
+		else {
+			app.UseDeveloperExceptionPage();
+		}
 
 		app.MapAuthRoutes(RouteTags.Auth);
 		app.MapUserRoutes(RouteTags.User);

@@ -101,7 +101,8 @@ public class MediaService(
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
-		MediaEntity media = (await db.Set<MediaEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
+		MediaEntity? media = await db.Set<MediaEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (media == null) return new UResponse(Usc.NotFound, ls.Get("MediaNotFound"));
 
 		try {
 			File.Delete(Path.Combine(env.WebRootPath, "Media", media.Path));

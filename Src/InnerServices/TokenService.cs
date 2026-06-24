@@ -35,8 +35,20 @@ public class TokenService : ITokenService {
 	);
 
 	public JwtClaimData? ExtractClaims(string? token) {
+		if (token.IsNullOrEmpty()) return null;
 		try {
-			IEnumerable<Claim> claims = new JwtSecurityTokenHandler().ReadJwtToken(token).Claims.ToList();
+			JwtSecurityTokenHandler handler = new() { MapInboundClaims = false }; 
+			ClaimsPrincipal principal = handler.ValidateToken(token, new TokenValidationParameters {
+				ValidateIssuerSigningKey = true,
+				IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Core.App.Jwt.Key)),
+				ValidateIssuer = true,
+				ValidIssuer = Core.App.Jwt.Issuer,
+				ValidateAudience = true,
+				ValidAudience = Core.App.Jwt.Audience,
+				ValidateLifetime = false,
+				ClockSkew = TimeSpan.Zero
+			}, out _);
+			IEnumerable<Claim> claims = principal.Claims.ToList();
 			string? rolesClaim = claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 			IEnumerable<TagUser> tags = [];
 			if (!string.IsNullOrWhiteSpace(rolesClaim)) {

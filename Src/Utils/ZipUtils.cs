@@ -7,13 +7,8 @@ public static class ZipUtils {
 		CancellationToken ct = default) {
 		using MemoryStream memoryStream = new();
 		await using (ZipArchive archive = new(memoryStream, ZipArchiveMode.Create, true)) {
-			if (textFiles != null) {
-				foreach ((string fileName, string content) in textFiles) await AddTextFileToZipAsync(archive, fileName, content, ct);
-			}
-
-			if (imageFiles != null) {
-				foreach ((string fileName, string base64Content) in imageFiles) AddImageFileToZip(archive, fileName, base64Content);
-			}
+			if (textFiles != null) foreach ((string fileName, string content) in textFiles) await AddTextFileToZipAsync(archive, fileName, content, ct);
+			if (imageFiles != null) foreach ((string fileName, string base64Content) in imageFiles) await AddImageFileToZip(archive, fileName, base64Content);
 		}
 
 		return memoryStream.ToArray();
@@ -26,7 +21,7 @@ public static class ZipUtils {
 		await writer.WriteAsync(content.AsMemory(), ct);
 	}
 
-	private static async void AddImageFileToZip(ZipArchive archive, string fileName, string base64Content) {
+	private static async Task AddImageFileToZip(ZipArchive archive, string fileName, string base64Content) {
 		try {
 			if (!string.IsNullOrEmpty(base64Content)) {
 				ZipArchiveEntry entry = archive.CreateEntry(fileName);

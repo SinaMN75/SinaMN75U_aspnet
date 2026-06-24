@@ -48,7 +48,8 @@ public class TicketService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		TicketEntity e = (await db.Set<TicketEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct))!;
+		TicketEntity? e = await db.Set<TicketEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("TicketNotFound"));
 		if (p.Title.IsNotNullOrEmpty()) e.JsonData.Title = p.Title;
 		if (p.Description.IsNotNullOrEmpty()) e.JsonData.Description = p.Description;
 		if (p.Instagram.IsNotNullOrEmpty()) e.JsonData.Instagram = p.Instagram;

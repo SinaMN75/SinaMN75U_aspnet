@@ -81,7 +81,7 @@ public class ProcessService(DbContext db, ILocalizationService ls, ITokenService
 				Fields = [
 					new UProcessField { Key = nameof(UserEntity.NationalCardFront), Label = "روی کارت ملی", Type = TagFieldType.File, Required = true, Value = e.NationalCardFront, FileConfig = new UFileConfig { Type = TagFileFieldType.Image, IsCamera = true }, RejectionReason = e.JsonData.NationalCardFrontRejectionReason },
 					new UProcessField { Key = nameof(UserEntity.NationalCardBack), Label = "پشت کارت ملی", Type = TagFieldType.File, Required = true, Value = e.NationalCardBack, FileConfig = new UFileConfig { Type = TagFileFieldType.Image, IsCamera = true }, RejectionReason = e.JsonData.NationalCardBackRejectionReason },
-					new UProcessField { Key = nameof(UserEntity.BirthCertificateFirst), Label = "صفحه اول شناسنامه", Type = TagFieldType.File, Required = true, Value = e.BirthCertificateFirst, FileConfig = new UFileConfig { Type = TagFileFieldType.Image, IsCamera = true }, RejectionReason = e.JsonData.NationalCardBackRejectionReason }
+					new UProcessField { Key = nameof(UserEntity.BirthCertificateFirst), Label = "صفحه اول شناسنامه", Type = TagFieldType.File, Required = true, Value = e.BirthCertificateFirst, FileConfig = new UFileConfig { Type = TagFileFieldType.Image, IsCamera = true }, RejectionReason = e.JsonData.BirthCertificateFirstRejectionReason }
 				]
 			},
 			new() {

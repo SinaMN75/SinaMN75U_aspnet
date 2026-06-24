@@ -65,7 +65,9 @@ public static class UExtensions {
 	}
 
 	public static decimal? GetDecimalOrNull(this JsonElement element, string propertyName) {
-		if (element.TryGetProperty(propertyName, out JsonElement value) && value.ValueKind == JsonValueKind.String) return value.GetDecimal();
+		if (!element.TryGetProperty(propertyName, out JsonElement value)) return null;
+		if (value.ValueKind == JsonValueKind.Number && value.TryGetDecimal(out decimal d)) return d;
+		if (value.ValueKind == JsonValueKind.String && decimal.TryParse(value.GetString(), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal ds)) return ds;
 		return null;
 	}
 

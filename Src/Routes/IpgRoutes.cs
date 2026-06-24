@@ -13,7 +13,7 @@ public static class IpgRoutes {
 			[FromQuery] string? additionalData,
 			IIpgService s,
 			CancellationToken c) => {
-			await s.IpgCallBack(token, status, cardNumberMasked, rrn, c);
+			await s.IpgCallBack(token, status, cardNumberMasked, rrn, additionalData, c);
 
 			bool success = status == 0;
 			string html = $@"
