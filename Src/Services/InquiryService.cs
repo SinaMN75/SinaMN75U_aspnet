@@ -346,7 +346,8 @@ public class InquiryService(
 		string? responseBody = inquiryHistory?.Response;
 
 		if (inquiryHistory == null || responseBody == null) {
-			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.IBanToBankAccountDetail, ct)) return new UResponse<FreewayTollsResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+			// BUG FIX: was using the IBan cost/tag (copy-paste); use FreewayToll cost so the right amount is checked/charged
+			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.FreewayToll, ct)) return new UResponse<FreewayTollsResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<FreewayTollsResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
@@ -368,13 +369,15 @@ public class InquiryService(
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
 				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
-				await CreateFreewayTollsHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.IBanToBankAccountDetail, TagInquiryHistory.Error], errorMessage, p, ct);
+				// BUG FIX: tag history as FreewayTolls (was IBanToBankAccountDetail) so ReadFreewayTollsHistory can actually find the cached row
+				await CreateFreewayTollsHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.FreewayTolls, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<FreewayTollsResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<FreewayTollsResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
-			await CreateFreewayTollsHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.IBanToBankAccountDetail], "", p, ct);
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.IBanToBankAccountDetail, Token = p.Token }, ct);
+			// BUG FIX: tag history + charge as FreewayTolls (were IBanToBankAccountDetail) so caching works and the correct fee is charged
+			await CreateFreewayTollsHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.FreewayTolls], "", p, ct);
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.FreewayTolls, Token = p.Token }, ct);
 		}
 
 		if (inquiryHistory?.Tags.Contains(TagInquiryHistory.Error) ?? false) return new UResponse<FreewayTollsResponse?>(null, Usc.ThirdPartyError, inquiryHistory.JsonData.Detail1);
@@ -649,7 +652,8 @@ public class InquiryServiceFake(
 	public async Task<UResponse<FreewayTollsResponse?>> FreewayTolls(FreewayTollsParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<FreewayTollsResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.IBanToBankAccountDetail, Token = p.Token }, ct);
+		// BUG FIX: charge FreewayTolls (was IBanToBankAccountDetail copy-paste)
+		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.FreewayTolls, Token = p.Token }, ct);
 		return new UResponse<FreewayTollsResponse?>(new FreewayTollsResponse());
 	}
 

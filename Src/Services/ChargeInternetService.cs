@@ -72,7 +72,7 @@ public partial class ChargeInternetService(
 				WalletTxnId = null,
 				ChargePin = approveResponse.Pin
 			}, ct);
-			await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.ChargeSimPin }, ct);
+			// BUG FIX: removed duplicate Purchase call — it charged the user a second time and threw (no Amount → p.Amount!.Value on null)
 		}
 
 		return new UResponse<ChargeInternetReserveResponse?>(new ChargeInternetReserveResponse {
