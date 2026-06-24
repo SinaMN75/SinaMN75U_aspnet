@@ -117,12 +117,7 @@ public class UserService(
 		if (p.StartBirthDate.HasValue) q = q.Where(u => u.Birthdate >= p.StartBirthDate);
 		if (p.EndBirthDate.HasValue) q = q.Where(u => u.Birthdate <= p.EndBirthDate);
 		if (p.Categories.IsNotNullOrEmpty()) q = q.Where(x => x.Categories.Any(y => p.Categories!.Contains(y.Id)));
-
-		if (p.OrderByFirstName) q = q.OrderBy(x => x.FirstName);
-		if (p.OrderByFirstNameDesc) q = q.OrderByDescending(x => x.FirstName);
-		if (p.OrderByLastName) q = q.OrderBy(x => x.LastName);
-		if (p.OrderByLastNameDesc) q = q.OrderByDescending(x => x.LastName);
-
+		
 		IQueryable<UserResponse> projected = q.Select(Projections.UserSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}

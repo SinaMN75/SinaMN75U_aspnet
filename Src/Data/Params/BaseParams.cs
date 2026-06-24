@@ -37,8 +37,6 @@ public class BaseReadParams<T> : BaseParams {
 	public int PageNumber { get; set; } = 1;
 	public DateTime? FromCreatedAt { get; set; }
 	public DateTime? ToCreatedAt { get; set; }
-	public bool OrderByCreatedAt { get; set; } = true;
-	public bool OrderByCreatedAtDesc { get; set; }
 	public ICollection<T>? Tags { get; set; }
 	public ICollection<Guid> Ids { get; set; } = [];
 	public Guid? CreatorId { get; set; }

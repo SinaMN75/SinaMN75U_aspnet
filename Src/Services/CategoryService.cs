@@ -56,9 +56,6 @@ public class CategoryService(
 	public async Task<UResponse<IEnumerable<CategoryResponse>?>> Read(CategoryReadParams p, CancellationToken ct) {
 		IQueryable<CategoryEntity> q = db.Set<CategoryEntity>().Where(x => x.ParentId == null).ApplyReadParams<CategoryEntity, TagCategory, CategoryJson>(p);
 		
-		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
-		else if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
-		
 		IQueryable<CategoryResponse> projected = q.Select(Projections.CategorySelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}

@@ -30,13 +30,8 @@ public sealed class CategoryUpdateParams : BaseUpdateParams<TagCategory> {
 	public Guid? ParentId { get; set; }
 	public ICollection<Guid>? RelatedProducts { get; set; }
 	public ICollection<Guid>? Media { get; set; }
-
-	public decimal? ProductDeposit { get; set; }
-	public decimal? ProductRent { get; set; }
 }
 
 public sealed class CategoryReadParams : BaseReadParams<TagCategory> {
-	public bool OrderByOrder { get; set; }
-	public bool OrderByOrderDesc { get; set; }
 	public CategorySelectorArgs SelectorArgs { get; set; } = new();
 }

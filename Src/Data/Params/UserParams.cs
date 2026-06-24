@@ -81,10 +81,6 @@ public sealed class UserReadParams : BaseReadParams<TagUser> {
 	public DateTime? StartBirthDate { get; set; }
 	public DateTime? EndBirthDate { get; set; }
 	public ICollection<Guid>? Categories { get; set; }
-	public bool OrderByFirstName { get; set; }
-	public bool OrderByFirstNameDesc { get; set; }
-	public bool OrderByLastName { get; set; }
-	public bool OrderByLastNameDesc { get; set; }
 	public UserSelectorArgs SelectorArgs { get; set; } = new();
 }
 

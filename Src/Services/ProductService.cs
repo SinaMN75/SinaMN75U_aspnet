@@ -54,9 +54,6 @@ public class ProductService(
 		if (p.MaxStock.IsNotNull()) q = q.Where(x => x.Stock <= p.MaxStock);
 		if (p.Categories.IsNotNullOrEmpty()) q = q.Where(x => x.Categories.Any(y => p.Categories.Contains(y.Id)));
 		
-		if (p.OrderByOrder) q = q.OrderBy(x => x.Order);
-		else if (p.OrderByOrderDesc) q = q.OrderByDescending(x => x.Order);
-
 		UResponse<IEnumerable<ProductResponse>?> list = await q.Select(Projections.ProductSelector(p.SelectorArgs)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 		return list;
 	}

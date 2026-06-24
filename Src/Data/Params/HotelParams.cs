@@ -61,8 +61,6 @@ public sealed class HotelRoomReadParams : BaseReadParams<TagRoom> {
 	public int? MaxCapacity { get; set; }
 	public decimal? MinPrice { get; set; }
 	public decimal? MaxPrice { get; set; }
-	public bool OrderByPrice { get; set; }
-	public bool OrderByPriceDesc { get; set; }
 }
 
 // ---------------- Dorm ----------------
@@ -148,8 +146,6 @@ public sealed class DormBedReadParams : BaseReadParams<TagDormBed> {
 	public decimal? MaxDeposit { get; set; }
 	public decimal? MinMonthlyRent { get; set; }
 	public decimal? MaxMonthlyRent { get; set; }
-	public bool OrderByMonthlyRent { get; set; }
-	public bool OrderByMonthlyRentDesc { get; set; }
 	public DormBedSelectorArgs SelectorArgs { get; set; } = new();
 }
 

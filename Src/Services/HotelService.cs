@@ -164,10 +164,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 		if (p.MaxCapacity.HasValue) q = q.Where(x => x.Capacity <= p.MaxCapacity);
 		if (p.MinPrice.HasValue) q = q.Where(x => x.PricePerNight >= p.MinPrice);
 		if (p.MaxPrice.HasValue) q = q.Where(x => x.PricePerNight <= p.MaxPrice);
-
-		if (p.OrderByPrice) q = q.OrderBy(x => x.PricePerNight);
-		if (p.OrderByPriceDesc) q = q.OrderByDescending(x => x.PricePerNight);
-
+		
 		IQueryable<HotelRoomResponse> projected = q.Select(Projections.HotelRoomSelector(new HotelRoomSelectorArgs()));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
@@ -394,10 +391,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 		if (p.MaxDeposit.HasValue) q = q.Where(x => x.Deposit <= p.MaxDeposit);
 		if (p.MinMonthlyRent.HasValue) q = q.Where(x => x.MonthlyRent >= p.MinMonthlyRent);
 		if (p.MaxMonthlyRent.HasValue) q = q.Where(x => x.MonthlyRent <= p.MaxMonthlyRent);
-
-		if (p.OrderByMonthlyRent) q = q.OrderBy(x => x.MonthlyRent);
-		if (p.OrderByMonthlyRentDesc) q = q.OrderByDescending(x => x.MonthlyRent);
-
+		
 		IQueryable<DormBedResponse> projected = q.Select(Projections.DormBedSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
@@ -641,7 +635,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 	public async Task<UResponse<IEnumerable<DormBedInvoiceResponse>?>> ReadDormBedInvoices(DormBedInvoiceReadParams p, CancellationToken ct) {
 		IQueryable<DormBedInvoiceEntity> q = db.Set<DormBedInvoiceEntity>().Include(x => x.Contract).ApplyReadParams<DormBedInvoiceEntity, TagDormBedInvoice, DormBedInvoiceJson>(p);
 
-		if (p.UserId.IsNotNull()) q = q.Where(x => x.Contract.UserId == p.UserId);
+		if (p.UserId.IsNotNull()) q = q.Where(x => x.Contract!.UserId == p.UserId);
 		if (p.ContractId.IsNotNull()) q = q.Where(x => x.ContractId == p.ContractId);
 
 		UResponse<IEnumerable<DormBedInvoiceResponse>?> response = await q.Select(Projections.DormBedInvoiceSelector(p.SelectorArgs)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);

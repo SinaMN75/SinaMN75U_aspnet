@@ -69,8 +69,6 @@ public sealed class ProductReadParams : BaseReadParams<TagProduct> {
 	public Guid? ParentId { get; set; }
 	public int? MinStock { get; set; }
 	public int? MaxStock { get; set; }
-	public bool OrderByOrder { get; set; }
-	public bool OrderByOrderDesc { get; set; }
 	public ICollection<Guid>? Categories { get; set; }
 	public ProductSelectorArgs SelectorArgs { get; set; } = new();
 }
