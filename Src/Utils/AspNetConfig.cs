@@ -85,7 +85,6 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<INotificationService, NotificationService>();
 		builder.Services.AddScoped<IDataSeedService, DataSeedService>();
 		builder.Services.AddScoped<IVasService, VasService>();
-		builder.Services.AddScoped<IChargeInternetService, ChargeInternetService>();
 		builder.Services.AddScoped<IMerchantService, MerchantService>();
 		builder.Services.AddScoped<IPnService, PnService>();
 		builder.Services.AddScoped<IProcessService, ProcessService>();
@@ -94,10 +93,12 @@ public static partial class AspNetConfig {
 		if (Core.App.Test) {
 			builder.Services.AddScoped<IInquiryService, InquiryServiceFake>();
 			builder.Services.AddScoped<ISmsNotificationService, SmsNotificationServiceFake>();
+			builder.Services.AddScoped<IChargeInternetService, ChargeInternetServiceFake>();
 		}
 		else {
 			builder.Services.AddScoped<IInquiryService, InquiryService>();
 			builder.Services.AddScoped<ISmsNotificationService, SmsNotificationService>();
+			builder.Services.AddScoped<IChargeInternetService, ChargeInternetService>();
 		}
 	}
 

@@ -4,17 +4,13 @@ public interface IChargeInternetService {
 	Task<UResponse<ChargeInternetReserveResponse?>> Pin(ReserveChargeParams p, CancellationToken ct);
 	Task<UResponse<ChargeInternetReserveResponse?>> Topup(TopupChargeParams p, CancellationToken ct);
 	Task<UResponse<InternetPackageResponse?>> InternetList(InternetListParams p, CancellationToken ct);
-
 	Task<UResponse<GetStatusResponse?>> GetStatus(GetStatusParams p, CancellationToken ct);
 	Task<UResponse<GetBalanceResponse?>> GetBalance(CancellationToken ct);
-
 	Task<UResponse<EchoResponse?>> Echo(CancellationToken ct);
-
-	// Task<UResponse<InternetPackageResponse?>> MciTopOffer(MCITopOfferParams p, CancellationToken ct);
 	Task<UResponse<ChargeInternetReserveResponse?>> InternetReserve(InternetReserveParams p, CancellationToken ct);
 }
 
-public partial class ChargeInternetService(
+public class ChargeInternetService(
 	IHttpClientService httpClient,
 	ILocalizationService ls,
 	ITokenService ts,
@@ -72,7 +68,6 @@ public partial class ChargeInternetService(
 				WalletTxnId = null,
 				ChargePin = approveResponse.Pin
 			}, ct);
-			// BUG FIX: removed duplicate Purchase call — it charged the user a second time and threw (no Amount → p.Amount!.Value on null)
 		}
 
 		return new UResponse<ChargeInternetReserveResponse?>(new ChargeInternetReserveResponse {
@@ -309,60 +304,6 @@ public partial class ChargeInternetService(
 		});
 	}
 
-	// public async Task<UResponse<InternetPackageResponse?>> MciTopOffer(MCITopOfferParams p, CancellationToken ct) {
-	// 	GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-	// 	if (tokenResponse?.AccessToken == null) return new UResponse<InternetPackageResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
-	//
-	// 	HttpResponseMessage? response = await httpClient.Post(
-	// 		$"{Core.App.Mobtakeran.BaseUrl}api/v2/Internet/MCITopOffer",
-	// 		new {
-	// 			apiKey = Core.App.Mobtakeran.ApiKey,
-	// 			reserve = Random.Shared.Next(999999).ToString(),
-	// 			localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
-	// 			attachments = new { subscriber = p.Subscriber }
-	// 		},
-	// 		new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
-	// 	);
-	//
-	// 	if (response is null or { IsSuccessStatusCode: false }) return new UResponse<InternetPackageResponse?>(null);
-	//
-	// 	JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
-	// 	JsonElement attachment = data.GetProperty("attachments");
-	//
-	// 	string? listJson = attachment.GetStringOrNull("list");
-	// 	IEnumerable<InternetPackageItem> packages = [];
-	//
-	// 	if (!string.IsNullOrEmpty(listJson)) {
-	// 		JsonElement packagesArray = JsonSerializer.Deserialize<JsonElement>(listJson);
-	// 		packages = packagesArray.EnumerateArray()
-	// 			.Select(x => new InternetPackageItem {
-	// 				Amount = x.GetIntOrNull("amount"),
-	// 				Id = x.GetStringOrNull("id"),
-	// 				Title = x.GetStringOrNull("title"),
-	// 				ShortTitle = null, // Not in this endpoint
-	// 				SimType = x.GetIntOrNull("simType"),
-	// 				Duration = x.GetStringOrNull("duration"),
-	// 				OfferCode = x.GetStringOrNull("offerCode"),
-	// 				Price = x.GetDecimalOrNull("price"),
-	// 				PackageDType = x.GetIntOrNull("packageDTYPE"),
-	// 				Capacity = x.GetStringOrNull("capacity")
-	// 			})
-	// 			.ToList();
-	// 	}
-	//
-	// 	return new UResponse<InternetPackageResponse?>(new InternetPackageResponse {
-	// 		Reserve = data.GetIntOrNull("reserve"),
-	// 		ServerDateTime = data.GetStringOrNull("serverDateTime"),
-	// 		Status = data.GetBoolOrNull("status"),
-	// 		Code = data.GetIntOrNull("code"),
-	// 		Message = data.GetStringOrNull("message"),
-	// 		Reference = attachment.GetStringOrNull("reference"),
-	// 		TraceId = attachment.GetStringOrNull("trace_id"),
-	// 		Help = attachment.GetStringOrNull("help"),
-	// 		List = packages
-	// 	});
-	// }
-
 	private async Task<ApproveResponse?> Approve(ApproveParams p, CancellationToken ct) {
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null) return null;
@@ -461,21 +402,146 @@ public partial class ChargeInternetService(
 
 	private static string NormalizeDuration(string? raw) {
 		if (string.IsNullOrWhiteSpace(raw)) return "UNKNOWN";
-
 		string v = raw.Trim().ToUpperInvariant().Replace(" ", "");
-
 		// "30" -> "30D", "7" -> "7D", "90" -> "3M"
-		if (int.TryParse(v, out int num)) {
-			return num <= 31 ? $"{num}D" : $"{Math.Max(1, (int)Math.Round(num / 30.0))}M";
-		}
-
+		if (int.TryParse(v, out int num)) return num <= 31 ? $"{num}D" : $"{Math.Max(1, (int)Math.Round(num / 30.0))}M";
 		// "W1" -> "1W", "M1" -> "1M"  
-		if (v.Length == 2 && (v[0] == 'W' || v[0] == 'M' || v[0] == 'D')) {
-			return $"{v[1]}{v[0]}";
-		}
-
+		if (v.Length == 2 && (v[0] == 'W' || v[0] == 'M' || v[0] == 'D')) return $"{v[1]}{v[0]}";
 		// "W" -> "1W", "M" -> "1M"
 		if (v == "W") return "1W";
 		return v == "M" ? "1M" : v;
 	}
+}
+
+public class ChargeInternetServiceFake : IChargeInternetService {
+	public bool SimulateUnauthorized { get; set; }
+	public bool SimulateLowBalance { get; set; }
+	public bool SimulateTokenFailure { get; set; }
+	public bool SimulateUpstreamFailure { get; set; }
+
+	public List<ReserveChargeParams> PinCalls { get; } = [];
+	public List<TopupChargeParams> TopupCalls { get; } = [];
+	public List<InternetReserveParams> InternetReserveCalls { get; } = [];
+	public List<InternetListParams> InternetListCalls { get; } = [];
+	public List<GetStatusParams> GetStatusCalls { get; } = [];
+	public int GetBalanceCalls { get; private set; }
+	public int EchoCalls { get; private set; }
+
+	public string FakePin { get; set; } = "1234567890123456";
+	public int FakeBalance { get; set; } = 5_000_000;
+
+	public Task<UResponse<ChargeInternetReserveResponse?>> Pin(ReserveChargeParams p, CancellationToken ct) {
+		PinCalls.Add(p);
+		if (SimulateUnauthorized) return Fail<ChargeInternetReserveResponse>(Usc.UnAuthorized, "AuthorizationRequired");
+		if (SimulateLowBalance) return Fail<ChargeInternetReserveResponse>(Usc.BalanceIsLow, "BalanceIsLow");
+		return SimulateTokenFailure ? Fail<ChargeInternetReserveResponse>(Usc.ShahkarException, "ShahkarIsNotAvailableAtThisTime") : Task.FromResult(SimulateUpstreamFailure ? new UResponse<ChargeInternetReserveResponse?>(null) : new UResponse<ChargeInternetReserveResponse?>(BuildReserve(p.Amount, FakePin)));
+	}
+
+	public Task<UResponse<ChargeInternetReserveResponse?>> Topup(TopupChargeParams p, CancellationToken ct) {
+		TopupCalls.Add(p);
+		if (SimulateUnauthorized) return Fail<ChargeInternetReserveResponse>(Usc.UnAuthorized, "AuthorizationRequired");
+		if (SimulateLowBalance) return Fail<ChargeInternetReserveResponse>(Usc.BalanceIsLow, "BalanceIsLow");
+		return SimulateTokenFailure ? Fail<ChargeInternetReserveResponse>(Usc.ShahkarException, "ShahkarIsNotAvailableAtThisTime") : Task.FromResult(SimulateUpstreamFailure ? new UResponse<ChargeInternetReserveResponse?>(null) : new UResponse<ChargeInternetReserveResponse?>(BuildReserve(p.Amount, null)));
+	}
+
+	public Task<UResponse<ChargeInternetReserveResponse?>> InternetReserve(InternetReserveParams p, CancellationToken ct) {
+		InternetReserveCalls.Add(p);
+		if (SimulateUnauthorized) return Fail<ChargeInternetReserveResponse>(Usc.UnAuthorized, "AuthorizationRequired");
+		if (SimulateLowBalance) return Fail<ChargeInternetReserveResponse>(Usc.BalanceIsLow, "BalanceIsLow");
+		return SimulateTokenFailure ? Fail<ChargeInternetReserveResponse>(Usc.ShahkarException, "ShahkarIsNotAvailableAtThisTime") : Task.FromResult(SimulateUpstreamFailure ? new UResponse<ChargeInternetReserveResponse?>(null) : new UResponse<ChargeInternetReserveResponse?>(BuildReserve(p.Amount, null)));
+	}
+
+	public Task<UResponse<InternetPackageResponse?>> InternetList(InternetListParams p, CancellationToken ct) {
+		InternetListCalls.Add(p);
+		if (SimulateTokenFailure) return Fail<InternetPackageResponse>(Usc.ShahkarException, "ShahkarIsNotAvailableAtThisTime");
+		if (SimulateUpstreamFailure) return Task.FromResult(new UResponse<InternetPackageResponse?>(null));
+
+
+		InternetPackageResponse result = new() {
+			Status = true,
+			Message = "OK",
+			List = [
+				new() { Id = "PKG-1", Title = "1GB - 1 Day", Amount = 30_000, SimType = 0, Duration = "1D", OfferCode = "OFF1", PackageDType = 1, Capacity = "1GB" },
+				new() { Id = "PKG-2", Title = "10GB - 30 Day", Amount = 200_000, SimType = 1, Duration = "1M", OfferCode = "OFF2", PackageDType = 2, Capacity = "10GB" }
+			]
+		};
+		return Task.FromResult(new UResponse<InternetPackageResponse?>(result));
+	}
+
+	public Task<UResponse<GetStatusResponse?>> GetStatus(GetStatusParams p, CancellationToken ct) {
+		GetStatusCalls.Add(p);
+		if (SimulateTokenFailure) return Fail<GetStatusResponse>(Usc.ShahkarException, "ShahkarIsNotAvailableAtThisTime");
+		if (SimulateUpstreamFailure) return Task.FromResult(new UResponse<GetStatusResponse?>(null));
+
+		return Task.FromResult(new UResponse<GetStatusResponse?>(new GetStatusResponse {
+			Reserve = 111111,
+			ServerDateTime = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+			Status = true,
+			Code = 0,
+			Message = "Success",
+			Reference = 999999,
+			Subscriber = "09120000000",
+			Serial = "SER-0001",
+			Pin = FakePin,
+			TxnTime = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+			Help = null,
+			MessageSource = "fake",
+			ExtCode = "0"
+		}));
+	}
+
+	public Task<UResponse<GetBalanceResponse?>> GetBalance(CancellationToken ct) {
+		GetBalanceCalls++;
+		if (SimulateTokenFailure) return Fail<GetBalanceResponse>(Usc.ShahkarException, "ShahkarIsNotAvailableAtThisTime");
+		if (SimulateUpstreamFailure) return Task.FromResult(new UResponse<GetBalanceResponse?>(null));
+
+		return Task.FromResult(new UResponse<GetBalanceResponse?>(new GetBalanceResponse {
+			Reserve = 222222,
+			ServerDateTime = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+			Status = true,
+			Code = 0,
+			Message = "Success",
+			Balance = FakeBalance,
+			Wallet = FakeBalance,
+			Credit = 0,
+			Limit = 0,
+			Help = null,
+			MessageSource = "fake",
+			ExtCode = "0"
+		}));
+	}
+
+	public Task<UResponse<EchoResponse?>> Echo(CancellationToken ct) {
+		EchoCalls++;
+		if (SimulateTokenFailure) return Fail<EchoResponse>(Usc.ShahkarException, "ShahkarIsNotAvailableAtThisTime");
+		if (SimulateUpstreamFailure) return Task.FromResult(new UResponse<EchoResponse?>(null));
+		return Task.FromResult(new UResponse<EchoResponse?>(new EchoResponse {
+			Reserve = 333333,
+			ServerDateTime = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+			Status = true,
+			Code = 0,
+			Message = "Success",
+			MciTopup = true,
+			Mtn = true,
+			Rightel = true,
+			Shatel = true,
+			MciInternet = true
+		}));
+	}
+
+	private static ChargeInternetReserveResponse BuildReserve(decimal amount, string? pin) => new() {
+		Reserve = Random.Shared.Next(999999),
+		ServerDateTime = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+		Status = true,
+		Code = 0,
+		Message = "Success",
+		Reference = Guid.NewGuid().ToString("N"),
+		TraceId = Guid.NewGuid().ToString("N"),
+		AffectiveAmount = (int)amount,
+		Help = null,
+		MessageSource = "fake",
+		Pin = pin
+	};
+
+	private static Task<UResponse<T?>> Fail<T>(Usc status, string messageKey) => Task.FromResult(new UResponse<T?>(default, status, messageKey));
 }
