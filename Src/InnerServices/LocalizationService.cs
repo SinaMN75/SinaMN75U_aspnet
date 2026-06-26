@@ -155,6 +155,8 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 
 		// ===== System / API =====
 		{ "InternalServerError", "Internal server error" },
+		{ "IpgError", "Payment gateway error. Please try again." },
+		{ "TxnNotFound", "Transaction not found." },
 		{ "InvalidBase64RequestBody", "Invalid base64 request body" },
 		{ "InvalidJsonBody", "Invalid JSON body" },
 		{ "InvalidRequestFormat", "Invalid request format" },
@@ -359,6 +361,8 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 
 		// ===== System / API =====
 		{ "InternalServerError", "خطای داخلی سرور" },
+		{ "IpgError", "خطای درگاه پرداخت. لطفاً دوباره تلاش کنید." },
+		{ "TxnNotFound", "تراکنش یافت نشد." },
 		{ "InvalidBase64RequestBody", "بدنه درخواست base64 نامعتبر است" },
 		{ "InvalidJsonBody", "بدنه JSON نامعتبر است" },
 		{ "InvalidRequestFormat", "قالب درخواست نامعتبر است" },

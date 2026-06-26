@@ -91,7 +91,8 @@ public class WalletService(
 		WalletEntity? e = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == p.UserId, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("WalletNotFound"));
 
-		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		// Security: free top-ups are admin-only now; regular users must add funds through the IPG gateway (real money), not this endpoint.
+		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		return await Transfer(new WalletTransferParams {
 			ApiKey = p.ApiKey,

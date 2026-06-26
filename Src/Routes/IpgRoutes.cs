@@ -3,7 +3,8 @@ namespace SinaMN75U.Routes;
 public static class IpgRoutes {
 	public static void MapIpgRoutes(this IEndpointRouteBuilder app, string tag) {
 		RouteGroupBuilder r = app.MapGroup(tag).WithTags(tag).AddEndpointFilter<UValidationFilter>();
-		r.MapPost("Pay", async (IpgSaleParams p, IIpgService s, CancellationToken c) => (await s.GetSaleIpgLink(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("Pay", async (IpgSaleParams p, IIpgService s, CancellationToken c) => (await s.GetSaleIpgLink(p, c)).ToResult()).Produces<UResponse<IpgPayResponse?>>();
+		r.MapPost("Verify", async (IpgVerifyParams p, IIpgService s, CancellationToken c) => (await s.Verify(p, c)).ToResult()).Produces<UResponse<IpgVerifyResponse?>>();
 
 		r.MapGet("CallBack", async (
 			[FromQuery] string token,
