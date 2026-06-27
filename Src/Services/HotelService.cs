@@ -165,7 +165,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 		if (p.MinPrice.HasValue) q = q.Where(x => x.PricePerNight >= p.MinPrice);
 		if (p.MaxPrice.HasValue) q = q.Where(x => x.PricePerNight <= p.MaxPrice);
 		
-		IQueryable<HotelRoomResponse> projected = q.Select(Projections.HotelRoomSelector(new HotelRoomSelectorArgs()));
+		IQueryable<HotelRoomResponse> projected = q.Select(Projections.HotelRoomSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 

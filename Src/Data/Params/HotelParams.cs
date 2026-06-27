@@ -61,6 +61,8 @@ public sealed class HotelRoomReadParams : BaseReadParams<TagRoom> {
 	public int? MaxCapacity { get; set; }
 	public decimal? MinPrice { get; set; }
 	public decimal? MaxPrice { get; set; }
+
+	public HotelRoomSelectorArgs SelectorArgs { get; set; } = new();
 }
 
 // ---------------- Dorm ----------------
