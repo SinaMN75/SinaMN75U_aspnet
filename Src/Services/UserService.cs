@@ -117,7 +117,17 @@ public class UserService(
 		if (p.StartBirthDate.HasValue) q = q.Where(u => u.Birthdate >= p.StartBirthDate);
 		if (p.EndBirthDate.HasValue) q = q.Where(u => u.Birthdate <= p.EndBirthDate);
 		if (p.Categories.IsNotNullOrEmpty()) q = q.Where(x => x.Categories.Any(y => p.Categories!.Contains(y.Id)));
-		
+
+		if (p.Query.IsNotNullOrEmpty())
+			q = q.Where(x =>
+				(x.UserName).Contains(p.Query) ||
+				(x.PhoneNumber ?? "").Contains(p.Query) ||
+				(x.FirstName ?? "").Contains(p.Query) ||
+				(x.LastName ?? "").Contains(p.Query) ||
+				(x.NationalCode ?? "").Contains(p.Query) ||
+				(x.Email ?? "").Contains(p.Query)
+			);
+
 		IQueryable<UserResponse> projected = q.Select(Projections.UserSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
@@ -166,7 +176,7 @@ public class UserService(
 		if (p.BirthCertificateSecondRejectionReason != null) e.JsonData.BirthCertificateSecondRejectionReason = p.BirthCertificateSecondRejectionReason;
 		if (p.BirthCertificateThirdRejectionReason != null) e.JsonData.BirthCertificateThirdRejectionReason = p.BirthCertificateThirdRejectionReason;
 		if (p.BirthCertificateForthRejectionReason != null) e.JsonData.BirthCertificateForthRejectionReason = p.BirthCertificateForthRejectionReason;
-		if (p.BirthCertificateFifthRejectionReason  != null) e.JsonData.BirthCertificateFifthRejectionReason = p.BirthCertificateFifthRejectionReason;
+		if (p.BirthCertificateFifthRejectionReason != null) e.JsonData.BirthCertificateFifthRejectionReason = p.BirthCertificateFifthRejectionReason;
 		if (p.VisualAuthenticationRejectionReason != null) e.JsonData.VisualAuthenticationRejectionReason = p.VisualAuthenticationRejectionReason;
 		if (p.ESignatureRejectionReason != null) e.JsonData.ESignatureRejectionReason = p.ESignatureRejectionReason;
 
@@ -266,7 +276,7 @@ public class UserService(
 				ESignature = true
 			}))
 			.FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
-		
+
 		if (e == null) return new UResponse<bool?>(null, Usc.NotFound, ls.Get("UserNotFound"));
 
 		if (
@@ -281,7 +291,7 @@ public class UserService(
 			e.ESignature.IsNullOrEmpty() ||
 			e.Tags.Contains(TagUser.ESignatureVerified)
 		) return new UResponse<bool?>(true);
-		
+
 		return new UResponse<bool?>(false);
 	}
 }

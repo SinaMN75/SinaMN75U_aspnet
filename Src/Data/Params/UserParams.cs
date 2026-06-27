@@ -70,6 +70,7 @@ public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {
 }
 
 public sealed class UserReadParams : BaseReadParams<TagUser> {
+	public string? Query { get; set; }
 	public string? LandLine { get; set; }
 	public string? FirstName { get; set; }
 	public string? LastName { get; set; }
