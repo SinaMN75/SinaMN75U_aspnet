@@ -461,8 +461,16 @@ public class ChargeInternetServiceFake : IChargeInternetService {
 			Status = true,
 			Message = "OK",
 			List = [
-				new() { Id = "PKG-1", Title = "1GB - 1 Day", Amount = 30_000, SimType = 0, Duration = "1D", OfferCode = "OFF1", PackageDType = 1, Capacity = "1GB" },
-				new() { Id = "PKG-2", Title = "10GB - 30 Day", Amount = 200_000, SimType = 1, Duration = "1M", OfferCode = "OFF2", PackageDType = 2, Capacity = "10GB" }
+				new InternetPackageItem { Id = "PKG-1", Title = "1GB - 1 Day", Amount = 30_000, SimType = 0, Duration = "1D", OfferCode = "OFF1", PackageDType = 1, Capacity = "1GB" },
+				new InternetPackageItem { Id = "PKG-1", Title = "1GB - 1 Day", Amount = 30_000, SimType = 0, Duration = "1D", OfferCode = "OFF1", PackageDType = 1, Capacity = "1GB" },
+				new InternetPackageItem { Id = "PKG-1", Title = "1GB - 1 Day", Amount = 30_000, SimType = 0, Duration = "1D", OfferCode = "OFF1", PackageDType = 1, Capacity = "1GB" },
+				new InternetPackageItem { Id = "PKG-1", Title = "1GB - 1 Day", Amount = 30_000, SimType = 0, Duration = "1D", OfferCode = "OFF1", PackageDType = 1, Capacity = "1GB" },
+				new InternetPackageItem { Id = "PKG-1", Title = "1GB - 1 Day", Amount = 30_000, SimType = 0, Duration = "1D", OfferCode = "OFF1", PackageDType = 1, Capacity = "1GB" },
+				new InternetPackageItem { Id = "PKG-1", Title = "1GB - 1 Day", Amount = 30_000, SimType = 0, Duration = "1D", OfferCode = "OFF1", PackageDType = 1, Capacity = "1GB" },
+				new InternetPackageItem { Id = "PKG-1", Title = "1GB - 1 Day", Amount = 30_000, SimType = 0, Duration = "1D", OfferCode = "OFF1", PackageDType = 1, Capacity = "1GB" },
+				new InternetPackageItem { Id = "PKG-1", Title = "1GB - 1 Day", Amount = 30_000, SimType = 0, Duration = "1D", OfferCode = "OFF1", PackageDType = 1, Capacity = "1GB" },
+				new InternetPackageItem { Id = "PKG-1", Title = "1GB - 1 Day", Amount = 30_000, SimType = 0, Duration = "1D", OfferCode = "OFF1", PackageDType = 1, Capacity = "1GB" },
+				new InternetPackageItem { Id = "PKG-2", Title = "10GB - 30 Day", Amount = 200_000, SimType = 1, Duration = "1M", OfferCode = "OFF2", PackageDType = 2, Capacity = "10GB" }
 			]
 		};
 		return Task.FromResult(new UResponse<InternetPackageResponse?>(result));

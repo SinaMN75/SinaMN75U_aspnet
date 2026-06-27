@@ -30,8 +30,7 @@ public static class LinqExtensions {
 		if (p.CreatorId != null) q = q.Where(x => x.CreatorId == p.CreatorId);
 		if (p.FromCreatedAt != null) q = q.Where(x => x.CreatedAt >= p.FromCreatedAt);
 		if (p.ToCreatedAt != null) q = q.Where(x => x.CreatedAt <= p.ToCreatedAt);
-		if (p.Tags?.Count != 0) q = q.Where(x => p.Tags!.All(tag => x.Tags.Contains(tag)));
-		
+		if (p.Tags != null && p.Tags.Count != 0) q = q.Where(x => p.Tags.All(tag => x.Tags.Contains(tag)));
 		return q;
 	}
 
