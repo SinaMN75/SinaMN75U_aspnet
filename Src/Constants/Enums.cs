@@ -1,5 +1,43 @@
 namespace SinaMN75U.Constants;
 
+public enum TagOrderBy {
+	CreatedAt = 101,
+	CardNumber = 102,
+	ZipCode = 103,
+	Order = 104,
+	Title = 105,
+	Capacity = 106,
+	City = 107,
+	IsAvailable = 108,
+	StartDate = 109,
+	EndDate = 110,
+	DueDate = 111,
+	Mcc = 112,
+	Code = 113,
+	Amount = 114,
+	UserName = 115,
+	Brand = 116,
+	Balance = 117,
+
+	CreatedAtDescending = 201,
+	CardNumberDescending = 202,
+	ZipCodeDescending = 203,
+	OrderDescending = 204,
+	TitleDescending = 205,
+	CapacityDescending = 206,
+	CityDescending = 207,
+	IsAvailableDescending = 208,
+	StartDateDescending = 209,
+	EndDateDescending = 210,
+	DueDateDescending = 211,
+	MccDescending = 212,
+	CodeDescending = 213,
+	AmountDescending = 214,
+	UserNameDescending = 215,
+	BrandDescending = 216,
+	BalanceDescending = 217,
+}
+
 public enum Usc {
 	Success = 200,
 	Created = 201,
@@ -329,11 +367,13 @@ public enum TagRoom {
 	Double = 102,
 	Triple = 103
 }
+
 public enum TagDormRoom {
 	Single = 101,
 	Double = 102,
 	Dorm = 103
 }
+
 public enum TagDormBed {
 	Single = 101,
 	Double = 102

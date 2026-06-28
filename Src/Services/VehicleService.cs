@@ -34,7 +34,7 @@ public class VehicleService(
 	}
 
 	public async Task<UResponse<IEnumerable<VehicleResponse>?>> Read(VehicleReadParams p, CancellationToken ct) {
-		IQueryable<VehicleEntity> q = db.Set<VehicleEntity>().ApplyReadParams<VehicleEntity, TagVehicle, BaseJson>(p);
+		IQueryable<VehicleEntity> q = db.Set<VehicleEntity>().ApplyReadParams(p);
 		if (p.Brand.IsNotNullOrEmpty()) q = q.Where(x => x.Brand == p.Brand);
 		if (p.LicencePlate.IsNotNullOrEmpty()) q = q.Where(x => x.LicencePlate == p.LicencePlate);
 		if (p.Color.IsNotNullOrEmpty()) q = q.Where(x => x.Color == p.Color);

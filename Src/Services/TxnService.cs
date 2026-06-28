@@ -33,7 +33,7 @@ public class TxnService(
 	}
 
 	public async Task<UResponse<IEnumerable<TxnResponse>?>> Read(TxnReadParams p, CancellationToken ct) {
-		IQueryable<TxnEntity> q = db.Set<TxnEntity>().ApplyReadParams<TxnEntity, TagTxn, BaseJson>(p);
+		IQueryable<TxnEntity> q = db.Set<TxnEntity>().ApplyReadParams(p);
 		IQueryable<TxnResponse> projected = q.Select(Projections.TxnSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}

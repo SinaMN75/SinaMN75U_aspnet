@@ -38,7 +38,7 @@ public class TicketService(
 	}
 
 	public async Task<UResponse<IEnumerable<TicketResponse>?>> Read(TicketReadParams p, CancellationToken ct) {
-		IQueryable<TicketEntity> q = db.Set<TicketEntity>().ApplyReadParams<TicketEntity, TagTicket, TicketJson>(p);
+		IQueryable<TicketEntity> q = db.Set<TicketEntity>().ApplyReadParams(p);
 		
 		IQueryable<TicketResponse> projected = q.Select(Projections.TicketSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);

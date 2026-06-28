@@ -40,6 +40,8 @@ public class BaseReadParams<T> : BaseParams {
 	public ICollection<T>? Tags { get; set; }
 	public ICollection<Guid> Ids { get; set; } = [];
 	public Guid? CreatorId { get; set; }
+
+	public TagOrderBy OrderBy { get; set; } = TagOrderBy.CreatedAt;
 }
 
 public class BaseUpdateParams<T> : BaseParams {

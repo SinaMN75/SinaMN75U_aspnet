@@ -104,7 +104,7 @@ public class UserService(
 	}
 
 	public async Task<UResponse<IEnumerable<UserResponse>?>> Read(UserReadParams p, CancellationToken ct) {
-		IQueryable<UserEntity> q = db.Set<UserEntity>().ApplyReadParams<UserEntity, TagUser, UserJson>(p);
+		IQueryable<UserEntity> q = db.Set<UserEntity>().ApplyReadParams(p);
 
 		if (p.UserName.IsNotNullOrEmpty()) q = q.Where(u => u.UserName.Contains(p.UserName!));
 		if (p.FirstName.IsNotNullOrEmpty()) q = q.Where(u => (u.FirstName ?? "").Contains(p.FirstName!));

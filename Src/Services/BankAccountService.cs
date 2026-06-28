@@ -39,7 +39,7 @@ public class BankAccountService(
 		if (userData == null) return new UResponse<IEnumerable<BankAccountResponse>?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		if (!userData.IsAdmin) return new UResponse<IEnumerable<BankAccountResponse>?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
-		IQueryable<BankAccountEntity> q = db.Set<BankAccountEntity>().ApplyReadParams<BankAccountEntity, TagBankAccount, BaseJson>(p);
+		IQueryable<BankAccountEntity> q = db.Set<BankAccountEntity>().ApplyReadParams(p);
 
 		if (p.CardNumber.IsNotNullOrEmpty()) q = q.Where(x => x.CardNumber == p.CardNumber);
 		if (p.OwnerName.IsNotNullOrEmpty()) q = q.Where(x => x.OwnerName == p.OwnerName);

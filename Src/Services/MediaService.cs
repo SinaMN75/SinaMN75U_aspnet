@@ -70,7 +70,7 @@ public class MediaService(
 	}
 
 	public async Task<UResponse<IEnumerable<MediaResponse>?>> Read(BaseReadParams<TagMedia> p, CancellationToken ct) {
-		IQueryable<MediaEntity> q = db.Set<MediaEntity>().ApplyReadParams<MediaEntity, TagMedia, BaseJson>(p);
+		IQueryable<MediaEntity> q = db.Set<MediaEntity>().ApplyReadParams(p);
 
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
 

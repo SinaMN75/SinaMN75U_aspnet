@@ -78,7 +78,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 	}
 
 	public async Task<UResponse<IEnumerable<HotelResponse>?>> ReadHotels(HotelReadParams p, CancellationToken ct) {
-		IQueryable<HotelEntity> q = db.Set<HotelEntity>().ApplyReadParams<HotelEntity, TagHotel, BaseJson>(p);
+		IQueryable<HotelEntity> q = db.Set<HotelEntity>().ApplyReadParams(p);
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.City.IsNotNullOrEmpty()) q = q.Where(x => x.City.Contains(p.City!));
@@ -155,7 +155,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 	}
 
 	public async Task<UResponse<IEnumerable<HotelRoomResponse>?>> ReadHotelRooms(HotelRoomReadParams p, CancellationToken ct) {
-		IQueryable<HotelRoomEntity> q = db.Set<HotelRoomEntity>().ApplyReadParams<HotelRoomEntity, TagRoom, BaseJson>(p);
+		IQueryable<HotelRoomEntity> q = db.Set<HotelRoomEntity>().ApplyReadParams(p);
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.HotelId.HasValue) q = q.Where(x => x.HotelId == p.HotelId);
@@ -233,7 +233,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 	}
 
 	public async Task<UResponse<IEnumerable<DormResponse>?>> ReadDorms(DormReadParams p, CancellationToken ct) {
-		IQueryable<DormEntity> q = db.Set<DormEntity>().ApplyReadParams<DormEntity, TagDorm, BaseJson>(p);
+		IQueryable<DormEntity> q = db.Set<DormEntity>().ApplyReadParams(p);
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.City.IsNotNullOrEmpty()) q = q.Where(x => x.City.Contains(p.City!));
@@ -307,7 +307,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 	}
 
 	public async Task<UResponse<IEnumerable<DormRoomResponse>?>> ReadDormRooms(DormRoomReadParams p, CancellationToken ct) {
-		IQueryable<DormRoomEntity> q = db.Set<DormRoomEntity>().ApplyReadParams<DormRoomEntity, TagDormRoom, BaseJson>(p);
+		IQueryable<DormRoomEntity> q = db.Set<DormRoomEntity>().ApplyReadParams(p);
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.DormId.HasValue) q = q.Where(x => x.DormId == p.DormId);
@@ -382,7 +382,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 	}
 
 	public async Task<UResponse<IEnumerable<DormBedResponse>?>> ReadDormBeds(DormBedReadParams p, CancellationToken ct) {
-		IQueryable<DormBedEntity> q = db.Set<DormBedEntity>().ApplyReadParams<DormBedEntity, TagDormBed, BaseJson>(p);
+		IQueryable<DormBedEntity> q = db.Set<DormBedEntity>().ApplyReadParams(p);
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.RoomId.HasValue) q = q.Where(x => x.RoomId == p.RoomId);
@@ -564,7 +564,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 	}
 
 	public async Task<UResponse<IEnumerable<DormBedContractResponse>?>> ReadDormBedContracts(DormBedContractReadParams p, CancellationToken ct) {
-		IQueryable<DormBedContractEntity> q = db.Set<DormBedContractEntity>().ApplyReadParams<DormBedContractEntity, TagDormBedContract, BaseJson>(p);
+		IQueryable<DormBedContractEntity> q = db.Set<DormBedContractEntity>().ApplyReadParams(p);
 
 		if (p.UserId.IsNotNull()) q = q.Where(u => u.UserId == p.UserId);
 		if (p.BedId.IsNotNull()) q = q.Where(u => u.BedId == p.BedId);
@@ -633,7 +633,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 	}
 
 	public async Task<UResponse<IEnumerable<DormBedInvoiceResponse>?>> ReadDormBedInvoices(DormBedInvoiceReadParams p, CancellationToken ct) {
-		IQueryable<DormBedInvoiceEntity> q = db.Set<DormBedInvoiceEntity>().Include(x => x.Contract).ApplyReadParams<DormBedInvoiceEntity, TagDormBedInvoice, DormBedInvoiceJson>(p);
+		IQueryable<DormBedInvoiceEntity> q = db.Set<DormBedInvoiceEntity>().Include(x => x.Contract).ApplyReadParams(p);
 
 		if (p.UserId.IsNotNull()) q = q.Where(x => x.Contract!.UserId == p.UserId);
 		if (p.ContractId.IsNotNull()) q = q.Where(x => x.ContractId == p.ContractId);

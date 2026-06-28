@@ -31,7 +31,7 @@ public class NotificationService(
 	}
 
 	public async Task<UResponse<IEnumerable<NotificationResponse>?>> Read(NotificationReadParams p, CancellationToken ct) {
-		IQueryable<NotificationEntity> q = db.Set<NotificationEntity>().ApplyReadParams<NotificationEntity, TagNotification, BaseJson>(p);
+		IQueryable<NotificationEntity> q = db.Set<NotificationEntity>().ApplyReadParams(p);
 		
 		if (p.UserId.IsNotNull()) q = q.Where(x => x.UserId == p.UserId);
 		

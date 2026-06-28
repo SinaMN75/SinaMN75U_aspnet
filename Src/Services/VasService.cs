@@ -34,7 +34,7 @@ public class VasService(
 	}
 
 	public async Task<UResponse<IEnumerable<VasResponse>?>> Read(VasReadParams p, CancellationToken ct) {
-		IQueryable<VasEntity> q = db.Set<VasEntity>().ApplyReadParams<VasEntity, TagVas, VasJson>(p);
+		IQueryable<VasEntity> q = db.Set<VasEntity>().ApplyReadParams(p);
 
 		if (p.AuthorizeCode.IsNotNullOrEmpty()) q = q.Where(x => x.AuthorizeCode == p.AuthorizeCode);
 		if (p.BillId.IsNotNullOrEmpty()) q = q.Where(x => x.BillId == p.BillId);

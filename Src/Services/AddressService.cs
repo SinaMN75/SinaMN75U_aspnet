@@ -46,7 +46,7 @@ public class AddressService(
 	}
 
 	public async Task<UResponse<IEnumerable<AddressResponse>?>> Read(AddressReadParams p, CancellationToken ct) {
-		IQueryable<AddressEntity> q = db.Set<AddressEntity>().ApplyReadParams<AddressEntity, TagAddress, AddressJson>(p);
+		IQueryable<AddressEntity> q = db.Set<AddressEntity>().ApplyReadParams(p);
 		
 		if (p.ZipCode.IsNotNullOrEmpty()) q = q.Where(x => x.ZipCode == p.ZipCode);
 

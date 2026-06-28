@@ -43,7 +43,7 @@ public class ProductService(
 	public async Task<UResponse<IEnumerable<ProductResponse>?>> Read(ProductReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		p.SelectorArgs.UserId = userData?.Id;
-		IQueryable<ProductEntity> q = db.Set<ProductEntity>().Where(x => x.ParentId == null).ApplyReadParams<ProductEntity, TagProduct, ProductJson>(p);
+		IQueryable<ProductEntity> q = db.Set<ProductEntity>().Where(x => x.ParentId == null).ApplyReadParams(p);
 
 		if (p.Query.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Query!) || (x.Description ?? "").Contains(p.Query!) || (x.Subtitle ?? "").Contains(p.Query!));
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));

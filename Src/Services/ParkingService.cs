@@ -38,7 +38,7 @@ public class ParkingService(
 	}
 
 	public async Task<UResponse<IEnumerable<ParkingResponse>?>> ReadParking(ParkingReadParams p, CancellationToken ct) {
-		IQueryable<ParkingEntity> q = db.Set<ParkingEntity>().ApplyReadParams<ParkingEntity, TagParking, BaseJson>(p);
+		IQueryable<ParkingEntity> q = db.Set<ParkingEntity>().ApplyReadParams(p);
 		IQueryable<ParkingResponse> projected = q.Select(Projections.ParkingSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
@@ -104,7 +104,7 @@ public class ParkingService(
 	}
 
 	public async Task<UResponse<IEnumerable<ParkingReportResponse>?>> ReadParkingReport(ParkingReportReadParams p, CancellationToken ct) {
-		IQueryable<ParkingReportEntity> q = db.Set<ParkingReportEntity>().ApplyReadParams<ParkingReportEntity, TagParkingReport, BaseJson>(p);
+		IQueryable<ParkingReportEntity> q = db.Set<ParkingReportEntity>().ApplyReadParams(p);
 		
 		if (p.EndDate.HasValue) q = q.Where(x => x.EndDate >= p.EndDate);
 		if (p.StartDate.HasValue) q = q.Where(x => x.StartDate >= p.StartDate);

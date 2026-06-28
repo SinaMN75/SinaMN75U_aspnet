@@ -50,7 +50,7 @@ public class MerchantService(
 	}
 	
 	public async Task<UResponse<IEnumerable<MerchantResponse>?>> Read(MerchantReadParams p, CancellationToken ct) {
-		IQueryable<MerchantEntity> q = db.Set<MerchantEntity>().ApplyReadParams<MerchantEntity, TagMerchant, MerchantJson>(p);
+		IQueryable<MerchantEntity> q = db.Set<MerchantEntity>().ApplyReadParams(p);
 
 		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(x => x.UserId == p.UserId);
 		if (p.ZipCode.IsNotNullOrEmpty()) q = q.Where(x => x.ZipCode == p.ZipCode);

@@ -40,7 +40,7 @@ public class CommentService(
 	}
 
 	public async Task<UResponse<IEnumerable<CommentResponse>?>> Read(CommentReadParams p, CancellationToken ct) {
-		IQueryable<CommentEntity> q = db.Set<CommentEntity>().ApplyReadParams<CommentEntity, TagComment, CommentJson>(p);
+		IQueryable<CommentEntity> q = db.Set<CommentEntity>().ApplyReadParams(p);
 		
 		if (p.UserId.IsNotNull()) q = q.Where(x => x.UserId == p.UserId);
 		if (p.ProductId.IsNotNull()) q = q.Where(x => x.ProductId == p.ProductId);

@@ -33,7 +33,7 @@ public class SimCardService(
 	}
 
 	public async Task<UResponse<IEnumerable<SimCardResponse>?>> Read(SimCardReadParams p, CancellationToken ct) {
-		IQueryable<SimCardEntity> q = db.Set<SimCardEntity>().ApplyReadParams<SimCardEntity, TagSimOperator, BaseJson>(p);
+		IQueryable<SimCardEntity> q = db.Set<SimCardEntity>().ApplyReadParams(p);
 		IQueryable<SimCardResponse> projected = q.Select(Projections.SimCardSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
