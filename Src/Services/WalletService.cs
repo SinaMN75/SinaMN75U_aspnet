@@ -109,7 +109,7 @@ public class WalletService(
 		IQueryable<WalletResponse> q = db.Set<WalletEntity>().Where(x => x.CreatorId == p.UserId).Select(Projections.WalletSelector(p.SelectorArgs));
 		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
-	
+
 	public async Task<UResponse<WalletTxnResponse?>> Transfer(WalletTransferParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<WalletTxnResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
@@ -136,14 +136,14 @@ public class WalletService(
 			ReceiverId = p.ReceiverId,
 			Amount = p.Amount,
 			JsonData = new BaseJson { Detail1 = p.Detail1 ?? "" },
-			Tags = [TagWalletTxn.Transfer]
+			Tags = p.TagWalletTxn.Count != 0 ? p.TagWalletTxn : [TagWalletTxn.Transfer]
 		};
 		await db.Set<WalletTxnEntity>().AddAsync(e, ct);
 
 		db.Set<WalletEntity>().Update(senderWallet);
 		db.Set<WalletEntity>().Update(receiverWallet);
 		await db.SaveChangesAsync(ct);
-		
+
 		return new UResponse<WalletTxnResponse?>(new WalletTxnResponse {
 			SenderId = e.SenderId,
 			ReceiverId = e.ReceiverId,
@@ -154,7 +154,7 @@ public class WalletService(
 	}
 
 	public async Task<UResponse<IEnumerable<WalletTxnResponse>?>> ReadTxn(WalletTxnReadParams p, CancellationToken ct) {
-		IQueryable<WalletTxnResponse> q = db.Set<WalletTxnEntity>()
+		IQueryable<WalletTxnResponse> q = db.Set<WalletTxnEntity>().ApplyReadParams(p)
 			.Where(x => x.SenderId == p.UserId || x.ReceiverId == p.UserId)
 			.Select(Projections.WalletTxnSelector(p.SelectorArgs));
 
