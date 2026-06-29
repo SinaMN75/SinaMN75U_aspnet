@@ -5,7 +5,7 @@ public static class TerminalRoutes {
 		RouteGroupBuilder r = app.MapGroup(tag).WithTags(tag).AddEndpointFilter<UValidationFilter>();
 		r.MapPost("Create", async (TerminalCreateParams p, ITerminalService s, CancellationToken c) => (await s.Create(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("BulkCreate", async (TerminalBulkCreateParams p, ITerminalService s, CancellationToken c) => (await s.BulkCreate(p, c)).ToResult()).Produces<UResponse>();
-		r.MapPost("Import", async ([FromForm] TerminalImportParams p, ITerminalService s, CancellationToken c) => (await s.Import(p, c)).ToResult()).Produces<UResponse<TerminalImportResponse>>().DisableAntiforgery();
+		r.MapPost("Import", async (TerminalImportParams p, ITerminalService s, CancellationToken c) => (await s.Import(p, c)).ToResult()).Produces<UResponse<TerminalImportResponse>>();
 		r.MapPost("Read", async (TerminalReadParams p, ITerminalService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Produces<UResponse<IEnumerable<TerminalResponse>>>();
 		r.MapPost("Delete", async (IdParams p, ITerminalService s, CancellationToken c) => (await s.Delete(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("ReadSupportPassword", async (IdParams p, ITerminalService s, CancellationToken c) => (await s.ReadSupportPassword(p, c)).ToResult()).Produces<UResponse<TerminalSupportPasswordResponse>>();

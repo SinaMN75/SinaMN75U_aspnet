@@ -36,7 +36,7 @@ public class TerminalBulkCreateParams : BaseParams {
 
 public sealed class TerminalImportParams : BaseParams {
 	[UValidationRequired("FileRequired")]
-	public IFormFile File { get; set; } = null!;
+	public string File { get; set; } = null!;
 }
 
 public class TerminalReadParams : BaseReadParams<TagTerminal> {

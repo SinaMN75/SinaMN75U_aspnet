@@ -257,14 +257,13 @@ public class TerminalService(
 	public async Task<UResponse<TerminalImportResponse?>> Import(TerminalImportParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<TerminalImportResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (p.File.Length == 0) return new UResponse<TerminalImportResponse?>(null, Usc.BadRequest, ls.Get("FileRequired"));
+		if (p.File.IsNullOrEmpty()) return new UResponse<TerminalImportResponse?>(null, Usc.BadRequest, ls.Get("FileRequired"));
 
-		// Copy to a seekable stream and read every row from the spreadsheet into memory
+		// Decode the base64 file into a seekable stream and read every row
 		List<Dictionary<string, string>> rows;
 		try {
-			using MemoryStream ms = new();
-			await p.File.CopyToAsync(ms, ct);
-			ms.Position = 0;
+			byte[] bytes = Convert.FromBase64String(StripDataUri(p.File));
+			using MemoryStream ms = new(bytes);
 			rows = ParseSheet(ms);
 		} catch {
 			return new UResponse<TerminalImportResponse?>(null, Usc.BadRequest, ls.Get("InvalidFileFormat"));
@@ -378,6 +377,12 @@ public class TerminalService(
 		int i = 0;
 		while (i < cellRef.Length && char.IsLetter(cellRef[i])) i++;
 		return cellRef[..i];
+	}
+
+	// Strips an optional "data:...;base64," prefix so a raw or data-URI base64 string both work
+	private static string StripDataUri(string s) {
+		int i = s.IndexOf("base64,", StringComparison.OrdinalIgnoreCase);
+		return i >= 0 ? s[(i + 7)..].Trim() : s.Trim();
 	}
 
 	private static string Val(Dictionary<string, string> row, string key) => row.TryGetValue(key, out string? v) ? v : "";
