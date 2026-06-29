@@ -34,6 +34,11 @@ public class TerminalBulkCreateParams : BaseParams {
 	public required List<TerminalCreateParams> List { get; set; }
 }
 
+public sealed class TerminalImportParams : BaseParams {
+	[UValidationRequired("FileRequired")]
+	public IFormFile File { get; set; } = null!;
+}
+
 public class TerminalReadParams : BaseReadParams<TagTerminal> {
 	public string? Serial { get; set; }
 	public string? SimCardNumber { get; set; }

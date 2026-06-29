@@ -15,3 +15,10 @@ public class TerminalResponse : BaseResponse<TagTerminal, BaseJson> {
 public class TerminalSupportPasswordResponse {
 	public string? Password { get; set; }
 }
+
+public class TerminalImportResponse {
+	public int TotalRows { get; set; }
+	public int Imported { get; set; }
+	public int Skipped { get; set; }
+	public List<string> SkippedSerials { get; set; } = [];
+}

@@ -1,8 +1,11 @@
-﻿namespace SinaMN75U.Services;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+
+namespace SinaMN75U.Services;
 
 public interface ITerminalService {
 	Task<UResponse<Guid?>> Create(TerminalCreateParams p, CancellationToken ct);
 	Task<UResponse> BulkCreate(TerminalBulkCreateParams p, CancellationToken ct);
+	Task<UResponse<TerminalImportResponse?>> Import(TerminalImportParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<TerminalResponse>?>> Read(TerminalReadParams p, CancellationToken ct);
 	Task<UResponse> Update(TerminalUpdateParams p, CancellationToken ct);
 	Task<UResponse<TerminalResponse?>> Assign(TerminalAssignParams p, CancellationToken ct);
@@ -249,6 +252,144 @@ public class TerminalService(
 			new TerminalSupportPasswordResponse { Password = data.GetStringOrNull("supportPassword") }
 		);
 	}
+	
+		// Imports terminals from an uploaded .xlsx file; duplicates are skipped and the rest still import
+	public async Task<UResponse<TerminalImportResponse?>> Import(TerminalImportParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<TerminalImportResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (p.File.Length == 0) return new UResponse<TerminalImportResponse?>(null, Usc.BadRequest, ls.Get("FileRequired"));
+
+		// Copy to a seekable stream and read every row from the spreadsheet into memory
+		List<Dictionary<string, string>> rows;
+		try {
+			using MemoryStream ms = new();
+			await p.File.CopyToAsync(ms, ct);
+			ms.Position = 0;
+			rows = ParseSheet(ms);
+		} catch {
+			return new UResponse<TerminalImportResponse?>(null, Usc.BadRequest, ls.Get("InvalidFileFormat"));
+		}
+
+		// Pull existing unique values so we can detect duplicates without hitting the DB unique indexes
+		HashSet<string> serials = (await db.Set<TerminalEntity>().Select(x => x.Serial).ToListAsync(ct)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+		HashSet<string> imeis = (await db.Set<TerminalEntity>().Where(x => x.Imei != null).Select(x => x.Imei!).ToListAsync(ct)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+		HashSet<string> simSerials = (await db.Set<TerminalEntity>().Where(x => x.SimCardSerial != null).Select(x => x.SimCardSerial!).ToListAsync(ct)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+		HashSet<string> terminalIds = (await db.Set<TerminalEntity>().Where(x => x.TerminalId != null).Select(x => x.TerminalId!).ToListAsync(ct)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+		TerminalImportResponse result = new() { TotalRows = rows.Count };
+		List<TerminalEntity> toAdd = [];
+
+		foreach (Dictionary<string, string> row in rows) {
+			string serial = Val(row, "Serial");
+			if (serial.IsNullOrEmpty()) { result.SkippedSerials.Add("(empty serial)"); continue; } // no serial -> ignore
+
+			string? imei = Val(row, "Imei").NullIfEmpty();
+			string? simSerial = Val(row, "SimCardSerial").NullIfEmpty();
+			string? terminalId = Val(row, "TerminalId").NullIfEmpty();
+
+			// Skip any row that collides on a unique field (already in DB or earlier in this file)
+			if (serials.Contains(serial) ||
+			    (imei != null && imeis.Contains(imei)) ||
+			    (simSerial != null && simSerials.Contains(simSerial)) ||
+			    (terminalId != null && terminalIds.Contains(terminalId))) {
+				result.SkippedSerials.Add($"{serial} (duplicate)");
+				continue;
+			}
+
+			// First tag is required, second is optional; both go into the tags list
+			if (!TryParseTag(Val(row, "Tag1"), out TagTerminal tag1)) {
+				result.SkippedSerials.Add($"{serial} (missing/invalid Tag1)");
+				continue;
+			}
+			List<TagTerminal> tags = [tag1];
+			if (TryParseTag(Val(row, "Tag2"), out TagTerminal tag2) && tag2 != tag1) tags.Add(tag2);
+
+			toAdd.Add(new TerminalEntity {
+				Id = Guid.CreateVersion7(),
+				Serial = serial,
+				CreatedAt = DateTime.UtcNow,
+				JsonData = new BaseJson(),
+				Tags = tags,
+				CreatorId = userData.Id,
+				SimCardNumber = Val(row, "SimCardNumber").NullIfEmpty(),
+				SimCardSerial = simSerial,
+				Imei = imei,
+				TerminalId = terminalId,
+				InsId = Val(row, "InsId").NullIfEmpty()
+			});
+
+			// Reserve these values so later rows in the same file can't duplicate them
+			serials.Add(serial);
+			if (imei != null) imeis.Add(imei);
+			if (simSerial != null) simSerials.Add(simSerial);
+			if (terminalId != null) terminalIds.Add(terminalId);
+		}
+
+		if (toAdd.Count > 0) {
+			await db.Set<TerminalEntity>().AddRangeAsync(toAdd, ct);
+			await db.SaveChangesAsync(ct);
+		}
+
+		result.Imported = toAdd.Count;
+		result.Skipped = result.TotalRows - result.Imported;
+		return new UResponse<TerminalImportResponse?>(result, Usc.Success, ls.Get("ImportCompleted"));
+	}
+
+	// Reads an .xlsx sheet into a list of header->value dictionaries (first row is the header)
+	private static List<Dictionary<string, string>> ParseSheet(Stream stream) {
+		List<Dictionary<string, string>> rows = [];
+		using SpreadsheetDocument doc = SpreadsheetDocument.Open(stream, false);
+		WorkbookPart wb = doc.WorkbookPart!;
+		WorksheetPart wsPart = wb.WorksheetParts.First();
+		SharedStringTablePart? sst = wb.SharedStringTablePart;
+
+		Row[] sheetRows = wsPart.Worksheet.GetFirstChild<SheetData>()!.Elements<Row>().ToArray();
+		if (sheetRows.Length == 0) return rows;
+
+		// Map column letter (A, B, ...) -> trimmed header text
+		Dictionary<string, string> headers = new(StringComparer.OrdinalIgnoreCase);
+		foreach (Cell c in sheetRows[0].Elements<Cell>()) {
+			string text = CellText(c, sst).Trim();
+			if (text.Length > 0) headers[ColumnLetter(c.CellReference!.Value!)] = text;
+		}
+
+		foreach (Row r in sheetRows.Skip(1)) {
+			Dictionary<string, string> map = new(StringComparer.OrdinalIgnoreCase);
+			foreach (Cell c in r.Elements<Cell>()) {
+				string col = ColumnLetter(c.CellReference!.Value!);
+				if (headers.TryGetValue(col, out string? header)) map[header] = CellText(c, sst).Trim();
+			}
+			if (map.Values.Any(v => v.Length > 0)) rows.Add(map); // skip fully empty rows
+		}
+		return rows;
+	}
+
+	// Resolves a cell's display text, handling shared strings and inline strings
+	private static string CellText(Cell cell, SharedStringTablePart? sst) {
+		string raw = cell.CellValue?.InnerText ?? "";
+		if (cell.DataType?.Value == CellValues.SharedString && sst != null && int.TryParse(raw, out int idx))
+			return sst.SharedStringTable.Elements<SharedStringItem>().ElementAt(idx).InnerText;
+		if (cell.DataType?.Value == CellValues.InlineString) return cell.InnerText;
+		return raw;
+	}
+
+	// Extracts the column letters from a cell reference like "B12" -> "B"
+	private static string ColumnLetter(string cellRef) {
+		int i = 0;
+		while (i < cellRef.Length && char.IsLetter(cellRef[i])) i++;
+		return cellRef[..i];
+	}
+
+	private static string Val(Dictionary<string, string> row, string key) => row.TryGetValue(key, out string? v) ? v : "";
+
+	// Accepts a tag by its numeric enum value only (e.g. 101 = Atm, 102 = WallCashless, 103 = DeskCashless)
+	private static bool TryParseTag(string raw, out TagTerminal tag) {
+		tag = default;
+		if (!int.TryParse(raw.Trim(), out int n) || !Enum.IsDefined(typeof(TagTerminal), n)) return false;
+		tag = (TagTerminal)n;
+		return true;
+	}
+	
 
 	private async Task<string> GenerateAgreement(UserEntity user, TerminalEntity terminal) {
 		return await WordPdfGenerator.GenerateWithTextsAndImagesAsync(

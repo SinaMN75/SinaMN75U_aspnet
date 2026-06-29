@@ -8,6 +8,7 @@ public static class UExtensions {
 	public static bool IsNotNullOrZero([NotNullWhen(true)] this int? s) => s != null && s != 0;
 	public static bool IsNotNullOrZero([NotNullWhen(true)] this decimal? s) => s != null && s != 0;
 	public static bool IsNullOrEmpty<T>([NotNullWhen(false)] this IEnumerable<T>? list) => list == null || !list.Any();
+	public static string? NullIfEmpty(this string? s) => string.IsNullOrWhiteSpace(s) ? null : s;
 	public static bool IsNull([NotNullWhen(false)] this string? s) => s == null;
 	public static bool IsNotNull([NotNullWhen(true)] this object? s) => s != null;
 	public static bool IsGuid(this string s) => Guid.TryParse(s, out Guid _);
