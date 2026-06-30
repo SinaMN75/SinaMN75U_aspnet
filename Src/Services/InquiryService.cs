@@ -603,21 +603,21 @@ public class InquiryServiceFake(
 		if (userData == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.ZipCodeToAddressDetail, Token = p.Token }, ct);
 		return new UResponse<ZipCodeToAddressDetailResponse?>(new ZipCodeToAddressDetailResponse {
-			BuildingName = "تست",
-			Description = "تست",
-			Floor = "تست",
-			HouseNumber = "تست",
-			LocalityName = "تست",
-			LocalityType = "تست",
-			ZipCode = "123456789",
-			Province = "تست",
-			SideFloor = "تست",
-			Street = "تست",
-			Street2 = "تست",
-			SubLocality = "تست",
-			TownShip = "تست",
-			TraceId = "تست",
-			Village = "تست"
+			BuildingName = "برج آسمان",
+			Description = "واحد جنوبی",
+			Floor = "5",
+			HouseNumber = "18",
+			LocalityName = "سعادت آباد",
+			LocalityType = "محله",
+			ZipCode = "1998754312",
+			Province = "تهران",
+			SideFloor = "راست",
+			Street = "بلوار سرو",
+			Street2 = "کوچه گلستان",
+			SubLocality = "ناحیه ۲",
+			TownShip = "تهران",
+			TraceId = "ZIP2406300001",
+			Village = ""
 		});
 	}
 
@@ -625,42 +625,149 @@ public class InquiryServiceFake(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.VehicleViolationsDetail, Token = p.Token }, ct);
-		return new UResponse<VehicleViolationDetailResponse?>(new VehicleViolationDetailResponse());
+		return new UResponse<VehicleViolationDetailResponse?>(new VehicleViolationDetailResponse {
+			PlateDictation = "21 الف 345 ایران 99",
+			PlateChar = "الف",
+			ComplaintStatus = "ندارد",
+			Complaint = "0",
+			DateTime = "1405/04/09 11:25",
+			PriceStatus = "پرداخت نشده",
+			TraceId = "VV240630001",
+			PaperId = "812345678901",
+			PaymentId = "456123789654",
+			WarningPrice = "3,150,000",
+			InquirePrice = "2,850,000",
+			EjrInquireNo = "EJR548796",
+			WarningId = "WRN874512",
+			InquirePriceDictation = "دو میلیون و هشتصد و پنجاه هزار ریال",
+			Items = [
+				new VehicleViolationDetailResponse.VehicleViolationDetailItem {
+					SerialNo = "100001",
+					Date = "1405/03/28 14:20",
+					Type = "دوربین",
+					Address = "بزرگراه همت",
+					ViolationType = "سرعت غیرمجاز",
+					FinalPrice = "1,500,000",
+					PaperId = "100000001",
+					PaymentId = "500000001",
+					WarningId = "W100001",
+					InvestigationAbility = "دارد",
+					HasImage = true
+				},
+				new VehicleViolationDetailResponse.VehicleViolationDetailItem {
+					SerialNo = "100002",
+					Date = "1405/04/02 09:15",
+					Type = "مامور",
+					Address = "خیابان ولیعصر",
+					ViolationType = "توقف ممنوع",
+					FinalPrice = "1,350,000",
+					PaperId = "100000002",
+					PaymentId = "500000002",
+					WarningId = "W100002",
+					InvestigationAbility = "ندارد",
+					HasImage = false
+				}
+			]
+		});
 	}
 
 	public async Task<UResponse<DrivingLicenceDetailResponse?>> DrivingLicenceDetail(DrivingLicenceDetailParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceStatus, Token = p.Token }, ct);
-		return new UResponse<DrivingLicenceDetailResponse?>(new DrivingLicenceDetailResponse());
+		return new UResponse<DrivingLicenceDetailResponse?>(new DrivingLicenceDetailResponse {
+			NationalCode = "0012345678",
+			FirstName = "علی",
+			LastName = "محمدی",
+			RequestDate = "1404/10/15",
+			Title = "آماده تحویل",
+			ConfirmDate = "1404/10/18",
+			RahvarStatus = "تحویل به پست",
+			PacketNo = "PK987654321",
+			Barcode = "626123456789012345",
+			PrintNnumber = "PR140500123",
+			PrintDate = "1404/10/16",
+			ValidYears = "10"
+		});
 	}
 
 	public async Task<UResponse<LicencePlateDetailResponse?>> LicencePlateDetail(LicencePlateDetailParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<LicencePlateDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.LicencePlateDetail, Token = p.Token }, ct);
-		return new UResponse<LicencePlateDetailResponse?>(new LicencePlateDetailResponse());
+		return new UResponse<LicencePlateDetailResponse?>(new LicencePlateDetailResponse {
+			Status = "فعال",
+			TracePlate = "21الف34599",
+			Items = [
+				new LicencePlateDetailResponse.LicencePlateHistoryItem {
+					System = "سواری",
+					Type = "شخصی",
+					InstallDate = "1401/05/20",
+					Model = "پژو 207"
+				},
+				new LicencePlateDetailResponse.LicencePlateHistoryItem {
+					System = "سواری",
+					Type = "شخصی",
+					InstallDate = "1398/11/15",
+					Model = "پژو 206"
+				}
+			]
+		});
 	}
 
 	public async Task<UResponse<DrivingLicenceNegativePointResponse?>> DrivingLicenceNegativePoint(DrivingLicenceNegativePointParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceNegativePoint, Token = p.Token }, ct);
-		return new UResponse<DrivingLicenceNegativePointResponse?>(new DrivingLicenceNegativePointResponse());
+		return new UResponse<DrivingLicenceNegativePointResponse?>(new DrivingLicenceNegativePointResponse {
+			Point = "8",
+			Allowable = true,
+			RuleId = "NP-1405-001"
+		});
 	}
 
 	public async Task<UResponse<FreewayTollsResponse?>> FreewayTolls(FreewayTollsParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<FreewayTollsResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		// BUG FIX: charge FreewayTolls (was IBanToBankAccountDetail copy-paste)
 		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.FreewayTolls, Token = p.Token }, ct);
-		return new UResponse<FreewayTollsResponse?>(new FreewayTollsResponse());
+		return new UResponse<FreewayTollsResponse?>(new FreewayTollsResponse {
+			TotalPrice = "780,000",
+			Items = [
+				new FreewayTollsResponse.FreewayTollsItem {
+					Id = "T001",
+					Date = "1405/03/15 08:20",
+					Price = "250,000",
+					Gateway = "عوارض تهران-قم",
+					Freeway = "آزادراه تهران قم"
+				},
+				new FreewayTollsResponse.FreewayTollsItem {
+					Id = "T002",
+					Date = "1405/03/20 18:40",
+					Price = "280,000",
+					Gateway = "عوارض قم-کاشان",
+					Freeway = "آزادراه امیرکبیر"
+				},
+				new FreewayTollsResponse.FreewayTollsItem {
+					Id = "T003",
+					Date = "1405/03/25 12:05",
+					Price = "250,000",
+					Gateway = "عوارض تهران-پردیس",
+					Freeway = "آزادراه پردیس"
+				}
+			]
+		});
 	}
 
 	public async Task<UResponse<IBanToBankAccountDetailResponse?>> IBanToBankAccountDetail(IBanToBankAccountDetailParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.IBanToBankAccountDetail, Token = p.Token }, ct);
-		return new UResponse<IBanToBankAccountDetailResponse?>(new IBanToBankAccountDetailResponse());
+		return new UResponse<IBanToBankAccountDetailResponse?>(new IBanToBankAccountDetailResponse {
+			DepositNumber = "0101234567001",
+			IBanType = "جاری",
+			BankCode = "017",
+			BankName = "بانک ملی ایران",
+			OwnerName = "علی محمدی"
+		});
 	}
 }
