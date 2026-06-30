@@ -32,9 +32,6 @@ public sealed class WalletTxnReadParams : BaseReadParams<TagWalletTxn> {
 	public WalletTxnSelectorArgs SelectorArgs { get; set; } = new();
 }
 
-public sealed class WalletReadParams : BaseReadParams<TagWalletTxn> {
-	[UValidationRequired("UserIdRequired")]
-	public Guid UserId { get; set; }
-
+public sealed class WalletReadParams : BaseReadParams<TagWallet> {
 	public WalletSelectorArgs SelectorArgs { get; set; } = new();
 }

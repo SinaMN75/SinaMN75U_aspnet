@@ -2,7 +2,8 @@ namespace SinaMN75U.Services;
 
 public interface IWalletService {
 	Task<UResponse> Charge(WalletChargeParams p, CancellationToken ct);
-	Task<UResponse<IEnumerable<WalletResponse>?>> ReadByUserId(WalletReadParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<WalletResponse>?>> Read(WalletReadParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<WalletResponse>?>> ReadByUserId(IdParams<WalletSelectorArgs> p, CancellationToken ct);
 	Task<UResponse<WalletTxnResponse?>> Transfer(WalletTransferParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<WalletTxnResponse>?>> ReadTxn(WalletTxnReadParams p, CancellationToken ct);
 	Task<UResponse> Purchase(WalletPurchaseParams p, CancellationToken ct);
@@ -91,7 +92,6 @@ public class WalletService(
 		WalletEntity? e = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == p.UserId, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("WalletNotFound"));
 
-		// Security: free top-ups are admin-only now; regular users must add funds through the IPG gateway (real money), not this endpoint.
 		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		return await Transfer(new WalletTransferParams {
@@ -105,9 +105,15 @@ public class WalletService(
 		}, ct);
 	}
 
-	public async Task<UResponse<IEnumerable<WalletResponse>?>> ReadByUserId(WalletReadParams p, CancellationToken ct) {
-		IQueryable<WalletResponse> q = db.Set<WalletEntity>().Where(x => x.CreatorId == p.UserId).Select(Projections.WalletSelector(p.SelectorArgs));
-		return await q.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	public async Task<UResponse<IEnumerable<WalletResponse>?>> Read(WalletReadParams p, CancellationToken ct) {
+		IQueryable<WalletEntity> q = db.Set<WalletEntity>().ApplyReadParams(p);
+		IQueryable<WalletResponse> projected = q.Select(Projections.WalletSelector(p.SelectorArgs));
+		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	}
+
+	public async Task<UResponse<IEnumerable<WalletResponse>?>> ReadByUserId(IdParams<WalletSelectorArgs> p, CancellationToken ct) {
+		IQueryable<WalletResponse> q = db.Set<WalletEntity>().Where(x => x.CreatorId == p.Id).Select(Projections.WalletSelector(p.SelectorArgs));
+		return await q.ToPaginatedResponse(1, 10, ct);
 	}
 
 	public async Task<UResponse<WalletTxnResponse?>> Transfer(WalletTransferParams p, CancellationToken ct) {
