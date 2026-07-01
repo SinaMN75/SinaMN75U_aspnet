@@ -14,11 +14,15 @@ public sealed class VerifyNationalCodeAndPhoneNumber : BaseParams {
 
 	[UValidationRequired("PhoneNumberRequired"), UValidationStringLength(9, 15, "PhoneNumberInvalid")]
 	public string PhoneNumber { get; set; } = null!;
+
+	public bool Refresh { get; set; }
 }
 
 public sealed class ZipCodeToAddressDetailParams : BaseParams {
 	[UValidationRequired("ZipCodeRequired"), UValidationStringLength(10, 10, "ZipCodeInvalid")]
 	public string ZipCode { get; set; } = null!;
+
+	public bool Refresh { get; set; }
 }
 
 public sealed class VehicleViolationDetailParams : BaseParams {
@@ -30,6 +34,8 @@ public sealed class VehicleViolationDetailParams : BaseParams {
 
 	[UValidationRequired("LicencePlateRequired"), UValidationStringLength(4, 10, "LicencePlateInvalid")]
 	public string LicencePlate { get; set; } = null!;
+
+	public bool Refresh { get; set; }
 }
 
 public sealed class DrivingLicenceDetailParams : BaseParams {
@@ -38,6 +44,8 @@ public sealed class DrivingLicenceDetailParams : BaseParams {
 
 	[UValidationRequired("PhoneNumberRequired"), UValidationStringLength(9, 15, "PhoneNumberInvalid")]
 	public string PhoneNumber { get; set; } = null!;
+
+	public bool Refresh { get; set; }
 }
 
 public sealed class LicencePlateDetailParams : BaseParams {
@@ -46,11 +54,15 @@ public sealed class LicencePlateDetailParams : BaseParams {
 
 	[UValidationRequired("LicencePlateRequired"), UValidationStringLength(5, 15, "LicencePlateInvalid")]
 	public string LicencePlate { get; set; } = null!;
+
+	public bool Refresh { get; set; }
 }
 
 public sealed class FreewayTollsParams : BaseParams {
 	[UValidationRequired("LicencePlateRequired"), UValidationStringLength(5, 15, "LicencePlateInvalid")]
 	public string LicencePlate { get; set; } = null!;
+
+	public bool Refresh { get; set; }
 }
 
 public sealed class DrivingLicenceNegativePointParams : BaseParams {
@@ -62,9 +74,13 @@ public sealed class DrivingLicenceNegativePointParams : BaseParams {
 
 	[UValidationRequired("DrivingLicenceNumberRequired"), UValidationStringLength(5, 15, "DrivingLicenceNumberInvalid")]
 	public string DrivingLicenceNumber { get; set; } = null!;
+
+	public bool Refresh { get; set; }
 }
 
 public sealed class IBanToBankAccountDetailParams : BaseParams {
 	[UValidationRequired("IBanRequired"), UValidationStringLength(20, 28, "IBanInvalid")]
 	public string IBan { get; set; } = null!;
+
+	public bool Refresh { get; set; }
 }

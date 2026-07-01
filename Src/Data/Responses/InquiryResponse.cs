@@ -1,5 +1,10 @@
 namespace SinaMN75U.Data.Responses;
 
+public interface IInquiryCacheInfo {
+	bool IsCached { get; set; }
+	DateTime? CachedAt { get; set; }
+}
+
 public class BillInfoResponse {
 	public required string BillId { get; set; }
 	public required string PaymentId { get; set; }
@@ -18,7 +23,9 @@ public class BillInfoResponse {
 	public ICollection<string> Warnings { get; set; } = [];
 }
 
-public sealed class ZipCodeToAddressDetailResponse {
+public sealed class ZipCodeToAddressDetailResponse : IInquiryCacheInfo {
+	public bool IsCached { get; set; }
+	public DateTime? CachedAt { get; set; }
 	public string? BuildingName { get; set; }
 	public string? Description { get; set; }
 	public string? Floor { get; set; }
@@ -36,7 +43,9 @@ public sealed class ZipCodeToAddressDetailResponse {
 	public string? Village { get; set; }
 }
 
-public sealed class DrivingLicenceDetailResponse {
+public sealed class DrivingLicenceDetailResponse : IInquiryCacheInfo {
+	public bool IsCached { get; set; }
+	public DateTime? CachedAt { get; set; }
 	public string? NationalCode { get; set; }
 	public string? FirstName { get; set; }
 	public string? LastName { get; set; }
@@ -51,7 +60,9 @@ public sealed class DrivingLicenceDetailResponse {
 	public string? ValidYears { get; set; }
 }
 
-public sealed class VehicleViolationDetailResponse {
+public sealed class VehicleViolationDetailResponse : IInquiryCacheInfo {
+	public bool IsCached { get; set; }
+	public DateTime? CachedAt { get; set; }
 	public string? PlateDictation { get; set; }
 	public string? PlateChar { get; set; }
 	public string? ComplaintStatus { get; set; }
@@ -83,7 +94,9 @@ public sealed class VehicleViolationDetailResponse {
 	}
 }
 
-public sealed class LicencePlateDetailResponse {
+public sealed class LicencePlateDetailResponse : IInquiryCacheInfo {
+	public bool IsCached { get; set; }
+	public DateTime? CachedAt { get; set; }
 	public string? Status { get; set; }
 	public string? TracePlate { get; set; }
 	public IEnumerable<LicencePlateHistoryItem> Items { get; set; } = [];
@@ -96,13 +109,17 @@ public sealed class LicencePlateDetailResponse {
 	}
 }
 
-public sealed class DrivingLicenceNegativePointResponse {
+public sealed class DrivingLicenceNegativePointResponse : IInquiryCacheInfo {
+	public bool IsCached { get; set; }
+	public DateTime? CachedAt { get; set; }
 	public string? Point { get; set; }
 	public bool? Allowable { get; set; }
 	public string? RuleId { get; set; }
 }
 
-public sealed class IBanToBankAccountDetailResponse {
+public sealed class IBanToBankAccountDetailResponse : IInquiryCacheInfo {
+	public bool IsCached { get; set; }
+	public DateTime? CachedAt { get; set; }
 	public string? DepositNumber { get; set; }
 	public string? IBanType { get; set; }
 	public string? BankCode { get; set; }
@@ -110,7 +127,9 @@ public sealed class IBanToBankAccountDetailResponse {
 	public string? OwnerName { get; set; }
 }
 
-public sealed class FreewayTollsResponse {
+public sealed class FreewayTollsResponse : IInquiryCacheInfo {
+	public bool IsCached { get; set; }
+	public DateTime? CachedAt { get; set; }
 	public string? TotalPrice { get; set; }
 	public IEnumerable<FreewayTollsItem> Items { get; set; } = [];
 

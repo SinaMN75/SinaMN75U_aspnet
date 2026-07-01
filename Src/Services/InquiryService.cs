@@ -9,7 +9,6 @@ public interface IInquiryService {
 	Task<UResponse<DrivingLicenceNegativePointResponse?>> DrivingLicenceNegativePoint(DrivingLicenceNegativePointParams p, CancellationToken ct);
 	Task<UResponse<FreewayTollsResponse?>> FreewayTolls(FreewayTollsParams p, CancellationToken ct);
 	Task<UResponse<IBanToBankAccountDetailResponse?>> IBanToBankAccountDetail(IBanToBankAccountDetailParams p, CancellationToken ct);
-	
 	UResponse<BillInfoResponse?> BillInfo(BillInfoParams p, CancellationToken ct);
 }
 
@@ -36,8 +35,10 @@ public class InquiryService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<bool?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		InquiryHistoryEntity? inquiryHistory = await ReadMobileAndNationalCodeVerificationHistory(p.NationalCode, p.PhoneNumber, ct);
+		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadMobileAndNationalCodeVerificationHistory(p.NationalCode, p.PhoneNumber, ct);
 		if (inquiryHistory != null) return new UResponse<bool?>(inquiryHistory.Tags.Contains(TagInquiryHistory.Verified));
+
+		if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.MobileAndNationalCodeVerification, ct)) return new UResponse<bool?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null) return new UResponse<bool?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
@@ -62,7 +63,7 @@ public class InquiryService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		InquiryHistoryEntity? inquiryHistory = await ReadZipCodeToAddressHistory(p, ct);
+		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadZipCodeToAddressHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
 
 		if (inquiryHistory == null || responseBody == null) {
@@ -96,6 +97,8 @@ public class InquiryService(
 		JsonElement json = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data");
 
 		return new UResponse<ZipCodeToAddressDetailResponse?>(new ZipCodeToAddressDetailResponse {
+			IsCached = inquiryHistory != null,
+			CachedAt = inquiryHistory?.CreatedAt,
 			BuildingName = json.GetStringOrNull("BuildingName"),
 			Description = json.GetStringOrNull("description"),
 			Floor = json.GetStringOrNull("floor"),
@@ -118,10 +121,11 @@ public class InquiryService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		InquiryHistoryEntity? inquiryHistory = await ReadVehicleViolationsDetailHistory(p, ct);
+		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadVehicleViolationsDetailHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
 
 		if (inquiryHistory == null || responseBody == null) {
+			if (!p.Refresh) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.InquiryNotCached, ls.Get("InquiryNotCached"));
 			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.VehicleViolationsDetail, ct)) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
@@ -160,6 +164,8 @@ public class InquiryService(
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetProperty("body");
 
 		return new UResponse<VehicleViolationDetailResponse?>(new VehicleViolationDetailResponse {
+			IsCached = inquiryHistory != null,
+			CachedAt = inquiryHistory?.CreatedAt,
 			PlateDictation = data.GetStringOrNull("plateDictation"),
 			PlateChar = data.GetStringOrNull("plateChar"),
 			ComplaintStatus = data.GetStringOrNull("complaintStatus"),
@@ -200,10 +206,11 @@ public class InquiryService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		InquiryHistoryEntity? inquiryHistory = await ReadDrivingLicenceDetailHistory(p, ct);
+		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadDrivingLicenceDetailHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
 
 		if (inquiryHistory == null || responseBody == null) {
+			if (!p.Refresh) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.InquiryNotCached, ls.Get("InquiryNotCached"));
 			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.DrivingLicenceStatus, ct)) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
@@ -234,6 +241,8 @@ public class InquiryService(
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetProperty("body").EnumerateArray().First();
 
 		return new UResponse<DrivingLicenceDetailResponse?>(new DrivingLicenceDetailResponse {
+			IsCached = inquiryHistory != null,
+			CachedAt = inquiryHistory?.CreatedAt,
 			NationalCode = data.GetStringOrNull("nationalNo"),
 			FirstName = data.GetStringOrNull("firstName"),
 			LastName = data.GetStringOrNull("lastName"),
@@ -253,10 +262,11 @@ public class InquiryService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<LicencePlateDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		InquiryHistoryEntity? inquiryHistory = await ReadLicencePlateStatusHistory(p, ct);
+		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadLicencePlateStatusHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
 
 		if (inquiryHistory == null || responseBody == null) {
+			if (!p.Refresh) return new UResponse<LicencePlateDetailResponse?>(null, Usc.InquiryNotCached, ls.Get("InquiryNotCached"));
 			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.LicencePlateDetail, ct)) return new UResponse<LicencePlateDetailResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
@@ -293,6 +303,8 @@ public class InquiryService(
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetProperty("body");
 
 		return new UResponse<LicencePlateDetailResponse?>(new LicencePlateDetailResponse {
+			IsCached = inquiryHistory != null,
+			CachedAt = inquiryHistory?.CreatedAt,
 			Status = data.GetStringOrNull("plateStatus"),
 			TracePlate = data.GetStringOrNull("tracePlate"),
 			Items = data.GetProperty("historyPlate")
@@ -310,7 +322,7 @@ public class InquiryService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		InquiryHistoryEntity? inquiryHistory = await ReadDrivingLicenceNegativePointHistory(p, ct);
+		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadDrivingLicenceNegativePointHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
 
 		if (inquiryHistory == null || responseBody == null) {
@@ -344,6 +356,8 @@ public class InquiryService(
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetProperty("body");
 
 		return new UResponse<DrivingLicenceNegativePointResponse?>(new DrivingLicenceNegativePointResponse {
+			IsCached = inquiryHistory != null,
+			CachedAt = inquiryHistory?.CreatedAt,
 			Allowable = data.GetStringOrNull("allowable") == "1",
 			Point = data.GetStringOrNull("negPoint"),
 			RuleId = data.GetStringOrNull("ruleId")
@@ -354,11 +368,10 @@ public class InquiryService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<FreewayTollsResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		InquiryHistoryEntity? inquiryHistory = await ReadFreewayTollsHistory(p, ct);
+		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadFreewayTollsHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
 
 		if (inquiryHistory == null || responseBody == null) {
-			// BUG FIX: was using the IBan cost/tag (copy-paste); use FreewayToll cost so the right amount is checked/charged
 			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.FreewayToll, ct)) return new UResponse<FreewayTollsResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
@@ -381,13 +394,11 @@ public class InquiryService(
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
 				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
-				// BUG FIX: tag history as FreewayTolls (was IBanToBankAccountDetail) so ReadFreewayTollsHistory can actually find the cached row
 				await CreateFreewayTollsHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.FreewayTolls, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<FreewayTollsResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<FreewayTollsResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
-			// BUG FIX: tag history + charge as FreewayTolls (were IBanToBankAccountDetail) so caching works and the correct fee is charged
 			await CreateFreewayTollsHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.FreewayTolls], "", p, ct);
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.FreewayTolls, Token = p.Token }, ct);
 		}
@@ -397,6 +408,8 @@ public class InquiryService(
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody);
 
 		return new UResponse<FreewayTollsResponse?>(new FreewayTollsResponse {
+			IsCached = inquiryHistory != null,
+			CachedAt = inquiryHistory?.CreatedAt,
 			TotalPrice = data.GetIntOrNull("total_price").ToString(),
 			Items = data.GetProperty("items").EnumerateArray().Select(x => new FreewayTollsResponse.FreewayTollsItem {
 				Id = x.GetStringOrNull("id"),
@@ -412,7 +425,7 @@ public class InquiryService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		InquiryHistoryEntity? inquiryHistory = await ReadIBanToBankAccountDetailHistory(p, ct);
+		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadIBanToBankAccountDetailHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
 
 		if (inquiryHistory == null || responseBody == null) {
@@ -446,6 +459,8 @@ public class InquiryService(
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data");
 
 		return new UResponse<IBanToBankAccountDetailResponse?>(new IBanToBankAccountDetailResponse {
+			IsCached = inquiryHistory != null,
+			CachedAt = inquiryHistory?.CreatedAt,
 			DepositNumber = data.GetStringOrNull("depositNumber"),
 			IBanType = data.GetStringOrNull("iBanType"),
 			BankCode = data.GetStringOrNull("bankCode"),
@@ -564,19 +579,54 @@ public class InquiryService(
 		}, ct);
 		await db.SaveChangesAsync(ct);
 	}
+	
+	private async Task<InquiryHistoryEntity?> ReadMobileAndNationalCodeVerificationHistory(string nationalCode, string phoneNumber, CancellationToken ct) =>
+		await db.Set<InquiryHistoryEntity>()
+			.Where(x => x.NationalCode == nationalCode && x.PhoneNumber == phoneNumber && x.Tags.Contains(TagInquiryHistory.ValidateNationalCodeAndPhoneNumber))
+			.OrderByDescending(x => x.CreatedAt)
+			.FirstOrDefaultAsync(ct);
 
-	private async Task<InquiryHistoryEntity?> ReadMobileAndNationalCodeVerificationHistory(string nationalCode, string phoneNumber, CancellationToken ct) {
-		InquiryHistoryEntity? e = await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.NationalCode == nationalCode && x.PhoneNumber == phoneNumber, ct);
-		return e;
-	}
+	private async Task<InquiryHistoryEntity?> ReadDrivingLicenceDetailHistory(DrivingLicenceDetailParams p, CancellationToken ct) =>
+		await db.Set<InquiryHistoryEntity>()
+			.Where(x => x.PhoneNumber == p.PhoneNumber && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.DrivingLicenceDetail) && !x.Tags.Contains(TagInquiryHistory.Error))
+			.OrderByDescending(x => x.CreatedAt)
+			.FirstOrDefaultAsync(ct);
 
-	private async Task<InquiryHistoryEntity?> ReadDrivingLicenceDetailHistory(DrivingLicenceDetailParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.DrivingLicenceDetail), ct);
-	private async Task<InquiryHistoryEntity?> ReadLicencePlateStatusHistory(LicencePlateDetailParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.LicencePlate == p.LicencePlate && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.LicencePlateDetail), ct);
-	private async Task<InquiryHistoryEntity?> ReadDrivingLicenceNegativePointHistory(DrivingLicenceNegativePointParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.DrivingLicenceNumber == p.DrivingLicenceNumber && x.NationalCode == p.NationalCode && x.PhoneNumber == p.PhoneNumber && x.Tags.Contains(TagInquiryHistory.DrivingLicenceNegativePoint), ct);
-	private async Task<InquiryHistoryEntity?> ReadIBanToBankAccountDetailHistory(IBanToBankAccountDetailParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.IBan == p.IBan && x.Tags.Contains(TagInquiryHistory.IBanToBankAccountDetail), ct);
-	private async Task<InquiryHistoryEntity?> ReadFreewayTollsHistory(FreewayTollsParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.LicencePlate == p.LicencePlate && x.Tags.Contains(TagInquiryHistory.FreewayTolls), ct);
-	private async Task<InquiryHistoryEntity?> ReadZipCodeToAddressHistory(ZipCodeToAddressDetailParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.ZipCode == p.ZipCode && x.Tags.Contains(TagInquiryHistory.ZipCodeToAddressDetail), ct);
-	private async Task<InquiryHistoryEntity?> ReadVehicleViolationsDetailHistory(VehicleViolationDetailParams p, CancellationToken ct) => await db.Set<InquiryHistoryEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber && x.LicencePlate == p.LicencePlate && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.VehicleViolationsDetail), ct);
+	private async Task<InquiryHistoryEntity?> ReadLicencePlateStatusHistory(LicencePlateDetailParams p, CancellationToken ct) =>
+		await db.Set<InquiryHistoryEntity>()
+			.Where(x => x.LicencePlate == p.LicencePlate && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.LicencePlateDetail) && !x.Tags.Contains(TagInquiryHistory.Error))
+			.OrderByDescending(x => x.CreatedAt)
+			.FirstOrDefaultAsync(ct);
+
+	private async Task<InquiryHistoryEntity?> ReadDrivingLicenceNegativePointHistory(DrivingLicenceNegativePointParams p, CancellationToken ct) =>
+		await db.Set<InquiryHistoryEntity>()
+			.Where(x => x.DrivingLicenceNumber == p.DrivingLicenceNumber && x.NationalCode == p.NationalCode && x.PhoneNumber == p.PhoneNumber && x.Tags.Contains(TagInquiryHistory.DrivingLicenceNegativePoint) && !x.Tags.Contains(TagInquiryHistory.Error))
+			.OrderByDescending(x => x.CreatedAt)
+			.FirstOrDefaultAsync(ct);
+
+	private async Task<InquiryHistoryEntity?> ReadIBanToBankAccountDetailHistory(IBanToBankAccountDetailParams p, CancellationToken ct) =>
+		await db.Set<InquiryHistoryEntity>()
+			.Where(x => x.IBan == p.IBan && x.Tags.Contains(TagInquiryHistory.IBanToBankAccountDetail) && !x.Tags.Contains(TagInquiryHistory.Error))
+			.OrderByDescending(x => x.CreatedAt)
+			.FirstOrDefaultAsync(ct);
+
+	private async Task<InquiryHistoryEntity?> ReadFreewayTollsHistory(FreewayTollsParams p, CancellationToken ct) =>
+		await db.Set<InquiryHistoryEntity>()
+			.Where(x => x.LicencePlate == p.LicencePlate && x.Tags.Contains(TagInquiryHistory.FreewayTolls) && !x.Tags.Contains(TagInquiryHistory.Error))
+			.OrderByDescending(x => x.CreatedAt)
+			.FirstOrDefaultAsync(ct);
+
+	private async Task<InquiryHistoryEntity?> ReadZipCodeToAddressHistory(ZipCodeToAddressDetailParams p, CancellationToken ct) =>
+		await db.Set<InquiryHistoryEntity>()
+			.Where(x => x.ZipCode == p.ZipCode && x.Tags.Contains(TagInquiryHistory.ZipCodeToAddressDetail) && !x.Tags.Contains(TagInquiryHistory.Error))
+			.OrderByDescending(x => x.CreatedAt)
+			.FirstOrDefaultAsync(ct);
+
+	private async Task<InquiryHistoryEntity?> ReadVehicleViolationsDetailHistory(VehicleViolationDetailParams p, CancellationToken ct) =>
+		await db.Set<InquiryHistoryEntity>()
+			.Where(x => x.PhoneNumber == p.PhoneNumber && x.LicencePlate == p.LicencePlate && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.VehicleViolationsDetail) && !x.Tags.Contains(TagInquiryHistory.Error))
+			.OrderByDescending(x => x.CreatedAt)
+			.FirstOrDefaultAsync(ct);
 
 	private async Task<GetAccessTokenResponse?> GetAccessToken(CancellationToken ct) {
 		HttpResponseMessage? response = await httpClient.PostForm(

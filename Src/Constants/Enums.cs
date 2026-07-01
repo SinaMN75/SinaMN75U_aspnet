@@ -63,7 +63,8 @@ public enum Usc {
 	ShahkarException = 605,
 	ShahkarError = 606,
 
-	BalanceIsLow = 701
+	BalanceIsLow = 701,
+	InquiryNotCached = 702
 }
 
 public enum TagSmsPanel {
