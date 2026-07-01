@@ -398,7 +398,7 @@ public static class Projections {
 			Creator = creatorSelector != null ? creatorSelector.Invoke(x.Creator) : null,
 		};
 
-		return selector;
+		return selector.Expand();
 	}
 
 	public static Expression<Func<CategoryEntity, CategoryResponse>> CategorySelector(CategorySelectorArgs args) {
@@ -426,7 +426,7 @@ public static class Projections {
 			Children = childSelector != null ? x.Children.AsQueryable().Select(childSelector).ToList() : null,
 			Creator = creatorSelector != null ? creatorSelector.Invoke(x.Creator) : null,
 		};
-		return selector;
+		return selector.Expand();
 	}
 
 	public static Expression<Func<ContentEntity, ContentResponse>> ContentSelector(ContentSelectorArgs args) {

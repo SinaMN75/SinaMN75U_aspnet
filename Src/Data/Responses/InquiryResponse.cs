@@ -1,5 +1,23 @@
 namespace SinaMN75U.Data.Responses;
 
+public class BillInfoResponse {
+	public required string BillId { get; set; }
+	public required string PaymentId { get; set; }
+	public bool IsValid { get; set; }
+	public string? CaseCode { get; set; }
+	public string? CompanyCode { get; set; }
+	public string? ServiceType { get; set; }
+	public string? CheckDigit { get; set; }
+	public string? CompanyName { get; set; }
+	public string? ServiceName { get; set; }
+	public long? BillAmount { get; set; }
+	public int? YearDigit { get; set; }
+	public int? PeriodCode { get; set; }
+	public int? ControlDigit1 { get; set; }
+	public int? ControlDigit2 { get; set; }
+	public ICollection<string> Warnings { get; set; } = [];
+}
+
 public sealed class ZipCodeToAddressDetailResponse {
 	public string? BuildingName { get; set; }
 	public string? Description { get; set; }
@@ -49,7 +67,7 @@ public sealed class VehicleViolationDetailResponse {
 	public string? WarningId { get; set; }
 	public string? InquirePriceDictation { get; set; }
 	public IEnumerable<VehicleViolationDetailItem> Items { get; set; } = [];
-	
+
 	public sealed class VehicleViolationDetailItem {
 		public string? SerialNo { get; set; }
 		public string? Date { get; set; }
@@ -69,7 +87,7 @@ public sealed class LicencePlateDetailResponse {
 	public string? Status { get; set; }
 	public string? TracePlate { get; set; }
 	public IEnumerable<LicencePlateHistoryItem> Items { get; set; } = [];
-	
+
 	public sealed class LicencePlateHistoryItem {
 		public string? System { get; set; }
 		public string? Type { get; set; }
@@ -95,7 +113,7 @@ public sealed class IBanToBankAccountDetailResponse {
 public sealed class FreewayTollsResponse {
 	public string? TotalPrice { get; set; }
 	public IEnumerable<FreewayTollsItem> Items { get; set; } = [];
-	
+
 	public sealed class FreewayTollsItem {
 		public string? Id { get; set; }
 		public string? Date { get; set; }
