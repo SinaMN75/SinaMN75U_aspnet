@@ -1,5 +1,13 @@
 namespace SinaMN75U.Data.Params;
 
+public sealed class BillInfoParams : BaseParams {
+	[UValidationRequired("BillIdRequired")]
+	public string BillId { get; set; } = null!;
+
+	[UValidationRequired("PaymentIdRequired")]
+	public string PaymentId { get; set; } = null!;
+}
+
 public sealed class VerifyNationalCodeAndPhoneNumber : BaseParams {
 	[UValidationRequired("NationalCodeRequired"), UValidationStringLength(10, 10, "NationalCodeInvalid")]
 	public string NationalCode { get; set; } = null!;

@@ -55,6 +55,8 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "BirthCertificateFirstRequired", "Birth Certificate First Required." },
 		{ "VisualAuthenticationRequired", "Visual Authentication Required." },
 		{ "SignatureRequired", "Signature Required." },
+		{ "BillIdRequired", "Bill Id Required." },
+		{ "PaymentIdRequired", "Payment Id Required." },
 
 		// ===== Invalid =====
 		{ "AddressNotValid", "Address is Not Valid." },
@@ -261,6 +263,8 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "BirthCertificateFirstRequired", "صفحه اول شناسنامه الزامی است." },
 		{ "VisualAuthenticationRequired", "احراز هویت تصویری الزامی است." },
 		{ "SignatureRequired", "امضا الزامی است." },
+		{ "BillIdRequired",  "شناسه قبض الزامی است." },
+		{ "PaymentIdRequired",  "شناسه پرداخت الزامی است." },
 
 		// ===== Invalid =====
 		{ "AddressNotValid", "آدرس صحیح نیست." },

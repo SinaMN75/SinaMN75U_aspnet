@@ -9,6 +9,8 @@ public interface IInquiryService {
 	Task<UResponse<DrivingLicenceNegativePointResponse?>> DrivingLicenceNegativePoint(DrivingLicenceNegativePointParams p, CancellationToken ct);
 	Task<UResponse<FreewayTollsResponse?>> FreewayTolls(FreewayTollsParams p, CancellationToken ct);
 	Task<UResponse<IBanToBankAccountDetailResponse?>> IBanToBankAccountDetail(IBanToBankAccountDetailParams p, CancellationToken ct);
+	
+	UResponse<BillInfoResponse?> BillInfo(BillInfoParams p, CancellationToken ct);
 }
 
 public class InquiryService(
@@ -19,6 +21,16 @@ public class InquiryService(
 	IWalletService walletService
 ) : IInquiryService {
 	private readonly ItHub _itHub = Core.App.ItHub;
+	
+	public UResponse<BillInfoResponse?> BillInfo(BillInfoParams p, CancellationToken ct) {
+		BillParser parser = new();
+		try {
+			return new UResponse<BillInfoResponse?>(parser.Parse(p.BillId, p.PaymentId));
+		}
+		catch (Exception e) {
+			return new UResponse<BillInfoResponse?>(null, Usc.ThirdPartyError, e.Message);
+		}
+	}
 
 	public async Task<UResponse<bool?>> MobileAndNationalCodeVerification(VerifyNationalCodeAndPhoneNumber p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
@@ -591,6 +603,15 @@ public class InquiryServiceFake(
 	ITokenService ts,
 	IWalletService walletService
 ) : IInquiryService {
+	public UResponse<BillInfoResponse?> BillInfo(BillInfoParams p, CancellationToken ct) {
+		BillParser parser = new();
+		try {
+			return new UResponse<BillInfoResponse?>(parser.Parse(p.BillId, p.PaymentId));
+		}
+		catch (Exception e) {
+			return new UResponse<BillInfoResponse?>(null, Usc.ThirdPartyError, e.Message);
+		}
+	}
 	public async Task<UResponse<bool?>> MobileAndNationalCodeVerification(VerifyNationalCodeAndPhoneNumber p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<bool?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));

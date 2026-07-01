@@ -3,6 +3,7 @@ namespace SinaMN75U.Routes;
 public static class InquiryRoutes {
 	public static void MapInquiryRoutes(this IEndpointRouteBuilder app, string tag) {
 		RouteGroupBuilder r = app.MapGroup(tag).WithTags(tag).AddEndpointFilter<UValidationFilter>();
+		r.MapPost("Bill", (BillInfoParams p, IInquiryService s, CancellationToken c) => s.BillInfo(p, c).ToResult()).Produces<UResponse<BillInfoResponse>>();
 		r.MapPost("ZipCodeToAddressDetail", async (ZipCodeToAddressDetailParams p, IInquiryService s, CancellationToken c) => (await s.ZipCodeToAddressDetail(p, c)).ToResult()).Produces<UResponse<ZipCodeToAddressDetailResponse>>();
 		r.MapPost("VehicleViolationDetail", async (VehicleViolationDetailParams p, IInquiryService s, CancellationToken c) => (await s.VehicleViolationsDetail(p, c)).ToResult()).Produces<UResponse<VehicleViolationDetailResponse>>();
 		r.MapPost("DrivingLicenceDetail", async (DrivingLicenceDetailParams p, IInquiryService s, CancellationToken c) => (await s.DrivingLicenceDetail(p, c)).ToResult()).Produces<UResponse<DrivingLicenceDetailResponse>>();
