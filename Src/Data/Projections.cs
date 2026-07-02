@@ -149,7 +149,8 @@ public static class Projections {
 			ZipCode = x.ZipCode,
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator)
+			// null-guard: avoid EF materializing a non-nullable column from a missing joined row
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null
 		};
 		return selector.Expand();
 	}
@@ -164,9 +165,9 @@ public static class Projections {
 			Amount = x.Amount,
 			CreatedAt = x.CreatedAt,
 			CreatorId = x.CreatorId,
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
-			Sender = (args.Sender != null ? UserSelector(args.Sender) : u => null!).Invoke(x.Sender),
-			Receiver = (args.Receiver != null ? UserSelector(args.Receiver) : u => null!).Invoke(x.Receiver)
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null,
+			Sender = args.Sender != null ? UserSelector(args.Sender).Invoke(x.Sender) : null,
+			Receiver = args.Receiver != null ? UserSelector(args.Receiver).Invoke(x.Receiver) : null
 		};
 		return selector.Expand();
 	}
@@ -180,8 +181,8 @@ public static class Projections {
 			UserId = x.UserId,
 			ZipCode = x.ZipCode,
 			CreatedAt = x.CreatedAt,
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
-			User = (args.User != null ? UserSelector(args.User) : u => null!).Invoke(x.User),
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null,
+			User = args.User != null ? UserSelector(args.User).Invoke(x.User) : null,
 		};
 		return selector.Expand();
 	}
@@ -194,7 +195,7 @@ public static class Projections {
 			Balance = x.Balance,
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null,
 		};
 		return selector.Expand();
 	}
@@ -211,7 +212,7 @@ public static class Projections {
 			OwnerName = x.OwnerName,
 			CreatorId = x.CreatorId,
 			JsonData = x.JsonData,
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null,
 		};
 		return selector.Expand();
 	}
@@ -226,8 +227,8 @@ public static class Projections {
 			Number = x.Number,
 			Tags = x.Tags,
 			CreatorId = x.CreatorId,
-			User = (args.User != null ? UserSelector(args.User) : u => null!).Invoke(x.User),
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+			User = args.User != null ? UserSelector(args.User).Invoke(x.User) : null,
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null,
 		};
 		return selector.Expand();
 	}
@@ -250,7 +251,7 @@ public static class Projections {
 			JsonData = x.JsonData,
 			Title = x.Title,
 			CreatorId = x.CreatorId,
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null,
 		};
 		return selector.Expand();
 	}
@@ -310,8 +311,8 @@ public static class Projections {
 			MerchantId = x.MerchantId,
 			PhoneNumber = x.PhoneNumber,
 			Terminals = args.Terminal == null ? null : x.Terminals.AsQueryable().Select(TerminalSelector(args.Terminal)).ToList(),
-			User = (args.User != null ? UserSelector(args.User) : u => null!).Invoke(x.User),
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+			User = args.User != null ? UserSelector(args.User).Invoke(x.User) : null,
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null,
 		};
 		return selector.Expand();
 	}
@@ -328,9 +329,9 @@ public static class Projections {
 			ParkingId = x.ParkingId,
 			Amount = x.Amount,
 			EndDate = x.EndDate,
-			Parking = (args.Parking != null ? ParkingSelector(args.Parking) : p => null!).Invoke(x.Parking),
-			Vehicle = (args.Vehicle != null ? VehicleSelector(args.Vehicle) : v => null!).Invoke(x.Vehicle),
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+			Parking = args.Parking != null ? ParkingSelector(args.Parking).Invoke(x.Parking) : null,
+			Vehicle = args.Vehicle != null ? VehicleSelector(args.Vehicle).Invoke(x.Vehicle) : null,
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null,
 		};
 		return selector.Expand();
 	}
@@ -346,7 +347,7 @@ public static class Projections {
 			Title = x.Title,
 			Brand = x.Brand,
 			Color = x.Color,
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null,
 		};
 		return selector.Expand();
 	}
@@ -437,7 +438,7 @@ public static class Projections {
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null,
 		};
 		return selector.Expand();
 	}
@@ -456,8 +457,8 @@ public static class Projections {
 			TerminalId = x.TerminalId,
 			CreatedAt = x.CreatedAt,
 			Agreement = args.Agreement ? x.Agreement.ToBase64() : null,
-			Merchant = (args.Merchant != null ? MerchantSelector(args.Merchant) : m => null!).Invoke(x.Merchant!),
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+			Merchant = args.Merchant != null && x.Merchant != null ? MerchantSelector(args.Merchant).Invoke(x.Merchant) : null,
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null,
 		};
 		return selector.Expand();
 	}
@@ -472,8 +473,8 @@ public static class Projections {
 			JsonData = x.JsonData,
 			UserId = x.UserId,
 			CreatorId = x.CreatorId,
-			User = (args.User != null ? UserSelector(args.User) : u => null!).Invoke(x.User),
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+			User = args.User != null ? UserSelector(args.User).Invoke(x.User) : null,
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null,
 		};
 		return selector.Expand();
 	}
@@ -486,7 +487,7 @@ public static class Projections {
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null,
 		};
 		return selector.Expand();
 	}
@@ -505,8 +506,8 @@ public static class Projections {
 			CreatedAt = x.CreatedAt,
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 			Children = args.Children == null ? null : x.Children.AsQueryable().Select(CommentSelector(args.Children)).ToList(),
-			User = (args.User != null ? UserSelector(args.User) : u => null!)!.Invoke(x.User),
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+			User = args.User != null && x.User != null ? UserSelector(args.User).Invoke(x.User) : null,
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null,
 		};
 		return selector.Expand();
 	}
@@ -524,9 +525,9 @@ public static class Projections {
 			TxnId = x.TxnId,
 			WalletTxnId = x.WalletTxnId,
 			JsonData = x.JsonData,
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
-			Txn = (args.Txn != null ? TxnSelector(args.Txn) : t => null!).Invoke(x.Txn!),
-			WalletTxn = (args.WalletTxn != null ? WalletTxnSelector(args.WalletTxn) : w => null!).Invoke(x.WalletTxn!)
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null,
+			Txn = args.Txn != null && x.Txn != null ? TxnSelector(args.Txn).Invoke(x.Txn) : null,
+			WalletTxn = args.WalletTxn != null && x.WalletTxn != null ? WalletTxnSelector(args.WalletTxn).Invoke(x.WalletTxn) : null
 		};
 		return selector.Expand();
 	}
@@ -545,9 +546,9 @@ public static class Projections {
 			BedId = x.BedId,
 			CreatedAt = x.CreatedAt,
 			Invoices = args.Invoice == null ? null : x.Invoices.AsQueryable().Select(DormBedInvoiceSelector(args.Invoice)).ToList(),
-			User = (args.User != null ? UserSelector(args.User) : t => null!).Invoke(x.User),
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : t => null!).Invoke(x.Creator),
-			Bed = (args.Bed != null ? DormBedSelector(args.Bed) : t => null!).Invoke(x.Bed)
+			User = args.User != null ? UserSelector(args.User).Invoke(x.User) : null,
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null,
+			Bed = args.Bed != null ? DormBedSelector(args.Bed).Invoke(x.Bed) : null
 		};
 		return selector.Expand();
 	}
@@ -564,8 +565,8 @@ public static class Projections {
 			PenaltyAmount = x.PenaltyAmount,
 			DueDate = x.DueDate,
 			DebtAmount = x.DebtAmount,
-			Contract = (args.Contract != null ? DormBedContractSelector(args.Contract) : t => null!)!.Invoke(x.Contract),
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : t => null!).Invoke(x.Creator)
+			Contract = args.Contract != null && x.Contract != null ? DormBedContractSelector(args.Contract).Invoke(x.Contract) : null,
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null
 		};
 		return selector.Expand();
 	}
@@ -582,7 +583,7 @@ public static class Projections {
 			CreatedAt = x.CreatedAt,
 			Rooms = args.Rooms == null ? null : x.Rooms.AsQueryable().Select(HotelRoomSelector(args.Rooms)).ToList(),
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null,
 		};
 		return selector.Expand();
 	}
@@ -599,9 +600,9 @@ public static class Projections {
 			HotelId = x.HotelId,
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,
-			Hotel = (args.Hotel != null ? HotelSelector(args.Hotel) : h => null!).Invoke(x.Hotel),
+			Hotel = args.Hotel != null ? HotelSelector(args.Hotel).Invoke(x.Hotel) : null,
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null,
 		};
 		return selector.Expand();
 	}
@@ -618,7 +619,7 @@ public static class Projections {
 			CreatedAt = x.CreatedAt,
 			Rooms = args.Rooms == null ? null : x.Rooms.AsQueryable().Select(DormRoomSelector(args.Rooms)).ToList(),
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null,
 		};
 		return selector.Expand();
 	}
@@ -632,10 +633,10 @@ public static class Projections {
 			DormId = x.DormId,
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,
-			Dorm = (args.Dorm != null ? DormSelector(args.Dorm) : d => null!).Invoke(x.Dorm),
+			Dorm = args.Dorm != null ? DormSelector(args.Dorm).Invoke(x.Dorm) : null,
 			Beds = (args.Beds == null ? null : x.Beds.AsQueryable().Select(DormBedSelector(args.Beds)).ToList())!,
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null,
 		};
 		return selector.Expand();
 	}
@@ -652,9 +653,9 @@ public static class Projections {
 			RoomId = x.RoomId,
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,
-			Room = (args.Room != null ? DormRoomSelector(args.Room) : r => null!).Invoke(x.Room),
+			Room = args.Room != null ? DormRoomSelector(args.Room).Invoke(x.Room) : null,
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
-			Creator = (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+			Creator = args.Creator != null ? UserSelector(args.Creator).Invoke(x.Creator) : null,
 		};
 		return selector.Expand();
 	}
