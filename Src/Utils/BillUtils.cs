@@ -74,7 +74,7 @@ public class BillParser {
 				info.Warnings.Add($"کد خدمات '{info.ServiceType}' در دیکشنری یافت نشد");
 			}
 			
-			ValidateCheckDigits(info);
+			info.IsValid = ValidateCheckDigits(info);
 		}
 		catch (Exception ex) {
 			info.IsValid = false;
@@ -84,38 +84,45 @@ public class BillParser {
 		return info;
 	}
 
-	private void ValidateCheckDigits(BillInfoResponse info) {
+	private bool ValidateCheckDigits(BillInfoResponse info) {
+		bool ok = true;
 		try {
 			string billWithoutCheck = info.BillId[..12];
-			int calculatedCheck = CalculateLuhnCheckDigit(billWithoutCheck);
+			int calculatedCheck = CalculateCheckDigit(billWithoutCheck);
 			int actualCheck = int.Parse(info.CheckDigit!);
 
-			if (calculatedCheck != actualCheck) info.Warnings.Add($"رقم کنترلی شناسه قبض نامعتبر است (محاسبه شده: {calculatedCheck}، موجود: {actualCheck})");
-			
-			string paymentWithoutCheck2 = info.PaymentId[..12];
-			int calculatedCheck2 = CalculateLuhnCheckDigit(paymentWithoutCheck2);
+			if (calculatedCheck != actualCheck) {
+				info.Warnings.Add($"رقم کنترلی شناسه قبض نامعتبر است (محاسبه شده: {calculatedCheck}، موجود: {actualCheck})");
+				ok = false;
+			}
 
-			if (calculatedCheck2 != info.ControlDigit2) info.Warnings.Add($"رقم کنترلی دوم شناسه پرداخت نامعتبر است (محاسبه شده: {calculatedCheck2}، موجود: {info.ControlDigit2})");
+			string paymentWithoutCheck2 = info.PaymentId[..12];
+			int calculatedCheck2 = CalculateCheckDigit(paymentWithoutCheck2);
+
+			if (calculatedCheck2 != info.ControlDigit2) {
+				info.Warnings.Add($"رقم کنترلی دوم شناسه پرداخت نامعتبر است (محاسبه شده: {calculatedCheck2}، موجود: {info.ControlDigit2})");
+				ok = false;
+			}
 		}
 		catch (Exception ex) {
 			info.Warnings.Add($"خطا در اعتبارسنجی: {ex.Message}");
+			ok = false;
 		}
-	}
 
-	private int CalculateLuhnCheckDigit(string number) {
+		return ok;
+	}
+	
+	private int CalculateCheckDigit(string number) {
 		int sum = 0;
-		bool alternate = true;
+		int weight = 2;
 
 		for (int i = number.Length - 1; i >= 0; i--) {
-			int digit = int.Parse(number[i].ToString());
-			if (alternate) {
-				digit *= 2;
-				if (digit > 9) digit -= 9;
-			}
-
-			sum += digit;
-			alternate = !alternate;
+			int digit = number[i] - '0';
+			sum += digit * weight;
+			weight = weight == 7 ? 2 : weight + 1;
 		}
-		return (10 - (sum % 10)) % 10;
+
+		int remainder = sum % 11;
+		return remainder is 0 or 1 ? 0 : 11 - remainder;
 	}
 }
