@@ -37,6 +37,7 @@ public sealed class Middleware {
 	public required bool RequireRefreshToken { get; init; }
 	public required bool Log { get; init; }
 	public required bool LogSuccess { get; init; }
+	public int LogRetentionDays { get; init; } = 30;
 }
 
 public sealed class SmsPanel {

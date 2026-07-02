@@ -192,6 +192,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "ReceiverWalletNotFound", "Receiver Wallet Not Found." },
 		{ "SimCardNotFound", "Sim Card Not Found." },
 		{ "VehicleNotFound", "Vehicle Not Found." },
+		{ "LogNotFound", "Log entry not found." },
 
 		// ===== Business Logic (additional) =====
 		{ "BedHasActiveContract", "This bed has an active contract." },
@@ -401,6 +402,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "ReceiverWalletNotFound", "کیف پول گیرنده یافت نشد." },
 		{ "SimCardNotFound", "سیمکارت یافت نشد." },
 		{ "VehicleNotFound", "خودرو یافت نشد." },
+		{ "LogNotFound", "رکورد لاگ یافت نشد." },
 
 		// ===== Business Logic (additional) =====
 		{ "BedHasActiveContract", "این تخت دارای قرارداد فعال است." },

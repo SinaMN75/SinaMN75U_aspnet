@@ -174,7 +174,9 @@ public enum TagFollow {
 public enum TagContent {
 	AboutUs = 101,
 	Terms = 102,
-	HomeSlider1 = 103
+	ContactUs = 103,
+	HomeSlider1 = 201,
+	HomeSlider2 = 202,
 }
 
 public enum TagTicket {

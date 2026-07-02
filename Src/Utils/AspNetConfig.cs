@@ -62,7 +62,10 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IMediaService, MediaService>();
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
 		builder.Services.AddSingleton<ILocalStorageService, UMemoryCacheService>();
+		builder.Services.AddSingleton<RequestLogChannel>();
 		builder.Services.AddSingleton<IRequestLogger, RequestLogger>();
+		builder.Services.AddHostedService<RequestLogBackgroundService>();
+		builder.Services.AddScoped<IApiLogService, ApiLogService>();
 		builder.Services.AddSingleton<ITokenService, TokenService>();
 		builder.Services.AddScoped<IUserService, UserService>();
 		builder.Services.AddScoped<IAuthService, AuthService>();

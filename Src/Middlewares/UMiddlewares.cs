@@ -87,7 +87,10 @@ public sealed class UMiddleware(
 
 			sw.Stop();
 
-			_ = Task.Run(() => logger.TryLog(new RequestLogDto {
+			// Non-blocking: TryLog only pushes onto an in-memory channel, so no Task.Run/threadpool
+			// hop is needed here anymore (the old file-writing implementation needed one; the new
+			// Postgres-batched one doesn't).
+			logger.TryLog(new RequestLogDto {
 				Timestamp = DateTime.UtcNow,
 				Method = context.Request.Method,
 				Path = context.Request.Path,
@@ -96,8 +99,11 @@ public sealed class UMiddleware(
 				RawRequest = rawRequestBody,
 				DecodedRequest = decodedRequestBodyForLog,
 				Response = responseBody,
-				Exception = exception
-			}));
+				Exception = exception,
+				UserId = TryExtractUserId(decodedRequestBodyForLog),
+				IpAddress = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim()
+					?? context.Connection.RemoteIpAddress?.ToString()
+			});
 		}
 	}
 
@@ -161,5 +167,17 @@ public sealed class UMiddleware(
 	private static async Task WriteErrorAsync(HttpContext ctx, Usc status, string msg) {
 		if (ctx.Response.HasStarted) return;
 		await new UResponse(status, msg).ToResult().ExecuteAsync(ctx);
+	}
+
+	// Best-effort only: request bodies here don't reliably carry a "token" field (many endpoints
+	// don't require auth), so failures are swallowed and the log entry simply has no UserId.
+	private Guid? TryExtractUserId(string decodedBody) {
+		try {
+			JsonElement json = JsonSerializer.Deserialize<JsonElement>(decodedBody);
+			return ts.ExtractClaims(json.GetStringOrNull("token"))?.Id;
+		}
+		catch {
+			return null;
+		}
 	}
 }
