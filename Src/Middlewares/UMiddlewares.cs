@@ -8,6 +8,10 @@ public sealed class UMiddleware(
 	ITokenService ts,
 	IRequestLogger logger
 ) {
+	private static readonly HashSet<string> SensitiveHeaders = new(StringComparer.OrdinalIgnoreCase) {
+		"Authorization", "Cookie", "Set-Cookie", "X-Api-Key", "apiKey", "Proxy-Authorization"
+	};
+
 	public async Task InvokeAsync(HttpContext context) {
 		if (!ShouldHandle(context)) {
 			await next(context);
@@ -17,7 +21,6 @@ public sealed class UMiddleware(
 		Stopwatch sw = Stopwatch.StartNew();
 		string rawRequestBody;
 		string decodedRequestBodyForLog = string.Empty;
-		string responseBody;
 		Exception? exception = null;
 		bool earlyError = false;
 
@@ -35,6 +38,12 @@ public sealed class UMiddleware(
 				// ignored
 			}
 		}
+		
+		context.Response.OnStarting(() => {
+			if (!context.Response.Headers.ContainsKey("X-Trace-Id"))
+				context.Response.Headers["X-Trace-Id"] = context.TraceIdentifier;
+			return Task.CompletedTask;
+		});
 
 		Stream originalResponseStream = context.Response.Body;
 		using MemoryStream captureStream = new();
@@ -65,12 +74,20 @@ public sealed class UMiddleware(
 				await WriteErrorAsync(context, Usc.InternalServerError, ls.Get("InternalServerError"));
 		}
 		finally {
+			string responseBody;
 			try {
 				captureStream.Seek(0, SeekOrigin.Begin);
 				responseBody = await new StreamReader(captureStream, leaveOpen: true).ReadToEndAsync();
 			}
 			catch {
 				responseBody = "<response unreadable>";
+			}
+			
+			string? requestHeadersJson = null;
+			string? responseHeadersJson = null;
+			if (Core.App.Middleware.LogHeaders) {
+				requestHeadersJson = SerializeHeaders(context.Request.Headers);
+				responseHeadersJson = SerializeHeaders(context.Response.Headers);
 			}
 
 			context.Response.Body = originalResponseStream;
@@ -87,37 +104,56 @@ public sealed class UMiddleware(
 
 			sw.Stop();
 
-			// Non-blocking: TryLog only pushes onto an in-memory channel, so no Task.Run/threadpool
-			// hop is needed here anymore (the old file-writing implementation needed one; the new
-			// Postgres-batched one doesn't).
+			(Guid? UserId, string? UserName, string? Email, string? Roles) userData = TryExtractUserData(context, decodedRequestBodyForLog);
 			logger.TryLog(new RequestLogDto {
 				Timestamp = DateTime.UtcNow,
 				Method = context.Request.Method,
 				Path = context.Request.Path,
+				QueryString = context.Request.QueryString.HasValue ? context.Request.QueryString.Value : null,
 				StatusCode = context.Response.StatusCode,
 				DurationMs = sw.ElapsedMilliseconds,
 				RawRequest = rawRequestBody,
 				DecodedRequest = decodedRequestBodyForLog,
 				Response = responseBody,
+				RequestHeaders = requestHeadersJson,
+				ResponseHeaders = responseHeadersJson,
+				RequestSizeBytes = Encoding.UTF8.GetByteCount(rawRequestBody),
+				ResponseSizeBytes = Encoding.UTF8.GetByteCount(responseBody),
+				UserAgent = context.Request.Headers["User-Agent"].FirstOrDefault(),
+				TraceId = context.TraceIdentifier,
+				Host = Environment.MachineName,
 				Exception = exception,
-				UserId = TryExtractUserId(decodedRequestBodyForLog),
+				UserId = userData.UserId,
+				UserName = userData.UserName,
+				UserEmail = userData.Email,
+				UserRoles = userData.Roles,
 				IpAddress = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim()
-					?? context.Connection.RemoteIpAddress?.ToString()
+				            ?? context.Connection.RemoteIpAddress?.ToString()
 			});
 		}
 	}
 
 	private static bool ShouldHandle(HttpContext ctx) {
-		return ctx.Request.Method.Equals("POST", StringComparison.OrdinalIgnoreCase) &&
-		       ctx.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase) &&
-		       ctx.Request.Path.Value?.Contains("media", StringComparison.OrdinalIgnoreCase) != true;
+		string? path = ctx.Request.Path.Value;
+		if (path == null || !ctx.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase)) return false;
+		return path.Contains("media", StringComparison.OrdinalIgnoreCase) != true &&
+		       path.Contains("download", StringComparison.OrdinalIgnoreCase) != true;
+	}
+
+	private static string SerializeHeaders(IHeaderDictionary headers) {
+		try {
+			Dictionary<string, string> map = headers.ToDictionary(
+				h => h.Key,
+				h => SensitiveHeaders.Contains(h.Key) ? "***REDACTED***" : h.Value.ToString(),
+				StringComparer.OrdinalIgnoreCase);
+			return JsonSerializer.Serialize(map, Core.Default);
+		}
+		catch {
+			return "{}";
+		}
 	}
 
 	private async Task<(string? Processed, string? Decoded)> PreProcessRequestAsync(HttpContext ctx, string raw) {
-		// if (raw.Length > 100_000_000) {
-		// 	await WriteErrorAsync(ctx, Usc.PayloadTooLarge, ls.Get("RequestTooLarge"));
-		// 	return (null, raw);
-		// }
 
 		string decoded = raw;
 		string processed = raw;
@@ -133,10 +169,12 @@ public sealed class UMiddleware(
 				return (null, raw);
 			}
 		}
+		
+		string jsonSource = string.IsNullOrWhiteSpace(processed) ? "{}" : processed;
 
 		if (Core.App.Middleware.RequireApiKey)
 			try {
-				JsonElement json = JsonSerializer.Deserialize<JsonElement>(processed);
+				JsonElement json = JsonSerializer.Deserialize<JsonElement>(jsonSource);
 				if (!json.TryGetProperty("apiKey", out JsonElement token) || token.GetString() != Core.App.ApiKey) {
 					await WriteErrorAsync(ctx, Usc.UnAuthorized, ls.Get("InvalidAPIKey"));
 					return (null, decoded);
@@ -149,7 +187,7 @@ public sealed class UMiddleware(
 
 		if (Core.App.Middleware.RequireRefreshToken)
 			try {
-				JsonElement json = JsonSerializer.Deserialize<JsonElement>(processed);
+				JsonElement json = JsonSerializer.Deserialize<JsonElement>(jsonSource);
 				JwtClaimData? userData = ts.ExtractClaims(json.GetStringOrNull("token"));
 				if (userData != null && userData.IsExpired) {
 					await WriteErrorAsync(ctx, Usc.ExpiredToken, ls.Get("TokenExpired"));
@@ -169,15 +207,36 @@ public sealed class UMiddleware(
 		await new UResponse(status, msg).ToResult().ExecuteAsync(ctx);
 	}
 
-	// Best-effort only: request bodies here don't reliably carry a "token" field (many endpoints
-	// don't require auth), so failures are swallowed and the log entry simply has no UserId.
-	private Guid? TryExtractUserId(string decodedBody) {
+	private (Guid? UserId, string? UserName, string? Email, string? Roles) TryExtractUserData(HttpContext ctx, string decodedBody) {
+		string? token = null;
+
 		try {
 			JsonElement json = JsonSerializer.Deserialize<JsonElement>(decodedBody);
-			return ts.ExtractClaims(json.GetStringOrNull("token"))?.Id;
+			token = json.GetStringOrNull("token");
 		}
 		catch {
-			return null;
+			// not a JSON body - fall through to header/query lookups below
+		}
+
+		if (string.IsNullOrWhiteSpace(token)) {
+			string? authHeader = ctx.Request.Headers.Authorization.FirstOrDefault();
+			if (authHeader != null && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+				token = authHeader["Bearer ".Length..].Trim();
+		}
+
+		if (string.IsNullOrWhiteSpace(token))
+			token = ctx.Request.Query["token"].FirstOrDefault();
+
+		if (string.IsNullOrWhiteSpace(token)) return (null, null, null, null);
+
+		try {
+			JwtClaimData? claims = ts.ExtractClaims(token);
+			if (claims == null) return (null, null, null, null);
+			string? roles = claims.Tags.Any() ? string.Join(",", claims.Tags) : null;
+			return (claims.Id, claims.UserName ?? claims.FullName, claims.Email, roles);
+		}
+		catch {
+			return (null, null, null, null);
 		}
 	}
 }

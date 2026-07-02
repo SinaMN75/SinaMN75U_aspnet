@@ -19,21 +19,9 @@ public static class DashboardRoutes {
 			return Results.Ok(result);
 		});
 
-		// Paginated/filterable table of requests: date range, method, status code, error-only,
-		// user, and free-text search across path/exception. Backed by Postgres (see
-		// InnerServices/LogService.cs + Data/Entities/ApiRequestLogEntity.cs), not the old
-		// per-day JSON files.
-		r.MapPost("Logs/Search", async (IApiLogService s, ApiLogSearchParams p, CancellationToken ct) => (await s.Search(p, ct)).ToResult())
-			.Produces<UResponse<IEnumerable<ApiLogListItemResponse>?>>();
-
-		// Full detail (bodies, exception, stack trace) for a single request - replaces the old
-		// "load the whole day's file to view one entry" Logs/content endpoint.
-		r.MapPost("Logs/Detail", async (IApiLogService s, IdParams p, CancellationToken ct) => (await s.ReadById(p, ct)).ToResult())
-			.Produces<UResponse<ApiLogDetailResponse?>>();
-
-		// Aggregates for the dashboard's charts: volume/error time series, status code
-		// distribution, top slow endpoints, top failing endpoints.
-		r.MapPost("Logs/Stats", async (IApiLogService s, ApiLogStatsParams p, CancellationToken ct) => (await s.ReadStats(p, ct)).ToResult())
-			.Produces<UResponse<ApiLogStatsResponse?>>();
+		r.MapPost("Logs/Search", async (IApiLogService s, ApiLogSearchParams p, CancellationToken ct) => (await s.Search(p, ct)).ToResult()).Produces<UResponse<IEnumerable<ApiLogListItemResponse>?>>();
+		r.MapPost("Logs/Detail", async (IApiLogService s, IdParams p, CancellationToken ct) => (await s.ReadById(p, ct)).ToResult()).Produces<UResponse<ApiLogDetailResponse?>>();
+		r.MapPost("Logs/Stats", async (IApiLogService s, ApiLogStatsParams p, CancellationToken ct) => (await s.ReadStats(p, ct)).ToResult()).Produces<UResponse<ApiLogStatsResponse?>>();
+		r.MapPost("Logs/Export", async (IApiLogService s, ApiLogSearchParams p, CancellationToken ct) => Results.File(await s.Export(p, ct), "text/csv", $"api-logs-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv"));
 	}
 }

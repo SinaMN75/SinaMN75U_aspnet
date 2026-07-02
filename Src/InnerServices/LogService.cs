@@ -7,10 +7,6 @@ public interface IRequestLogger {
 	void TryLog(RequestLogDto log);
 }
 
-// In-memory hand-off point between request threads and RequestLogBackgroundService.
-// Bounded + DropOldest: under extreme load we'd rather silently lose the oldest buffered
-// log entries than block requests or grow memory unbounded. Sized generously relative to
-// the batching interval below (2s), so drops should only happen under sustained overload.
 public sealed class RequestLogChannel {
 	private readonly Channel<RequestLogDto> _channel = Channel.CreateBounded<RequestLogDto>(new BoundedChannelOptions(5_000) {
 		FullMode = BoundedChannelFullMode.DropOldest,
@@ -22,9 +18,6 @@ public sealed class RequestLogChannel {
 	public ChannelReader<RequestLogDto> Reader => _channel.Reader;
 }
 
-// Fast path used by UMiddleware. Does no I/O: it only decides whether a log is wanted and,
-// if so, hands it to the channel. This replaces the old implementation which read + parsed +
-// rewrote an entire day's JSON file, under a single lock, on every single request.
 public sealed class RequestLogger(RequestLogChannel channel) : IRequestLogger {
 	public void TryLog(RequestLogDto log) {
 		if (!Core.App.Middleware.Log) return;
@@ -34,9 +27,6 @@ public sealed class RequestLogger(RequestLogChannel channel) : IRequestLogger {
 	}
 }
 
-// Drains the channel in batches and bulk-writes them to Postgres, off the request path entirely.
-// Also owns retention: old rows are purged on a timer so the table (and its indexes) stay small
-// regardless of traffic volume.
 public sealed class RequestLogBackgroundService(RequestLogChannel channel, IServiceScopeFactory scopeFactory) : BackgroundService {
 	private const int BatchSize = 200;
 	private const int MaxBodyLength = 20_000;
@@ -70,7 +60,6 @@ public sealed class RequestLogBackgroundService(RequestLogChannel channel, IServ
 			}
 		}
 
-		// Best-effort final drain so we don't drop the last couple seconds of logs on shutdown.
 		List<RequestLogDto> remaining = [];
 		while (channel.Reader.TryRead(out RequestLogDto? item)) remaining.Add(item);
 		if (remaining.Count > 0) await FlushAsync(remaining, CancellationToken.None);
@@ -85,13 +74,24 @@ public sealed class RequestLogBackgroundService(RequestLogChannel channel, IServ
 				Timestamp = log.Timestamp,
 				Method = log.Method,
 				Path = log.Path,
+				QueryString = TruncateTo(log.QueryString, 2000),
 				StatusCode = log.StatusCode,
 				IsSuccess = log.StatusCode is >= 200 and <= 299,
 				DurationMs = log.DurationMs,
 				UserId = log.UserId,
+				UserName = TruncateTo(log.UserName, 200),
+				UserEmail = TruncateTo(log.UserEmail, 300),
+				UserRoles = TruncateTo(log.UserRoles, 300),
 				IpAddress = log.IpAddress,
 				RequestBody = Truncate(log.DecodedRequest),
 				ResponseBody = Truncate(log.Response),
+				RequestHeaders = Truncate(log.RequestHeaders),
+				ResponseHeaders = Truncate(log.ResponseHeaders),
+				RequestSizeBytes = log.RequestSizeBytes,
+				ResponseSizeBytes = log.ResponseSizeBytes,
+				UserAgent = TruncateTo(log.UserAgent, 500),
+				TraceId = TruncateTo(log.TraceId, 100),
+				Host = TruncateTo(log.Host, 200),
 				ExceptionType = log.Exception?.GetType().Name,
 				ExceptionMessage = log.Exception?.Message,
 				StackTrace = log.Exception?.StackTrace
@@ -101,7 +101,7 @@ public sealed class RequestLogBackgroundService(RequestLogChannel channel, IServ
 			await db.SaveChangesAsync(ct);
 		}
 		catch {
-			// A lost batch of logs is acceptable; a crashed background service is not.
+			// ignored
 		}
 	}
 
@@ -113,23 +113,36 @@ public sealed class RequestLogBackgroundService(RequestLogChannel channel, IServ
 			await db.Set<ApiRequestLogEntity>().Where(x => x.Timestamp < cutoff).ExecuteDeleteAsync(ct);
 		}
 		catch {
-			// Retention is best-effort; it will simply retry on the next cycle.
+			// ignored
 		}
 	}
 
 	private static string? Truncate(string? s) => string.IsNullOrEmpty(s) ? s : s.Length > MaxBodyLength ? s[..MaxBodyLength] + "...<truncated>" : s;
+	
+	private static string? TruncateTo(string? s, int max) => string.IsNullOrEmpty(s) || s.Length <= max ? s : s[..max];
 }
 
 public sealed class RequestLogDto {
 	public DateTime Timestamp { get; init; }
 	public string Method { get; init; } = "";
 	public string Path { get; init; } = "";
+	public string? QueryString { get; init; }
 	public int StatusCode { get; init; }
 	public long DurationMs { get; init; }
 	public string RawRequest { get; init; } = "";
 	public string DecodedRequest { get; init; } = "";
 	public string Response { get; init; } = "";
+	public string? RequestHeaders { get; init; }
+	public string? ResponseHeaders { get; init; }
+	public int RequestSizeBytes { get; init; }
+	public int ResponseSizeBytes { get; init; }
+	public string? UserAgent { get; init; }
+	public string? TraceId { get; init; }
+	public string? Host { get; init; }
 	public Exception? Exception { get; init; }
 	public Guid? UserId { get; init; }
+	public string? UserName { get; init; }
+	public string? UserEmail { get; init; }
+	public string? UserRoles { get; init; }
 	public string? IpAddress { get; init; }
 }
