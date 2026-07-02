@@ -18,10 +18,5 @@ public static class DashboardRoutes {
 
 			return Results.Ok(result);
 		});
-
-		r.MapPost("Logs/Search", async (IApiLogService s, ApiLogSearchParams p, CancellationToken ct) => (await s.Search(p, ct)).ToResult()).Produces<UResponse<IEnumerable<ApiLogListItemResponse>?>>();
-		r.MapPost("Logs/Detail", async (IApiLogService s, IdParams p, CancellationToken ct) => (await s.ReadById(p, ct)).ToResult()).Produces<UResponse<ApiLogDetailResponse?>>();
-		r.MapPost("Logs/Stats", async (IApiLogService s, ApiLogStatsParams p, CancellationToken ct) => (await s.ReadStats(p, ct)).ToResult()).Produces<UResponse<ApiLogStatsResponse?>>();
-		r.MapPost("Logs/Export", async (IApiLogService s, ApiLogSearchParams p, CancellationToken ct) => Results.File(await s.Export(p, ct), "text/csv", $"api-logs-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv"));
 	}
 }

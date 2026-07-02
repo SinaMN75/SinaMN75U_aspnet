@@ -38,7 +38,6 @@ public sealed class Middleware {
 	public required bool Log { get; init; }
 	public required bool LogSuccess { get; init; }
 	public bool LogHeaders { get; init; } = true;
-	public int LogRetentionDays { get; init; } = 30;
 }
 
 public sealed class SmsPanel {

@@ -18,6 +18,7 @@ public enum TagOrderBy {
 	UserName = 115,
 	Brand = 116,
 	Balance = 117,
+	DurationMs = 118,
 
 	CreatedAtDescending = 201,
 	CardNumberDescending = 202,
@@ -36,6 +37,22 @@ public enum TagOrderBy {
 	UserNameDescending = 215,
 	BrandDescending = 216,
 	BalanceDescending = 217,
+	DurationMsDescending = 218,
+}
+
+public enum TagApiLog {
+	Get = 101,
+	Post = 102,
+	Put = 103,
+	Patch = 104,
+	Delete = 105,
+	Other = 106,
+
+	Success = 201,
+	ClientError = 202,
+	ServerError = 203,
+
+	HasException = 301,
 }
 
 public enum Usc {

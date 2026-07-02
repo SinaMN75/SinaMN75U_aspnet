@@ -62,9 +62,6 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IMediaService, MediaService>();
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
 		builder.Services.AddSingleton<ILocalStorageService, UMemoryCacheService>();
-		builder.Services.AddSingleton<RequestLogChannel>();
-		builder.Services.AddSingleton<IRequestLogger, RequestLogger>();
-		builder.Services.AddHostedService<RequestLogBackgroundService>();
 		builder.Services.AddScoped<IApiLogService, ApiLogService>();
 		builder.Services.AddSingleton<ITokenService, TokenService>();
 		builder.Services.AddScoped<IUserService, UserService>();
@@ -114,6 +111,7 @@ public static partial class AspNetConfig {
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
 		if (app.Environment.IsProduction()) {
+			app.UseMiddleware<ApiLogMiddleware>();
 			app.UseMiddleware<UMiddleware>();
 			app.UseMiddleware<DbExceptionMiddleware>();
 		}
@@ -150,6 +148,7 @@ public static partial class AspNetConfig {
 		app.MapProcessRoutes(RouteTags.Process);
 		app.MapPnRoutes(RouteTags.Pn);
 		app.MapHotelRoutes(RouteTags.Hotel);
+		app.MapApiLogRoutes(RouteTags.ApiLog);
 	}
 
 	private static string CleanAndFormatSql(string sql) {

@@ -31,6 +31,7 @@ public static class RouteTags {
 	public const string Process = "api/Process/";
 	public const string Pn = "api/Pn/";
 	public const string Hotel = "api/Hotel/";
+	public const string ApiLog = "api/ApiLog/";
 }
 
 public static class UConstants {

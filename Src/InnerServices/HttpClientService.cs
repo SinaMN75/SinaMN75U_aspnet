@@ -10,7 +10,7 @@ public interface IHttpClientService {
 	Task<HttpResponseMessage?> Upload(string uri, IFormFile file, string fileName, Dictionary<string, string>? headers = null);
 }
 
-public class HttpClientService(HttpClient httpClient, IRequestLogger logger) : IHttpClientService {
+public class HttpClientService(HttpClient httpClient, IApiLogService apiLogService) : IHttpClientService {
 	public async Task<HttpResponseMessage?> Get(string uri, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Get, uri, null, headers);
 	public async Task<HttpResponseMessage?> Post(string uri, object? body, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Post, uri, body, headers);
 	public async Task<HttpResponseMessage?> Put(string uri, object? body, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Put, uri, body, headers);
@@ -75,33 +75,34 @@ public class HttpClientService(HttpClient httpClient, IRequestLogger logger) : I
 			Console.WriteLine($"{method} - {uri} - {(int)response.StatusCode} \nPARAMS: {paramsLog} \nRESPONSE: {responseBody}");
 
 			sw.Stop();
-			logger.TryLog(new RequestLogDto {
-				Timestamp = DateTime.UtcNow,
+			await apiLogService.Create(new ApiLogCreateParams {
 				Method = method.ToString(),
 				Path = uri,
 				StatusCode = (int)response.StatusCode,
 				DurationMs = sw.ElapsedMilliseconds,
-				RawRequest = body == null ? "" : body.ToString() ?? "",
-				DecodedRequest = body == null ? "" : JsonSerializer.Serialize(body),
-				Response = responseBody,
-				Exception = null
-			});
+				RequestBody = body == null ? "" : JsonSerializer.Serialize(body),
+				ResponseBody = responseBody,
+				RequestSizeBytes = body == null ? 0 : Encoding.UTF8.GetByteCount(JsonSerializer.Serialize(body)),
+				ResponseSizeBytes = Encoding.UTF8.GetByteCount(responseBody)
+			}, CancellationToken.None);
 
 			return response;
 		}
 		catch (Exception ex) {
 			sw.Stop();
-			logger.TryLog(new RequestLogDto {
-				Timestamp = DateTime.UtcNow,
+			await apiLogService.Create(new ApiLogCreateParams {
 				Method = method.ToString(),
 				Path = uri,
 				StatusCode = 500,
 				DurationMs = sw.ElapsedMilliseconds,
-				RawRequest = body == null ? "" : body.ToString() ?? "",
-				DecodedRequest = body == null ? "" : JsonSerializer.Serialize(body),
-				Response = "",
-				Exception = ex
-			});
+				RequestBody = body == null ? "" : JsonSerializer.Serialize(body),
+				ResponseBody = "",
+				RequestSizeBytes = body == null ? 0 : Encoding.UTF8.GetByteCount(JsonSerializer.Serialize(body)),
+				ResponseSizeBytes = 0,
+				ExceptionType = ex.GetType().Name,
+				ExceptionMessage = ex.Message,
+				StackTrace = ex.StackTrace
+			}, CancellationToken.None);
 
 			Console.WriteLine($"{method} - {uri} - ERROR \nPARAMS: {(body != null ? JsonSerializer.Serialize(body) : "null")} \nRESPONSE: {ex.Message}");
 			return null;

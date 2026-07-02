@@ -140,7 +140,27 @@ public sealed class AddressSelectorArgs : BaseSelectorArgs;
 
 public sealed class WalletSelectorArgs : BaseSelectorArgs;
 
+public sealed class ApiLogSelectorArgs : BaseSelectorArgs;
+
 public static class Projections {
+	public static Expression<Func<ApiLogEntity, ApiLogResponse>> ApiLogSelector(ApiLogSelectorArgs args) {
+		Expression<Func<ApiLogEntity, ApiLogResponse>> selector = x => new ApiLogResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			Path = x.Path,
+			StatusCode = x.StatusCode,
+			DurationMs = x.DurationMs,
+			UserId = x.UserId,
+			IpAddress = x.IpAddress,
+			TraceId = x.TraceId,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
+
 	public static Expression<Func<AddressEntity, AddressResponse>> AddressSelector(AddressSelectorArgs args) {
 		Expression<Func<AddressEntity, AddressResponse>> selector = x => new AddressResponse {
 			Id = x.Id,
