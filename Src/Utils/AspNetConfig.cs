@@ -63,7 +63,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
 		builder.Services.AddSingleton<ILocalStorageService, UMemoryCacheService>();
 		builder.Services.AddSingleton<IRequestLogger, RequestLogger>();
-		builder.Services.AddScoped<ITokenService, TokenService>();
+		builder.Services.AddSingleton<ITokenService, TokenService>();
 		builder.Services.AddScoped<IUserService, UserService>();
 		builder.Services.AddScoped<IAuthService, AuthService>();
 		builder.Services.AddScoped<ICategoryService, CategoryService>();

@@ -61,19 +61,19 @@ public class BillParser {
 			info.ControlDigit2 = int.Parse(info.PaymentId.Substring(12, 1));
 
 			if (long.TryParse(amountPart, out long amount)) info.BillAmount = amount * 1000;
-			
+
 			if (CompanyNames.TryGetValue(info.CompanyCode, out string? companyName)) info.CompanyName = companyName;
 			else {
 				info.CompanyName = $"نامشخص (کد: {info.CompanyCode})";
 				info.Warnings.Add($"کد شرکت '{info.CompanyCode}' در دیکشنری یافت نشد");
 			}
-			
+
 			if (ServiceNames.TryGetValue(info.ServiceType, out string? serviceName)) info.ServiceName = serviceName;
 			else {
 				info.ServiceName = $"نامشخص (کد: {info.ServiceType})";
 				info.Warnings.Add($"کد خدمات '{info.ServiceType}' در دیکشنری یافت نشد");
 			}
-			
+
 			info.IsValid = ValidateCheckDigits(info);
 		}
 		catch (Exception ex) {
@@ -111,8 +111,8 @@ public class BillParser {
 
 		return ok;
 	}
-	
-	private int CalculateCheckDigit(string number) {
+
+	private static int CalculateCheckDigit(string number) {
 		int sum = 0;
 		int weight = 2;
 
