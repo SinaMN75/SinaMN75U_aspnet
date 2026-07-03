@@ -7,6 +7,7 @@ public static class DashboardRoutes {
 		r.MapPost("Read", async (IDashboardService s, CancellationToken ct) => await s.ReadDashboardData(ct)).Produces<DashboardResponse>();
 		r.MapPost("ReadFinancialOpsDashboard", async (DashboardRangeParams p, IDashboardService s, CancellationToken ct) => (await s.ReadFinancialOpsDashboard(p, ct)).ToResult()).Produces<UResponse<FinancialOpsDashboardResponse>>();
 		r.MapPost("ReadPropertyDashboard", async (DashboardRangeParams p, IDashboardService s, CancellationToken ct) => (await s.ReadPropertyDashboard(p, ct)).ToResult()).Produces<UResponse<PropertyDashboardResponse>>();
+		r.MapPost("ReadOsMetrics", async (BaseParams p, IDashboardService s, CancellationToken ct) => (await s.ReadOsMetrics(p, ct)).ToResult()).Produces<UResponse<OsMetricsResponse>>();
 		r.MapGet("Enums", () => {
 			Dictionary<string, IEnumerable<IdTitleParams>> result = new() {
 				[nameof(Usc)] = UExtensions.GetValues<Usc>(),

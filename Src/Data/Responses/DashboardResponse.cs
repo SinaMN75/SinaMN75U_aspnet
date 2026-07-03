@@ -1,4 +1,79 @@
+using System.Net.NetworkInformation;
+
 namespace SinaMN75U.Data.Responses;
+
+// ===================== OS / Server Metrics (rich, cross-platform) =====================
+
+public sealed class OsMetricsResponse {
+	public DateTime GeneratedAt { get; set; }
+
+	// Identity
+	public string OsName { get; set; } = "";
+	public string OsDescription { get; set; } = "";
+	public string OsArchitecture { get; set; } = "";
+	public string ProcessArchitecture { get; set; } = "";
+	public string FrameworkDescription { get; set; } = "";
+	public string MachineName { get; set; } = "";
+	public bool Is64BitOperatingSystem { get; set; }
+	public bool Is64BitProcess { get; set; }
+	public int ProcessorCount { get; set; }
+
+	// Uptime
+	public double SystemUptimeSeconds { get; set; }
+	public double ProcessUptimeSeconds { get; set; }
+	public DateTime ProcessStartedAt { get; set; }
+
+	// CPU
+	public double CpuUsagePercent { get; set; }
+	public double? LoadAverage1Min { get; set; }
+	public double? LoadAverage5Min { get; set; }
+	public double? LoadAverage15Min { get; set; }
+
+	// Memory (GB)
+	public double MemoryTotalGb { get; set; }
+	public double MemoryUsedGb { get; set; }
+	public double MemoryFreeGb { get; set; }
+	public double MemoryUsagePercent { get; set; }
+
+	// Disks
+	public List<DiskMetricsItem> Disks { get; set; } = [];
+
+	// Current process
+	public double ProcessWorkingSetMb { get; set; }
+	public double ProcessPrivateMemoryMb { get; set; }
+	public int ProcessThreadCount { get; set; }
+	public int? ProcessHandleCount { get; set; }
+
+	// GC
+	public double GcTotalMemoryMb { get; set; }
+	public int Gen0Collections { get; set; }
+	public int Gen1Collections { get; set; }
+	public int Gen2Collections { get; set; }
+	public bool IsServerGc { get; set; }
+
+	// Network
+	public List<NetworkInterfaceMetricsItem> NetworkInterfaces { get; set; } = [];
+}
+
+public sealed class DiskMetricsItem {
+	public string Name { get; set; } = "";
+	public string DriveFormat { get; set; } = "";
+	public string DriveType { get; set; } = "";
+	public double TotalGb { get; set; }
+	public double FreeGb { get; set; }
+	public double UsedGb { get; set; }
+	public double UsagePercent { get; set; }
+}
+
+public sealed class NetworkInterfaceMetricsItem {
+	public string Name { get; set; } = "";
+	public string Description { get; set; } = "";
+	public string Type { get; set; } = "";
+	public string Status { get; set; } = "";
+	public double SpeedMbps { get; set; }
+	public double BytesSentMb { get; set; }
+	public double BytesReceivedMb { get; set; }
+}
 
 public sealed record SystemMetricsResponse(
 	double CpuUsage,
