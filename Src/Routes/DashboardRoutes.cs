@@ -5,6 +5,8 @@ public static class DashboardRoutes {
 		RouteGroupBuilder r = app.MapGroup(tag).WithTags(tag).AddEndpointFilter<UValidationFilter>();
 		r.MapPost("ReadSystemMetrics", async (IDashboardService s) => await s.ReadSystemMetrics()).Produces<SystemMetricsResponse>();
 		r.MapPost("Read", async (IDashboardService s, CancellationToken ct) => await s.ReadDashboardData(ct)).Produces<DashboardResponse>();
+		r.MapPost("ReadFinancialOpsDashboard", async (DashboardRangeParams p, IDashboardService s, CancellationToken ct) => (await s.ReadFinancialOpsDashboard(p, ct)).ToResult()).Produces<UResponse<FinancialOpsDashboardResponse>>();
+		r.MapPost("ReadPropertyDashboard", async (DashboardRangeParams p, IDashboardService s, CancellationToken ct) => (await s.ReadPropertyDashboard(p, ct)).ToResult()).Produces<UResponse<PropertyDashboardResponse>>();
 		r.MapGet("Enums", () => {
 			Dictionary<string, IEnumerable<IdTitleParams>> result = new() {
 				[nameof(Usc)] = UExtensions.GetValues<Usc>(),
