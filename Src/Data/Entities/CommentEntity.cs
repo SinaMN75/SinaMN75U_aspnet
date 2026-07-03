@@ -15,6 +15,9 @@ public sealed class CommentEntity : BaseEntity<TagComment, CommentJson> {
 	public Guid? ProductId { get; set; }
 	public ProductEntity? Product { get; set; }
 
+	public Guid? BlogId { get; set; }
+	public BlogEntity? Blog { get; set; }
+
 	public Guid? ParentId { get; set; }
 	public CommentEntity? Parent { get; set; }
 

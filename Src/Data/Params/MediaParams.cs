@@ -16,6 +16,7 @@ public sealed class MediaCreateParams: BaseParams {
 	public Guid? DormId { get; set; }
 	public Guid? DormRoomId { get; set; }
 	public Guid? DormBedId { get; set; }
+	public Guid? BlogId { get; set; }
 	public string? Title { get; set; }
 	public string? Description { get; set; }
 }
@@ -33,4 +34,5 @@ public sealed class MediaUpdateParams : BaseUpdateParams<TagMedia> {
 	public Guid? DormId { get; set; }
 	public Guid? DormRoomId { get; set; }
 	public Guid? DormBedId { get; set; }
+	public Guid? BlogId { get; set; }
 }

@@ -39,5 +39,6 @@ public static class DbModelBuilder {
 			b.OwnsMany(i => i.Reacts);
 		});
 		builder.Entity<ApiLogEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<BlogEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 	}
 }

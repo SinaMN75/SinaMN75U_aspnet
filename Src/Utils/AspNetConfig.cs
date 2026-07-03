@@ -90,6 +90,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IPnService, PnService>();
 		builder.Services.AddScoped<IProcessService, ProcessService>();
 		builder.Services.AddScoped<IHotelService, HotelService>();
+		builder.Services.AddScoped<IBlogService, BlogService>();
 
 		if (Core.App.Test) {
 			builder.Services.AddScoped<IInquiryService, InquiryServiceFake>();
@@ -149,6 +150,7 @@ public static partial class AspNetConfig {
 		app.MapPnRoutes(RouteTags.Pn);
 		app.MapHotelRoutes(RouteTags.Hotel);
 		app.MapApiLogRoutes(RouteTags.ApiLog);
+		app.MapBlogRoutes(RouteTags.Blog);
 	}
 
 	private static string CleanAndFormatSql(string sql) {

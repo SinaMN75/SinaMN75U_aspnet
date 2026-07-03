@@ -31,6 +31,7 @@ public class CommentService(
 			CreatorId = p.CreatorId ?? userData.Id,
 			UserId = p.UserId,
 			ProductId = p.ProductId,
+			BlogId = p.BlogId,
 			ParentId = p.ParentId
 		};
 
@@ -44,6 +45,7 @@ public class CommentService(
 		
 		if (p.UserId.IsNotNull()) q = q.Where(x => x.UserId == p.UserId);
 		if (p.ProductId.IsNotNull()) q = q.Where(x => x.ProductId == p.ProductId);
+		if (p.BlogId.IsNotNull()) q = q.Where(x => x.BlogId == p.BlogId);
 		
 		IQueryable<CommentResponse> projected = q.Select(Projections.CommentSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);

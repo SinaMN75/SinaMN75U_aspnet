@@ -142,6 +142,13 @@ public sealed class WalletSelectorArgs : BaseSelectorArgs;
 
 public sealed class ApiLogSelectorArgs : BaseSelectorArgs;
 
+public sealed class BlogSelectorArgs : BaseSelectorArgs {
+	public MediaSelectorArgs? Media { get; set; }
+	public CategorySelectorArgs? Category { get; set; }
+	public CommentSelectorArgs? Comments { get; set; }
+	public bool CommentsCount { get; set; }
+}
+
 public static class Projections {
 	public static Expression<Func<ApiLogEntity, ApiLogResponse>> ApiLogSelector(ApiLogSelectorArgs args) {
 		Expression<Func<ApiLogEntity, ApiLogResponse>> selector = x => new ApiLogResponse {
@@ -519,6 +526,7 @@ public static class Projections {
 			CreatorId = x.CreatorId,
 			UserId = x.UserId,
 			ProductId = x.ProductId,
+			BlogId = x.BlogId,
 			ParentId = x.ParentId,
 			Score = x.Score,
 			Description = x.Description,
@@ -677,6 +685,34 @@ public static class Projections {
 			Room = x.Room == null ? null : (args.Room != null ? DormRoomSelector(args.Room) : r => null!).Invoke(x.Room),
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<BlogEntity, BlogResponse>> BlogSelector(BlogSelectorArgs args) {
+		Expression<Func<MediaEntity, MediaResponse>>? mediaSelector = args.Media != null ? MediaSelector() : null;
+		Expression<Func<CategoryEntity, CategoryResponse>>? categorySelector = args.Category != null ? CategorySelector(args.Category) : null;
+		Expression<Func<CommentEntity, CommentResponse>>? commentSelector = args.Comments != null ? CommentSelector(args.Comments) : null;
+		Expression<Func<UserEntity, UserResponse>>? creatorSelector = args.Creator != null ? UserSelector(args.Creator) : null;
+
+		Expression<Func<BlogEntity, BlogResponse>> selector = x => new BlogResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			Title = x.Title,
+			Subtitle = x.Subtitle,
+			Slug = x.Slug,
+			Content = x.Content,
+			ViewCount = x.ViewCount,
+			PublishedAt = x.PublishedAt,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			AdminUserIds = x.AdminUserIds,
+			Media = mediaSelector != null ? x.Media.AsQueryable().Select(mediaSelector).ToList() : null,
+			Categories = categorySelector != null ? x.Categories.AsQueryable().Select(categorySelector).ToList() : null,
+			Comments = commentSelector != null ? x.Comments.AsQueryable().Select(commentSelector).ToList() : null,
+			CommentCount = args.CommentsCount ? x.Comments.Count : null,
+			Creator = x.Creator == null ? null : creatorSelector != null ? creatorSelector.Invoke(x.Creator) : null,
 		};
 		return selector.Expand();
 	}

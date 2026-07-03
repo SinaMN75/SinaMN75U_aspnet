@@ -35,6 +35,7 @@ public class MediaService(
 		else if (p.DormId != null) folderName = "dorms";
 		else if (p.DormRoomId != null) folderName = "dormRooms";
 		else if (p.DormBedId != null) folderName = "dormBeds";
+		else if (p.BlogId != null) folderName = "blogs";
 		else folderName = "generic";
 
 		string name = $"{folderName}/{Guid.CreateVersion7() + Path.GetExtension(p.File.FileName)}";
@@ -57,6 +58,7 @@ public class MediaService(
 			DormId = p.DormId,
 			DormRoomId = p.DormRoomId,
 			DormBedId = p.DormBedId,
+			BlogId = p.BlogId,
 			Tags = tags,
 			JsonData = new BaseJson {
 				Detail1 = p.Title ?? "",
@@ -86,6 +88,7 @@ public class MediaService(
 		if (p.CommentId != null) e.CommentId = p.CommentId;
 		if (p.ContentId != null) e.ContentId = p.ContentId;
 		if (p.ProductId != null) e.ProductId = p.ProductId;
+		if (p.BlogId != null) e.BlogId = p.BlogId;
 		if (p.UserId != null) e.UserId = p.UserId;
 		if (p.AddTags != null) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags != null) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));

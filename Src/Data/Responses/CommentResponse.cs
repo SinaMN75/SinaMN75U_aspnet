@@ -9,6 +9,7 @@ public sealed class CommentResponse : BaseResponse<TagComment, CommentJson> {
 
 	public Guid? ParentId { get; set; }
 	public Guid? ProductId { get; set; }
+	public Guid? BlogId { get; set; }
 
 	public IEnumerable<CommentResponse>? Children { get; set; }
 

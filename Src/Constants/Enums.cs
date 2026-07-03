@@ -170,6 +170,14 @@ public enum TagProduct {
 	Room10 = 410
 }
 
+public enum TagBlog {
+	Draft = 101,
+	Published = 102,
+	Archived = 103,
+	Featured = 201,
+	Pinned = 202
+}
+
 public enum TagComment {
 	Released = 101,
 	InQueue = 102,
