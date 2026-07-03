@@ -42,6 +42,12 @@ public static class LinqExtensions {
 
 		return q.Provider.CreateQuery<TEntity>(call);
 	}
+	
+	public static IQueryable<TEntity> ApplyAdminScope<TEntity, TTag>(this IQueryable<TEntity> q, JwtClaimData? userData) where TEntity : BaseEntity<TTag> where TTag : Enum {
+		if (userData is { IsSuperAdmin: true }) return q;
+		Guid uid = userData?.Id ?? Guid.Empty;
+		return q.Where(x => x.CreatorId == uid || x.AdminUserIds.Count == 0 || x.AdminUserIds.Contains(uid));
+	}
 
 	public static TEntity ApplyUpdateParam<TEntity, TTag, TJson>(this TEntity e, BaseUpdateParams<TTag> p)
 		where TEntity : BaseEntity<TTag, TJson>
@@ -50,6 +56,9 @@ public static class LinqExtensions {
 		if (p.Tags.IsNotNullOrEmpty()) e.Tags = p.Tags;
 		if (p.AddTags.IsNotNullOrEmpty()) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags.IsNotNullOrEmpty()) foreach (TTag i in p.RemoveTags) e.Tags.Remove(i);
+		if (p.AdminUserIds.IsNotNullOrEmpty()) e.AdminUserIds = p.AdminUserIds;
+		if (p.AddAdminUserIds.IsNotNullOrEmpty()) e.AdminUserIds.AddRangeIfNotExist(p.AddAdminUserIds);
+		if (p.RemoveAdminUserIds.IsNotNullOrEmpty()) foreach (Guid i in p.RemoveAdminUserIds) e.AdminUserIds.Remove(i);
 		if (p.Detail1.IsNotNullOrEmpty()) e.JsonData.Detail1 = p.Detail1;
 		if (p.Detail2.IsNotNullOrEmpty()) e.JsonData.Detail2 = p.Detail2;
 		return e;

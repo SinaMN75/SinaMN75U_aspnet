@@ -12,6 +12,13 @@ public class BaseEntity<T> where T : Enum {
 
 	public required Guid CreatorId { get; set; }
 	public UserEntity Creator { get; set; } = null!;
+
+	/// <summary>
+	/// Scopes visibility/management of this entity to specific users.
+	/// Empty list = visible/manageable by everyone (subject to normal rules).
+	/// Non-empty list = only users whose Id is in this list (plus the creator and super admins) can see/manage it.
+	/// </summary>
+	public ICollection<Guid> AdminUserIds { get; set; } = [];
 }
 
 public class BaseEntity<T, TJ> : BaseEntity<T> where T : Enum where TJ : BaseJson {

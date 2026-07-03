@@ -12,5 +12,8 @@ public class JwtClaimData {
 	public required DateTime? Expiration { get; set; }
 	public bool IsExpired => Expiration.HasValue && Expiration.Value < DateTime.UtcNow;
 	public bool IsAdmin => Tags.Contains(TagUser.SuperAdmin) || Tags.Contains(TagUser.SystemUser) || Tags.Contains(TagUser.SystemAdmin);
+	public bool IsSuperAdmin => Tags.Contains(TagUser.SuperAdmin);
 	public required IEnumerable<TagUser> Tags { get; set; }
+	public bool CanAccess(Guid creatorId, ICollection<Guid> adminUserIds) => IsSuperAdmin || Id == creatorId || adminUserIds.Count == 0 || adminUserIds.Contains(Id);
+	public bool CanManage(Guid creatorId, ICollection<Guid> adminUserIds) => IsAdmin || Id == creatorId || adminUserIds.Contains(Id);
 }
