@@ -7,6 +7,7 @@ public class BaseResponse<T, TJ> where T : Enum where TJ : class {
 	public required ICollection<T> Tags { get; set; }
 	public UserResponse? Creator { get; set; }
 	public Guid? CreatorId { get; set; }
+	public ICollection<Guid> AdminUserIds { get; set; } = [];
 }
 
 public class GetAccessTokenResponse {
