@@ -12,8 +12,7 @@ public sealed class ApiLogMiddleware(RequestDelegate next, ITokenService ts) {
 		}
 
 		context.Response.OnStarting(() => {
-			if (!context.Response.Headers.ContainsKey("X-Trace-Id"))
-				context.Response.Headers["X-Trace-Id"] = context.TraceIdentifier;
+			if (!context.Response.Headers.ContainsKey("X-Trace-Id")) context.Response.Headers["X-Trace-Id"] = context.TraceIdentifier;
 			return Task.CompletedTask;
 		});
 

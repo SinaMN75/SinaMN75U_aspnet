@@ -13,8 +13,10 @@ public class ApiLogService(DbContext db) : IApiLogService {
 
 		bool isSuccess = p.StatusCode is >= 200 and <= 299;
 		if (isSuccess && !Core.App.Middleware.LogSuccess) return;
+		if (p.Path.Contains("log", StringComparison.CurrentCultureIgnoreCase)) return;
 
 		List<TagApiLog> tags = [
+
 			p.Method.ToUpperInvariant() switch {
 				"GET" => TagApiLog.Get,
 				"POST" => TagApiLog.Post,
@@ -22,28 +24,24 @@ public class ApiLogService(DbContext db) : IApiLogService {
 				"PATCH" => TagApiLog.Patch,
 				"DELETE" => TagApiLog.Delete,
 				_ => TagApiLog.Other
+			},
+
+			p.StatusCode switch {
+				>= 200 and <= 299 => TagApiLog.Success,
+				>= 400 and <= 499 => TagApiLog.ClientError,
+				_ => TagApiLog.ServerError
 			}
 		];
 
-		tags.Add(p.StatusCode switch {
-			>= 200 and <= 299 => TagApiLog.Success,
-			>= 400 and <= 499 => TagApiLog.ClientError,
-			_ => TagApiLog.ServerError
-		});
-
-		if (!string.IsNullOrEmpty(p.ExceptionType)) tags.Add(TagApiLog.HasException);
+		if (p.ExceptionType.IsNotNullOrEmpty()) tags.Add(TagApiLog.HasException);
 
 		ApiLogEntity entity = new() {
-			Path = Truncate(p.Path,
-				       500) ??
-			       "",
+			Path = Truncate(p.Path, 500) ?? "",
 			StatusCode = p.StatusCode,
 			DurationMs = p.DurationMs,
 			UserId = p.UserId,
-			IpAddress = Truncate(p.IpAddress,
-				64),
-			TraceId = Truncate(p.TraceId,
-				100),
+			IpAddress = Truncate(p.IpAddress, 64),
+			TraceId = Truncate(p.TraceId, 100),
 			Tags = tags,
 			JsonData = new ApiLogJson {
 				Method = p.Method,
@@ -52,16 +50,11 @@ public class ApiLogService(DbContext db) : IApiLogService {
 				ResponseBody = TruncateBody(p.ResponseBody),
 				RequestHeaders = TruncateBody(p.RequestHeaders),
 				ResponseHeaders = TruncateBody(p.ResponseHeaders),
-				UserAgent = Truncate(p.UserAgent,
-					500),
-				Host = Truncate(p.Host,
-					200),
-				UserName = Truncate(p.UserName,
-					200),
-				UserEmail = Truncate(p.UserEmail,
-					300),
-				UserRoles = Truncate(p.UserRoles,
-					300),
+				UserAgent = Truncate(p.UserAgent, 500),
+				Host = Truncate(p.Host, 200),
+				UserName = Truncate(p.UserName, 200),
+				UserEmail = Truncate(p.UserEmail, 300),
+				UserRoles = Truncate(p.UserRoles, 300),
 				ExceptionType = p.ExceptionType,
 				ExceptionMessage = p.ExceptionMessage,
 				StackTrace = p.StackTrace,
@@ -103,9 +96,7 @@ public class ApiLogService(DbContext db) : IApiLogService {
 		List<StatRow> rows = await range.Select(x => new StatRow { CreatedAt = x.CreatedAt, StatusCode = x.StatusCode, DurationMs = x.DurationMs, Path = x.Path }).ToListAsync(ct);
 
 		List<ApiLogBucketResponse> timeline = rows
-			.GroupBy(x => byDay
-				? new DateTime(x.CreatedAt.Year, x.CreatedAt.Month, x.CreatedAt.Day)
-				: new DateTime(x.CreatedAt.Year, x.CreatedAt.Month, x.CreatedAt.Day, x.CreatedAt.Hour, 0, 0))
+			.GroupBy(x => byDay ? new DateTime(x.CreatedAt.Year, x.CreatedAt.Month, x.CreatedAt.Day) : new DateTime(x.CreatedAt.Year, x.CreatedAt.Month, x.CreatedAt.Day, x.CreatedAt.Hour, 0, 0))
 			.OrderBy(g => g.Key)
 			.Select(g => new ApiLogBucketResponse {
 				Time = g.Key,
@@ -152,10 +143,7 @@ public class ApiLogService(DbContext db) : IApiLogService {
 	}
 
 	public async Task<byte[]> Export(ApiLogReadParams p, CancellationToken ct) {
-		List<ApiLogEntity> rows = await Filter(db.Set<ApiLogEntity>(), p)
-			.ApplyReadParams(p)
-			.Take(10_000)
-			.ToListAsync(ct);
+		List<ApiLogEntity> rows = await Filter(db.Set<ApiLogEntity>(), p).ApplyReadParams(p).Take(10_000).ToListAsync(ct);
 
 		StringBuilder sb = new();
 		sb.AppendLine(string.Join(",", "CreatedAt", "Method", "Path", "StatusCode", "DurationMs", "UserId", "IpAddress", "TraceId"));
