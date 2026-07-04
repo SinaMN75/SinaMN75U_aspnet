@@ -148,7 +148,6 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 			Title = p.Title,
 			Capacity = p.Capacity,
 			PricePerNight = p.PricePerNight,
-			IsAvailable = p.IsAvailable,
 			HotelId = p.HotelId
 		};
 
@@ -167,7 +166,6 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.HotelId.HasValue) q = q.Where(x => x.HotelId == p.HotelId);
-		if (p.IsAvailable.HasValue) q = q.Where(x => x.IsAvailable == p.IsAvailable);
 		if (p.MinCapacity.HasValue) q = q.Where(x => x.Capacity >= p.MinCapacity);
 		if (p.MaxCapacity.HasValue) q = q.Where(x => x.Capacity <= p.MaxCapacity);
 		if (p.MinPrice.HasValue) q = q.Where(x => x.PricePerNight >= p.MinPrice);
@@ -200,7 +198,6 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
 		if (p.Capacity.HasValue) e.Capacity = p.Capacity.Value;
 		if (p.PricePerNight.HasValue) e.PricePerNight = p.PricePerNight.Value;
-		if (p.IsAvailable.HasValue) e.IsAvailable = p.IsAvailable.Value;
 		if (p.HotelId.HasValue) e.HotelId = p.HotelId.Value;
 
 		e.ApplyUpdateParam<HotelRoomEntity, TagRoom, BaseJson>(p);
@@ -398,7 +395,6 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 			JsonData = new BaseJson(),
 			Tags = p.Tags,
 			Title = p.Title,
-			IsAvailable = p.IsAvailable,
 			Deposit = p.Deposit,
 			MonthlyRent = p.MonthlyRent,
 			RoomId = p.RoomId
@@ -419,7 +415,6 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.RoomId.HasValue) q = q.Where(x => x.RoomId == p.RoomId);
-		if (p.IsAvailable.HasValue) q = q.Where(x => x.IsAvailable == p.IsAvailable);
 		if (p.MinDeposit.HasValue) q = q.Where(x => x.Deposit >= p.MinDeposit);
 		if (p.MaxDeposit.HasValue) q = q.Where(x => x.Deposit <= p.MaxDeposit);
 		if (p.MinMonthlyRent.HasValue) q = q.Where(x => x.MonthlyRent >= p.MinMonthlyRent);
@@ -450,7 +445,6 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Room.Dorm.CreatorId, e.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageDorms)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
-		if (p.IsAvailable.HasValue) e.IsAvailable = p.IsAvailable.Value;
 		if (p.Deposit.HasValue) e.Deposit = p.Deposit.Value;
 		if (p.MonthlyRent.HasValue) e.MonthlyRent = p.MonthlyRent.Value;
 		if (p.RoomId.HasValue) e.RoomId = p.RoomId.Value;

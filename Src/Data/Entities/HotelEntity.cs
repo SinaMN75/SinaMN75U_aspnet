@@ -24,9 +24,7 @@ public class HotelRoomEntity : BaseEntity<TagRoom, BaseJson> {
 
 	[Required, Column(TypeName = "decimal(24,2)")]
 	public decimal PricePerNight { get; set; }
-
-	public required bool IsAvailable { get; set; }
-
+	
 	public required Guid HotelId { get; set; }
 	public HotelEntity Hotel { get; set; } = null!;
 
@@ -64,9 +62,7 @@ public class DormRoomEntity : BaseEntity<TagDormRoom, BaseJson> {
 public class DormBedEntity : BaseEntity<TagDormBed, BaseJson> {
 	[Required, MaxLength(4)]
 	public required string Title { get; set; }
-
-	public required bool IsAvailable { get; set; }
-
+	
 	[Required, Column(TypeName = "decimal(24,2)")]
 	public required decimal Deposit { get; set; }
 

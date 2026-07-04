@@ -13,7 +13,6 @@ public sealed class HotelRoomResponse : BaseResponse<TagRoom, BaseJson> {
 	public required string Title { get; set; }
 	public int Capacity { get; set; }
 	public decimal PricePerNight { get; set; }
-	public bool IsAvailable { get; set; }
 	
 	public Guid HotelId { get; set; }
 	public HotelResponse? Hotel { get; set; }
@@ -42,7 +41,6 @@ public sealed class DormRoomResponse : BaseResponse<TagDormRoom, BaseJson> {
 
 public sealed class DormBedResponse : BaseResponse<TagDormBed, BaseJson> {
 	public required string Title { get; set; }
-	public required bool IsAvailable { get; set; }
 	public required decimal Deposit { get; set; }
 	public required decimal MonthlyRent { get; set; }
 

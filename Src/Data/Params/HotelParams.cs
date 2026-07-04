@@ -38,9 +38,7 @@ public sealed class HotelRoomCreateParams : BaseCreateParams<TagRoom> {
 
 	[UValidationRequired("PricePerNightRequired")]
 	public decimal PricePerNight { get; set; }
-
-	public bool IsAvailable { get; set; }
-
+	
 	[UValidationRequired("HotelIdRequired")]
 	public Guid HotelId { get; set; }
 }
@@ -49,14 +47,12 @@ public sealed class HotelRoomUpdateParams : BaseUpdateParams<TagRoom> {
 	public string? Title { get; set; }
 	public int? Capacity { get; set; }
 	public decimal? PricePerNight { get; set; }
-	public bool? IsAvailable { get; set; }
 	public Guid? HotelId { get; set; }
 }
 
 public sealed class HotelRoomReadParams : BaseReadParams<TagRoom> {
 	public string? Title { get; set; }
 	public Guid? HotelId { get; set; }
-	public bool? IsAvailable { get; set; }
 	public int? MinCapacity { get; set; }
 	public int? MaxCapacity { get; set; }
 	public decimal? MinPrice { get; set; }
@@ -119,9 +115,7 @@ public sealed class DormRoomReadParams : BaseReadParams<TagDormRoom> {
 public sealed class DormBedCreateParams : BaseCreateParams<TagDormBed> {
 	[UValidationRequired("TitleRequired"), UValidationStringLength(1, 4, "TitleMaxLength")]
 	public string Title { get; set; } = null!;
-
-	public bool IsAvailable { get; set; }
-
+	
 	[UValidationRequired("DepositRequired")]
 	public decimal Deposit { get; set; }
 
@@ -134,7 +128,6 @@ public sealed class DormBedCreateParams : BaseCreateParams<TagDormBed> {
 
 public sealed class DormBedUpdateParams : BaseUpdateParams<TagDormBed> {
 	public string? Title { get; set; }
-	public bool? IsAvailable { get; set; }
 	public decimal? Deposit { get; set; }
 	public decimal? MonthlyRent { get; set; }
 	public Guid? RoomId { get; set; }
@@ -143,7 +136,6 @@ public sealed class DormBedUpdateParams : BaseUpdateParams<TagDormBed> {
 public sealed class DormBedReadParams : BaseReadParams<TagDormBed> {
 	public string? Title { get; set; }
 	public Guid? RoomId { get; set; }
-	public bool? IsAvailable { get; set; }
 	public decimal? MinDeposit { get; set; }
 	public decimal? MaxDeposit { get; set; }
 	public decimal? MinMonthlyRent { get; set; }
