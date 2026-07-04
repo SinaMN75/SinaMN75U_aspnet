@@ -17,10 +17,30 @@ public class UserService(
 	ITokenService ts,
 	IMemoryCache cache
 ) : IUserService {
+	/// <summary>
+	/// Role/permission tags are the keys to the admin panel. Only a full admin (SuperAdmin/SystemAdmin/SystemUser)
+	/// may ever grant or revoke these on any user - never a SubAdmin, and never a user acting on themselves,
+	/// otherwise a SubAdmin (or a compromised regular account) could self-escalate to SuperAdmin.
+	/// </summary>
+	private static readonly HashSet<TagUser> RoleOrPermissionTags = [
+		TagUser.SuperAdmin, TagUser.SystemAdmin, TagUser.SystemUser, TagUser.SubAdmin,
+		TagUser.PermissionManageHotels, TagUser.PermissionDeleteHotels,
+		TagUser.PermissionManageDorms, TagUser.PermissionDeleteDorms,
+		TagUser.PermissionManageContracts, TagUser.PermissionDeleteContracts,
+		TagUser.PermissionManageInvoices, TagUser.PermissionDeleteInvoices, TagUser.PermissionPayInvoices,
+		TagUser.PermissionManageUsers, TagUser.PermissionDeleteUsers
+	];
+
+	private static bool TouchesRoleOrPermissionTags(IEnumerable<TagUser>? tags, IEnumerable<TagUser>? addTags, IEnumerable<TagUser>? removeTags) =>
+		(tags?.Any(RoleOrPermissionTags.Contains) ?? false) ||
+		(addTags?.Any(RoleOrPermissionTags.Contains) ?? false) ||
+		(removeTags?.Any(RoleOrPermissionTags.Contains) ?? false);
+
 	public async Task<UResponse<Guid?>> Create(UserCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (!userData.IsAdmin) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (!userData.IsAdmin && !userData.HasPermission(TagUser.PermissionManageUsers)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (!userData.IsAdmin && TouchesRoleOrPermissionTags(p.Tags, null, null)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		Guid userId = p.Id ?? Guid.CreateVersion7();
 		DateTime now = DateTime.UtcNow;
@@ -65,6 +85,8 @@ public class UserService(
 	public async Task<UResponse> BulkCreate(UserBulkCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (!userData.IsAdmin && !userData.HasPermission(TagUser.PermissionManageUsers)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (!userData.IsAdmin && p.Users.Any(u => TouchesRoleOrPermissionTags(u.Tags, null, null))) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Users.Count == 0) return new UResponse(Usc.BadRequest, ls.Get("AtLeastOneUserRequired"));
 
@@ -104,6 +126,10 @@ public class UserService(
 	}
 
 	public async Task<UResponse<IEnumerable<UserResponse>?>> Read(UserReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<UserResponse>?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (!userData.IsAdmin && !userData.HasPermission(TagUser.PermissionManageUsers)) return new UResponse<IEnumerable<UserResponse>?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+
 		IQueryable<UserEntity> q = db.Set<UserEntity>().ApplyReadParams(p);
 
 		if (p.UserName.IsNotNullOrEmpty()) q = q.Where(u => u.UserName.Contains(p.UserName!));
@@ -133,6 +159,11 @@ public class UserService(
 	}
 
 	public async Task<UResponse<UserResponse?>> ReadById(IdParams<UserSelectorArgs> p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<UserResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.Id != p.Id && !userData.IsAdmin && !userData.HasPermission(TagUser.PermissionManageUsers))
+			return new UResponse<UserResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+
 		UserResponse? e = await db.Set<UserEntity>().Select(Projections.UserSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<UserResponse?>(null, Usc.NotFound, ls.Get("UserNotFound")) : new UResponse<UserResponse?>(e);
 	}
@@ -144,7 +175,11 @@ public class UserService(
 		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("UserNotFound"));
 
-		if (!userData.IsAdmin && userData.Id != e.Id) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (userData.Id != e.Id && !userData.IsAdmin && !userData.HasPermission(TagUser.PermissionManageUsers)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+
+		// Role/permission tags can only ever be changed by a full admin - never by the user themselves,
+		// and never by a SubAdmin, even one holding PermissionManageUsers - otherwise anyone could self-escalate.
+		if (!userData.IsAdmin && TouchesRoleOrPermissionTags(p.Tags, p.AddTags, p.RemoveTags)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Password.IsNotNullOrEmpty()) e.Password = UPasswordHasher.Hash(p.Password);
 		if (p.FirstName.IsNotNullOrEmpty()) e.FirstName = p.FirstName;
@@ -198,7 +233,7 @@ public class UserService(
 		UserEntity? e = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("UserNotFound"));
 
-		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (!userData.IsAdmin && userData.Id != e.CreatorId && !userData.HasPermission(TagUser.PermissionDeleteUsers)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<UserEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
@@ -209,7 +244,7 @@ public class UserService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<string?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		if (!userData.IsAdmin) return new UResponse<string?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (!userData.IsAdmin && !userData.HasPermission(TagUser.PermissionManageUsers)) return new UResponse<string?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		UserEntity? e = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse<string?>(null, Usc.NotFound, ls.Get("UserNotFound"));

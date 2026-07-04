@@ -99,6 +99,7 @@ public enum TagUser {
 	SystemAdmin = 203,
 	SystemUser = 204,
 	SunUser = 205,
+	SubAdmin = 206,
 	AwaitingVerification = 301,
 	Verified = 302,
 	NationalCardFrontVerified = 401,
@@ -120,6 +121,19 @@ public enum TagUser {
 	BirthCertificateFifthAwaitingVerification = 507,
 	VisualAuthenticationAwaitingVerification = 508,
 	ESignatureAwaitingVerification = 509,
+
+	// ---- Granular admin-panel permissions (only enforced for non-full-admins, e.g. SubAdmin) ----
+	PermissionManageHotels = 601, // create/update Hotel + HotelRoom
+	PermissionDeleteHotels = 602, // delete Hotel + HotelRoom
+	PermissionManageDorms = 603, // create/update Dorm + DormRoom + DormBed
+	PermissionDeleteDorms = 604, // delete Dorm + DormRoom + DormBed
+	PermissionManageContracts = 605, // create/update DormBedContract
+	PermissionDeleteContracts = 606,
+	PermissionManageInvoices = 607, // create/update DormBedInvoice
+	PermissionDeleteInvoices = 608,
+	PermissionPayInvoices = 609,
+	PermissionManageUsers = 610, // update other users' profiles
+	PermissionDeleteUsers = 611,
 }
 
 public enum TagCategory {
