@@ -2,8 +2,7 @@ namespace SinaMN75U.Data.Responses;
 
 public sealed class HotelResponse : BaseResponse<TagHotel, BaseJson> {
 	public required string Title { get; set; }
-	public required string City { get; set; }
-	public required string Country { get; set; }
+	public required string CityCode { get; set; }
 
 	public IEnumerable<HotelRoomResponse>? Rooms { get; set; }
 	public IEnumerable<MediaResponse>? Media { get; set; }
@@ -22,8 +21,7 @@ public sealed class HotelRoomResponse : BaseResponse<TagRoom, BaseJson> {
 
 public sealed class DormResponse : BaseResponse<TagDorm, BaseJson> {
 	public required string Title { get; set; }
-	public required string City { get; set; }
-	public required string Country { get; set; }
+	public required string CityCode { get; set; }
 
 	public IEnumerable<DormRoomResponse>? Rooms { get; set; }
 	public IEnumerable<MediaResponse>? Media { get; set; }

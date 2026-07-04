@@ -68,8 +68,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 			JsonData = new BaseJson(),
 			Tags = p.Tags,
 			Title = p.Title,
-			City = p.City,
-			Country = p.Country,
+			CityCode = p.CityCode,
 			AdminUserIds = p.AdminUserIds ?? []
 		};
 
@@ -83,8 +82,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 		IQueryable<HotelEntity> q = db.Set<HotelEntity>().ApplyReadParams(p).ApplyAdminScope<HotelEntity, TagHotel>(userData);
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
-		if (p.City.IsNotNullOrEmpty()) q = q.Where(x => x.City.Contains(p.City!));
-		if (p.Country.IsNotNullOrEmpty()) q = q.Where(x => x.Country.Contains(p.Country!));
+		if (p.CityCode.IsNotNullOrEmpty()) q = q.Where(x => x.CityCode == p.CityCode);
 
 		IQueryable<HotelResponse> projected = q.Select(Projections.HotelSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
@@ -106,8 +104,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 		if (!userData.CanManage(e.CreatorId, e.AdminUserIds) || !userData.HasPermission(TagUser.PermissionManageHotels)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
-		if (p.City.IsNotNullOrEmpty()) e.City = p.City;
-		if (p.Country.IsNotNullOrEmpty()) e.Country = p.Country;
+		if (p.CityCode.IsNotNullOrEmpty()) e.CityCode = p.CityCode;
 
 		e.ApplyUpdateParam<HotelEntity, TagHotel, BaseJson>(p);
 		await db.SaveChangesAsync(ct);
@@ -234,8 +231,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 			JsonData = new BaseJson(),
 			Tags = p.Tags,
 			Title = p.Title,
-			City = p.City,
-			Country = p.Country,
+			CityCode = p.CityCode,
 			AdminUserIds = p.AdminUserIds ?? []
 		};
 
@@ -249,8 +245,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 		IQueryable<DormEntity> q = db.Set<DormEntity>().ApplyReadParams(p).ApplyAdminScope<DormEntity, TagDorm>(userData);
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
-		if (p.City.IsNotNullOrEmpty()) q = q.Where(x => x.City.Contains(p.City!));
-		if (p.Country.IsNotNullOrEmpty()) q = q.Where(x => x.Country.Contains(p.Country!));
+		if (p.CityCode.IsNotNullOrEmpty()) q = q.Where(x => x.CityCode.Contains(p.CityCode!));
 
 		IQueryable<DormResponse> projected = q.Select(Projections.DormSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
@@ -272,8 +267,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 		if (!userData.CanManage(e.CreatorId, e.AdminUserIds) || !userData.HasPermission(TagUser.PermissionManageDorms)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
-		if (p.City.IsNotNullOrEmpty()) e.City = p.City;
-		if (p.Country.IsNotNullOrEmpty()) e.Country = p.Country;
+		if (p.CityCode.IsNotNullOrEmpty()) e.CityCode = p.CityCode;
 
 		e.ApplyUpdateParam<DormEntity, TagDorm, BaseJson>(p);
 		await db.SaveChangesAsync(ct);

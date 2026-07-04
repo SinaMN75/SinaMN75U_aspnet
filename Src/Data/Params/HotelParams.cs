@@ -7,22 +7,17 @@ public sealed class HotelCreateParams : BaseCreateParams<TagHotel> {
 	public string Title { get; set; } = null!;
 
 	[UValidationRequired("CityRequired"), UValidationStringLength(2, 100, "CityMinLength")]
-	public string City { get; set; } = null!;
-
-	[UValidationRequired("CountryRequired"), UValidationStringLength(2, 100, "CountryMinLength")]
-	public string Country { get; set; } = null!;
+	public required string CityCode { get; set; }
 }
 
 public sealed class HotelUpdateParams : BaseUpdateParams<TagHotel> {
 	public string? Title { get; set; }
-	public string? City { get; set; }
-	public string? Country { get; set; }
+	public string? CityCode { get; set; }
 }
 
 public sealed class HotelReadParams : BaseReadParams<TagHotel> {
 	public string? Title { get; set; }
-	public string? City { get; set; }
-	public string? Country { get; set; }
+	public string? CityCode { get; set; }
 
 	public HotelSelectorArgs SelectorArgs { get; set; } = new();
 }
@@ -68,22 +63,17 @@ public sealed class DormCreateParams : BaseCreateParams<TagDorm> {
 	public string Title { get; set; } = null!;
 
 	[UValidationRequired("CityRequired"), UValidationStringLength(2, 100, "CityMinLength")]
-	public string City { get; set; } = null!;
-
-	[UValidationRequired("CountryRequired"), UValidationStringLength(2, 100, "CountryMinLength")]
-	public string Country { get; set; } = null!;
+	public string CityCode { get; set; } = null!;
 }
 
 public sealed class DormUpdateParams : BaseUpdateParams<TagDorm> {
 	public string? Title { get; set; }
-	public string? City { get; set; }
-	public string? Country { get; set; }
+	public string? CityCode { get; set; }
 }
 
 public sealed class DormReadParams : BaseReadParams<TagDorm> {
 	public string? Title { get; set; }
-	public string? City { get; set; }
-	public string? Country { get; set; }
+	public string? CityCode { get; set; }
 
 	public DormSelectorArgs SelectorArgs { get; set; } = new();
 }

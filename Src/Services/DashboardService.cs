@@ -29,6 +29,7 @@ public class DashboardService(
 		TagWalletTxn.DrivingLicenceNegativePoint, TagWalletTxn.IBanToBankAccountDetail, TagWalletTxn.FreewayTolls,
 		TagWalletTxn.MerchantCreationFee, TagWalletTxn.ChargeSimPin, TagWalletTxn.ChargeSimTopup, TagWalletTxn.InternetSim
 	];
+
 	public async Task<SystemMetricsResponse> ReadSystemMetrics() {
 		string[] linuxMemInfoKeys = ["MemTotal:", "MemAvailable:"];
 		const double bytesToGb = 1024.0 * 1024 * 1024;
@@ -193,14 +194,14 @@ public class DashboardService(
 		int walletsCount = await db.Set<WalletEntity>().CountAsync(ct);
 		decimal totalWalletBalance = await db.Set<WalletEntity>().SumAsync(x => (decimal?)x.Balance, ct) ?? 0;
 
-		List<WalletTxnEntity> walletRows = await db.Set<WalletTxnEntity>().AsNoTracking()
+		List<WalletTxnEntity> walletRows = await db.Set<WalletTxnEntity>()
 			.Where(x => x.CreatedAt >= from && x.CreatedAt <= to)
 			.ToListAsync(ct);
 
 		decimal totalIn = walletRows.Where(x => x.Tags.Contains(TagWalletTxn.Charge)).Sum(x => x.Amount);
 		decimal totalOut = walletRows.Where(x => x.Tags.Any(t => SpendingTags.Contains(t))).Sum(x => x.Amount);
 
-		List<TxnEntity> txnRows = await db.Set<TxnEntity>().AsNoTracking()
+		List<TxnEntity> txnRows = await db.Set<TxnEntity>()
 			.Where(x => x.CreatedAt >= from && x.CreatedAt <= to)
 			.ToListAsync(ct);
 
@@ -216,7 +217,7 @@ public class DashboardService(
 			.Select(g => new AccountingBreakdownItem { Tag = (int)g.Key, TagName = g.Key.ToString(), Amount = g.Sum(i => i.Amount), Count = g.Count() })
 			.OrderByDescending(x => x.Amount).ToList();
 
-		List<TerminalEntity> terminalTagRows = await db.Set<TerminalEntity>().AsNoTracking().ToListAsync(ct);
+		List<TerminalEntity> terminalTagRows = await db.Set<TerminalEntity>().ToListAsync(ct);
 
 		List<AccountingBreakdownItem> terminalsByType = terminalTagRows
 			.SelectMany(x => x.Tags)
@@ -233,26 +234,26 @@ public class DashboardService(
 			})
 			.OrderBy(x => x.Date).ToList();
 
-		List<TopMerchantItem> topMerchants = await db.Set<MerchantEntity>().AsNoTracking()
+		List<TopMerchantItem> topMerchants = await db.Set<MerchantEntity>()
 			.OrderByDescending(x => x.Terminals.Count)
 			.Take(5)
 			.Select(x => new TopMerchantItem { Id = x.Id, Title = x.Title, City = x.CityCode, TerminalCount = x.Terminals.Count, CreatedAt = x.CreatedAt })
 			.ToListAsync(ct);
 
-		List<TxnEntity> recentTxnEntities = await db.Set<TxnEntity>().AsNoTracking().Include(x => x.User)
+		List<TxnEntity> recentTxnEntities = await db.Set<TxnEntity>().Include(x => x.User)
 			.OrderByDescending(x => x.CreatedAt).Take(10).ToListAsync(ct);
 		List<RecentTxnItem> recentTransactions = recentTxnEntities.Select(x => new RecentTxnItem {
 			Id = x.Id, Amount = x.Amount, TrackingNumber = x.TrackingNumber, UserName = x.User.UserName,
 			Tags = x.Tags.Select(t => t.ToString()).ToList(), CreatedAt = x.CreatedAt
 		}).ToList();
 
-		List<MerchantEntity> recentMerchantEntities = await db.Set<MerchantEntity>().AsNoTracking()
+		List<MerchantEntity> recentMerchantEntities = await db.Set<MerchantEntity>()
 			.OrderByDescending(x => x.CreatedAt).Take(5).ToListAsync(ct);
 		List<RecentMerchantItem> recentMerchants = recentMerchantEntities.Select(x => new RecentMerchantItem {
 			Id = x.Id, Title = x.Title, CityCode = x.CityCode, TerminalCount = 0, CreatedAt = x.CreatedAt
 		}).ToList();
 
-		List<UserEntity> recentUserEntities = await db.Set<UserEntity>().AsNoTracking()
+		List<UserEntity> recentUserEntities = await db.Set<UserEntity>()
 			.OrderByDescending(x => x.CreatedAt).Take(5).ToListAsync(ct);
 		List<RecentUserItem> recentUsers = recentUserEntities.Select(x => new RecentUserItem {
 			Id = x.Id, DisplayName = $"{x.FirstName} {x.LastName}".Trim() is { Length: > 0 } n ? n : x.UserName,
@@ -329,7 +330,7 @@ public class DashboardService(
 		decimal totalPaid = await db.Set<DormBedInvoiceEntity>().SumAsync(x => (decimal?)x.PaidAmount, ct) ?? 0;
 		decimal totalPenalty = await db.Set<DormBedInvoiceEntity>().SumAsync(x => (decimal?)x.PenaltyAmount, ct) ?? 0;
 
-		List<DormBedInvoiceEntity> recentInvoices = await db.Set<DormBedInvoiceEntity>().AsNoTracking()
+		List<DormBedInvoiceEntity> recentInvoices = await db.Set<DormBedInvoiceEntity>()
 			.Where(x => x.CreatedAt >= now.AddMonths(-12))
 			.ToListAsync(ct);
 		List<DormBedInvoiceChartResponse> monthlyRevenue = recentInvoices
@@ -344,7 +345,7 @@ public class DashboardService(
 			})
 			.OrderBy(x => x.Month).ToList();
 
-		List<DormBedContractEntity> expiringEntities = await db.Set<DormBedContractEntity>().AsNoTracking()
+		List<DormBedContractEntity> expiringEntities = await db.Set<DormBedContractEntity>()
 			.Include(x => x.User).Include(x => x.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm)
 			.Where(x => x.EndDate >= now && x.EndDate <= soon)
 			.OrderBy(x => x.EndDate).Take(10).ToListAsync(ct);
@@ -352,7 +353,7 @@ public class DashboardService(
 			Id = x.Id, UserName = x.User.UserName, BedTitle = x.Bed.Title, DormTitle = x.Bed.Room.Dorm.Title, EndDate = x.EndDate, Rent = x.Rent
 		}).ToList();
 
-		List<DormBedInvoiceEntity> overdueEntities = await db.Set<DormBedInvoiceEntity>().AsNoTracking()
+		List<DormBedInvoiceEntity> overdueEntities = await db.Set<DormBedInvoiceEntity>()
 			.Include(x => x.Contract).ThenInclude(x => x!.User)
 			.Where(x => x.Tags.Contains(TagDormBedInvoice.NotPaid) && x.DueDate < now)
 			.OrderBy(x => x.DueDate).Take(10).ToListAsync(ct);
@@ -361,7 +362,7 @@ public class DashboardService(
 			PenaltyAmount = x.PenaltyAmount, DueDate = x.DueDate, DaysOverdue = Math.Max(0, (now - x.DueDate).Days)
 		}).ToList();
 
-		List<DormBedContractEntity> recentContractEntities = await db.Set<DormBedContractEntity>().AsNoTracking()
+		List<DormBedContractEntity> recentContractEntities = await db.Set<DormBedContractEntity>()
 			.Include(x => x.User).Include(x => x.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm)
 			.OrderByDescending(x => x.CreatedAt).Take(5).ToListAsync(ct);
 		List<RecentContractItem> recentContracts = recentContractEntities.Select(x => new RecentContractItem {
@@ -369,20 +370,20 @@ public class DashboardService(
 			StartDate = x.StartDate, EndDate = x.EndDate, Rent = x.Rent, CreatedAt = x.CreatedAt
 		}).ToList();
 
-		List<UserEntity> recentUserEntities = await db.Set<UserEntity>().AsNoTracking()
+		List<UserEntity> recentUserEntities = await db.Set<UserEntity>()
 			.OrderByDescending(x => x.CreatedAt).Take(5).ToListAsync(ct);
 		List<RecentUserItem> recentUsers = recentUserEntities.Select(x => new RecentUserItem {
 			Id = x.Id, DisplayName = $"{x.FirstName} {x.LastName}".Trim() is { Length: > 0 } n ? n : x.UserName,
 			UserName = x.UserName, PhoneNumber = x.PhoneNumber, CreatedAt = x.CreatedAt
 		}).ToList();
 
-		List<PropertyBreakdownItem> hotelsByCity = await db.Set<HotelEntity>().AsNoTracking()
-			.GroupBy(x => x.City)
+		List<PropertyBreakdownItem> hotelsByCity = await db.Set<HotelEntity>()
+			.GroupBy(x => x.CityCode)
 			.Select(g => new PropertyBreakdownItem { Name = g.Key, Count = g.Count() })
 			.OrderByDescending(x => x.Count).Take(10).ToListAsync(ct);
 
-		List<PropertyBreakdownItem> dormsByCity = await db.Set<DormEntity>().AsNoTracking()
-			.GroupBy(x => x.City)
+		List<PropertyBreakdownItem> dormsByCity = await db.Set<DormEntity>()
+			.GroupBy(x => x.CityCode)
 			.Select(g => new PropertyBreakdownItem { Name = g.Key, Count = g.Count() })
 			.OrderByDescending(x => x.Count).Take(10).ToListAsync(ct);
 
@@ -456,7 +457,9 @@ public class DashboardService(
 				freeMemGb = freeMemGbLocal;
 				memUsage = totalMemGb == 0 ? 0 : 100 - freeMemGb / totalMemGb * 100;
 			}
-			catch { /* fallback values remain at 0 */ }
+			catch {
+				/* fallback values remain at 0 */
+			}
 
 			try {
 				string loadAvg = await File.ReadAllTextAsync("/proc/loadavg", ct);
@@ -465,7 +468,9 @@ public class DashboardService(
 				load5 = double.Parse(parts[1]);
 				load15 = double.Parse(parts[2]);
 			}
-			catch { /* not available */ }
+			catch {
+				/* not available */
+			}
 		}
 		else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
 			try {
@@ -496,7 +501,9 @@ public class DashboardService(
 					memUsage = totalMemGb == 0 ? 0 : used / totalMemGb * 100;
 				}
 			}
-			catch { /* fallback values remain at 0 */ }
+			catch {
+				/* fallback values remain at 0 */
+			}
 
 			try {
 				using Process? loadProcess = Process.Start(new ProcessStartInfo { FileName = "sysctl", Arguments = "-n vm.loadavg", RedirectStandardOutput = true, UseShellExecute = false });
@@ -511,7 +518,9 @@ public class DashboardService(
 					}
 				}
 			}
-			catch { /* not available */ }
+			catch {
+				/* not available */
+			}
 		}
 		else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 			try {
@@ -534,7 +543,9 @@ public class DashboardService(
 					memUsage = totalMemGb == 0 ? 0 : 100 - freeMemGb / totalMemGb * 100;
 				}
 			}
-			catch { /* fallback values remain at 0 */ }
+			catch {
+				/* fallback values remain at 0 */
+			}
 		}
 
 		List<DiskMetricsItem> disks = [];
@@ -557,7 +568,9 @@ public class DashboardService(
 				})
 				.ToList();
 		}
-		catch { /* leave disks empty on failure */ }
+		catch {
+			/* leave disks empty on failure */
+		}
 
 		double processWorkingSetMb = 0, processPrivateMemoryMb = 0;
 		int processThreadCount = 0;
@@ -571,10 +584,16 @@ public class DashboardService(
 			processThreadCount = current.Threads.Count;
 			processStartedAt = current.StartTime.ToUniversalTime();
 			processUptimeSeconds = (DateTime.UtcNow - processStartedAt).TotalSeconds;
-			try { processHandleCount = current.HandleCount; }
-			catch { processHandleCount = null; }
+			try {
+				processHandleCount = current.HandleCount;
+			}
+			catch {
+				processHandleCount = null;
+			}
 		}
-		catch { /* leave process metrics at defaults */ }
+		catch {
+			/* leave process metrics at defaults */
+		}
 
 		List<NetworkInterfaceMetricsItem> networkInterfaces = [];
 		try {
@@ -587,7 +606,9 @@ public class DashboardService(
 						sentMb = Math.Round(stats.BytesSent / bytesToMb, 2);
 						receivedMb = Math.Round(stats.BytesReceived / bytesToMb, 2);
 					}
-					catch { /* stats unavailable on this platform/interface */ }
+					catch {
+						/* stats unavailable on this platform/interface */
+					}
 
 					return new NetworkInterfaceMetricsItem {
 						Name = n.Name,
@@ -601,7 +622,9 @@ public class DashboardService(
 				})
 				.ToList();
 		}
-		catch { /* leave network interfaces empty on failure */ }
+		catch {
+			/* leave network interfaces empty on failure */
+		}
 
 		return new UResponse<OsMetricsResponse?>(new OsMetricsResponse {
 			GeneratedAt = DateTime.UtcNow,
@@ -640,8 +663,12 @@ public class DashboardService(
 	}
 
 	private static string? SafeGet(Func<string> getter) {
-		try { return getter(); }
-		catch { return null; }
+		try {
+			return getter();
+		}
+		catch {
+			return null;
+		}
 	}
 
 	private static ulong ToUlong(Win32FileTime ft) => ((ulong)ft.dwHighDateTime << 32) | ft.dwLowDateTime;

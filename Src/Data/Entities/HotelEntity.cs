@@ -5,11 +5,8 @@ public class HotelEntity : BaseEntity<TagHotel, BaseJson> {
 	[Required, MaxLength(100)]
 	public required string Title { get; set; }
 
-	[Required, MaxLength(100)]
-	public required string City { get; set; }
-
-	[Required, MaxLength(100)]
-	public required string Country { get; set; }
+	[Required, MaxLength(20)]
+	public required string CityCode { get; set; }
 
 	public ICollection<HotelRoomEntity> Rooms { get; set; } = [];
 	public ICollection<MediaEntity> Media { get; set; } = [];
@@ -36,11 +33,8 @@ public class DormEntity : BaseEntity<TagDorm, BaseJson> {
 	[Required, MaxLength(100)]
 	public required string Title { get; set; }
 
-	[Required, MaxLength(100)]
-	public required string City { get; set; }
-
-	[Required, MaxLength(100)]
-	public required string Country { get; set; }
+	[Required, MaxLength(20)]
+	public required string CityCode { get; set; }
 
 	public ICollection<DormRoomEntity> Rooms { get; set; } = [];
 	public ICollection<MediaEntity> Media { get; set; } = [];
