@@ -564,6 +564,7 @@ public static class Projections {
 			CreatorId = x.CreatorId,
 			BedId = x.BedId,
 			CreatedAt = x.CreatedAt,
+			IsActive = x.EndDate < DateTime.UtcNow,
 			Invoices = args.Invoice == null ? null : x.Invoices.AsQueryable().Select(DormBedInvoiceSelector(args.Invoice)).ToList(),
 			User = x.User == null ? null : (args.User != null ? UserSelector(args.User) : t => null!).Invoke(x.User),
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : t => null!).Invoke(x.Creator),

@@ -61,6 +61,8 @@ public sealed class DormBedContractResponse : BaseResponse<TagDormBedContract, B
 	public DormBedResponse? Bed { get; set; }
 	public required Guid BedId { get; set; }
 
+	public required bool IsActive { get; set; }
+
 	public IEnumerable<DormBedInvoiceResponse>? Invoices { get; set; }
 }
 
