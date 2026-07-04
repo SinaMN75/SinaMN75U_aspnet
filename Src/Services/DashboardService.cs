@@ -305,14 +305,14 @@ public class DashboardService(
 
 		int hotelsCount = await db.Set<HotelEntity>().CountAsync(ct);
 		int hotelRoomsCount = await db.Set<HotelRoomEntity>().CountAsync(ct);
-		int hotelRoomsAvailableCount = await db.Set<HotelRoomEntity>().CountAsync(x => x.IsAvailable, ct);
+		int hotelRoomsAvailableCount = await db.Set<HotelRoomEntity>().CountAsync(ct);
 		int hotelRoomsOccupiedCount = hotelRoomsCount - hotelRoomsAvailableCount;
 
 		int dormsCount = await db.Set<DormEntity>().CountAsync(ct);
 		int dormRoomsCount = await db.Set<DormRoomEntity>().CountAsync(ct);
 		int dormBedsCount = await db.Set<DormBedEntity>().CountAsync(ct);
-		int dormBedsAvailableCount = await db.Set<DormBedEntity>().CountAsync(x => x.IsAvailable, ct);
-		int dormBedsOccupiedCount = dormBedsCount - dormBedsAvailableCount;
+		int dormBedsOccupiedCount = await db.Set<DormBedContractEntity>().Where(x => x.StartDate <= now && x.EndDate >= now).Select(x => x.BedId).Distinct().CountAsync(ct);
+		int dormBedsAvailableCount = dormBedsCount - dormBedsOccupiedCount;
 
 		int contractsCount = await db.Set<DormBedContractEntity>().CountAsync(ct);
 		int activeContractsCount = await db.Set<DormBedContractEntity>().CountAsync(x => x.StartDate <= now && x.EndDate >= now, ct);
