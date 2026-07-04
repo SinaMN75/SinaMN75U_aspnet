@@ -46,6 +46,7 @@ public sealed class DormBedResponse : BaseResponse<TagDormBed, BaseJson> {
 	public DormRoomResponse? Room { get; set; }
 
 	public ICollection<MediaResponse>? Media { get; set; }
+	public ICollection<DormBedContractResponse>? Contracts { get; set; }
 }
 
 public sealed class DormBedContractResponse : BaseResponse<TagDormBedContract, BaseJson> {

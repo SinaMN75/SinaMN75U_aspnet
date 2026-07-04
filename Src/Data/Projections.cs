@@ -28,6 +28,7 @@ public sealed class DormRoomSelectorArgs : BaseSelectorArgs {
 public sealed class DormBedSelectorArgs : BaseSelectorArgs {
 	public DormRoomSelectorArgs? Room { get; set; }
 	public MediaSelectorArgs? Media { get; set; }
+	public DormBedContractSelectorArgs? Contract { get; set; }
 }
 
 public sealed class DormBedContractSelectorArgs : BaseSelectorArgs {
@@ -672,6 +673,7 @@ public static class Projections {
 			Room = x.Room == null ? null : (args.Room != null ? DormRoomSelector(args.Room) : r => null!).Invoke(x.Room),
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+			Contracts = args.Contract == null ? null : x.Contracts.AsQueryable().Select(DormBedContractSelector(args.Contract)).ToList(),
 		};
 		return selector.Expand();
 	}
