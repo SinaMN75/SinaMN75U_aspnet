@@ -183,8 +183,22 @@ public sealed class DormBedContractReadParams : BaseReadParams<TagDormBedContrac
 	public Guid? UserId { get; set; }
 	public string? UserName { get; set; }
 	public Guid? BedId { get; set; }
+	public Guid? DormId { get; set; }
 	public DateTime? StartDate { get; set; }
 	public DateTime? EndDate { get; set; }
+
+	/// <summary>Contract is currently within its start/end date range.</summary>
+	public bool? ActiveOnly { get; set; }
+
+	/// <summary>Contract's start date hasn't arrived yet.</summary>
+	public bool? UpcomingOnly { get; set; }
+
+	/// <summary>Contract's end date has already passed.</summary>
+	public bool? ExpiredOnly { get; set; }
+
+	/// <summary>Contract ends within this many days from now (and hasn't already expired).</summary>
+	public int? ExpiringWithinDays { get; set; }
+
 	public DormBedContractSelectorArgs SelectorArgs { get; set; } = new();
 }
 
@@ -228,4 +242,16 @@ public sealed class DormBedInvoiceReadParams : BaseReadParams<TagDormBedInvoice>
 
 	public Guid? ContractId { get; set; }
 	public Guid? UserId { get; set; }
+	public Guid? DormId { get; set; }
+
+	/// <summary>true = only paid invoices, false = only unpaid invoices.</summary>
+	public bool? IsPaid { get; set; }
+
+	/// <summary>true = only unpaid invoices whose due date has passed.</summary>
+	public bool? IsOverdue { get; set; }
+
+	public DateTime? MinDueDate { get; set; }
+	public DateTime? MaxDueDate { get; set; }
+	public decimal? MinDebtAmount { get; set; }
+	public decimal? MaxDebtAmount { get; set; }
 }

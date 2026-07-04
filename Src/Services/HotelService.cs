@@ -617,9 +617,19 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 
 		if (p.UserId.IsNotNull()) q = q.Where(u => u.UserId == p.UserId);
 		if (p.BedId.IsNotNull()) q = q.Where(u => u.BedId == p.BedId);
+		if (p.DormId.IsNotNull()) q = q.Where(u => u.Bed.Room.DormId == p.DormId);
 		if (p.UserName.IsNotNullOrEmpty()) q = q.Include(x => x.User).Where(x => x.User.UserName.Contains(p.UserName));
 		if (p.StartDate.HasValue) q = q.Where(u => u.StartDate <= p.StartDate);
 		if (p.EndDate.HasValue) q = q.Where(u => u.EndDate >= p.EndDate);
+
+		DateTime nowContract = DateTime.UtcNow;
+		if (p.ActiveOnly == true) q = q.Where(u => u.StartDate <= nowContract && u.EndDate >= nowContract);
+		if (p.UpcomingOnly == true) q = q.Where(u => u.StartDate > nowContract);
+		if (p.ExpiredOnly == true) q = q.Where(u => u.EndDate < nowContract);
+		if (p.ExpiringWithinDays.HasValue) {
+			DateTime horizon = nowContract.AddDays(p.ExpiringWithinDays.Value);
+			q = q.Where(u => u.EndDate >= nowContract && u.EndDate <= horizon);
+		}
 
 		IQueryable<DormBedContractResponse> list = q.Select(Projections.DormBedContractSelector(p.SelectorArgs));
 
@@ -708,6 +718,16 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 
 		if (p.UserId.IsNotNull()) q = q.Where(x => x.Contract!.UserId == p.UserId);
 		if (p.ContractId.IsNotNull()) q = q.Where(x => x.ContractId == p.ContractId);
+		if (p.DormId.IsNotNull()) q = q.Where(x => x.Contract != null && x.Contract.Bed.Room.DormId == p.DormId);
+		if (p.MinDueDate.HasValue) q = q.Where(x => x.DueDate >= p.MinDueDate);
+		if (p.MaxDueDate.HasValue) q = q.Where(x => x.DueDate <= p.MaxDueDate);
+		if (p.MinDebtAmount.HasValue) q = q.Where(x => x.DebtAmount >= p.MinDebtAmount);
+		if (p.MaxDebtAmount.HasValue) q = q.Where(x => x.DebtAmount <= p.MaxDebtAmount);
+
+		DateTime nowInvoice = DateTime.UtcNow;
+		if (p.IsPaid == true) q = q.Where(x => !x.Tags.Contains(TagDormBedInvoice.NotPaid));
+		if (p.IsPaid == false) q = q.Where(x => x.Tags.Contains(TagDormBedInvoice.NotPaid));
+		if (p.IsOverdue == true) q = q.Where(x => x.Tags.Contains(TagDormBedInvoice.NotPaid) && x.DueDate < nowInvoice);
 
 		UResponse<IEnumerable<DormBedInvoiceResponse>?> response = await q.Select(Projections.DormBedInvoiceSelector(p.SelectorArgs)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 		List<Guid> ids = response.Result!.Select(x => x.Id).ToList();
