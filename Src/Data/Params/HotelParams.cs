@@ -126,6 +126,7 @@ public sealed class DormBedUpdateParams : BaseUpdateParams<TagDormBed> {
 public sealed class DormBedReadParams : BaseReadParams<TagDormBed> {
 	public string? Title { get; set; }
 	public Guid? RoomId { get; set; }
+	public Guid? DormId { get; set; }
 	public decimal? MinDeposit { get; set; }
 	public decimal? MaxDeposit { get; set; }
 	public decimal? MinMonthlyRent { get; set; }

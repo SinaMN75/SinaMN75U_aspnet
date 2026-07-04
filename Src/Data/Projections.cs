@@ -16,6 +16,7 @@ public sealed class HotelRoomSelectorArgs : BaseSelectorArgs {
 
 public sealed class DormSelectorArgs : BaseSelectorArgs {
 	public DormRoomSelectorArgs? Rooms { get; set; }
+	public DormBedSelectorArgs? Beds { get; set; }
 	public MediaSelectorArgs? Media { get; set; }
 }
 
@@ -637,6 +638,7 @@ public static class Projections {
 			CreatedAt = x.CreatedAt,
 			AdminUserIds = x.AdminUserIds,
 			Rooms = args.Rooms == null ? null : x.Rooms.AsQueryable().Select(DormRoomSelector(args.Rooms)).ToList(),
+			Beds = args.Beds == null ? null : x.Rooms.SelectMany(r => r.Beds).AsQueryable().Select(DormBedSelector(args.Beds)).ToList(),
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
 		};

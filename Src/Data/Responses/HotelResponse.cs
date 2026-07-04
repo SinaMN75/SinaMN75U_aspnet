@@ -24,6 +24,7 @@ public sealed class DormResponse : BaseResponse<TagDorm, BaseJson> {
 	public required string CityCode { get; set; }
 
 	public IEnumerable<DormRoomResponse>? Rooms { get; set; }
+	public IEnumerable<DormBedResponse>? Beds { get; set; }
 	public IEnumerable<MediaResponse>? Media { get; set; }
 }
 

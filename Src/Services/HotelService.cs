@@ -409,6 +409,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.RoomId.HasValue) q = q.Where(x => x.RoomId == p.RoomId);
+		if (p.DormId.HasValue) q = q.Where(x => x.Room.DormId == p.DormId);
 		if (p.MinDeposit.HasValue) q = q.Where(x => x.Deposit >= p.MinDeposit);
 		if (p.MaxDeposit.HasValue) q = q.Where(x => x.Deposit <= p.MaxDeposit);
 		if (p.MinMonthlyRent.HasValue) q = q.Where(x => x.MonthlyRent >= p.MinMonthlyRent);
