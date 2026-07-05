@@ -1,0 +1,119 @@
+### =====================================================================
+### Blog API  (base route: api/Blog/)
+### TagBlog: 101 Draft, 102 Published, 103 Archived, 201 Featured, 202 Pinned
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Create - full
+POST {{host}}/api/Blog/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "title": "Getting Started with .NET 10",
+  "subtitle": "A quick intro",
+  "slug": "getting-started-dotnet-10",
+  "type": "article",
+  "content": "<p>Full HTML body...</p>",
+  "description": "Short description",
+  "metaTitle": "Getting Started with .NET 10",
+  "metaDescription": "SEO description",
+  "source": "https://example.com",
+  "tags": [102, 201],
+  "categories": [],
+  "relatedBlogs": [],
+  "media": []
+}
+
+### Create - minimal
+POST {{host}}/api/Blog/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "title": "Draft Post",
+  "tags": [101]
+}
+
+### BulkCreate
+POST {{host}}/api/Blog/BulkCreate
+Content-Type: application/json
+
+[
+  { "apiKey": "{{apiKey}}", "token": "{{token}}", "title": "Bulk Blog 1", "tags": [102] },
+  { "apiKey": "{{apiKey}}", "token": "{{token}}", "title": "Bulk Blog 2", "tags": [101] }
+]
+
+### Read - all
+POST {{host}}/api/Blog/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "pageSize": 20,
+  "pageNumber": 1
+}
+
+### Read - search + filter
+POST {{host}}/api/Blog/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "query": "dotnet",
+  "slug": "getting-started-dotnet-10",
+  "tags": [102],
+  "pageSize": 10,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### ReadById
+POST {{host}}/api/Blog/ReadById
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "selectorArgs": {}
+}
+
+### Update
+POST {{host}}/api/Blog/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "title": "Updated title",
+  "content": "<p>Updated body</p>",
+  "addTags": [202]
+}
+
+### Delete
+POST {{host}}/api/Blog/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### DeleteRange
+POST {{host}}/api/Blog/DeleteRange
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "ids": ["00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000002"]
+}

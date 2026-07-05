@@ -1,0 +1,115 @@
+### =====================================================================
+### Terminal API  (base route: api/terminal/)
+### TagTerminal: 101 Atm, 102 WallCashless, 103 DeskCashless
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Create - full
+POST {{host}}/api/terminal/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "serial": "TRM-0001",
+  "simCardNumber": "09120000000",
+  "simCardSerial": "SIM-0001",
+  "imei": "356789012345678",
+  "terminalId": "T-100",
+  "insId": "INS-1",
+  "merchantId": "00000000-0000-0000-0000-000000000000",
+  "tags": [103]
+}
+
+### Create - serial only
+POST {{host}}/api/terminal/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "serial": "TRM-0002",
+  "tags": [101]
+}
+
+### BulkCreate
+POST {{host}}/api/terminal/BulkCreate
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "list": [
+    { "apiKey": "{{apiKey}}", "token": "{{token}}", "serial": "TRM-1001", "tags": [101] },
+    { "apiKey": "{{apiKey}}", "token": "{{token}}", "serial": "TRM-1002", "tags": [102] }
+  ]
+}
+
+### Import (base64/path string of an xlsx per TerminalImportTemplate.xlsx)
+POST {{host}}/api/terminal/Import
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "file": "BASE64_OR_PATH_HERE"
+}
+
+### Read - filter by serial
+POST {{host}}/api/terminal/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "serial": "TRM-0001",
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### ReadSupportPassword
+POST {{host}}/api/terminal/ReadSupportPassword
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### Assign - to a merchant
+POST {{host}}/api/terminal/Assign
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "serial": "TRM-0001",
+  "title": "Front desk",
+  "simCardSerial": "SIM-0001",
+  "merchantId": "00000000-0000-0000-0000-000000000000"
+}
+
+### Update
+POST {{host}}/api/terminal/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "imei": "356789012345679"
+}
+
+### Delete
+POST {{host}}/api/terminal/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}

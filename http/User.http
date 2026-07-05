@@ -1,0 +1,124 @@
+### =====================================================================
+### User API  (base route: api/user/)
+### TagUser: 101 Male, 102 Female, 201 SuperAdmin, 202 Guest, 302 Verified ...
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Create - full
+POST {{host}}/api/user/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "userName": "jane_doe",
+  "password": "secret123",
+  "tags": [102, 302],
+  "phoneNumber": "+989120000001",
+  "email": "jane@example.com",
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "nationalCode": "1234567890",
+  "bio": "QA engineer",
+  "birthdate": "1995-06-15T00:00:00Z"
+}
+
+### Create - minimal
+POST {{host}}/api/user/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "userName": "min_user2",
+  "password": "pass1234",
+  "tags": [103]
+}
+
+### BulkCreate
+POST {{host}}/api/user/BulkCreate
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "users": [
+    { "apiKey": "{{apiKey}}", "userName": "bulk1", "password": "pass1234", "tags": [101] },
+    { "apiKey": "{{apiKey}}", "userName": "bulk2", "password": "pass1234", "tags": [102] }
+  ]
+}
+
+### Read - all
+POST {{host}}/api/user/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "pageSize": 50,
+  "pageNumber": 1,
+  "orderBy": 115
+}
+
+### Read - search + filter
+POST {{host}}/api/user/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "query": "jane",
+  "userName": "jane_doe",
+  "tags": [302],
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### ReadById
+POST {{host}}/api/user/ReadById
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "selectorArgs": {}
+}
+
+### Update
+POST {{host}}/api/user/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "bio": "Updated bio",
+  "addTags": [401],
+  "removeTags": []
+}
+
+### Delete
+POST {{host}}/api/user/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### DownloadUserData
+POST {{host}}/api/user/DownloadUserData
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}

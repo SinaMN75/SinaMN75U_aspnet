@@ -1,0 +1,63 @@
+### =====================================================================
+### Notification API  (base route: api/Notification/)  TagNotification: 999 Test
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Create
+POST {{host}}/api/Notification/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "userId": "00000000-0000-0000-0000-000000000000",
+  "tags": [999]
+}
+
+### Read - all
+POST {{host}}/api/Notification/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### Read - by user
+POST {{host}}/api/Notification/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "userId": "00000000-0000-0000-0000-000000000000",
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### Update
+POST {{host}}/api/Notification/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "addTags": [999]
+}
+
+### Delete
+POST {{host}}/api/Notification/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}

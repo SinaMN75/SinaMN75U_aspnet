@@ -1,0 +1,440 @@
+### =====================================================================
+### Hotel API  (base route: api/Hotel/)
+### Sub-resources: Hotel, HotelRoom, Dorm, DormRoom, DormBed, DormBedContract, DormBedInvoice
+### Tags -> TagHotel:101 | TagRoom:101 Single,102 Double,103 Triple
+###         TagDorm:101 Girls,102 Boys | TagDormRoom:101 Single,102 Double,103 Dorm
+###         TagDormBed:101 Single,102 Double | TagDormBedContract:103 Monthly ...
+###         TagDormBedInvoice:102 Rent,204 NotPaid ...
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### ---------------- Hotel ----------------
+
+### Hotel/Create
+POST {{host}}/api/Hotel/Hotel/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "title": "Grand Hotel",
+  "cityCode": "021",
+  "tags": [101]
+}
+
+### Hotel/Read
+POST {{host}}/api/Hotel/Hotel/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "cityCode": "021",
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### Hotel/ReadById
+POST {{host}}/api/Hotel/Hotel/ReadById
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "selectorArgs": {}
+}
+
+### Hotel/Update
+POST {{host}}/api/Hotel/Hotel/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "title": "Grand Hotel (renovated)"
+}
+
+### Hotel/Delete
+POST {{host}}/api/Hotel/Hotel/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### ---------------- HotelRoom ----------------
+
+### HotelRoom/Create
+POST {{host}}/api/Hotel/HotelRoom/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "title": "Deluxe Double",
+  "capacity": 2,
+  "pricePerNight": 1200000,
+  "hotelId": "00000000-0000-0000-0000-000000000000",
+  "tags": [102]
+}
+
+### HotelRoom/Read - by capacity/price range
+POST {{host}}/api/Hotel/HotelRoom/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "hotelId": "00000000-0000-0000-0000-000000000000",
+  "minCapacity": 2,
+  "maxPrice": 2000000,
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### HotelRoom/ReadById
+POST {{host}}/api/Hotel/HotelRoom/ReadById
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "selectorArgs": {}
+}
+
+### HotelRoom/Update
+POST {{host}}/api/Hotel/HotelRoom/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "pricePerNight": 1350000
+}
+
+### HotelRoom/Delete
+POST {{host}}/api/Hotel/HotelRoom/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### ---------------- Dorm ----------------
+
+### Dorm/Create
+POST {{host}}/api/Hotel/Dorm/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "title": "Campus Dorm A",
+  "cityCode": "021",
+  "tags": [102]
+}
+
+### Dorm/Read
+POST {{host}}/api/Hotel/Dorm/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### Dorm/ReadById
+POST {{host}}/api/Hotel/Dorm/ReadById
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "selectorArgs": {}
+}
+
+### Dorm/Update
+POST {{host}}/api/Hotel/Dorm/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "title": "Campus Dorm A (updated)"
+}
+
+### Dorm/Delete
+POST {{host}}/api/Hotel/Dorm/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### ---------------- DormRoom ----------------
+
+### DormRoom/Create
+POST {{host}}/api/Hotel/DormRoom/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "title": "Room 101",
+  "dormId": "00000000-0000-0000-0000-000000000000",
+  "tags": [103]
+}
+
+### DormRoom/Read
+POST {{host}}/api/Hotel/DormRoom/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "dormId": "00000000-0000-0000-0000-000000000000",
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### DormRoom/ReadById
+POST {{host}}/api/Hotel/DormRoom/ReadById
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "selectorArgs": {}
+}
+
+### DormRoom/Update
+POST {{host}}/api/Hotel/DormRoom/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "title": "Room 101A"
+}
+
+### DormRoom/Delete
+POST {{host}}/api/Hotel/DormRoom/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### ---------------- DormBed ----------------
+
+### DormBed/Create
+POST {{host}}/api/Hotel/DormBed/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "title": "B1",
+  "deposit": 5000000,
+  "monthlyRent": 1500000,
+  "roomId": "00000000-0000-0000-0000-000000000000",
+  "tags": [101]
+}
+
+### DormBed/Read - by rent range
+POST {{host}}/api/Hotel/DormBed/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "dormId": "00000000-0000-0000-0000-000000000000",
+  "minMonthlyRent": 1000000,
+  "maxMonthlyRent": 2000000,
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### DormBed/ReadById
+POST {{host}}/api/Hotel/DormBed/ReadById
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "selectorArgs": {}
+}
+
+### DormBed/Update
+POST {{host}}/api/Hotel/DormBed/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "monthlyRent": 1600000
+}
+
+### DormBed/Delete
+POST {{host}}/api/Hotel/DormBed/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### ---------------- DormBedContract ----------------
+
+### DormBedContract/Create
+POST {{host}}/api/Hotel/DormBedContract/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "startDate": "2026-07-01T00:00:00Z",
+  "endDate": "2027-07-01T00:00:00Z",
+  "deposit": 5000000,
+  "rent": 1500000,
+  "userId": "00000000-0000-0000-0000-000000000000",
+  "bedId": "00000000-0000-0000-0000-000000000000",
+  "penaltyPrecentEveryDate": 2,
+  "tags": [103]
+}
+
+### DormBedContract/Read
+POST {{host}}/api/Hotel/DormBedContract/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "userId": "00000000-0000-0000-0000-000000000000",
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### DormBedContract/Update
+POST {{host}}/api/Hotel/DormBedContract/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "rent": 1600000
+}
+
+### DormBedContract/Delete
+POST {{host}}/api/Hotel/DormBedContract/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### ---------------- DormBedInvoice ----------------
+
+### DormBedInvoice/Create
+POST {{host}}/api/Hotel/DormBedInvoice/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "debtAmount": 1500000,
+  "creditorAmount": 0,
+  "paidAmount": 0,
+  "penaltyAmount": 0,
+  "penaltyPrecentEveryDate": 2,
+  "contractId": "00000000-0000-0000-0000-000000000000",
+  "dueDate": "2026-08-01T00:00:00Z",
+  "tags": [102, 204]
+}
+
+### DormBedInvoice/Read - unpaid & overdue
+POST {{host}}/api/Hotel/DormBedInvoice/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "contractId": "00000000-0000-0000-0000-000000000000",
+  "isPaid": false,
+  "isOverdue": true,
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### DormBedInvoice/Update
+POST {{host}}/api/Hotel/DormBedInvoice/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "paidAmount": 1500000
+}
+
+### DormBedInvoice/Pay
+POST {{host}}/api/Hotel/DormBedInvoice/Pay
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### DormBedInvoice/Delete
+POST {{host}}/api/Hotel/DormBedInvoice/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### DormBedInvoice/ChartData
+POST {{host}}/api/Hotel/DormBedInvoice/ChartData
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}"
+}

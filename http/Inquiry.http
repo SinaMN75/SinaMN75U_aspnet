@@ -1,0 +1,100 @@
+### =====================================================================
+### Inquiry API  (base route: api/inquiry/)  - third-party inquiry services
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### BillInfo
+POST {{host}}/api/inquiry/BillInfo
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "billId": "1234567890",
+  "paymentId": "12345678"
+}
+
+### ZipCodeToAddressDetail
+POST {{host}}/api/inquiry/ZipCodeToAddressDetail
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "zipCode": "1234567890",
+  "refresh": false
+}
+
+### VehicleViolationDetail
+POST {{host}}/api/inquiry/VehicleViolationDetail
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "nationalCode": "1234567890",
+  "phoneNumber": "09120000000",
+  "licencePlate": "12A34567",
+  "refresh": false
+}
+
+### DrivingLicenceDetail
+POST {{host}}/api/inquiry/DrivingLicenceDetail
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "nationalCode": "1234567890",
+  "phoneNumber": "09120000000",
+  "refresh": false
+}
+
+### LicencePlateDetail
+POST {{host}}/api/inquiry/LicencePlateDetail
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "nationalCode": "1234567890",
+  "licencePlate": "12A34567",
+  "refresh": false
+}
+
+### DrivingLicenceNegativePoint
+POST {{host}}/api/inquiry/DrivingLicenceNegativePoint
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "nationalCode": "1234567890",
+  "phoneNumber": "09120000000",
+  "drivingLicenceNumber": "1234567890",
+  "refresh": false
+}
+
+### FreewayTolls
+POST {{host}}/api/inquiry/FreewayTolls
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "licencePlate": "12A34567",
+  "refresh": false
+}
+
+### IBanToBankAccountDetail
+POST {{host}}/api/inquiry/IBanToBankAccountDetail
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "iBan": "IR123456789012345678901234",
+  "refresh": false
+}

@@ -1,0 +1,32 @@
+### =====================================================================
+### Process API  (base route: api/Process/)
+### TagFieldType: 101 Text, 102 DropDown, 103 File, 105 ESignature
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Get - fetch a process step by id
+POST {{host}}/api/Process/Get
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "process-instance-id"
+}
+
+### Send - submit fields for a process step
+POST {{host}}/api/Process/Send
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "processId": "process-instance-id",
+  "stepId": "step-1",
+  "fields": [
+    { "key": "firstName", "label": "First Name", "value": "John", "required": true, "type": 101 },
+    { "key": "nationalCode", "label": "National Code", "value": "1234567890", "required": true, "type": 101 }
+  ]
+}

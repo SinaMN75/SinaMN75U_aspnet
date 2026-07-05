@@ -1,0 +1,67 @@
+### =====================================================================
+### Txn API  (base route: api/txn/)
+### TagTxn: 101 CreditCard, 102 Cash, 201 Pending, 202 Paid, 203 Failed ...
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Create - credit card, pending
+POST {{host}}/api/txn/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "amount": 250000,
+  "trackingNumber": "TRK-0001",
+  "tags": [101, 201]
+}
+
+### Create - cash, paid
+POST {{host}}/api/txn/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "amount": 99000,
+  "trackingNumber": "TRK-0002",
+  "tags": [102, 202]
+}
+
+### Read
+POST {{host}}/api/txn/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "tags": [202],
+  "pageSize": 20,
+  "pageNumber": 1,
+  "orderBy": 114,
+  "selectorArgs": {}
+}
+
+### Update - mark paid
+POST {{host}}/api/txn/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "paidAt": "2026-07-05T12:00:00Z",
+  "gatewayName": "PNA"
+}
+
+### Delete
+POST {{host}}/api/txn/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}

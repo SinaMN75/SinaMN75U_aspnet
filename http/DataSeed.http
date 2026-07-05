@@ -1,0 +1,12 @@
+### =====================================================================
+### DataSeeder API  (base route: api/DataSeeder/)
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Seed Users (no body required)
+POST {{host}}/api/DataSeeder/Users
+
+### Seed Categories (no body required)
+POST {{host}}/api/DataSeeder/Categories

@@ -1,0 +1,66 @@
+### =====================================================================
+### Ticket API  (base route: api/ticket/)  TagTicket: 101 SuperAdmin, 102 Admin
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Create - full
+POST {{host}}/api/ticket/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "title": "Payment failed",
+  "description": "I could not complete my payment.",
+  "tags": [102],
+  "phone": "+989120000000",
+  "telegram": "@support"
+}
+
+### Create - minimal (title + description + tags)
+POST {{host}}/api/ticket/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "title": "Feature request",
+  "description": "Please add dark mode.",
+  "tags": [101]
+}
+
+### Read
+POST {{host}}/api/ticket/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "tags": [102],
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### Update
+POST {{host}}/api/ticket/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "description": "Updated details"
+}
+
+### Delete
+POST {{host}}/api/ticket/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}

@@ -1,0 +1,71 @@
+### =====================================================================
+### ChargeInternet API  (base route: api/ChargeInternet/)
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Pin - buy a charge pin
+POST {{host}}/api/ChargeInternet/Pin
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "amount": 20000,
+  "simType": "HamrahAvval"
+}
+
+### Topup - direct top-up
+POST {{host}}/api/ChargeInternet/Topup
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "amount": 20000,
+  "operatorId": "1",
+  "chargeType": "normal",
+  "phoneNumber": "09120000000"
+}
+
+### InternetList - available packages for an operator
+POST {{host}}/api/ChargeInternet/InternetList
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "operatorId": "1"
+}
+
+### InternetReserve - reserve a package
+POST {{host}}/api/ChargeInternet/InternetReserve
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "subscriber": "09120000000",
+  "operatorId": "1",
+  "packageId": "PKG-123",
+  "amount": 50000,
+  "device": "05",
+  "bank": null
+}
+
+### GetStatus - by reference
+POST {{host}}/api/ChargeInternet/GetStatus
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "reference": "REF-123456"
+}
+
+### GetBalance (no body required)
+POST {{host}}/api/ChargeInternet/GetBalance
+
+### Echo (health check, no body required)
+POST {{host}}/api/ChargeInternet/Echo

@@ -1,0 +1,79 @@
+### =====================================================================
+### Wallet API  (base route: api/wallet/)
+### TagWalletTxn: 101 Charge, 102 Transfer, 301 ChargeSimPin ...
+### TagWallet: 101 Primary
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Charge - add funds to a user's wallet
+POST {{host}}/api/wallet/Charge
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "userId": "00000000-0000-0000-0000-000000000000",
+  "amount": 500000
+}
+
+### Transfer - user to user
+POST {{host}}/api/wallet/Transfer
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "receiverId": "00000000-0000-0000-0000-000000000000",
+  "amount": 100000,
+  "detail1": "Gift",
+  "tagWalletTxn": [102]
+}
+
+### Purchase - spend from wallet
+POST {{host}}/api/wallet/Purchase
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "tag": 209,
+  "amount": 50000
+}
+
+### ReadTxn - a user's wallet transactions
+POST {{host}}/api/wallet/ReadTxn
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "userId": "00000000-0000-0000-0000-000000000000",
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### Read - wallets
+POST {{host}}/api/wallet/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### ReadByUserId
+POST {{host}}/api/wallet/ReadByUserId
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "selectorArgs": {}
+}

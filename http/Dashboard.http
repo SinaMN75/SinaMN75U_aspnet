@@ -1,0 +1,44 @@
+### =====================================================================
+### Dashboard API  (base route: api/dashboard/)
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### ReadSystemMetrics (no body required)
+POST {{host}}/api/dashboard/ReadSystemMetrics
+
+### Read - dashboard data (no body required)
+POST {{host}}/api/dashboard/Read
+
+### ReadFinancialOpsDashboard - with date range
+POST {{host}}/api/dashboard/ReadFinancialOpsDashboard
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "fromDate": "2026-01-01T00:00:00Z",
+  "toDate": "2026-07-05T00:00:00Z"
+}
+
+### ReadPropertyDashboard - default window (null dates)
+POST {{host}}/api/dashboard/ReadPropertyDashboard
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}"
+}
+
+### ReadOsMetrics
+POST {{host}}/api/dashboard/ReadOsMetrics
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}"
+}
+
+### Enums (GET - lists all tag enums)
+GET {{host}}/api/dashboard/Enums

@@ -1,0 +1,27 @@
+### =====================================================================
+### Accounting API  (base route: api/accounting/)
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Report - full range for a user
+POST {{host}}/api/accounting/Report
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "userId": "00000000-0000-0000-0000-000000000000",
+  "fromDate": "2026-01-01T00:00:00Z",
+  "toDate": "2026-07-05T00:00:00Z"
+}
+
+### Report - no filters (all)
+POST {{host}}/api/accounting/Report
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}"
+}

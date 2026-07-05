@@ -1,0 +1,96 @@
+### =====================================================================
+### Auth API  (base route: api/auth/)
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+
+### Register - full
+POST {{host}}/api/auth/Register
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "userName": "john_doe",
+  "password": "secret123",
+  "tags": [101],
+  "email": "john@example.com",
+  "phoneNumber": "+989120000000",
+  "firstName": "John",
+  "lastName": "Doe"
+}
+
+### Register - minimal (userName + password + tags)
+POST {{host}}/api/auth/Register
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "userName": "min_user",
+  "password": "pass1234",
+  "tags": [101]
+}
+
+### Login - by username
+POST {{host}}/api/auth/Login
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "userName": "john_doe",
+  "password": "secret123"
+}
+
+> {%
+    client.global.set("token", response.body.result ? response.body.result.token : "");
+    client.global.set("refreshToken", response.body.result ? response.body.result.refreshToken : "");
+%}
+
+### Login - by email
+POST {{host}}/api/auth/Login
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "email": "john@example.com",
+  "password": "secret123"
+}
+
+### RefreshToken
+POST {{host}}/api/auth/RefreshToken
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "refreshToken": "{{refreshToken}}"
+}
+
+### GetVerificationCodeForLogin (OTP request)
+POST {{host}}/api/auth/GetVerificationCodeForLogin
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "phoneNumber": "989120000000"
+}
+
+### VerifyCodeForLogin (OTP verify)
+POST {{host}}/api/auth/VerifyCodeForLogin
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "phoneNumber": "989120000000",
+  "otp": "12345"
+}
+
+### CompleteProfile (requires token)
+POST {{host}}/api/auth/CompleteProfile
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "firstName": "John",
+  "lastName": "Doe",
+  "nationalCode": "1234567890"
+}

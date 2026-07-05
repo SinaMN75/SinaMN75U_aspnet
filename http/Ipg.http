@@ -1,0 +1,23 @@
+### =====================================================================
+### Ipg API  (base route: api/Ipg/)
+### Pay = POST (JSON). Gateway & Verify are GET pages used by the payment flow.
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Pay - open the gateway, returns a url to show in a WebView
+POST {{host}}/api/Ipg/Pay
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "amount": 150000
+}
+
+### Gateway - test-only fake gateway page (GET). Opened by Pay in test mode.
+GET {{host}}/api/Ipg/Gateway?additionalData=SOME_DATA&amount=150000
+
+### Verify - callback (GET). Normally the gateway redirects here; shown for reference.
+GET {{host}}/api/Ipg/Verify?additionalData=SOME_DATA&token=FAKE&status=0&rrn=123456789&cardNumberMasked=627412******2424

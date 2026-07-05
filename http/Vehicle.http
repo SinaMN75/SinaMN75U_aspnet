@@ -1,0 +1,65 @@
+### =====================================================================
+### Vehicle API  (base route: api/vehicle/)   TagVehicle: 999 Test
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Create - full
+POST {{host}}/api/vehicle/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "licencePlate": "12A34567",
+  "title": "My car",
+  "brand": "Peugeot",
+  "color": "White",
+  "tags": [999]
+}
+
+### Create - plate only
+POST {{host}}/api/vehicle/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "licencePlate": "99B11223",
+  "tags": [999]
+}
+
+### Read - filter
+POST {{host}}/api/vehicle/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "brand": "Peugeot",
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### Update
+POST {{host}}/api/vehicle/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "color": "Black"
+}
+
+### Delete
+POST {{host}}/api/vehicle/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}

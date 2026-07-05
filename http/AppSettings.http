@@ -1,0 +1,15 @@
+### =====================================================================
+### AppSettings API  (base route: api/AppSettings/)
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Read - returns ApiCallCosts + ChargeInternet config
+POST {{host}}/api/AppSettings/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}"
+}

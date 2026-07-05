@@ -1,0 +1,66 @@
+### =====================================================================
+### BankAccount API  (base route: api/bankAccount/)  TagBankAccount: 101 Verified
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Create - full
+POST {{host}}/api/bankAccount/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "cardNumber": "6274129999999999",
+  "accountNumber": "0123456789",
+  "iBanNumber": "IR123456789012345678901234",
+  "bankName": "Melli",
+  "ownerName": "John Doe",
+  "tags": [101]
+}
+
+### Create - card only
+POST {{host}}/api/bankAccount/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "cardNumber": "6037999999999999",
+  "tags": [101]
+}
+
+### Read - filter by owner
+POST {{host}}/api/bankAccount/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "ownerName": "John Doe",
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### Update
+POST {{host}}/api/bankAccount/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "bankName": "Saderat"
+}
+
+### Delete
+POST {{host}}/api/bankAccount/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}

@@ -1,0 +1,83 @@
+### =====================================================================
+### ApiLog API  (base route: api/ApiLog/)
+### TagApiLog: 101 Get,102 Post,... 201 Success,202 ClientError,203 ServerError,301 HasException
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Read - all
+POST {{host}}/api/ApiLog/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "pageSize": 50,
+  "pageNumber": 1,
+  "orderBy": 118,
+  "selectorArgs": {}
+}
+
+### Read - only errors + slow requests
+POST {{host}}/api/ApiLog/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "onlyErrors": true,
+  "minDurationMs": 1000,
+  "pathContains": "/api/product/",
+  "pageSize": 50,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### Read - by status code + trace
+POST {{host}}/api/ApiLog/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "statusCode": 500,
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### Stats - hourly buckets
+POST {{host}}/api/ApiLog/Stats
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "fromCreatedAt": "2026-07-01T00:00:00Z",
+  "toCreatedAt": "2026-07-05T00:00:00Z",
+  "bucket": "hour"
+}
+
+### Stats - daily buckets
+POST {{host}}/api/ApiLog/Stats
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "bucket": "day"
+}
+
+### Export (returns a CSV file)
+POST {{host}}/api/ApiLog/Export
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "onlyErrors": false,
+  "pageSize": 1000,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}

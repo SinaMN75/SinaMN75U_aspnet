@@ -1,0 +1,121 @@
+### =====================================================================
+### Category API  (base route: api/category/)
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Create - full
+POST {{host}}/api/category/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "title": "Electronics",
+  "subtitle": "Devices & gadgets",
+  "type": "shop",
+  "code": "CAT-EL",
+  "order": 1,
+  "location": "Tehran",
+  "address": "Valiasr St",
+  "phoneNumber": "+982100000000",
+  "tags": [101, 201],
+  "relatedProducts": [],
+  "children": [],
+  "media": []
+}
+
+### Create - minimal (title + tags)
+POST {{host}}/api/category/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "title": "Minimal Category",
+  "tags": [101]
+}
+
+### Create - with nested children
+POST {{host}}/api/category/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "title": "Parent Category",
+  "tags": [101],
+  "children": [
+    { "apiKey": "{{apiKey}}", "token": "{{token}}", "title": "Child 1", "tags": [101] },
+    { "apiKey": "{{apiKey}}", "token": "{{token}}", "title": "Child 2", "tags": [101] }
+  ]
+}
+
+### BulkCreate
+POST {{host}}/api/category/BulkCreate
+Content-Type: application/json
+
+[
+  { "apiKey": "{{apiKey}}", "token": "{{token}}", "title": "Bulk Cat 1", "tags": [101] },
+  { "apiKey": "{{apiKey}}", "token": "{{token}}", "title": "Bulk Cat 2", "tags": [101, 202] }
+]
+
+### Read - all (default)
+POST {{host}}/api/category/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "pageSize": 50,
+  "pageNumber": 1,
+  "orderBy": 101
+}
+
+### Read - by tags
+POST {{host}}/api/category/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "tags": [101, 201],
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### ReadById
+POST {{host}}/api/category/ReadById
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### Update
+POST {{host}}/api/category/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "title": "Electronics (updated)",
+  "order": 2,
+  "addTags": [202],
+  "removeTags": [201]
+}
+
+### Delete
+POST {{host}}/api/category/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}

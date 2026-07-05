@@ -1,0 +1,103 @@
+### =====================================================================
+### Parking API  (base route: api/parking/)
+### TagParking / TagParkingReport: 999 Test
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### CreateParking
+POST {{host}}/api/parking/CreateParking
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "title": "Central Parking",
+  "entrancePrice": 5000,
+  "hourlyPrice": 3000,
+  "dailyPrice": 40000,
+  "tags": [999]
+}
+
+### ReadParking
+POST {{host}}/api/parking/ReadParking
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### UpdateParking
+POST {{host}}/api/parking/UpdateParking
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "hourlyPrice": 3500
+}
+
+### DeleteParking
+POST {{host}}/api/parking/DeleteParking
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### CreateParkingReport
+POST {{host}}/api/parking/CreateParkingReport
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "parkingId": "00000000-0000-0000-0000-000000000000",
+  "startDate": "2026-07-05T08:00:00Z",
+  "numberPlate": "12A34567",
+  "amount": 15000,
+  "tags": [999]
+}
+
+### ReadParkingReport - filter by parking
+POST {{host}}/api/parking/ReadParkingReport
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "parkingId": "00000000-0000-0000-0000-000000000000",
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### UpdateParkingReport - close session
+POST {{host}}/api/parking/UpdateParkingReport
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "endDate": "2026-07-05T12:00:00Z",
+  "amount": 30000
+}
+
+### DeleteParkingReport
+POST {{host}}/api/parking/DeleteParkingReport
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}

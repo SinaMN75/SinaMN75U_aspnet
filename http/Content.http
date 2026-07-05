@@ -1,0 +1,74 @@
+### =====================================================================
+### Content API  (base route: api/content/)
+### TagContent: 101 AboutUs, 102 Terms, 103 ContactUs, 201 HomeSlider1 ...
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Create - full with extra list
+POST {{host}}/api/content/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "title": "About Us",
+  "subTitle": "Who we are",
+  "description": "Company description...",
+  "instagram": "@company",
+  "telegram": "@company",
+  "whatsapp": "+989120000000",
+  "phone": "+982100000000",
+  "tags": [101],
+  "extra": [
+    { "title": "Mission", "subtitle": "Our mission", "description": "..." },
+    { "title": "Vision", "subtitle": "Our vision", "description": "..." }
+  ]
+}
+
+### Create - minimal
+POST {{host}}/api/content/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "title": "Terms",
+  "tags": [102]
+}
+
+### Read
+POST {{host}}/api/content/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "tags": [101],
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### Update
+POST {{host}}/api/content/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "title": "About Us (v2)",
+  "description": "Updated"
+}
+
+### Delete
+POST {{host}}/api/content/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}

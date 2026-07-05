@@ -1,0 +1,115 @@
+### =====================================================================
+### Comment API  (base route: api/comment/)
+### TagComment: 101 Released, 102 InQueue, 103 Rejected, 201 Private
+### TagReaction: 101 Like, 102 Dislike
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Create - on a product
+POST {{host}}/api/comment/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "description": "Great product!",
+  "score": 4.5,
+  "reaction": 101,
+  "tags": [101],
+  "productId": "00000000-0000-0000-0000-000000000000"
+}
+
+### Create - reply (with parentId) on a blog
+POST {{host}}/api/comment/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "description": "I agree with the above.",
+  "score": 0,
+  "tags": [101],
+  "blogId": "00000000-0000-0000-0000-000000000000",
+  "parentId": "00000000-0000-0000-0000-000000000000"
+}
+
+### Read - by product
+POST {{host}}/api/comment/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "productId": "00000000-0000-0000-0000-000000000000",
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### Read - by user
+POST {{host}}/api/comment/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "userId": "00000000-0000-0000-0000-000000000000",
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### ReadById
+POST {{host}}/api/comment/ReadById
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "selectorArgs": {}
+}
+
+### Update
+POST {{host}}/api/comment/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "description": "Edited comment",
+  "score": 5
+}
+
+### Delete
+POST {{host}}/api/comment/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### ReadProductCommentCount
+POST {{host}}/api/comment/ReadProductCommentCount
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### ReadUserCommentCount
+POST {{host}}/api/comment/ReadUserCommentCount
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}

@@ -1,0 +1,61 @@
+### =====================================================================
+### Merchant API  (base route: api/Merchant/)   TagMerchant: 101 Normal
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Create - full (all fields validated)
+POST {{host}}/api/Merchant/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "zipCode": "1234567890",
+  "cityCode": "021",
+  "address": "Valiasr St, Tehran",
+  "phoneNumber": "02112345678",
+  "title": "Sina Store",
+  "landline": "02112345678",
+  "nationalCode": "1234567890",
+  "ownerPhoneNumber": "09120000000",
+  "ownerName": "John Doe",
+  "mcc": "5411",
+  "businessTitle": "Retail",
+  "tags": [101]
+}
+
+### Read - filter by title
+POST {{host}}/api/Merchant/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "title": "Sina Store",
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### ReadById
+POST {{host}}/api/Merchant/ReadById
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "selectorArgs": {}
+}
+
+### Delete
+POST {{host}}/api/Merchant/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}

@@ -1,0 +1,66 @@
+### =====================================================================
+### Pn API  (base route: api/Pn/)  - PNA payment onboarding
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Auth - onboard a user
+POST {{host}}/api/Pn/Auth
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "phoneNumber": "09120000000",
+  "firstName": "John",
+  "lastName": "Doe",
+  "fatherName": "Michael",
+  "nationalCode": "1234567890",
+  "email": "john@example.com",
+  "birthdate": "1990-01-01T00:00:00Z"
+}
+
+### UserStatus
+POST {{host}}/api/Pn/UserStatus
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "phoneNumber": "09120000000"
+}
+
+### CreateMerchant
+POST {{host}}/api/Pn/CreateMerchant
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "userPhoneNumber": "09120000000",
+  "zipCode": "1234567890",
+  "cityCode": "021",
+  "phoneNumber": "02112345678",
+  "title": "Sina Store",
+  "landline": "02112345678",
+  "nationalCode": "1234567890",
+  "ownerPhoneNumber": "09120000000",
+  "ownerName": "John Doe",
+  "mcc": "5411",
+  "address": "Valiasr St, Tehran",
+  "businessTitle": "Retail"
+}
+
+### CreateTerminal
+POST {{host}}/api/Pn/CreateTerminal
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "serial": "TRM-0001",
+  "simCardSerial": "SIM-0001",
+  "imei": "356789012345678",
+  "merchantId": "00000000-0000-0000-0000-000000000000"
+}

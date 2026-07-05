@@ -1,0 +1,85 @@
+### =====================================================================
+### Media API  (base route: api/media/)
+### NOTE: Create is multipart/form-data (file upload). TagMedia: 101 Image, 102 Profile
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Create - upload a file (multipart). Replace the path after < with a real file.
+POST {{host}}/api/media/Create
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="ApiKey"
+
+{{apiKey}}
+--WebAppBoundary
+Content-Disposition: form-data; name="Token"
+
+{{token}}
+--WebAppBoundary
+Content-Disposition: form-data; name="Tag1"
+
+101
+--WebAppBoundary
+Content-Disposition: form-data; name="ProductId"
+
+00000000-0000-0000-0000-000000000000
+--WebAppBoundary
+Content-Disposition: form-data; name="Title"
+
+Sample image
+--WebAppBoundary
+Content-Disposition: form-data; name="File"; filename="sample.png"
+Content-Type: image/png
+
+< ./sample.png
+--WebAppBoundary--
+
+### Read
+POST {{host}}/api/media/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "tags": [101],
+  "pageSize": 20,
+  "pageNumber": 1
+}
+
+### Update - metadata + attach to entity
+POST {{host}}/api/media/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "title": "Updated title",
+  "description": "Updated description"
+}
+
+### Delete
+POST {{host}}/api/media/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### DeleteRange
+POST {{host}}/api/media/DeleteRange
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "ids": ["00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000002"]
+}
+
+### Download (GET, query param)
+GET {{host}}/api/media/Download?filePath=Media/sample.png

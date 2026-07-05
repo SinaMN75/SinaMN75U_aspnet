@@ -1,0 +1,64 @@
+### =====================================================================
+### SimCard API  (base route: api/Sim/)
+### TagSimOperator: 1 IranCell, 2 HamrahAvval, 3 Rigthel, 5 Shatel
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Create - full
+POST {{host}}/api/Sim/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "number": "09120000000",
+  "serial": "SN-0001",
+  "tags": [2]
+}
+
+### Create - number only
+POST {{host}}/api/Sim/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "number": "09350000000",
+  "tags": [1]
+}
+
+### Read
+POST {{host}}/api/Sim/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "tags": [1],
+  "pageSize": 20,
+  "pageNumber": 1,
+  "selectorArgs": {}
+}
+
+### Update
+POST {{host}}/api/Sim/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "serial": "SN-0002"
+}
+
+### Delete
+POST {{host}}/api/Sim/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}

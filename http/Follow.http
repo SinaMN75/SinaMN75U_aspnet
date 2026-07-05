@@ -1,0 +1,117 @@
+### =====================================================================
+### Follow API  (base route: api/follow/)
+### FollowParams: set the relevant id (UserId / ProductId / CategoryId)
+### =====================================================================
+@host = http://localhost:5000
+@apiKey = your-dev-api-key
+@token =
+
+### Follow - a user
+POST {{host}}/api/follow/Follow
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "userId": "00000000-0000-0000-0000-000000000000"
+}
+
+### Follow - a product
+POST {{host}}/api/follow/Follow
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "productId": "00000000-0000-0000-0000-000000000000"
+}
+
+### Unfollow - a category
+POST {{host}}/api/follow/Unfollow
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "categoryId": "00000000-0000-0000-0000-000000000000"
+}
+
+### ReadFollowers (id = target user)
+POST {{host}}/api/follow/ReadFollowers
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### ReadFollowedUsers
+POST {{host}}/api/follow/ReadFollowedUsers
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### ReadFollowedProducts
+POST {{host}}/api/follow/ReadFollowedProducts
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### ReadFollowedCategories
+POST {{host}}/api/follow/ReadFollowedCategories
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### ReadFollowerFollowingCount
+POST {{host}}/api/follow/ReadFollowerFollowingCount
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### IsFollowingUser
+POST {{host}}/api/follow/IsFollowingUser
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "userId": "00000000-0000-0000-0000-000000000000"
+}
+
+### IsFollowingProduct
+POST {{host}}/api/follow/IsFollowingProduct
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "productId": "00000000-0000-0000-0000-000000000000"
+}
+
+### IsFollowingCategory
+POST {{host}}/api/follow/IsFollowingCategory
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "categoryId": "00000000-0000-0000-0000-000000000000"
+}
