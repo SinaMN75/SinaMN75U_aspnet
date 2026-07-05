@@ -8,6 +8,7 @@ public sealed class ContentCreateParams : BaseCreateParams<TagContent> {
 	public string? Telegram { get; set; }
 	public string? Whatsapp { get; set; }
 	public string? Phone { get; set; }
+	public List<ContentExtra> Extra { get; set; } = [];
 }
 
 public sealed class ContentUpdateParams : BaseUpdateParams<TagContent> {
@@ -18,6 +19,7 @@ public sealed class ContentUpdateParams : BaseUpdateParams<TagContent> {
 	public string? Telegram { get; set; }
 	public string? Whatsapp { get; set; }
 	public string? Phone { get; set; }
+	public List<ContentExtra>? Extra { get; set; }
 }
 
 public sealed class ContentReadParams : BaseReadParams<TagContent> {

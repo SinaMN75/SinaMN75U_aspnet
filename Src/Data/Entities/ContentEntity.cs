@@ -13,4 +13,14 @@ public sealed class ContentJson : BaseJson {
 	public string? Telegram { get; set; }
 	public string? Whatsapp { get; set; }
 	public string? Phone { get; set; }
+	public List<ContentExtra> Extra { get; set; } = [];
+}
+
+public sealed class ContentExtra {
+	public required string Title { get; set; }
+	public required string Subtitle { get; set; }
+	public required string Description { get; set; }
+	public string? Icon1 { get; set; }
+	public string? Icon2 { get; set; }
+	public string? Icon3 { get; set; }
 }

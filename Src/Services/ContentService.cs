@@ -27,7 +27,8 @@ public class ContentService(
 				Instagram = p.Instagram,
 				Telegram = p.Telegram,
 				Whatsapp = p.Whatsapp,
-				Phone = p.Phone
+				Phone = p.Phone,
+				Extra = p.Extra
 			},
 			Tags = p.Tags
 		};
@@ -57,7 +58,8 @@ public class ContentService(
 		if (p.Telegram != null) e.JsonData.Telegram = p.Telegram;
 		if (p.Whatsapp != null) e.JsonData.Whatsapp = p.Whatsapp;
 		if (p.Phone != null) e.JsonData.Phone = p.Phone;
-		
+		if (p.Extra != null) e.JsonData.Extra = p.Extra;
+
 		db.Set<ContentEntity>().Update(e.ApplyUpdateParam<ContentEntity,TagContent, ContentJson>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
