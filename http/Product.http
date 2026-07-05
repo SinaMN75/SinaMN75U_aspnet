@@ -1,0 +1,215 @@
+### =====================================================================
+### Product API  (base route: api/product/)
+### =====================================================================
+### Variables live in http-client.env.json (pick an env in the top-right
+### of the JetBrains HTTP client). Falls back to the defaults below.
+@host = {{host}}
+@apiKey = {{apiKey}}
+@token = {{token}}
+
+### ---------------------------------------------------------------------
+### Create - full product
+POST {{host}}/api/product/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "title": "Blue Cotton T-Shirt",
+  "subtitle": "Summer collection",
+  "description": "Soft 100% cotton t-shirt",
+  "code": "TSH-001",
+  "slug": "blue-cotton-t-shirt",
+  "type": "physical",
+  "stock": 120,
+  "point": 10,
+  "order": 1,
+  "latitude": 35.6892,
+  "longitude": 51.3890,
+  "phoneNumber": "+989120000000",
+  "address": "Tehran, IR",
+  "tags": [101, 201, 301],
+  "categories": [],
+  "media": []
+}
+
+> {%
+    client.global.set("productId", response.body.result);
+%}
+
+### ---------------------------------------------------------------------
+### Create - minimal (only required: title + tags)
+POST {{host}}/api/product/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "title": "Minimal Product",
+  "tags": [101]
+}
+
+### ---------------------------------------------------------------------
+### Create - with children (nested product)
+POST {{host}}/api/product/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "title": "Parent Product",
+  "type": "bundle",
+  "tags": [101],
+  "children": [
+    { "apiKey": "{{apiKey}}", "token": "{{token}}", "title": "Child A", "stock": 5, "tags": [101] },
+    { "apiKey": "{{apiKey}}", "token": "{{token}}", "title": "Child B", "stock": 8, "tags": [101] }
+  ]
+}
+
+### ---------------------------------------------------------------------
+### Create - invalid (missing tags -> expect validation error)
+POST {{host}}/api/product/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "title": "No Tags Product"
+}
+
+### ---------------------------------------------------------------------
+### BulkCreate - array of products
+POST {{host}}/api/product/BulkCreate
+Content-Type: application/json
+
+[
+  { "apiKey": "{{apiKey}}", "token": "{{token}}", "title": "Bulk Product 1", "stock": 10, "tags": [101] },
+  { "apiKey": "{{apiKey}}", "token": "{{token}}", "title": "Bulk Product 2", "stock": 20, "tags": [101, 202] },
+  { "apiKey": "{{apiKey}}", "token": "{{token}}", "title": "Bulk Product 3", "stock": 0,  "tags": [101, 302] }
+]
+
+### ---------------------------------------------------------------------
+### Read - first page, default page size
+POST {{host}}/api/product/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "pageSize": 20,
+  "pageNumber": 1,
+  "orderBy": 0
+}
+
+### ---------------------------------------------------------------------
+### Read - search by query + stock range + selectors
+POST {{host}}/api/product/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "query": "shirt",
+  "minStock": 1,
+  "maxStock": 500,
+  "pageSize": 50,
+  "pageNumber": 1,
+  "tags": [101, 201],
+  "selectorArgs": {
+    "children": null,
+    "category": {},
+    "media": {},
+    "childrenCount": true,
+    "commentsCount": true,
+    "isFollowing": false
+  }
+}
+
+### ---------------------------------------------------------------------
+### Read - filter by title / code / slug
+POST {{host}}/api/product/Read
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "title": "Blue Cotton T-Shirt",
+  "code": "TSH-001",
+  "slug": "blue-cotton-t-shirt",
+  "pageSize": 10,
+  "pageNumber": 1
+}
+
+### ---------------------------------------------------------------------
+### ReadById - uses the id captured from Create
+POST {{host}}/api/product/ReadById
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "{{productId}}",
+  "selectorArgs": {
+    "childrenCount": true,
+    "commentsCount": true,
+    "isFollowing": true,
+    "category": {},
+    "media": {}
+  }
+}
+
+### ---------------------------------------------------------------------
+### Update - basic fields
+POST {{host}}/api/product/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "{{productId}}",
+  "title": "Blue Cotton T-Shirt (v2)",
+  "description": "Updated description",
+  "stock": 95,
+  "order": 2
+}
+
+### ---------------------------------------------------------------------
+### Update - add / remove categories & related products & tags
+POST {{host}}/api/product/Update
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "{{productId}}",
+  "addCategories": ["00000000-0000-0000-0000-000000000000"],
+  "removeCategories": [],
+  "addRelatedProducts": [],
+  "addTags": [202],
+  "removeTags": [201]
+}
+
+### ---------------------------------------------------------------------
+### Delete - single by id
+POST {{host}}/api/product/Delete
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "{{productId}}"
+}
+
+### ---------------------------------------------------------------------
+### DeleteRange - multiple ids
+POST {{host}}/api/product/DeleteRange
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "ids": [
+    "00000000-0000-0000-0000-000000000001",
+    "00000000-0000-0000-0000-000000000002"
+  ]
+}
