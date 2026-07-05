@@ -145,10 +145,14 @@ public sealed class WalletSelectorArgs : BaseSelectorArgs;
 public sealed class ApiLogSelectorArgs : BaseSelectorArgs;
 
 public sealed class BlogSelectorArgs : BaseSelectorArgs {
+	public Guid? UserId { get; set; }
 	public MediaSelectorArgs? Media { get; set; }
 	public CategorySelectorArgs? Category { get; set; }
 	public CommentSelectorArgs? Comments { get; set; }
+	public BlogSelectorArgs? Children { get; set; }
 	public bool CommentsCount { get; set; }
+	public bool ChildrenCount { get; set; }
+	public int ChildrenDebt { get; set; }
 }
 
 public static class Projections {
@@ -404,17 +408,19 @@ public static class Projections {
 			CreatedAt = x.CreatedAt,
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 			Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
-			Children = !hasChildren ? null : x.Children.AsQueryable().Select(ProductSelector(new ProductSelectorArgs {
-				UserId = args.UserId,
-				Media = args.Media,
-				ChildrenCount = args.ChildrenCount,
-				CommentsCount = args.CommentsCount,
-				IsFollowing = args.IsFollowing,
-				Children = args.Children,
-				Category = args.Category,
-				Creator = args.Creator,
-				ChildrenDebt = args.ChildrenDebt - 1
-			})).ToList(),
+			Children = !hasChildren
+				? null
+				: x.Children.AsQueryable().Select(ProductSelector(new ProductSelectorArgs {
+					UserId = args.UserId,
+					Media = args.Media,
+					ChildrenCount = args.ChildrenCount,
+					CommentsCount = args.CommentsCount,
+					IsFollowing = args.IsFollowing,
+					Children = args.Children,
+					Category = args.Category,
+					Creator = args.Creator,
+					ChildrenDebt = args.ChildrenDebt - 1
+				})).ToList(),
 			CommentCount = args.CommentsCount ? x.Comments.Count : null,
 			ChildrenCount = args.ChildrenCount ? x.Children.Count : null,
 			IsFollowing = args.IsFollowing && args.UserId != null ? x.Followers.Any(f => f.CreatorId == args.UserId) : null,
@@ -438,12 +444,14 @@ public static class Projections {
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
-			Children = !hasChildren ? null : x.Children.AsQueryable().Select(CategorySelector(new CategorySelectorArgs {
-				Media = args.Media,
-				Creator = args.Creator,
-				Children = args.Children,
-				ChildrenDebt = args.ChildrenDebt - 1
-			})).ToList(),
+			Children = !hasChildren
+				? null
+				: x.Children.AsQueryable().Select(CategorySelector(new CategorySelectorArgs {
+					Media = args.Media,
+					Creator = args.Creator,
+					Children = args.Children,
+					ChildrenDebt = args.ChildrenDebt - 1
+				})).ToList(),
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
 		};
 		return selector.Expand();
@@ -682,23 +690,43 @@ public static class Projections {
 	}
 
 	public static Expression<Func<BlogEntity, BlogResponse>> BlogSelector(BlogSelectorArgs args) {
+		bool hasChildren = args is { Children: not null, ChildrenDebt: > 0 };
+
 		Expression<Func<BlogEntity, BlogResponse>> selector = x => new BlogResponse {
 			Id = x.Id,
 			Tags = x.Tags,
 			JsonData = x.JsonData,
 			Title = x.Title,
 			Subtitle = x.Subtitle,
+			Code = x.Code,
+			Description = x.Description,
 			Slug = x.Slug,
+			Type = x.Type,
 			Content = x.Content,
-			ViewCount = x.ViewCount,
-			PublishedAt = x.PublishedAt,
+			Latitude = x.Latitude,
+			Longitude = x.Longitude,
+			ParentId = x.ParentId,
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,
 			AdminUserIds = x.AdminUserIds,
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 			Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
 			Comments = args.Comments == null ? null : x.Comments.AsQueryable().Select(CommentSelector(args.Comments)).ToList(),
+			Children = !hasChildren
+				? null
+				: x.Children.AsQueryable().Select(BlogSelector(new BlogSelectorArgs {
+					UserId = args.UserId,
+					Media = args.Media,
+					Category = args.Category,
+					Comments = args.Comments,
+					Children = args.Children,
+					CommentsCount = args.CommentsCount,
+					ChildrenCount = args.ChildrenCount,
+					Creator = args.Creator,
+					ChildrenDebt = args.ChildrenDebt - 1
+				})).ToList(),
 			CommentCount = args.CommentsCount ? x.Comments.Count : null,
+			ChildrenCount = args.ChildrenCount ? x.Children.Count : null,
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
 		};
 		return selector.Expand();

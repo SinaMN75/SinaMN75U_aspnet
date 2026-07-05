@@ -207,7 +207,8 @@ public enum TagReaction {
 public enum TagFollow {
 	User = 101,
 	Product = 102,
-	Category = 103
+	Category = 103,
+	Blog = 104
 }
 
 public enum TagContent {
