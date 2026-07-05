@@ -1,11 +1,12 @@
 ### =====================================================================
 ### Product API  (base route: api/product/)
 ### =====================================================================
-### Variables live in http-client.env.json (pick an env in the top-right
-### of the JetBrains HTTP client). Falls back to the defaults below.
-@host = {{host}}
-@apiKey = {{apiKey}}
-@token = {{token}}
+### These are in-file defaults so requests work even with NO environment
+### selected. To override, pick an env (dev/prod) in the top-right dropdown
+### of the JetBrains HTTP client — env values in http-client.env.json win.
+@host = https://localhost:7110
+@apiKey = 
+@token =
 
 ### ---------------------------------------------------------------------
 ### Create - full product
