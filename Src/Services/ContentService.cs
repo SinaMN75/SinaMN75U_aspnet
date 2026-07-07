@@ -24,6 +24,8 @@ public class ContentService(
 				Title = p.Title,
 				SubTitle = p.SubTitle,
 				Description = p.Description,
+				Detail1 = p.Detail1,
+				Detail2 = p.Detail2,
 				Instagram = p.Instagram,
 				Telegram = p.Telegram,
 				Whatsapp = p.Whatsapp,

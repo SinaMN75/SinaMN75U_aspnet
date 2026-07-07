@@ -3,6 +3,7 @@ namespace SinaMN75U.Services;
 public interface IDataSeedService {
 	Task<UResponse> SeedUsers();
 	Task<UResponse> SeedCategories();
+	Task<UResponse> SeedContents();
 }
 
 public class DataSeedService(DbContext db) : IDataSeedService {
@@ -219,4 +220,101 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 		await db.SaveChangesAsync();
 		return new UResponse();
 	}
+
+	public async Task<UResponse> SeedContents() {
+		// One default row per TagContent. Idempotent: a tag already present in the
+		// Contents table is skipped, so this endpoint is safe to call repeatedly.
+		List<ContentEntity> defaults = [
+			BuildContent(
+				tag: TagContent.AboutUs,
+				title: "درباره ما",
+				subTitle: "معرفی مجموعه",
+				description: "ما مجموعه‌ای هستیم که با تکیه بر تجربه و تخصص، خدماتی باکیفیت به مشتریان خود ارائه می‌دهیم.",
+				detail1: "چشم‌انداز ما ارائه بهترین تجربه به کاربران است.",
+				detail2: "ماموریت ما ساده‌سازی و بهبود مستمر خدمات است.",
+				instagram: "https://instagram.com/",
+				telegram: "https://t.me/",
+				whatsapp: "https://wa.me/",
+				phone: "02100000000",
+				extra: [
+					new ContentExtra { Title = "کیفیت", Subtitle = "بالاترین استانداردها", Description = "تعهد ما به کیفیت در تمام مراحل کار." },
+					new ContentExtra { Title = "پشتیبانی", Subtitle = "همراه همیشگی شما", Description = "پشتیبانی سریع و پاسخگو در تمام ساعات." }
+				]
+			),
+			BuildContent(
+				tag: TagContent.Terms,
+				title: "قوانین و مقررات",
+				subTitle: "شرایط استفاده از خدمات",
+				description: "استفاده از خدمات این مجموعه به منزله پذیرش کامل قوانین و مقررات زیر است.",
+				detail1: "کاربر موظف به رعایت کلیه قوانین جاری است.",
+				detail2: "این مجموعه حق تغییر قوانین را برای خود محفوظ می‌دارد."
+			),
+			BuildContent(
+				tag: TagContent.ContactUs,
+				title: "تماس با ما",
+				subTitle: "راه‌های ارتباطی",
+				description: "برای ارتباط با ما می‌توانید از راه‌های زیر استفاده کنید.",
+				instagram: "https://instagram.com/",
+				telegram: "https://t.me/",
+				whatsapp: "https://wa.me/",
+				phone: "02100000000"
+			),
+			BuildContent(
+				tag: TagContent.HomeSlider1,
+				title: "اسلایدر اصلی ۱",
+				subTitle: "بنر معرفی",
+				description: "متن معرفی برای اولین اسلایدر صفحه اصلی."
+			),
+			BuildContent(
+				tag: TagContent.HomeSlider2,
+				title: "اسلایدر اصلی ۲",
+				subTitle: "بنر پیشنهاد ویژه",
+				description: "متن معرفی برای دومین اسلایدر صفحه اصلی."
+			)
+		];
+
+		List<ContentEntity> toInsert = [];
+		foreach (ContentEntity c in defaults) {
+			TagContent tag = c.Tags.First();
+			bool exists = await db.Set<ContentEntity>().AnyAsync(x => x.Tags.Contains(tag));
+			if (!exists) toInsert.Add(c);
+		}
+
+		if (toInsert.Count == 0) return new UResponse();
+
+		await db.Set<ContentEntity>().AddRangeAsync(toInsert);
+		await db.SaveChangesAsync();
+		return new UResponse();
+	}
+
+	private static ContentEntity BuildContent(
+		TagContent tag,
+		string title,
+		string? subTitle = null,
+		string? description = null,
+		string detail1 = "",
+		string detail2 = "",
+		string? instagram = null,
+		string? telegram = null,
+		string? whatsapp = null,
+		string? phone = null,
+		List<ContentExtra>? extra = null
+	) => new() {
+		Id = Guid.CreateVersion7(),
+		CreatedAt = DateTime.UtcNow,
+		CreatorId = Core.App.Users.SystemAdmin.Id,
+		Tags = [tag],
+		JsonData = new ContentJson {
+			Title = title,
+			SubTitle = subTitle,
+			Description = description,
+			Detail1 = detail1,
+			Detail2 = detail2,
+			Instagram = instagram,
+			Telegram = telegram,
+			Whatsapp = whatsapp,
+			Phone = phone,
+			Extra = extra ?? []
+		}
+	};
 }
