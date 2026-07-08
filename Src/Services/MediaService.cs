@@ -68,7 +68,7 @@ public class MediaService(
 		await SaveMedia(p.File, name);
 		await db.Set<MediaEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
-		return new UResponse<Guid?>(e.Id, message: Path.Combine(env.WebRootPath, "Media"));
+		return new UResponse<Guid?>(e.Id, message: $"{Core.App.BaseUrl}/Media/{name}");
 	}
 
 	public async Task<UResponse<IEnumerable<MediaResponse>?>> Read(BaseReadParams<TagMedia> p, CancellationToken ct) {
