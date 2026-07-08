@@ -198,6 +198,15 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 
 		// ===== Business Logic (additional) =====
 		{ "BedHasActiveContract", "This bed has an active contract." },
+		{ "ReservationNotFound", "Reservation Not Found." },
+		{ "RoomNotAvailable", "This room is not available for booking." },
+		{ "RoomAlreadyBookedForDates", "This room is already booked for the selected dates." },
+		{ "InvalidReservationDates", "Check-out date must be after the check-in date." },
+		{ "CheckInDateRequired", "Check-in Date is Required." },
+		{ "CheckOutDateRequired", "Check-out Date is Required." },
+		{ "GuestCountRequired", "Guest Count is Required." },
+		{ "ReservationIdRequired", "Reservation is Required." },
+		{ "RoomIdRequired", "Room is Required." },
 		{ "MerchantAlreadyExists", "This merchant already exists." },
 		{ "MerchantCreationFeeRequired", "Merchant creation fee is required." },
 
@@ -410,6 +419,15 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 
 		// ===== Business Logic (additional) =====
 		{ "BedHasActiveContract", "این تخت دارای قرارداد فعال است." },
+		{ "ReservationNotFound", "رزرو یافت نشد." },
+		{ "RoomNotAvailable", "این اتاق برای رزرو در دسترس نیست." },
+		{ "RoomAlreadyBookedForDates", "این اتاق در تاریخ‌های انتخاب‌شده قبلاً رزرو شده است." },
+		{ "InvalidReservationDates", "تاریخ خروج باید بعد از تاریخ ورود باشد." },
+		{ "CheckInDateRequired", "تاریخ ورود الزامی است." },
+		{ "CheckOutDateRequired", "تاریخ خروج الزامی است." },
+		{ "GuestCountRequired", "تعداد مهمان الزامی است." },
+		{ "ReservationIdRequired", "رزرو الزامی است." },
+		{ "RoomIdRequired", "اتاق الزامی است." },
 		{ "MerchantAlreadyExists", "این پذیرنده از قبل وجود دارد." },
 		{ "MerchantCreationFeeRequired", "پرداخت هزینه ایجاد پذیرنده الزامی است." },
 

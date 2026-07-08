@@ -6,12 +6,25 @@ public class BaseSelectorArgs {
 
 public sealed class HotelSelectorArgs : BaseSelectorArgs {
 	public HotelRoomSelectorArgs? Rooms { get; set; }
+	public HotelReservationSelectorArgs? Reservations { get; set; }
 	public MediaSelectorArgs? Media { get; set; }
 }
 
 public sealed class HotelRoomSelectorArgs : BaseSelectorArgs {
 	public HotelSelectorArgs? Hotel { get; set; }
+	public HotelReservationSelectorArgs? Reservations { get; set; }
 	public MediaSelectorArgs? Media { get; set; }
+}
+
+public sealed class HotelReservationSelectorArgs : BaseSelectorArgs {
+	public UserSelectorArgs? User { get; set; }
+	public HotelRoomSelectorArgs? Room { get; set; }
+	public HotelSelectorArgs? Hotel { get; set; }
+	public HotelInvoiceSelectorArgs? Invoice { get; set; }
+}
+
+public sealed class HotelInvoiceSelectorArgs : BaseSelectorArgs {
+	public HotelReservationSelectorArgs? Reservation { get; set; }
 }
 
 public sealed class DormSelectorArgs : BaseSelectorArgs {
@@ -607,10 +620,15 @@ public static class Projections {
 			JsonData = x.JsonData,
 			Title = x.Title,
 			CityCode = x.CityCode,
+			Stars = x.Stars,
+			Address = x.Address,
+			PhoneNumber = x.PhoneNumber,
+			Email = x.Email,
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,
 			AdminUserIds = x.AdminUserIds,
 			Rooms = args.Rooms == null ? null : x.Rooms.AsQueryable().Select(HotelRoomSelector(args.Rooms)).ToList(),
+			Reservations = args.Reservations == null ? null : x.Reservations.AsQueryable().Select(HotelReservationSelector(args.Reservations)).ToList(),
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
 		};
@@ -625,12 +643,61 @@ public static class Projections {
 			Title = x.Title,
 			Capacity = x.Capacity,
 			PricePerNight = x.PricePerNight,
+			RoomNumber = x.RoomNumber,
+			Quantity = x.Quantity,
+			IsAvailable = x.IsAvailable,
 			HotelId = x.HotelId,
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,
 			Hotel = x.Hotel == null ? null : (args.Hotel != null ? HotelSelector(args.Hotel) : h => null!).Invoke(x.Hotel),
+			Reservations = args.Reservations == null ? null : x.Reservations.AsQueryable().Select(HotelReservationSelector(args.Reservations)).ToList(),
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<HotelReservationEntity, HotelReservationResponse>> HotelReservationSelector(HotelReservationSelectorArgs args) {
+		Expression<Func<HotelReservationEntity, HotelReservationResponse>> selector = x => new HotelReservationResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CheckInDate = x.CheckInDate,
+			CheckOutDate = x.CheckOutDate,
+			GuestCount = x.GuestCount,
+			TotalPrice = x.TotalPrice,
+			UserId = x.UserId,
+			RoomId = x.RoomId,
+			HotelId = x.HotelId,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			AdminUserIds = x.AdminUserIds,
+			IsActive = x.CheckInDate <= DateTime.UtcNow && x.CheckOutDate >= DateTime.UtcNow,
+			User = x.User == null ? null : (args.User != null ? UserSelector(args.User) : t => null!).Invoke(x.User),
+			Room = x.Room == null ? null : (args.Room != null ? HotelRoomSelector(args.Room) : t => null!).Invoke(x.Room),
+			Hotel = x.Hotel == null ? null : (args.Hotel != null ? HotelSelector(args.Hotel) : t => null!).Invoke(x.Hotel),
+			Invoices = args.Invoice == null ? null : x.Invoices.AsQueryable().Select(HotelInvoiceSelector(args.Invoice)).ToList(),
+			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : t => null!).Invoke(x.Creator),
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<HotelInvoiceEntity, HotelInvoiceResponse>> HotelInvoiceSelector(HotelInvoiceSelectorArgs args) {
+		Expression<Func<HotelInvoiceEntity, HotelInvoiceResponse>> selector = x => new HotelInvoiceResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatedAt = x.CreatedAt,
+			CreatorId = x.CreatorId,
+			AdminUserIds = x.AdminUserIds,
+			DueDate = x.DueDate,
+			DebtAmount = x.DebtAmount,
+			CreditorAmount = x.CreditorAmount,
+			PaidAmount = x.PaidAmount,
+			PenaltyAmount = x.PenaltyAmount,
+			ReservationId = x.ReservationId,
+			Reservation = x.Reservation == null ? null : (args.Reservation != null ? HotelReservationSelector(args.Reservation) : t => null!).Invoke(x.Reservation),
+			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : t => null!).Invoke(x.Creator)
 		};
 		return selector.Expand();
 	}

@@ -134,6 +134,8 @@ public enum TagUser {
 	PermissionPayInvoices = 609,
 	PermissionManageUsers = 610, // update other users' profiles
 	PermissionDeleteUsers = 611,
+	PermissionManageReservations = 612, // create/update HotelReservation + HotelInvoice
+	PermissionDeleteReservations = 613, // delete HotelReservation
 }
 
 public enum TagCategory {
@@ -398,6 +400,26 @@ public enum TagBed {
 
 public enum TagHotel {
 	Hotel = 101,
+	Featured = 201,
+	Active = 202,
+	Inactive = 203
+}
+
+public enum TagHotelReservation {
+	Pending = 101,
+	Confirmed = 102,
+	CheckedIn = 103,
+	CheckedOut = 104,
+	Cancelled = 201,
+	NoShow = 202
+}
+
+public enum TagHotelInvoice {
+	Full = 101,
+	Paid = 201,
+	PaidOnline = 202,
+	PaidManual = 203,
+	NotPaid = 204
 }
 
 public enum TagDorm {
@@ -408,7 +430,13 @@ public enum TagDorm {
 public enum TagRoom {
 	Single = 101,
 	Double = 102,
-	Triple = 103
+	Triple = 103,
+	Twin = 104,
+	Suite = 105,
+	Family = 106,
+	Deluxe = 107,
+	Available = 201,
+	OutOfService = 202
 }
 
 public enum TagDormRoom {

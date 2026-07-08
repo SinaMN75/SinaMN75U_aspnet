@@ -16,6 +16,24 @@ public interface IHotelService {
 	public Task<UResponse> UpdateHotelRoom(HotelRoomUpdateParams p, CancellationToken ct);
 	public Task<UResponse> DeleteHotelRoom(IdParams p, CancellationToken ct);
 
+	// HotelReservation
+	public Task<UResponse<Guid?>> CreateHotelReservation(HotelReservationCreateParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<HotelReservationResponse>?>> ReadHotelReservations(HotelReservationReadParams p, CancellationToken ct);
+	public Task<UResponse<HotelReservationResponse?>> ReadHotelReservationById(IdParams<HotelReservationSelectorArgs> p, CancellationToken ct);
+	public Task<UResponse> UpdateHotelReservation(HotelReservationUpdateParams p, CancellationToken ct);
+	public Task<UResponse> DeleteHotelReservation(IdParams p, CancellationToken ct);
+	public Task<UResponse> ConfirmHotelReservation(IdParams p, CancellationToken ct);
+	public Task<UResponse> CheckInHotelReservation(IdParams p, CancellationToken ct);
+	public Task<UResponse> CheckOutHotelReservation(IdParams p, CancellationToken ct);
+	public Task<UResponse> CancelHotelReservation(IdParams p, CancellationToken ct);
+
+	// HotelInvoice
+	public Task<UResponse<Guid?>> CreateHotelInvoice(HotelInvoiceCreateParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<HotelInvoiceResponse>?>> ReadHotelInvoices(HotelInvoiceReadParams p, CancellationToken ct);
+	public Task<UResponse> UpdateHotelInvoice(HotelInvoiceUpdateParams p, CancellationToken ct);
+	public Task<UResponse> DeleteHotelInvoice(IdParams p, CancellationToken ct);
+	public Task<UResponse> PayHotelInvoice(IdParams p, CancellationToken ct);
+
 	// Dorm
 	public Task<UResponse<Guid?>> CreateDorm(DormCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<DormResponse>?>> ReadDorms(DormReadParams p, CancellationToken ct);
@@ -65,10 +83,20 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJson(),
+			JsonData = new HotelJson {
+				Description = p.Description,
+				Policies = p.Policies,
+				CheckInTime = p.CheckInTime,
+				CheckOutTime = p.CheckOutTime,
+				Amenities = p.Amenities ?? []
+			},
 			Tags = p.Tags,
 			Title = p.Title,
 			CityCode = p.CityCode,
+			Stars = p.Stars,
+			Address = p.Address,
+			PhoneNumber = p.PhoneNumber,
+			Email = p.Email,
 			AdminUserIds = p.AdminUserIds ?? []
 		};
 
@@ -105,8 +133,17 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
 		if (p.CityCode.IsNotNullOrEmpty()) e.CityCode = p.CityCode;
+		if (p.Stars.HasValue) e.Stars = p.Stars.Value;
+		if (p.Address.IsNotNullOrEmpty()) e.Address = p.Address;
+		if (p.PhoneNumber.IsNotNullOrEmpty()) e.PhoneNumber = p.PhoneNumber;
+		if (p.Email.IsNotNullOrEmpty()) e.Email = p.Email;
+		if (p.Description.IsNotNullOrEmpty()) e.JsonData.Description = p.Description;
+		if (p.Policies.IsNotNullOrEmpty()) e.JsonData.Policies = p.Policies;
+		if (p.CheckInTime.IsNotNullOrEmpty()) e.JsonData.CheckInTime = p.CheckInTime;
+		if (p.CheckOutTime.IsNotNullOrEmpty()) e.JsonData.CheckOutTime = p.CheckOutTime;
+		if (p.Amenities != null) e.JsonData.Amenities = p.Amenities;
 
-		e.ApplyUpdateParam<HotelEntity, TagHotel, BaseJson>(p);
+		e.ApplyUpdateParam<HotelEntity, TagHotel, HotelJson>(p);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();
@@ -140,11 +177,20 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJson(),
+			JsonData = new HotelRoomJson {
+				Description = p.Description,
+				BedType = p.BedType,
+				SizeSquareMeters = p.SizeSquareMeters,
+				Floor = p.Floor,
+				Amenities = p.Amenities ?? []
+			},
 			Tags = p.Tags,
 			Title = p.Title,
 			Capacity = p.Capacity,
 			PricePerNight = p.PricePerNight,
+			RoomNumber = p.RoomNumber,
+			Quantity = p.Quantity,
+			IsAvailable = p.IsAvailable,
 			HotelId = p.HotelId
 		};
 
@@ -196,8 +242,16 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 		if (p.Capacity.HasValue) e.Capacity = p.Capacity.Value;
 		if (p.PricePerNight.HasValue) e.PricePerNight = p.PricePerNight.Value;
 		if (p.HotelId.HasValue) e.HotelId = p.HotelId.Value;
+		if (p.RoomNumber.IsNotNullOrEmpty()) e.RoomNumber = p.RoomNumber;
+		if (p.Quantity.HasValue) e.Quantity = p.Quantity.Value;
+		if (p.IsAvailable.HasValue) e.IsAvailable = p.IsAvailable.Value;
+		if (p.Description.IsNotNullOrEmpty()) e.JsonData.Description = p.Description;
+		if (p.BedType.IsNotNullOrEmpty()) e.JsonData.BedType = p.BedType;
+		if (p.SizeSquareMeters.HasValue) e.JsonData.SizeSquareMeters = p.SizeSquareMeters;
+		if (p.Floor.HasValue) e.JsonData.Floor = p.Floor;
+		if (p.Amenities != null) e.JsonData.Amenities = p.Amenities;
 
-		e.ApplyUpdateParam<HotelRoomEntity, TagRoom, BaseJson>(p);
+		e.ApplyUpdateParam<HotelRoomEntity, TagRoom, HotelRoomJson>(p);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();
@@ -213,6 +267,314 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Hotel.CreatorId, e.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionDeleteHotels)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<HotelRoomEntity>().Remove(e);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	// ===================== HotelReservation =====================
+
+	public async Task<UResponse<Guid?>> CreateHotelReservation(HotelReservationCreateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		HotelRoomEntity? room = await db.Set<HotelRoomEntity>().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.RoomId, ct);
+		if (room == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("HotelRoomNotFound"));
+		if ((!userData.CanManage(room.CreatorId, []) && !userData.CanManage(room.Hotel.CreatorId, room.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageReservations))
+			return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+
+		if (!room.IsAvailable) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("RoomNotAvailable"));
+
+		int nights = (p.CheckOutDate.Date - p.CheckInDate.Date).Days;
+		if (nights < 1) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("InvalidReservationDates"));
+
+		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
+		if (user == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("UserNotFound"));
+
+		// Count overlapping, still-blocking reservations for this room type.
+		int overlapping = await db.Set<HotelReservationEntity>().CountAsync(r =>
+			r.RoomId == room.Id &&
+			r.CheckInDate < p.CheckOutDate &&
+			r.CheckOutDate > p.CheckInDate &&
+			!r.Tags.Contains(TagHotelReservation.Cancelled) &&
+			!r.Tags.Contains(TagHotelReservation.NoShow) &&
+			!r.Tags.Contains(TagHotelReservation.CheckedOut), ct);
+		if (overlapping >= room.Quantity) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("RoomAlreadyBookedForDates"));
+
+		decimal total = p.TotalPrice ?? nights * room.PricePerNight;
+
+		Guid reservationId = p.Id ?? Guid.CreateVersion7();
+		HotelReservationEntity e = new() {
+			Id = reservationId,
+			CreatorId = p.CreatorId ?? userData.Id,
+			CreatedAt = DateTime.UtcNow,
+			Tags = p.Tags,
+			CheckInDate = p.CheckInDate,
+			CheckOutDate = p.CheckOutDate,
+			GuestCount = p.GuestCount,
+			TotalPrice = total,
+			UserId = user.Id,
+			RoomId = room.Id,
+			HotelId = room.HotelId,
+			AdminUserIds = p.AdminUserIds ?? [],
+			JsonData = new HotelReservationJson {
+				GuestName = p.GuestName,
+				GuestPhone = p.GuestPhone,
+				Notes = p.Notes,
+				NightCount = nights
+			}
+		};
+		await db.Set<HotelReservationEntity>().AddAsync(e, ct);
+
+		// Generate the reservation's invoice.
+		await db.Set<HotelInvoiceEntity>().AddAsync(new HotelInvoiceEntity {
+			Id = Guid.CreateVersion7(),
+			CreatorId = p.CreatorId ?? userData.Id,
+			CreatedAt = DateTime.UtcNow,
+			Tags = [TagHotelInvoice.NotPaid, TagHotelInvoice.Full],
+			DebtAmount = total,
+			CreditorAmount = 0,
+			PaidAmount = 0,
+			PenaltyAmount = 0,
+			ReservationId = reservationId,
+			DueDate = p.CheckInDate,
+			JsonData = new HotelInvoiceJson { PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate }
+		}, ct);
+
+		await db.SaveChangesAsync(ct);
+		return new UResponse<Guid?>(e.Id, Usc.Created);
+	}
+
+	public async Task<UResponse<IEnumerable<HotelReservationResponse>?>> ReadHotelReservations(HotelReservationReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		IQueryable<HotelReservationEntity> q = db.Set<HotelReservationEntity>().ApplyReadParams(p);
+		if (userData is not { IsSuperAdmin: true }) {
+			Guid uid = userData?.Id ?? Guid.Empty;
+			q = q.Where(x =>
+				x.UserId == uid ||
+				x.Hotel.CreatorId == uid ||
+				x.Hotel.AdminUserIds.Count == 0 ||
+				x.Hotel.AdminUserIds.Contains(uid));
+		}
+
+		if (p.UserId.IsNotNull()) q = q.Where(x => x.UserId == p.UserId);
+		if (p.RoomId.IsNotNull()) q = q.Where(x => x.RoomId == p.RoomId);
+		if (p.HotelId.IsNotNull()) q = q.Where(x => x.HotelId == p.HotelId);
+		if (p.UserName.IsNotNullOrEmpty()) q = q.Where(x => x.User.UserName.Contains(p.UserName!));
+		if (p.CheckInDate.HasValue) q = q.Where(x => x.CheckInDate >= p.CheckInDate);
+		if (p.CheckOutDate.HasValue) q = q.Where(x => x.CheckOutDate <= p.CheckOutDate);
+
+		DateTime now = DateTime.UtcNow;
+		if (p.ActiveOnly == true) q = q.Where(x => x.CheckInDate <= now && x.CheckOutDate >= now);
+		if (p.UpcomingOnly == true) q = q.Where(x => x.CheckInDate > now);
+		if (p.PastOnly == true) q = q.Where(x => x.CheckOutDate < now);
+
+		IQueryable<HotelReservationResponse> projected = q.Select(Projections.HotelReservationSelector(p.SelectorArgs));
+		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	}
+
+	public async Task<UResponse<HotelReservationResponse?>> ReadHotelReservationById(IdParams<HotelReservationSelectorArgs> p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		IQueryable<HotelReservationEntity> q = db.Set<HotelReservationEntity>();
+		if (userData is not { IsSuperAdmin: true }) {
+			Guid uid = userData?.Id ?? Guid.Empty;
+			q = q.Where(x => x.UserId == uid || x.Hotel.CreatorId == uid || x.Hotel.AdminUserIds.Count == 0 || x.Hotel.AdminUserIds.Contains(uid));
+		}
+		HotelReservationResponse? e = await q.Select(Projections.HotelReservationSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		return e == null ? new UResponse<HotelReservationResponse?>(null, Usc.NotFound, ls.Get("ReservationNotFound")) : new UResponse<HotelReservationResponse?>(e);
+	}
+
+	public async Task<UResponse> UpdateHotelReservation(HotelReservationUpdateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		HotelReservationEntity? e = await db.Set<HotelReservationEntity>().AsTracking().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ReservationNotFound"));
+		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Hotel.CreatorId, e.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageReservations))
+			return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+
+		if (p.CheckInDate.HasValue) e.CheckInDate = p.CheckInDate.Value;
+		if (p.CheckOutDate.HasValue) e.CheckOutDate = p.CheckOutDate.Value;
+		if (p.GuestCount.HasValue) e.GuestCount = p.GuestCount.Value;
+		if (p.TotalPrice.HasValue) e.TotalPrice = p.TotalPrice.Value;
+		if (p.GuestName.IsNotNullOrEmpty()) e.JsonData.GuestName = p.GuestName;
+		if (p.GuestPhone.IsNotNullOrEmpty()) e.JsonData.GuestPhone = p.GuestPhone;
+		if (p.Notes.IsNotNullOrEmpty()) e.JsonData.Notes = p.Notes;
+		e.JsonData.NightCount = (e.CheckOutDate.Date - e.CheckInDate.Date).Days;
+
+		e.ApplyUpdateParam<HotelReservationEntity, TagHotelReservation, HotelReservationJson>(p);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> DeleteHotelReservation(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		HotelReservationEntity? e = await db.Set<HotelReservationEntity>().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ReservationNotFound"));
+		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Hotel.CreatorId, e.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionDeleteReservations))
+			return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+
+		await db.Set<HotelReservationEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
+		return new UResponse();
+	}
+
+	private async Task<UResponse> TransitionReservation(IdParams p, TagHotelReservation status, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		HotelReservationEntity? e = await db.Set<HotelReservationEntity>().AsTracking().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ReservationNotFound"));
+		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Hotel.CreatorId, e.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageReservations))
+			return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+
+		e.Tags = [status];
+		db.Update(e);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public Task<UResponse> ConfirmHotelReservation(IdParams p, CancellationToken ct) => TransitionReservation(p, TagHotelReservation.Confirmed, ct);
+	public Task<UResponse> CheckInHotelReservation(IdParams p, CancellationToken ct) => TransitionReservation(p, TagHotelReservation.CheckedIn, ct);
+	public Task<UResponse> CheckOutHotelReservation(IdParams p, CancellationToken ct) => TransitionReservation(p, TagHotelReservation.CheckedOut, ct);
+	public Task<UResponse> CancelHotelReservation(IdParams p, CancellationToken ct) => TransitionReservation(p, TagHotelReservation.Cancelled, ct);
+
+	// ===================== HotelInvoice =====================
+
+	public async Task<UResponse<Guid?>> CreateHotelInvoice(HotelInvoiceCreateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		HotelReservationEntity? reservation = await db.Set<HotelReservationEntity>().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.ReservationId, ct);
+		if (reservation == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("ReservationNotFound"));
+		if ((!userData.CanManage(reservation.CreatorId, []) && !userData.CanManage(reservation.Hotel.CreatorId, reservation.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageInvoices))
+			return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+
+		EntityEntry<HotelInvoiceEntity> e = await db.AddAsync(new HotelInvoiceEntity {
+			Id = p.Id ?? Guid.CreateVersion7(),
+			CreatorId = p.CreatorId ?? userData.Id,
+			CreatedAt = DateTime.UtcNow,
+			Tags = p.Tags,
+			DebtAmount = p.DebtAmount,
+			CreditorAmount = p.CreditorAmount,
+			PaidAmount = p.PaidAmount,
+			PenaltyAmount = p.PenaltyAmount,
+			ReservationId = p.ReservationId,
+			DueDate = p.DueDate,
+			JsonData = new HotelInvoiceJson {
+				Detail1 = p.Detail1,
+				Detail2 = p.Detail2,
+				PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate
+			}
+		}, ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse<Guid?>(e.Entity.Id);
+	}
+
+	public async Task<UResponse<IEnumerable<HotelInvoiceResponse>?>> ReadHotelInvoices(HotelInvoiceReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		IQueryable<HotelInvoiceEntity> q = db.Set<HotelInvoiceEntity>().Include(x => x.Reservation).ApplyReadParams(p);
+		if (userData is not { IsSuperAdmin: true }) {
+			Guid uid = userData?.Id ?? Guid.Empty;
+			q = q.Where(x =>
+				x.Reservation != null && (
+					x.Reservation.UserId == uid ||
+					x.Reservation.Hotel.CreatorId == uid ||
+					x.Reservation.Hotel.AdminUserIds.Count == 0 ||
+					x.Reservation.Hotel.AdminUserIds.Contains(uid)));
+		}
+
+		if (p.UserId.IsNotNull()) q = q.Where(x => x.Reservation!.UserId == p.UserId);
+		if (p.ReservationId.IsNotNull()) q = q.Where(x => x.ReservationId == p.ReservationId);
+		if (p.HotelId.IsNotNull()) q = q.Where(x => x.Reservation != null && x.Reservation.HotelId == p.HotelId);
+		if (p.MinDueDate.HasValue) q = q.Where(x => x.DueDate >= p.MinDueDate);
+		if (p.MaxDueDate.HasValue) q = q.Where(x => x.DueDate <= p.MaxDueDate);
+		if (p.MinDebtAmount.HasValue) q = q.Where(x => x.DebtAmount >= p.MinDebtAmount);
+		if (p.MaxDebtAmount.HasValue) q = q.Where(x => x.DebtAmount <= p.MaxDebtAmount);
+
+		DateTime now = DateTime.UtcNow;
+		if (p.IsPaid == true) q = q.Where(x => !x.Tags.Contains(TagHotelInvoice.NotPaid));
+		if (p.IsPaid == false) q = q.Where(x => x.Tags.Contains(TagHotelInvoice.NotPaid));
+		if (p.IsOverdue == true) q = q.Where(x => x.Tags.Contains(TagHotelInvoice.NotPaid) && x.DueDate < now);
+
+		UResponse<IEnumerable<HotelInvoiceResponse>?> response = await q.Select(Projections.HotelInvoiceSelector(p.SelectorArgs)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		List<Guid> ids = response.Result!.Select(x => x.Id).ToList();
+		List<HotelInvoiceEntity> entities = await db.Set<HotelInvoiceEntity>().Where(x => ids.Contains(x.Id)).ToListAsync(ct);
+
+		bool anyChanges = false;
+		foreach (HotelInvoiceResponse dto in response.Result!) {
+			HotelInvoiceEntity? entity = entities.FirstOrDefault(x => x.Id == dto.Id);
+			if (entity == null || entity.JsonData.PenaltyPrecentEveryDate <= 0) continue;
+			int daysLate = Math.Max(0, (DateTime.UtcNow - entity.DueDate).Days);
+			decimal expectedPenalty = entity.DebtAmount * (entity.JsonData.PenaltyPrecentEveryDate / 100m) * daysLate;
+
+			bool needsPenaltyUpdate =
+				entity.PaidAmount < entity.DebtAmount + entity.PenaltyAmount &&
+				entity.DueDate <= DateTime.UtcNow &&
+				entity.PenaltyAmount < expectedPenalty;
+
+			if (needsPenaltyUpdate) {
+				entity.PenaltyAmount = expectedPenalty;
+				dto.PenaltyAmount = expectedPenalty;
+				db.Set<HotelInvoiceEntity>().Update(entity);
+				anyChanges = true;
+			}
+		}
+
+		if (anyChanges) await db.SaveChangesAsync(ct);
+		return response;
+	}
+
+	public async Task<UResponse> UpdateHotelInvoice(HotelInvoiceUpdateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		HotelInvoiceEntity? e = await db.Set<HotelInvoiceEntity>().AsTracking().Include(x => x.Reservation).ThenInclude(x => x!.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("InvoiceNotFound"));
+		if (e.Reservation != null && (!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Reservation.Hotel.CreatorId, e.Reservation.Hotel.AdminUserIds)))
+			return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (!userData.HasPermission(TagUser.PermissionManageInvoices)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+
+		if (p.DebtAmount.IsNotNull()) e.DebtAmount = p.DebtAmount.Value;
+		if (p.CreditorAmount.IsNotNull()) e.CreditorAmount = p.CreditorAmount.Value;
+		if (p.PenaltyAmount.IsNotNull()) e.PenaltyAmount = p.PenaltyAmount.Value;
+		if (p.PaidAmount.IsNotNull()) e.PaidAmount = p.PaidAmount.Value;
+		if (p.DueDate.HasValue) e.DueDate = p.DueDate.Value;
+		if (p.ReservationId.HasValue) e.ReservationId = p.ReservationId.Value;
+		if (p.PenaltyPrecentEveryDate.IsNotNull()) e.JsonData.PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate.Value;
+
+		e.ApplyUpdateParam<HotelInvoiceEntity, TagHotelInvoice, HotelInvoiceJson>(p);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> DeleteHotelInvoice(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		HotelInvoiceEntity? e = await db.Set<HotelInvoiceEntity>().Include(x => x.Reservation).ThenInclude(x => x!.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("InvoiceNotFound"));
+		if (e.Reservation != null && (!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Reservation.Hotel.CreatorId, e.Reservation.Hotel.AdminUserIds)))
+			return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (!userData.HasPermission(TagUser.PermissionDeleteInvoices)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+
+		await db.Set<HotelInvoiceEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> PayHotelInvoice(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+
+		HotelInvoiceEntity? e = await db.Set<HotelInvoiceEntity>().AsTracking().Include(x => x.Reservation).ThenInclude(x => x!.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("InvoiceNotFound"));
+		if (e.Reservation != null && (!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Reservation.Hotel.CreatorId, e.Reservation.Hotel.AdminUserIds)))
+			return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (!userData.HasPermission(TagUser.PermissionPayInvoices)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+
+		e.PaidAmount = e.DebtAmount + e.PenaltyAmount - e.CreditorAmount;
+		e.Tags = [TagHotelInvoice.PaidOnline];
+		db.Update(e);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}

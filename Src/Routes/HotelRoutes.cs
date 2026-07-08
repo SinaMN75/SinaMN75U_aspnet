@@ -18,6 +18,24 @@ public static class HotelRoutes {
 		r.MapPost("HotelRoom/Update", async (HotelRoomUpdateParams p, IHotelService s, CancellationToken c) => (await s.UpdateHotelRoom(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("HotelRoom/Delete", async (IdParams p, IHotelService s, CancellationToken c) => (await s.DeleteHotelRoom(p, c)).ToResult()).Produces<UResponse>();
 
+		// HotelReservation
+		r.MapPost("HotelReservation/Create", async (HotelReservationCreateParams p, IHotelService s, CancellationToken c) => (await s.CreateHotelReservation(p, c)).ToResult()).Produces<UResponse<Guid?>>();
+		r.MapPost("HotelReservation/Read", async (HotelReservationReadParams p, IHotelService s, CancellationToken c) => (await s.ReadHotelReservations(p, c)).ToResult()).Produces<UResponse<IEnumerable<HotelReservationResponse>>>();
+		r.MapPost("HotelReservation/ReadById", async (IdParams<HotelReservationSelectorArgs> p, IHotelService s, CancellationToken c) => (await s.ReadHotelReservationById(p, c)).ToResult()).Produces<UResponse<HotelReservationResponse>>();
+		r.MapPost("HotelReservation/Update", async (HotelReservationUpdateParams p, IHotelService s, CancellationToken c) => (await s.UpdateHotelReservation(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("HotelReservation/Delete", async (IdParams p, IHotelService s, CancellationToken c) => (await s.DeleteHotelReservation(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("HotelReservation/Confirm", async (IdParams p, IHotelService s, CancellationToken c) => (await s.ConfirmHotelReservation(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("HotelReservation/CheckIn", async (IdParams p, IHotelService s, CancellationToken c) => (await s.CheckInHotelReservation(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("HotelReservation/CheckOut", async (IdParams p, IHotelService s, CancellationToken c) => (await s.CheckOutHotelReservation(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("HotelReservation/Cancel", async (IdParams p, IHotelService s, CancellationToken c) => (await s.CancelHotelReservation(p, c)).ToResult()).Produces<UResponse>();
+
+		// HotelInvoice
+		r.MapPost("HotelInvoice/Create", async (HotelInvoiceCreateParams p, IHotelService s, CancellationToken c) => (await s.CreateHotelInvoice(p, c)).ToResult()).Produces<UResponse<Guid?>>();
+		r.MapPost("HotelInvoice/Read", async (HotelInvoiceReadParams p, IHotelService s, CancellationToken c) => (await s.ReadHotelInvoices(p, c)).ToResult()).Produces<UResponse<IEnumerable<HotelInvoiceResponse>>>();
+		r.MapPost("HotelInvoice/Update", async (HotelInvoiceUpdateParams p, IHotelService s, CancellationToken c) => (await s.UpdateHotelInvoice(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("HotelInvoice/Delete", async (IdParams p, IHotelService s, CancellationToken c) => (await s.DeleteHotelInvoice(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("HotelInvoice/Pay", async (IdParams p, IHotelService s, CancellationToken c) => (await s.PayHotelInvoice(p, c)).ToResult()).Produces<UResponse>();
+
 		// Dorm
 		r.MapPost("Dorm/Create", async (DormCreateParams p, IHotelService s, CancellationToken c) => (await s.CreateDorm(p, c)).ToResult()).Produces<UResponse<Guid?>>();
 		r.MapPost("Dorm/Read", async (DormReadParams p, IHotelService s, CancellationToken c) => (await s.ReadDorms(p, c)).ToResult()).Produces<UResponse<IEnumerable<DormResponse>>>();

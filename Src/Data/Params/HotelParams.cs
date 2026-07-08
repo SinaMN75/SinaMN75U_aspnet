@@ -8,16 +8,36 @@ public sealed class HotelCreateParams : BaseCreateParams<TagHotel> {
 
 	[UValidationRequired("CityRequired"), UValidationStringLength(2, 100, "CityMinLength")]
 	public required string CityCode { get; set; }
+
+	public int Stars { get; set; }
+	public string? Address { get; set; }
+	public string? PhoneNumber { get; set; }
+	public string? Email { get; set; }
+	public string? Description { get; set; }
+	public string? Policies { get; set; }
+	public string? CheckInTime { get; set; }
+	public string? CheckOutTime { get; set; }
+	public List<string>? Amenities { get; set; }
 }
 
 public sealed class HotelUpdateParams : BaseUpdateParams<TagHotel> {
 	public string? Title { get; set; }
 	public string? CityCode { get; set; }
+	public int? Stars { get; set; }
+	public string? Address { get; set; }
+	public string? PhoneNumber { get; set; }
+	public string? Email { get; set; }
+	public string? Description { get; set; }
+	public string? Policies { get; set; }
+	public string? CheckInTime { get; set; }
+	public string? CheckOutTime { get; set; }
+	public List<string>? Amenities { get; set; }
 }
 
 public sealed class HotelReadParams : BaseReadParams<TagHotel> {
 	public string? Title { get; set; }
 	public string? CityCode { get; set; }
+	public int? MinStars { get; set; }
 
 	public HotelSelectorArgs SelectorArgs { get; set; } = new();
 }
@@ -36,6 +56,15 @@ public sealed class HotelRoomCreateParams : BaseCreateParams<TagRoom> {
 	
 	[UValidationRequired("HotelIdRequired")]
 	public Guid HotelId { get; set; }
+
+	public string? RoomNumber { get; set; }
+	public int Quantity { get; set; } = 1;
+	public bool IsAvailable { get; set; } = true;
+	public string? Description { get; set; }
+	public string? BedType { get; set; }
+	public double? SizeSquareMeters { get; set; }
+	public int? Floor { get; set; }
+	public List<string>? Amenities { get; set; }
 }
 
 public sealed class HotelRoomUpdateParams : BaseUpdateParams<TagRoom> {
@@ -43,6 +72,14 @@ public sealed class HotelRoomUpdateParams : BaseUpdateParams<TagRoom> {
 	public int? Capacity { get; set; }
 	public decimal? PricePerNight { get; set; }
 	public Guid? HotelId { get; set; }
+	public string? RoomNumber { get; set; }
+	public int? Quantity { get; set; }
+	public bool? IsAvailable { get; set; }
+	public string? Description { get; set; }
+	public string? BedType { get; set; }
+	public double? SizeSquareMeters { get; set; }
+	public int? Floor { get; set; }
+	public List<string>? Amenities { get; set; }
 }
 
 public sealed class HotelRoomReadParams : BaseReadParams<TagRoom> {
@@ -52,8 +89,115 @@ public sealed class HotelRoomReadParams : BaseReadParams<TagRoom> {
 	public int? MaxCapacity { get; set; }
 	public decimal? MinPrice { get; set; }
 	public decimal? MaxPrice { get; set; }
+	public bool? AvailableOnly { get; set; }
 
 	public HotelRoomSelectorArgs SelectorArgs { get; set; } = new();
+}
+
+// ---------------- HotelReservation ----------------
+
+public sealed class HotelReservationCreateParams : BaseCreateParams<TagHotelReservation> {
+	[UValidationRequired("CheckInDateRequired")]
+	public DateTime CheckInDate { get; set; }
+
+	[UValidationRequired("CheckOutDateRequired")]
+	public DateTime CheckOutDate { get; set; }
+
+	[UValidationRequired("GuestCountRequired")]
+	public int GuestCount { get; set; }
+
+	[UValidationRequired("UserIdRequired")]
+	public Guid UserId { get; set; }
+
+	[UValidationRequired("RoomIdRequired")]
+	public Guid RoomId { get; set; }
+
+	/// <summary>Optional override; when null the total is computed from nights * room price.</summary>
+	public decimal? TotalPrice { get; set; }
+
+	public string? GuestName { get; set; }
+	public string? GuestPhone { get; set; }
+	public string? Notes { get; set; }
+
+	/// <summary>Daily late-fee percent applied to the generated invoice.</summary>
+	public int PenaltyPrecentEveryDate { get; set; }
+}
+
+public sealed class HotelReservationUpdateParams : BaseUpdateParams<TagHotelReservation> {
+	public DateTime? CheckInDate { get; set; }
+	public DateTime? CheckOutDate { get; set; }
+	public int? GuestCount { get; set; }
+	public decimal? TotalPrice { get; set; }
+	public string? GuestName { get; set; }
+	public string? GuestPhone { get; set; }
+	public string? Notes { get; set; }
+}
+
+public sealed class HotelReservationReadParams : BaseReadParams<TagHotelReservation> {
+	public Guid? UserId { get; set; }
+	public string? UserName { get; set; }
+	public Guid? RoomId { get; set; }
+	public Guid? HotelId { get; set; }
+	public DateTime? CheckInDate { get; set; }
+	public DateTime? CheckOutDate { get; set; }
+
+	/// <summary>Reservation currently in-stay (check-in passed, check-out not yet).</summary>
+	public bool? ActiveOnly { get; set; }
+
+	/// <summary>Check-in date is in the future.</summary>
+	public bool? UpcomingOnly { get; set; }
+
+	/// <summary>Check-out date has passed.</summary>
+	public bool? PastOnly { get; set; }
+
+	public HotelReservationSelectorArgs SelectorArgs { get; set; } = new();
+}
+
+// ---------------- HotelInvoice ----------------
+
+public sealed class HotelInvoiceCreateParams : BaseCreateParams<TagHotelInvoice> {
+	[UValidationRequired("PriceRequired")]
+	public decimal DebtAmount { get; set; }
+
+	public decimal CreditorAmount { get; set; }
+	public decimal PaidAmount { get; set; }
+	public decimal PenaltyAmount { get; set; }
+	public int PenaltyPrecentEveryDate { get; set; }
+
+	[UValidationRequired("ReservationIdRequired")]
+	public Guid ReservationId { get; set; }
+
+	[UValidationRequired("DateRequired")]
+	public DateTime DueDate { get; set; }
+}
+
+public sealed class HotelInvoiceUpdateParams : BaseUpdateParams<TagHotelInvoice> {
+	public decimal? DebtAmount { get; set; }
+	public decimal? CreditorAmount { get; set; }
+	public decimal? PaidAmount { get; set; }
+	public decimal? PenaltyAmount { get; set; }
+	public int? PenaltyPrecentEveryDate { get; set; }
+	public DateTime? DueDate { get; set; }
+	public Guid? ReservationId { get; set; }
+}
+
+public sealed class HotelInvoiceReadParams : BaseReadParams<TagHotelInvoice> {
+	public HotelInvoiceSelectorArgs SelectorArgs { get; set; } = new();
+
+	public Guid? ReservationId { get; set; }
+	public Guid? UserId { get; set; }
+	public Guid? HotelId { get; set; }
+
+	/// <summary>true = only paid invoices, false = only unpaid invoices.</summary>
+	public bool? IsPaid { get; set; }
+
+	/// <summary>true = only unpaid invoices whose due date has passed.</summary>
+	public bool? IsOverdue { get; set; }
+
+	public DateTime? MinDueDate { get; set; }
+	public DateTime? MaxDueDate { get; set; }
+	public decimal? MinDebtAmount { get; set; }
+	public decimal? MaxDebtAmount { get; set; }
 }
 
 // ---------------- Dorm ----------------
