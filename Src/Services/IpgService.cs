@@ -35,10 +35,9 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 
 		// Build absolute urls to OUR OWN Gateway/Verify endpoints from this request (e.g. https://localhost:7110/api/ipg/...).
 		HttpRequest request = httpContext.HttpContext!.Request;
-		string root = $"{request.Scheme}://{request.Host}";
 		string basePath = request.Path.Value![..(request.Path.Value!.LastIndexOf('/') + 1)]; // e.g. /api/ipg/
-		string verifyUrl = $"{root}{basePath}Verify";
-		string gatewayUrl = $"{root}{basePath}Gateway";
+		string verifyUrl = $"{Core.App.BaseUrl}{basePath}Verify";
+		string gatewayUrl = $"{Core.App.BaseUrl}{basePath}Gateway";
 
 		// Test mode (appsettings "Test": true): skip the bank. We open our own fake gateway PAGE (the Gateway endpoint,
 		// NOT the callback) whose two buttons later redirect to the callback. Detail2 "FAKE" tells Verify to skip Confirm.
