@@ -295,6 +295,10 @@ public static class Projections {
 			Tags = x.Tags,
 			JsonData = x.JsonData,
 			Title = x.Title,
+			EntrancePrice = x.EntrancePrice,
+			HourlyPrice = x.HourlyPrice,
+			DailyPrice = x.DailyPrice,
+			AdminUserIds = x.AdminUserIds,
 			CreatorId = x.CreatorId,
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
 		};

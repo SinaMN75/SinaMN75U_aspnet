@@ -2,6 +2,9 @@ namespace SinaMN75U.Data.Responses;
 
 public sealed class ParkingResponse : BaseResponse<TagParking, BaseJson> {
 	public required string Title { get; set; }
+	public decimal EntrancePrice { get; set; }
+	public decimal HourlyPrice { get; set; }
+	public decimal DailyPrice { get; set; }
 }
 
 public sealed class ParkingReportResponse : BaseResponse<TagParkingReport, BaseJson> {

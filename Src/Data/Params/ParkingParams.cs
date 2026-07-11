@@ -24,6 +24,36 @@ public sealed class ParkingReadParams : BaseReadParams<TagParking> {
 	public ParkingSelectorArgs SelectorArgs { get; set; } = new();
 }
 
+public sealed class ParkingUserCreateParams : BaseParams {
+	[UValidationRequired("IdRequired")]
+	public Guid ParkingId { get; set; }
+
+	[UValidationRequired("UserNameRequired")]
+	public string UserName { get; set; } = null!;
+
+	[UValidationRequired("PasswordRequired")]
+	public string Password { get; set; } = null!;
+
+	public string? FirstName { get; set; }
+	public string? LastName { get; set; }
+	public string? PhoneNumber { get; set; }
+}
+
+public sealed class ParkingUserReadParams : BaseParams {
+	[UValidationRequired("IdRequired")]
+	public Guid ParkingId { get; set; }
+
+	public UserSelectorArgs SelectorArgs { get; set; } = new();
+}
+
+public sealed class ParkingUserDeleteParams : BaseParams {
+	[UValidationRequired("IdRequired")]
+	public Guid ParkingId { get; set; }
+
+	[UValidationRequired("IdRequired")]
+	public Guid UserId { get; set; }
+}
+
 public sealed class ParkingReportCreateParams : BaseCreateParams<TagParkingReport> {
 	public Guid ParkingId { get; set; }
 	public DateTime StartDate { get; set; }
