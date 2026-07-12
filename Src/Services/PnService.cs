@@ -13,7 +13,6 @@ public class PnUserStatusResponse {
 
 public class PnPhoneNumberParams : BaseParams {
 	[UValidationRequired("PhoneNumberRequired")]
-	[UValidationRegex(@"^09\d{9}$", "InvalidPhoneNumber")]
 	public string PhoneNumber { get; set; } = null!;
 }
 
@@ -25,13 +24,15 @@ public class PnUserStatusItem {
 
 public class PnAuthParams : BaseParams {
 	[UValidationRequired("PhoneNumberRequired")]
-	[UValidationRegex(@"^09\d{9}$", "InvalidPhoneNumber")]
 	public string PhoneNumber { get; set; } = null!;
+
 	public string? FirstName { get; set; }
 	public string? LastName { get; set; }
 	public string? FatherName { get; set; }
+
 	[UValidationStringLength(10, 10, "InvalidNationalCode")]
 	public string? NationalCode { get; set; }
+
 	public string? NationalCardFront { get; set; }
 	public string? NationalCardBack { get; set; }
 	public string? BirthCertificateFirst { get; set; }
@@ -43,18 +44,15 @@ public class PnAuthParams : BaseParams {
 
 public class PnMerchantCreateParams : BaseParams {
 	[UValidationRequired("PhoneNumberRequired")]
-	[UValidationRegex(@"^09\d{9}$", "InvalidPhoneNumber")]
 	public string UserPhoneNumber { get; set; } = null!;
 
 	[UValidationRequired("ZipCodeRequired")]
-	[UValidationRegex(@"^\d{10}$", "InvalidZipCode")]
 	public string ZipCode { get; set; } = null!;
 
 	[UValidationRequired("CityCodeRequired")]
 	public string CityCode { get; set; } = null!;
 
 	[UValidationRequired("PhoneNumberRequired")]
-	[UValidationRegex(@"^09\d{9}$", "InvalidPhoneNumber")]
 	public string PhoneNumber { get; set; } = null!;
 
 	[UValidationRequired("TitleRequired")]
@@ -65,11 +63,9 @@ public class PnMerchantCreateParams : BaseParams {
 	public string Landline { get; set; } = null!;
 
 	[UValidationRequired("NationalCodeRequired")]
-	[UValidationRegex(@"^\d{10}$", "InvalidNationalCode")]
 	public string NationalCode { get; set; } = null!;
 
 	[UValidationRequired("PhoneNumberRequired")]
-	[UValidationRegex(@"^09\d{9}$", "InvalidPhoneNumber")]
 	public string OwnerPhoneNumber { get; set; } = null!;
 
 	[UValidationRequired("OwnerNameRequired")]
@@ -125,7 +121,6 @@ public class PnService(
 	IHttpClientService http,
 	IWebHostEnvironment env
 ) : IPnService {
-
 	public async Task<UResponse> Auth(PnAuthParams p, CancellationToken ct) {
 		ULog.Info($"Auth method called for phone number: {p.PhoneNumber}");
 		ULog.Debug($"Auth params - FirstName: {p.FirstName}, LastName: {p.LastName}");
@@ -167,6 +162,12 @@ public class PnService(
 				JsonData = new UserJson { FatherName = p.FatherName },
 				Tags = [TagUser.SunUser]
 			};
+
+			if (p.BirthCertificateFirst != null) user.Tags.Add(TagUser.BirthCertificateFirstAwaitingVerification);
+			if (p.NationalCardBack != null) user.Tags.Add(TagUser.NationalCardBackAwaitingVerification);
+			if (p.NationalCardFront != null) user.Tags.Add(TagUser.NationalCardFrontAwaitingVerification);
+			if (p.ESignature != null) user.Tags.Add(TagUser.ESignatureAwaitingVerification);
+			if (p.VisualAuthentication != null) user.Tags.Add(TagUser.VisualAuthenticationAwaitingVerification);
 
 			ULog.Debug($"New user created with ID: {user.Id}");
 			ULog.Debug($"Image compression applied - BirthCertificate: {p.BirthCertificateFirst != null}, NationalCardFront: {p.NationalCardFront != null}, NationalCardBack: {p.NationalCardBack != null}, ESignature: {p.ESignature != null}, VisualAuth: {p.VisualAuthentication != null}");
@@ -224,11 +225,11 @@ public class PnService(
 			updated = true;
 		}
 
-		// FIX: Re-uploading a verified field resets its verification tag so admin must re-approve
 		if (p.NationalCardFront.IsNotNullOrEmpty()) {
 			ULog.Warning($"NationalCardFront re-uploaded - removing verification tag for user {e.Id}");
 			e.NationalCardFront = ImageCompressor.CompressBase64(p.NationalCardFront);
 			e.Tags.Remove(TagUser.NationalCardFrontVerified);
+			e.Tags.Add(TagUser.NationalCardFrontAwaitingVerification);
 			e.JsonData.NationalCardFrontRejectionReason = null;
 			updated = true;
 			ULog.Debug("NationalCardFront updated and verification reset");
@@ -238,6 +239,7 @@ public class PnService(
 			ULog.Warning($"NationalCardBack re-uploaded - removing verification tag for user {e.Id}");
 			e.NationalCardBack = ImageCompressor.CompressBase64(p.NationalCardBack);
 			e.Tags.Remove(TagUser.NationalCardBackVerified);
+			e.Tags.Add(TagUser.NationalCardBackAwaitingVerification);
 			e.JsonData.NationalCardBackRejectionReason = null;
 			updated = true;
 			ULog.Debug("NationalCardBack updated and verification reset");
@@ -247,6 +249,7 @@ public class PnService(
 			ULog.Warning($"BirthCertificateFirst re-uploaded - removing verification tag for user {e.Id}");
 			e.BirthCertificateFirst = ImageCompressor.CompressBase64(p.BirthCertificateFirst);
 			e.Tags.Remove(TagUser.BirthCertificateFirstVerified);
+			e.Tags.Add(TagUser.BirthCertificateFirstAwaitingVerification);
 			e.JsonData.BirthCertificateFirstRejectionReason = null;
 			updated = true;
 			ULog.Debug("BirthCertificateFirst updated and verification reset");
@@ -256,6 +259,7 @@ public class PnService(
 			ULog.Warning($"VisualAuthentication re-uploaded - removing verification tag for user {e.Id}");
 			e.VisualAuthentication = p.VisualAuthentication.FromBase64();
 			e.Tags.Remove(TagUser.VisualAuthenticationVerified);
+			e.Tags.Add(TagUser.VisualAuthenticationAwaitingVerification);
 			e.JsonData.VisualAuthenticationRejectionReason = null;
 			updated = true;
 			ULog.Debug("VisualAuthentication updated and verification reset");
@@ -265,6 +269,7 @@ public class PnService(
 			ULog.Warning($"ESignature re-uploaded - removing verification tag for user {e.Id}");
 			e.ESignature = ImageCompressor.CompressBase64(p.ESignature, 10);
 			e.Tags.Remove(TagUser.ESignatureVerified);
+			e.Tags.Add(TagUser.ESignatureAwaitingVerification);
 			e.JsonData.ESignatureRejectionReason = null;
 			updated = true;
 			ULog.Debug("ESignature updated and verification reset");
@@ -496,7 +501,7 @@ public class PnService(
 
 			string terminalResponseContent = await terminalResponse.Content.ReadAsStringAsync(ct);
 			JsonElement terminalData = JsonSerializer.Deserialize<JsonElement>(terminalResponseContent);
-			
+
 			terminal.TerminalId = terminalData.GetStringOrNull("terminalId");
 			terminal.InsId = terminalData.GetStringOrNull("insId");
 			ULog.Debug($"Terminal updated - TerminalId: {terminal.TerminalId}, InsId: {terminal.InsId}, Tags: Verified added, AwaitingVerification removed");
