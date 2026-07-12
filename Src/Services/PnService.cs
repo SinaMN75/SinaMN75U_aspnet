@@ -99,11 +99,24 @@ public class PnTerminalCreateParams : BaseParams {
 	public Guid MerchantId { get; set; }
 }
 
+public class PnTerminalSupportPasswordParams : BaseParams {
+	[UValidationRequired("TerminalIdRequired")]
+	public Guid TerminalId { get; set; }
+}
+
+public class PnZipCodeParams : BaseParams {
+	[UValidationRequired("ZipCodeRequired")]
+	[UValidationStringLength(10, 10, "ZipCodeInvalid")]
+	public string ZipCode { get; set; } = null!;
+}
+
 public interface IPnService {
 	Task<UResponse> Auth(PnAuthParams p, CancellationToken ct);
 	Task<UResponse<Guid?>> CreateMerchant(PnMerchantCreateParams p, CancellationToken ct);
 	Task<UResponse<Guid?>> CreateTerminal(PnTerminalCreateParams p, CancellationToken ct);
 	Task<UResponse<PnUserStatusResponse?>> UserStatus(PnPhoneNumberParams p, CancellationToken ct);
+	Task<UResponse<TerminalSupportPasswordResponse?>> ReadTerminalSupportPassword(PnTerminalSupportPasswordParams p, CancellationToken ct);
+	Task<UResponse<ZipCodeToAddressDetailResponse?>> ZipCodeToAddress(PnZipCodeParams p, CancellationToken ct);
 }
 
 public class PnService(
@@ -574,6 +587,116 @@ public class PnService(
 
 		ULog.Success($"UserStatus completed for phone {p.PhoneNumber}");
 		return new UResponse<PnUserStatusResponse?>(response);
+	}
+
+	public async Task<UResponse<TerminalSupportPasswordResponse?>> ReadTerminalSupportPassword(PnTerminalSupportPasswordParams p, CancellationToken ct) {
+		ULog.Info($"Pn ReadTerminalSupportPassword called for terminal: {p.TerminalId}");
+
+		if (p.ApiKey != Core.App.Pn.ApiKey) {
+			ULog.Warning($"ReadTerminalSupportPassword failed: Invalid API key for terminal {p.TerminalId}");
+			return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.UnAuthorized, ls.Get("InvalidAPIKey"));
+		}
+
+		TerminalEntity? e = await db.Set<TerminalEntity>().Include(x => x.Merchant).FirstOrDefaultAsync(x => x.Id == p.TerminalId, ct);
+		if (e == null) {
+			ULog.Warning($"ReadTerminalSupportPassword failed: Terminal not found with Id {p.TerminalId}");
+			return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.NotFound, ls.Get("TerminalNotFound"));
+		}
+
+		if (e.Merchant == null) {
+			ULog.Warning($"ReadTerminalSupportPassword failed: Terminal {e.Id} has no bound merchant");
+			return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.NotFound, ls.Get("MerchantNotFound"));
+		}
+
+		HttpResponseMessage? response = await http.Post(
+			$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/generateSupportPassword",
+			new {
+				insId = e.InsId,
+				merchantId = e.Merchant.MerchantId,
+				terminalId = e.TerminalId,
+				terminalSerial = e.Serial,
+				terminalSerial2 = e.SimCardSerial
+			},
+			new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
+		);
+
+		if (response is null or { IsSuccessStatusCode: false }) {
+			ULog.Error($"Avreen generateSupportPassword failed for terminal {e.Id}");
+			return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+		}
+
+		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
+		ULog.Success($"Support password generated for terminal {e.Id}");
+		return new UResponse<TerminalSupportPasswordResponse?>(new TerminalSupportPasswordResponse { Password = data.GetStringOrNull("supportPassword") });
+	}
+
+	public async Task<UResponse<ZipCodeToAddressDetailResponse?>> ZipCodeToAddress(PnZipCodeParams p, CancellationToken ct) {
+		ULog.Info($"Pn ZipCodeToAddress called for zipCode: {p.ZipCode}");
+
+		if (p.ApiKey != Core.App.Pn.ApiKey) {
+			ULog.Warning($"ZipCodeToAddress failed: Invalid API key for zipCode {p.ZipCode}");
+			return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.UnAuthorized, ls.Get("InvalidAPIKey"));
+		}
+
+		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
+		if (tokenResponse?.AccessToken == null) {
+			ULog.Error("ZipCodeToAddress failed: could not obtain ItHub access token");
+			return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		}
+
+		HttpResponseMessage? response = await http.Post(
+			"https://gateway.itsaaz.ir/hub/api/v1/Address/DetailsTypeA",
+			new { postcode = p.ZipCode, orderId = 1 },
+			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
+		);
+
+		if (response == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+
+		string responseBody = await response.Content.ReadAsStringAsync(ct);
+		if (!response.IsSuccessStatusCode) {
+			string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
+			ULog.Warning($"ZipCodeToAddress third-party error for zipCode {p.ZipCode}: {errorMessage}");
+			return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ThirdPartyError, errorMessage);
+		}
+
+		JsonElement json = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data");
+		ULog.Success($"ZipCodeToAddress resolved for zipCode {p.ZipCode}");
+		return new UResponse<ZipCodeToAddressDetailResponse?>(new ZipCodeToAddressDetailResponse {
+			BuildingName = json.GetStringOrNull("BuildingName"),
+			Description = json.GetStringOrNull("description"),
+			Floor = json.GetStringOrNull("floor"),
+			HouseNumber = json.GetStringOrNull("houseNumber"),
+			LocalityName = json.GetStringOrNull("localityName"),
+			LocalityType = json.GetStringOrNull("localityType"),
+			ZipCode = json.GetStringOrNull("zipCode"),
+			Province = json.GetStringOrNull("province"),
+			SideFloor = json.GetStringOrNull("sideFloor"),
+			Street = json.GetStringOrNull("street"),
+			Street2 = json.GetStringOrNull("street2"),
+			SubLocality = json.GetStringOrNull("subLocality"),
+			TownShip = json.GetStringOrNull("townShip"),
+			TraceId = json.GetStringOrNull("traceId"),
+			Village = json.GetStringOrNull("village")
+		});
+	}
+
+	private async Task<GetAccessTokenResponse?> GetAccessToken(CancellationToken ct) {
+		ItHub itHub = Core.App.ItHub;
+		HttpResponseMessage? response = await http.PostForm(
+			"https://gateway.itsaaz.ir/sts/connect/token",
+			new Dictionary<string, string> {
+				{ "grant_type", "password" },
+				{ "client_id", itHub.ClientId },
+				{ "Client_secret", itHub.ClientSecret },
+				{ "username", itHub.UserName },
+				{ "password", itHub.Password }
+			}
+		);
+		if (response == null) return null;
+
+		string responseBody = await response.Content.ReadAsStringAsync(ct);
+		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody);
+		return new GetAccessTokenResponse { AccessToken = data.GetStringOrNull("access_token"), ExpiresIn = data.GetIntOrNull("expires_in") };
 	}
 
 	private static async Task<string> GenerateAgreement(UserEntity user, MerchantEntity merchant, string contentRootPath) {

@@ -7,5 +7,7 @@ public static class PnRoutes {
 		r.MapPost("CreateMerchant", async (PnMerchantCreateParams p, IPnService s, CancellationToken c) => (await s.CreateMerchant(p, c)).ToResult()).Produces<UResponse<Guid?>>();
 		r.MapPost("CreateTerminal", async (PnTerminalCreateParams p, IPnService s, CancellationToken c) => (await s.CreateTerminal(p, c)).ToResult()).Produces<UResponse<Guid?>>();
 		r.MapPost("UserStatus", async (PnPhoneNumberParams p, IPnService s, CancellationToken c) => (await s.UserStatus(p, c)).ToResult()).Produces<UResponse<PnUserStatusResponse?>>();
+		r.MapPost("ReadTerminalSupportPassword", async (PnTerminalSupportPasswordParams p, IPnService s, CancellationToken c) => (await s.ReadTerminalSupportPassword(p, c)).ToResult()).Produces<UResponse<TerminalSupportPasswordResponse?>>();
+		r.MapPost("ZipCodeToAddress", async (PnZipCodeParams p, IPnService s, CancellationToken c) => (await s.ZipCodeToAddress(p, c)).ToResult()).Produces<UResponse<ZipCodeToAddressDetailResponse?>>();
 	}
 }
