@@ -83,4 +83,14 @@ public static class UExtensions {
 				return intValue;
 		return null;
 	}
+
+	public static async Task<string> ReadBodyOnceAsync(this HttpContext context) {
+		if (context.Items.TryGetValue("__U_RequestBody", out object? cached) && cached is string cachedBody) return cachedBody;
+		context.Request.EnableBuffering();
+		string body;
+		using (StreamReader reader = new(context.Request.Body, Encoding.UTF8, leaveOpen: true)) body = await reader.ReadToEndAsync();
+		context.Request.Body.Seek(0, SeekOrigin.Begin);
+		context.Items["__U_RequestBody"] = body;
+		return body;
+	}
 }

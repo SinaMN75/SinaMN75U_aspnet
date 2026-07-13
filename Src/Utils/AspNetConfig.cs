@@ -105,20 +105,17 @@ public static partial class AspNetConfig {
 	}
 
 	public static void UseUServices(this WebApplication app) {
-		app.UseLeanResponses();
 		app.UseStaticFiles();
 		app.UseCors();
 		app.UseUSwagger();
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
-		if (app.Environment.IsProduction()) {
-			app.UseMiddleware<ApiLogMiddleware>();
-			app.UseMiddleware<UMiddleware>();
-			app.UseMiddleware<DbExceptionMiddleware>();
-		}
-		else {
-			app.UseDeveloperExceptionPage();
-		}
+		app.UseMiddleware<ApiKeyMiddleware>();
+		app.UseMiddleware<DbExceptionMiddleware>();
+		app.UseMiddleware<RefreshTokenMiddleware>();
+		app.UseMiddleware<ApiLogMiddleware>();
+		app.UseMiddleware<ExceptionMiddleware>();
+		if (app.Environment.IsDevelopment()) app.UseDeveloperExceptionPage();
 
 		app.MapAuthRoutes(RouteTags.Auth);
 		app.MapUserRoutes(RouteTags.User);

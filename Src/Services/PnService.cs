@@ -649,6 +649,26 @@ public class PnService(
 			return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 		}
 
+		if (Core.App.Test) {
+			return new UResponse<ZipCodeToAddressDetailResponse?>(new ZipCodeToAddressDetailResponse {
+				BuildingName = "تست",
+				Description = "تست",
+				Floor = "تست",
+				HouseNumber = "تست",
+				LocalityName = "تست",
+				LocalityType = "تست",
+				ZipCode = "تست",
+				Province = "تست",
+				SideFloor = "تست",
+				Street = "تست",
+				Street2 = "تست",
+				SubLocality = "تست",
+				TownShip = "تست",
+				TraceId = "تست",
+				Village = "تست",
+			});
+		}
+
 		HttpResponseMessage? response = await http.Post(
 			"https://gateway.itsaaz.ir/hub/api/v1/Address/DetailsTypeA",
 			new { postcode = p.ZipCode, orderId = 1 },

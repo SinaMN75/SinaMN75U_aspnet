@@ -31,8 +31,6 @@ public sealed class Jwt {
 }
 
 public sealed class Middleware {
-	public required bool DecryptParams { get; init; }
-	public required bool EncryptResponse { get; init; }
 	public required bool RequireApiKey { get; init; }
 	public required bool RequireRefreshToken { get; init; }
 	public required bool Log { get; init; }

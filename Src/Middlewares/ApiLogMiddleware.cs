@@ -16,10 +16,7 @@ public sealed class ApiLogMiddleware(RequestDelegate next, ITokenService ts) {
 			return Task.CompletedTask;
 		});
 
-		context.Request.EnableBuffering();
-		string requestBody;
-		using (StreamReader reader = new(context.Request.Body, Encoding.UTF8, leaveOpen: true)) requestBody = await reader.ReadToEndAsync();
-		context.Request.Body.Seek(0, SeekOrigin.Begin);
+		string requestBody = await context.ReadBodyOnceAsync();
 
 		Stream originalResponseStream = context.Response.Body;
 		using MemoryStream captureStream = new();
@@ -110,7 +107,9 @@ public sealed class ApiLogMiddleware(RequestDelegate next, ITokenService ts) {
 			JsonElement json = JsonSerializer.Deserialize<JsonElement>(requestBody);
 			token = json.GetStringOrNull("token");
 		}
-		catch { }
+		catch {
+			// ignored
+		}
 
 		if (string.IsNullOrWhiteSpace(token)) {
 			string? authHeader = ctx.Request.Headers.Authorization.FirstOrDefault();
