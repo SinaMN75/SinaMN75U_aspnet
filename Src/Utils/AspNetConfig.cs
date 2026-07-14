@@ -115,7 +115,6 @@ public static partial class AspNetConfig {
 		app.UseMiddleware<ExceptionMiddleware>();
 		app.UseMiddleware<DbExceptionMiddleware>();
 		app.UseMiddleware<RefreshTokenMiddleware>();
-		if (app.Environment.IsDevelopment()) app.UseDeveloperExceptionPage();
 
 		app.MapAuthRoutes(RouteTags.Auth);
 		app.MapUserRoutes(RouteTags.User);

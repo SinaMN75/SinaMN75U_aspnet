@@ -2,7 +2,7 @@ using BadHttpRequestException = Microsoft.AspNetCore.Http.BadHttpRequestExceptio
 
 namespace SinaMN75U.Middlewares;
 
-public sealed class ExceptionMiddleware(RequestDelegate next, ILocalizationService ls) {
+public sealed class ExceptionMiddleware(RequestDelegate next, ILocalizationService ls, IWebHostEnvironment env) {
 	public async Task InvokeAsync(HttpContext context) {
 		try {
 			await next(context);
@@ -13,7 +13,7 @@ public sealed class ExceptionMiddleware(RequestDelegate next, ILocalizationServi
 		}
 		catch (Exception ex) {
 			context.Items["ApiLogException"] = ex;
-			if (!context.Response.HasStarted) await WriteErrorAsync(context, Usc.InternalServerError, ls.Get("InternalServerError"));
+			if (!context.Response.HasStarted) await WriteErrorAsync(context, Usc.InternalServerError, env.IsDevelopment() ? $"{ex.GetType().Name}: {ex.Message}" : ls.Get("InternalServerError"));
 		}
 	}
 
