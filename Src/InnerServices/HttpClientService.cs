@@ -10,7 +10,7 @@ public interface IHttpClientService {
 	Task<HttpResponseMessage?> Upload(string uri, IFormFile file, string fileName, Dictionary<string, string>? headers = null);
 }
 
-public class HttpClientService(HttpClient httpClient, IApiLogService apiLogService) : IHttpClientService {
+public class HttpClientService(HttpClient httpClient, IDashboardService dashboardService) : IHttpClientService {
 	public async Task<HttpResponseMessage?> Get(string uri, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Get, uri, null, headers);
 	public async Task<HttpResponseMessage?> Post(string uri, object? body, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Post, uri, body, headers);
 	public async Task<HttpResponseMessage?> Put(string uri, object? body, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Put, uri, body, headers);
@@ -75,7 +75,7 @@ public class HttpClientService(HttpClient httpClient, IApiLogService apiLogServi
 			Console.WriteLine($"{method} - {uri} - {(int)response.StatusCode} \nPARAMS: {paramsLog} \nRESPONSE: {responseBody}");
 
 			sw.Stop();
-			await apiLogService.Create(new ApiLogCreateParams {
+			await dashboardService.CreateApiLog(new ApiLogCreateParams {
 				Method = method.ToString(),
 				Path = uri,
 				StatusCode = (int)response.StatusCode,
@@ -90,7 +90,7 @@ public class HttpClientService(HttpClient httpClient, IApiLogService apiLogServi
 		}
 		catch (Exception ex) {
 			sw.Stop();
-			await apiLogService.Create(new ApiLogCreateParams {
+			await dashboardService.CreateApiLog(new ApiLogCreateParams {
 				Method = method.ToString(),
 				Path = uri,
 				StatusCode = 500,

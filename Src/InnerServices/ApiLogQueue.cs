@@ -27,8 +27,8 @@ public sealed class ApiLogBackgroundService(ApiLogQueue queue, IServiceScopeFact
 
 			try {
 				using IServiceScope scope = scopeFactory.CreateScope();
-				IApiLogService service = scope.ServiceProvider.GetRequiredService<IApiLogService>();
-				await service.CreateMany(batch, stoppingToken);
+				IDashboardService service = scope.ServiceProvider.GetRequiredService<IDashboardService>();
+				await service.CreateManyApiLogs(batch, stoppingToken);
 			}
 			catch {
 				// logging must never crash the app

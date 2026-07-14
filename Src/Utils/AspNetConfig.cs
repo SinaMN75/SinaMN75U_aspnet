@@ -62,7 +62,6 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IMediaService, MediaService>();
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
 		builder.Services.AddSingleton<ILocalStorageService, UMemoryCacheService>();
-		builder.Services.AddScoped<IApiLogService, ApiLogService>();
 		builder.Services.AddSingleton<ApiLogQueue>();
 		builder.Services.AddSingleton<IApiLogQueue>(x => x.GetRequiredService<ApiLogQueue>());
 		builder.Services.AddHostedService<ApiLogBackgroundService>();
@@ -149,7 +148,6 @@ public static partial class AspNetConfig {
 		app.MapProcessRoutes(RouteTags.Process);
 		app.MapPnRoutes(RouteTags.Pn);
 		app.MapHotelRoutes(RouteTags.Hotel);
-		app.MapApiLogRoutes(RouteTags.ApiLog);
 		app.MapBlogRoutes(RouteTags.Blog);
 	}
 
