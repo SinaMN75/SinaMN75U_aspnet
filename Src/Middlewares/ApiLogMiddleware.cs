@@ -34,7 +34,7 @@ public sealed class ApiLogMiddleware(RequestDelegate next, ITokenService ts) {
 		}
 		finally {
 			sw.Stop();
-			exception ??= context.Items["ApiLogException"] as Exception;
+			exception ??= context.Items[UConstants.ApiLogExceptionKey] as Exception;
 
 			string responseBody;
 			try {

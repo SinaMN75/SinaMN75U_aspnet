@@ -8,11 +8,11 @@ public sealed class ExceptionMiddleware(RequestDelegate next, ILocalizationServi
 			await next(context);
 		}
 		catch (BadHttpRequestException ex) when (ex.Message.Contains("Failed to read parameter")) {
-			context.Items["ApiLogException"] = ex;
+			context.Items[UConstants.ApiLogExceptionKey] = ex;
 			await WriteErrorAsync(context, Usc.BadRequest, ls.Get("InvalidRequestFormat"));
 		}
 		catch (Exception ex) {
-			context.Items["ApiLogException"] = ex;
+			context.Items[UConstants.ApiLogExceptionKey] = ex;
 			if (!context.Response.HasStarted) await WriteErrorAsync(context, Usc.InternalServerError, env.IsDevelopment() ? $"{ex.GetType().Name}: {ex.Message}" : ls.Get("InternalServerError"));
 		}
 	}

@@ -119,7 +119,8 @@ public class PnService(
 	ILocalizationService ls,
 	DbContext db,
 	IHttpClientService http,
-	IWebHostEnvironment env
+	IWebHostEnvironment env,
+	IHttpContextAccessor httpContext
 ) : IPnService {
 	public async Task<UResponse> Auth(PnAuthParams p, CancellationToken ct) {
 		ULog.Info($"Auth method called for phone number: {p.PhoneNumber}");
@@ -419,6 +420,7 @@ public class PnService(
 			agreement = await GenerateAgreement(merchant.User, merchant, env.ContentRootPath);
 		}
 		catch (Exception ex) {
+			httpContext.CaptureForApiLog(ex);
 			ULog.Error(ex, $"Agreement generation failed for merchant {merchant.Id}");
 			return new UResponse<Guid?>(null, Usc.InternalServerError, ls.Get("AgreementGenerationFailed"));
 		}
@@ -514,6 +516,7 @@ public class PnService(
 			return new UResponse<Guid?>(terminal.Id);
 		}
 		catch (Exception ex) {
+			httpContext.CaptureForApiLog(ex);
 			ULog.Error(ex, $"Exception during Avreen integration for terminal {terminal.Id}");
 			await transaction.RollbackAsync(ct);
 			ULog.Warning($"Transaction rolled back for terminal {terminal.Id} due to exception");

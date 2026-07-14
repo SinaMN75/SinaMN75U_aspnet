@@ -93,4 +93,8 @@ public static class UExtensions {
 		context.Items["__U_RequestBody"] = body;
 		return body;
 	}
+	
+	public static void CaptureForApiLog(this IHttpContextAccessor accessor, Exception ex) => accessor.HttpContext.CaptureForApiLog(ex);
+
+	public static void CaptureForApiLog(this HttpContext? context, Exception ex) => context?.Items[UConstants.ApiLogExceptionKey] = ex;
 }

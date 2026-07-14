@@ -70,7 +70,8 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 			await MarkFailed(txn, ct);
 			return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("IpgError"));
 		}
-		catch (Exception) {
+		catch (Exception ex) {
+			httpContext.CaptureForApiLog(ex);
 			await MarkFailed(txn, ct);
 			return new UResponse<IpgPayResponse?>(null, Usc.InternalServerError, ls.Get("InternalServerError"));
 		}
@@ -127,8 +128,8 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 
 			await db.SaveChangesAsync(ct);
 		}
-		catch (Exception) {
-			// ignored
+		catch (Exception ex) {
+			httpContext.CaptureForApiLog(ex);
 		}
 	}
 
