@@ -525,7 +525,7 @@ public class DashboardService(
 
 		// Report only the server's primary disk (the system/root volume) instead of every mounted volume.
 		// Windows: the drive holding the OS (not always C:). Linux/macOS: the "/" root filesystem.
-		List<DiskMetricsItem> disks = [];
+		DiskMetricsItem disk = new();
 		try {
 			string rootName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 				? Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\"
@@ -538,7 +538,7 @@ public class DashboardService(
 				double totalGb = root.TotalSize / bytesToGb;
 				double freeGb = root.AvailableFreeSpace / bytesToGb;
 				double usedGb = totalGb - freeGb;
-				disks.Add(new DiskMetricsItem {
+				disk = new DiskMetricsItem {
 					Name = root.Name,
 					DriveFormat = SafeGet(() => root.DriveFormat) ?? "",
 					DriveType = root.DriveType.ToString(),
@@ -546,7 +546,7 @@ public class DashboardService(
 					FreeGb = Math.Round(freeGb, 2),
 					UsedGb = Math.Round(usedGb, 2),
 					UsagePercent = totalGb == 0 ? 0 : Math.Round(usedGb / totalGb * 100, 1)
-				});
+				};
 			}
 		}
 		catch {
@@ -629,7 +629,7 @@ public class DashboardService(
 			MemoryUsedGb = Math.Round(totalMemGb - freeMemGb, 2),
 			MemoryFreeGb = Math.Round(freeMemGb, 2),
 			MemoryUsagePercent = Math.Round(memUsage, 1),
-			Disks = disks,
+			Disk = disk,
 			ProcessWorkingSetMb = processWorkingSetMb,
 			ProcessPrivateMemoryMb = processPrivateMemoryMb,
 			ProcessThreadCount = processThreadCount,

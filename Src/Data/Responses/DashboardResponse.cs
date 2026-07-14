@@ -1,5 +1,3 @@
-using System.Net.NetworkInformation;
-
 namespace SinaMN75U.Data.Responses;
 
 // ===================== OS / Server Metrics (rich, cross-platform) =====================
@@ -36,7 +34,7 @@ public sealed class OsMetricsResponse {
 	public double MemoryUsagePercent { get; set; }
 
 	// Disks
-	public List<DiskMetricsItem> Disks { get; set; } = [];
+	public DiskMetricsItem? Disk { get; set; }
 
 	// Current process
 	public double ProcessWorkingSetMb { get; set; }
