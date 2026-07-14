@@ -5,7 +5,6 @@ public interface IApiLogService {
 	Task CreateMany(IReadOnlyCollection<ApiLogCreateParams> items, CancellationToken ct);
 	Task<UResponse<IEnumerable<ApiLogResponse>?>> Read(ApiLogReadParams p, CancellationToken ct);
 	Task<UResponse<ApiLogStatsResponse?>> Stats(ApiLogStatsParams p, CancellationToken ct);
-	Task<byte[]> Export(ApiLogReadParams p, CancellationToken ct);
 }
 
 public class ApiLogService(DbContext db) : IApiLogService {
@@ -19,10 +18,7 @@ public class ApiLogService(DbContext db) : IApiLogService {
 
 	public async Task CreateMany(IReadOnlyCollection<ApiLogCreateParams> items, CancellationToken ct) {
 		List<ApiLogEntity> entities = [];
-		foreach (ApiLogCreateParams p in items) {
-			ApiLogEntity? entity = MapToEntity(p);
-			if (entity != null) entities.Add(entity);
-		}
+		entities.AddRange(items.Select(MapToEntity).OfType<ApiLogEntity>());
 
 		if (entities.Count == 0) return;
 
@@ -33,12 +29,11 @@ public class ApiLogService(DbContext db) : IApiLogService {
 	private static ApiLogEntity? MapToEntity(ApiLogCreateParams p) {
 		if (!Core.App.Middleware.Log) return null;
 
-		bool isSuccess = p.StatusCode is >= 200 and <= 299;
-		if (isSuccess && !Core.App.Middleware.LogSuccess) return null;
+		if (p.StatusCode is >= 200 and <= 299 && !Core.App.Middleware.LogSuccess) return null;
 		if (p.Path.Contains("log", StringComparison.CurrentCultureIgnoreCase)) return null;
+		if (p.Path.Contains("dashboard", StringComparison.CurrentCultureIgnoreCase)) return null;
 
 		List<TagApiLog> tags = [
-
 			p.Method.ToUpperInvariant() switch {
 				"GET" => TagApiLog.Get,
 				"POST" => TagApiLog.Post,
@@ -161,26 +156,6 @@ public class ApiLogService(DbContext db) : IApiLogService {
 		});
 	}
 
-	public async Task<byte[]> Export(ApiLogReadParams p, CancellationToken ct) {
-		List<ApiLogEntity> rows = await Filter(db.Set<ApiLogEntity>(), p).ApplyReadParams(p).Take(10_000).ToListAsync(ct);
-
-		StringBuilder sb = new();
-		sb.AppendLine(string.Join(",", "CreatedAt", "Method", "Path", "StatusCode", "DurationMs", "UserId", "IpAddress", "TraceId"));
-
-		foreach (ApiLogEntity r in rows)
-			sb.AppendLine(string.Join(",",
-				CsvEscape(r.CreatedAt.ToString("o")),
-				CsvEscape(r.JsonData.Method),
-				CsvEscape(r.Path),
-				CsvEscape(r.StatusCode.ToString()),
-				CsvEscape(r.DurationMs.ToString()),
-				CsvEscape(r.UserId?.ToString()),
-				CsvEscape(r.IpAddress),
-				CsvEscape(r.TraceId)));
-
-		return Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(sb.ToString())).ToArray();
-	}
-
 	private static IQueryable<ApiLogEntity> Filter(IQueryable<ApiLogEntity> q, ApiLogReadParams p) {
 		if (!string.IsNullOrWhiteSpace(p.PathContains)) q = q.Where(x => EF.Functions.ILike(x.Path, $"%{p.PathContains}%"));
 		if (p.StatusCode.HasValue) q = q.Where(x => x.StatusCode == p.StatusCode.Value);
@@ -203,13 +178,6 @@ public class ApiLogService(DbContext db) : IApiLogService {
 	private static string? Truncate(string? s, int max) => string.IsNullOrEmpty(s) || s.Length <= max ? s : s[..max];
 
 	private static string? TruncateBody(string? s) => string.IsNullOrEmpty(s) || s.Length <= 20_000 ? s : s[..20_000] + "...<truncated>";
-
-	private static string CsvEscape(string? value) {
-		if (string.IsNullOrEmpty(value)) return "";
-		bool needsQuoting = value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r');
-		string escaped = value.Replace("\"", "\"\"");
-		return needsQuoting ? $"\"{escaped}\"" : escaped;
-	}
 
 	private sealed class StatRow {
 		public DateTime CreatedAt { get; init; }
