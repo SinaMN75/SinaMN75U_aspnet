@@ -5,13 +5,16 @@ public class DbExceptionMiddleware(RequestDelegate next, ILocalizationService ls
 		try {
 			await next(context);
 		}
-		catch (DbUpdateConcurrencyException) {
+		catch (DbUpdateConcurrencyException ex) {
+			context.Items["ApiLogException"] = ex;
 			await WriteAsync(context, Usc.Conflict, ls.Get("ConcurrencyConflict"));
 		}
 		catch (DbUpdateException ex) {
+			context.Items["ApiLogException"] = ex;
 			if (!await TryHandlePostgresAsync(context, ex.InnerException as PostgresException)) throw;
 		}
 		catch (PostgresException ex) {
+			context.Items["ApiLogException"] = ex;
 			if (!await TryHandlePostgresAsync(context, ex)) throw;
 		}
 	}

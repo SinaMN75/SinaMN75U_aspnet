@@ -73,7 +73,7 @@ public sealed class ApiLogMiddleware(RequestDelegate next, ITokenService ts) {
 				ResponseBody = responseBody,
 				RequestHeaders = requestHeaders,
 				ResponseHeaders = responseHeaders,
-				UserAgent = context.Request.Headers["User-Agent"].FirstOrDefault(),
+				UserAgent = context.Request.Headers.UserAgent.FirstOrDefault(),
 				Host = Environment.MachineName,
 				RequestSizeBytes = Encoding.UTF8.GetByteCount(requestBody),
 				ResponseSizeBytes = Encoding.UTF8.GetByteCount(responseBody),

@@ -1,25 +1,18 @@
 namespace SinaMN75U.Services;
 
 public interface IIpgService {
-	// Opens the gateway: returns the url the app must show in a WebView (real PNA page, or our test page in Test mode).
 	Task<UResponse<IpgPayResponse?>> GetSaleIpgLink(IpgSaleParams p, CancellationToken ct);
-
-	// The callback the gateway redirects to (our Verify endpoint). Does Confirm + credits the wallet, fully server-side.
 	Task Verify(string token, short status, string? cardNumberMasked, long? rrn, string additionalData, CancellationToken ct);
 }
 
-// ts added so the payer's identity and the charge amount are taken from the JWT/DB, never from the client callback.
-// httpContext added so we build our own Gateway/Verify urls from THIS request's host (works on localhost and prod).
 public class IpgService(IHttpClientService http, DbContext db, ILocalizationService ls, ITokenService ts, IHttpContextAccessor httpContext) : IIpgService {
 	public async Task<UResponse<IpgPayResponse?>> GetSaleIpgLink(IpgSaleParams p, CancellationToken ct) {
-		// Identify the payer from the token instead of trusting a client-supplied user id.
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IpgPayResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		if (p.Amount <= 0) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("AmountRequired"));
-
-		// Create an authoritative pending order up-front; the credited amount will come from this row, closing the tampering hole.
 		string trackingNumber = Guid.CreateVersion7().ToString("N");
 		int orderId = Math.Abs(Guid.NewGuid().GetHashCode());
+		
 		TxnEntity txn = new() {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
@@ -33,14 +26,11 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 		await db.Set<TxnEntity>().AddAsync(txn, ct);
 		await db.SaveChangesAsync(ct);
 
-		// Build absolute urls to OUR OWN Gateway/Verify endpoints from this request (e.g. https://localhost:7110/api/ipg/...).
 		HttpRequest request = httpContext.HttpContext!.Request;
-		string basePath = request.Path.Value![..(request.Path.Value!.LastIndexOf('/') + 1)]; // e.g. /api/ipg/
+		string basePath = request.Path.Value![..(request.Path.Value!.LastIndexOf('/') + 1)];
 		string verifyUrl = $"{Core.App.BaseUrl}{basePath}Verify";
 		string gatewayUrl = $"{Core.App.BaseUrl}{basePath}Gateway";
-
-		// Test mode (appsettings "Test": true): skip the bank. We open our own fake gateway PAGE (the Gateway endpoint,
-		// NOT the callback) whose two buttons later redirect to the callback. Detail2 "FAKE" tells Verify to skip Confirm.
+		
 		if (Core.App.Test) {
 			txn.JsonData.Detail2 = "FAKE";
 			db.Set<TxnEntity>().Update(txn);
@@ -67,7 +57,6 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 				JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody);
 				if (data.GetProperty("Status").GetInt16() == 0) {
 					string gatewayToken = data.GetProperty("Token").GetString()!;
-					// Bind this order to the gateway token so a forged callback for someone else's tracking number cannot be accepted.
 					txn.JsonData.Detail2 = gatewayToken;
 					db.Set<TxnEntity>().Update(txn);
 					await db.SaveChangesAsync(ct);
@@ -78,7 +67,6 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 				}
 			}
 
-			// Gateway rejected the sale: fail the pending order.
 			await MarkFailed(txn, ct);
 			return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("IpgError"));
 		}
@@ -89,26 +77,21 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 	}
 
 	public async Task Verify(string token, short status, string? cardNumberMasked, long? rrn, string additionalData, CancellationToken ct) {
-		// additionalData is the tracking number we sent at pay-time; resolve the order from it.
-		if (string.IsNullOrEmpty(additionalData)) return;
+		if (additionalData.IsNullOrEmpty()) return;
 
 		TxnEntity? txn = await db.Set<TxnEntity>().AsTracking().FirstOrDefaultAsync(x => x.TrackingNumber == additionalData, ct);
 		if (txn == null) return;
 
-		// Idempotency: if this order was already settled, do nothing (prevents double-crediting on repeated callbacks).
 		if (txn.Tags.Contains(TagTxn.Paid)) return;
 
-		// User cancelled or gateway reported failure.
 		if (status != 0) {
 			await MarkFailed(txn, ct);
 			return;
 		}
 
-		// The stored gateway token must match the callback token, otherwise this is not a legitimate callback for this order.
-		if (string.IsNullOrEmpty(txn.JsonData.Detail2) || txn.JsonData.Detail2 != token) return;
+		if (txn.JsonData.Detail2.IsNullOrEmpty() || txn.JsonData.Detail2 != token) return;
 
 		try {
-			// Real gateway must be confirmed before crediting; the fake gateway (token "FAKE") has nothing to confirm.
 			if (token != "FAKE") {
 				HttpResponseMessage? confirmResponse = await http.Post("https://pna.shaparak.ir/mhipg/api/Payment/confirm", new {
 					CorporationPin = Core.App.Ipg.Token,
@@ -121,7 +104,6 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 				if (confirmData.GetProperty("Status").GetInt16() != 0) return;
 			}
 
-			// Mark the order paid using the amount/user fixed at pay-time (trusted), not anything from the callback body.
 			txn.Tags = [TagTxn.ChargeWallet, TagTxn.Paid];
 			txn.JsonData.Detail1 = $"Card:{cardNumberMasked}";
 			txn.JsonData.Detail2 = $"RRN:{rrn}";
@@ -133,8 +115,6 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 				CreatedAt = DateTime.UtcNow,
 				JsonData = new BaseJson { Detail1 = $"RRN:{rrn}", Detail2 = "شارژ کیف پول" },
 				Tags = [TagWalletTxn.Charge],
-				// Money source for a wallet top-up is the platform account (a seeded user), not the unseeded IpgUserId
-				// which caused the FK_WalletTxns_Users_SenderId violation.
 				SenderId = Core.App.Users.AvaPlus.Id,
 				ReceiverId = txn.UserId,
 				Amount = txn.Amount
@@ -148,11 +128,10 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 			await db.SaveChangesAsync(ct);
 		}
 		catch (Exception) {
-			// Leave the order Pending (money may have been captured) so it can be reconciled rather than wrongly failed.
+			// ignored
 		}
 	}
 
-	// Helper: move a pending order to a failed state so it can never be settled later.
 	private async Task MarkFailed(TxnEntity txn, CancellationToken ct) {
 		if (txn.Tags.Contains(TagTxn.Paid)) return;
 		txn.Tags = [TagTxn.ChargeWallet, TagTxn.Failed];
