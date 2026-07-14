@@ -1,11 +1,11 @@
 namespace SinaMN75U.Middlewares;
 
-public sealed class ApiLogMiddleware(RequestDelegate next, ITokenService ts) {
+public sealed class ApiLogMiddleware(RequestDelegate next, ITokenService ts, IApiLogQueue queue) {
 	private static readonly HashSet<string> SensitiveHeaders = new(StringComparer.OrdinalIgnoreCase) {
 		"Authorization", "Cookie", "Set-Cookie", "X-Api-Key", "apiKey", "Proxy-Authorization"
 	};
 
-	public async Task InvokeAsync(HttpContext context, IApiLogService service) {
+	public async Task InvokeAsync(HttpContext context) {
 		if (!ShouldHandle(context)) {
 			await next(context);
 			return;
@@ -34,7 +34,7 @@ public sealed class ApiLogMiddleware(RequestDelegate next, ITokenService ts) {
 		}
 		finally {
 			sw.Stop();
-			exception ??= context.Items[UConstants.ApiLogExceptionKey] as Exception;
+			exception ??= context.Items["ApiLogException"] as Exception;
 
 			string responseBody;
 			try {
@@ -57,7 +57,7 @@ public sealed class ApiLogMiddleware(RequestDelegate next, ITokenService ts) {
 				responseHeaders = SerializeHeaders(context.Response.Headers);
 			}
 
-			await service.Create(new ApiLogCreateParams {
+			queue.Enqueue(new ApiLogCreateParams {
 				Method = context.Request.Method,
 				Path = context.Request.Path,
 				StatusCode = context.Response.StatusCode,
@@ -73,18 +73,19 @@ public sealed class ApiLogMiddleware(RequestDelegate next, ITokenService ts) {
 				ResponseBody = responseBody,
 				RequestHeaders = requestHeaders,
 				ResponseHeaders = responseHeaders,
-				UserAgent = context.Request.Headers.UserAgent.FirstOrDefault(),
+				UserAgent = context.Request.Headers["User-Agent"].FirstOrDefault(),
 				Host = Environment.MachineName,
 				RequestSizeBytes = Encoding.UTF8.GetByteCount(requestBody),
 				ResponseSizeBytes = Encoding.UTF8.GetByteCount(responseBody),
 				ExceptionType = exception?.GetType().Name,
 				ExceptionMessage = exception?.Message,
 				StackTrace = exception?.StackTrace
-			}, CancellationToken.None);
+			});
 		}
 	}
 
 	private static bool ShouldHandle(HttpContext ctx) {
+		if (!Core.App.Middleware.Log) return false;
 		string? path = ctx.Request.Path.Value;
 		if (path == null || !ctx.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase)) return false;
 		return path.Contains("media", StringComparison.OrdinalIgnoreCase) != true && path.Contains("download", StringComparison.OrdinalIgnoreCase) != true;

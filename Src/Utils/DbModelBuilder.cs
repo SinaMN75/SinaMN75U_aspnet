@@ -6,6 +6,13 @@ public static class DbModelBuilder {
 		foreach (IMutableForeignKey foreignKey in entityType.GetForeignKeys())
 			foreignKey.DeleteBehavior = DeleteBehavior.Cascade;
 
+		foreach (IMutableEntityType entityType in builder.Model.GetEntityTypes()) {
+			if (entityType.IsOwned()) continue;
+			AddIndexIfMissing(entityType, "CreatedAt");
+			AddIndexIfMissing(entityType, "CreatorId");
+			AddGinIndexIfMissing(entityType, "Tags");
+		}
+
 		builder.Entity<CategoryEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<MediaEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<FollowEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
@@ -45,5 +52,20 @@ public static class DbModelBuilder {
 		});
 		builder.Entity<ApiLogEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<BlogEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+	}
+
+	private static void AddIndexIfMissing(IMutableEntityType entityType, string propertyName) {
+		IMutableProperty? property = entityType.FindProperty(propertyName);
+		if (property == null) return;
+		if (entityType.FindIndex(property) != null) return;
+		entityType.AddIndex(property);
+	}
+
+	private static void AddGinIndexIfMissing(IMutableEntityType entityType, string propertyName) {
+		IMutableProperty? property = entityType.FindProperty(propertyName);
+		if (property == null) return;
+		if (entityType.FindIndex(property) != null) return;
+		IMutableIndex index = entityType.AddIndex(property);
+		index.SetAnnotation("Npgsql:IndexMethod", "gin");
 	}
 }

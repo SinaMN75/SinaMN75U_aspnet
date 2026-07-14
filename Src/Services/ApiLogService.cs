@@ -2,6 +2,7 @@ namespace SinaMN75U.Services;
 
 public interface IApiLogService {
 	Task Create(ApiLogCreateParams p, CancellationToken ct);
+	Task CreateMany(IReadOnlyCollection<ApiLogCreateParams> items, CancellationToken ct);
 	Task<UResponse<IEnumerable<ApiLogResponse>?>> Read(ApiLogReadParams p, CancellationToken ct);
 	Task<UResponse<ApiLogStatsResponse?>> Stats(ApiLogStatsParams p, CancellationToken ct);
 	Task<byte[]> Export(ApiLogReadParams p, CancellationToken ct);
@@ -9,11 +10,32 @@ public interface IApiLogService {
 
 public class ApiLogService(DbContext db) : IApiLogService {
 	public async Task Create(ApiLogCreateParams p, CancellationToken ct) {
-		if (!Core.App.Middleware.Log) return;
+		ApiLogEntity? entity = MapToEntity(p);
+		if (entity == null) return;
+
+		db.Set<ApiLogEntity>().Add(entity);
+		await db.SaveChangesAsync(ct);
+	}
+
+	public async Task CreateMany(IReadOnlyCollection<ApiLogCreateParams> items, CancellationToken ct) {
+		List<ApiLogEntity> entities = [];
+		foreach (ApiLogCreateParams p in items) {
+			ApiLogEntity? entity = MapToEntity(p);
+			if (entity != null) entities.Add(entity);
+		}
+
+		if (entities.Count == 0) return;
+
+		await db.Set<ApiLogEntity>().AddRangeAsync(entities, ct);
+		await db.SaveChangesAsync(ct);
+	}
+
+	private static ApiLogEntity? MapToEntity(ApiLogCreateParams p) {
+		if (!Core.App.Middleware.Log) return null;
 
 		bool isSuccess = p.StatusCode is >= 200 and <= 299;
-		if (isSuccess && !Core.App.Middleware.LogSuccess) return;
-		if (p.Path.Contains("log", StringComparison.CurrentCultureIgnoreCase)) return;
+		if (isSuccess && !Core.App.Middleware.LogSuccess) return null;
+		if (p.Path.Contains("log", StringComparison.CurrentCultureIgnoreCase)) return null;
 
 		List<TagApiLog> tags = [
 
@@ -35,7 +57,7 @@ public class ApiLogService(DbContext db) : IApiLogService {
 
 		if (p.ExceptionType.IsNotNullOrEmpty()) tags.Add(TagApiLog.HasException);
 
-		ApiLogEntity entity = new() {
+		return new ApiLogEntity {
 			Path = Truncate(p.Path, 500) ?? "",
 			StatusCode = p.StatusCode,
 			DurationMs = p.DurationMs,
@@ -65,9 +87,6 @@ public class ApiLogService(DbContext db) : IApiLogService {
 			CreatedAt = DateTime.UtcNow,
 			CreatorId = UConstants.SystemAdminId
 		};
-
-		db.Set<ApiLogEntity>().Add(entity);
-		await db.SaveChangesAsync(ct);
 	}
 
 	public async Task<UResponse<IEnumerable<ApiLogResponse>?>> Read(ApiLogReadParams p, CancellationToken ct) {

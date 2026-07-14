@@ -20,13 +20,12 @@ public static partial class AspNetConfig {
 			o.SerializerOptions.Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
 			o.SerializerOptions.MaxDepth = 128;
 		});
-		builder.Services.AddScoped<DbContext, T>();
 		builder.Services.AddDbContextPool<T>(b => {
 			b.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
 			b.UseNpgsql(Core.App.ConnectionStrings.Server, o => {
 				AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 				o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-				o.EnableRetryOnFailure(5, TimeSpan.FromSeconds(30), null);
+				o.EnableRetryOnFailure(3, TimeSpan.FromSeconds(5), null);
 			});
 			if (builder.Environment.IsDevelopment())
 				b.LogTo(x => {
@@ -45,6 +44,7 @@ public static partial class AspNetConfig {
 					[DbLoggerCategory.Database.Command.Name],
 					LogLevel.Information);
 		});
+		builder.Services.AddScoped<DbContext>(x => x.GetRequiredService<T>());
 
 		builder.Services.AddResponseCompression(o => {
 			o.EnableForHttps = true;
@@ -63,6 +63,9 @@ public static partial class AspNetConfig {
 		builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
 		builder.Services.AddSingleton<ILocalStorageService, UMemoryCacheService>();
 		builder.Services.AddScoped<IApiLogService, ApiLogService>();
+		builder.Services.AddSingleton<ApiLogQueue>();
+		builder.Services.AddSingleton<IApiLogQueue>(x => x.GetRequiredService<ApiLogQueue>());
+		builder.Services.AddHostedService<ApiLogBackgroundService>();
 		builder.Services.AddSingleton<ITokenService, TokenService>();
 		builder.Services.AddScoped<IUserService, UserService>();
 		builder.Services.AddScoped<IAuthService, AuthService>();
@@ -111,10 +114,11 @@ public static partial class AspNetConfig {
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
 		app.UseMiddleware<ApiKeyMiddleware>();
-		app.UseMiddleware<ApiLogMiddleware>();
-		app.UseMiddleware<ExceptionMiddleware>();
 		app.UseMiddleware<DbExceptionMiddleware>();
 		app.UseMiddleware<RefreshTokenMiddleware>();
+		app.UseMiddleware<ApiLogMiddleware>();
+		app.UseMiddleware<ExceptionMiddleware>();
+		if (app.Environment.IsDevelopment()) app.UseDeveloperExceptionPage();
 
 		app.MapAuthRoutes(RouteTags.Auth);
 		app.MapUserRoutes(RouteTags.User);

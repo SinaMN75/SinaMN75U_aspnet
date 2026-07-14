@@ -49,7 +49,7 @@ public class UProvince {
 	public string NameFa { get; }
 	public IReadOnlyList<UCity> Cities { get; }
 
-	public UProvince(string code, string nameEn, string nameFa, IReadOnlyList<UCity> cities = null) {
+	public UProvince(string code, string nameEn, string nameFa, IReadOnlyList<UCity>? cities = null) {
 		Code = code;
 		NameEn = nameEn;
 		NameFa = nameFa;
@@ -77,7 +77,7 @@ public enum UCodeType {
 }
 
 public static class UCountries {
-	public static string CityFullName(string cityCode) {
+	public static string? CityFullName(string cityCode) {
 		if (cityCode == null) return null;
 		foreach (var province in IranProvinces)
 		foreach (var city in province.Cities)
