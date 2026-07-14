@@ -83,28 +83,10 @@ public class DashboardService(
 				}
 
 				// Memory metrics
-				using Process? memProcess = Process.Start(new ProcessStartInfo {
-					FileName = "vm_stat",
-					RedirectStandardOutput = true,
-					UseShellExecute = false
-				});
-
-				if (memProcess != null) {
-					string memOutput = await memProcess.StandardOutput.ReadToEndAsync();
-					await memProcess.WaitForExitAsync();
-
-					string[] lines = memOutput.Split('\n');
-					const double pageSize = 4096.0;
-					double free = double.Parse(lines[1].Split(':')[1].Trim().Split(' ')[0]) * pageSize;
-					double active = double.Parse(lines[2].Split(':')[1].Trim().Split(' ')[0]) * pageSize;
-					double inactive = double.Parse(lines[3].Split(':')[1].Trim().Split(' ')[0]) * pageSize;
-					double wired = double.Parse(lines[4].Split(':')[1].Trim().Split(' ')[0]) * pageSize;
-
-					double used = (active + inactive + wired) / bytesToGb;
-					totalMem = used + free / bytesToGb;
-					freeMem = free / bytesToGb;
-					memUsage = used / totalMem * 100;
-				}
+				(double macTotalGb, double macFreeGb, double _, double macUsagePercent) = await GetMacMemory(CancellationToken.None);
+				totalMem = macTotalGb;
+				freeMem = macFreeGb;
+				memUsage = macUsagePercent;
 			}
 			catch {
 				// Fallback values remain at 0
@@ -489,21 +471,10 @@ public class DashboardService(
 					}
 				}
 
-				using Process? memProcess = Process.Start(new ProcessStartInfo { FileName = "vm_stat", RedirectStandardOutput = true, UseShellExecute = false });
-				if (memProcess != null) {
-					string memOutput = await memProcess.StandardOutput.ReadToEndAsync(ct);
-					await memProcess.WaitForExitAsync(ct);
-					string[] lines = memOutput.Split('\n');
-					const double pageSize = 4096.0;
-					double free = double.Parse(lines[1].Split(':')[1].Trim().Split(' ')[0]) * pageSize;
-					double active = double.Parse(lines[2].Split(':')[1].Trim().Split(' ')[0]) * pageSize;
-					double inactive = double.Parse(lines[3].Split(':')[1].Trim().Split(' ')[0]) * pageSize;
-					double wired = double.Parse(lines[4].Split(':')[1].Trim().Split(' ')[0]) * pageSize;
-					double used = (active + inactive + wired) / bytesToGb;
-					totalMemGb = used + free / bytesToGb;
-					freeMemGb = free / bytesToGb;
-					memUsage = totalMemGb == 0 ? 0 : used / totalMemGb * 100;
-				}
+				(double macTotalGb, double macFreeGb, double _, double macUsagePercent) = await GetMacMemory(ct);
+				totalMemGb = macTotalGb;
+				freeMemGb = macFreeGb;
+				memUsage = macUsagePercent;
 			}
 			catch {
 				/* fallback values remain at 0 */
@@ -552,25 +523,31 @@ public class DashboardService(
 			}
 		}
 
+		// Report only the server's primary disk (the system/root volume) instead of every mounted volume.
+		// Windows: the drive holding the OS (not always C:). Linux/macOS: the "/" root filesystem.
 		List<DiskMetricsItem> disks = [];
 		try {
-			disks = DriveInfo.GetDrives()
-				.Where(d => d.IsReady)
-				.Select(d => {
-					double totalGb = d.TotalSize / bytesToGb;
-					double freeGb = d.AvailableFreeSpace / bytesToGb;
-					double usedGb = totalGb - freeGb;
-					return new DiskMetricsItem {
-						Name = d.Name,
-						DriveFormat = SafeGet(() => d.DriveFormat) ?? "",
-						DriveType = d.DriveType.ToString(),
-						TotalGb = Math.Round(totalGb, 2),
-						FreeGb = Math.Round(freeGb, 2),
-						UsedGb = Math.Round(usedGb, 2),
-						UsagePercent = totalGb == 0 ? 0 : Math.Round(usedGb / totalGb * 100, 1)
-					};
-				})
-				.ToList();
+			string rootName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+				? Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\"
+				: "/";
+			DriveInfo[] ready = DriveInfo.GetDrives().Where(d => d.IsReady).ToArray();
+			DriveInfo? root = ready.FirstOrDefault(d => string.Equals(d.Name, rootName, StringComparison.OrdinalIgnoreCase))
+				?? ready.FirstOrDefault(d => d.Name is "/" or "C:\\")
+				?? ready.MaxBy(d => d.TotalSize);
+			if (root != null) {
+				double totalGb = root.TotalSize / bytesToGb;
+				double freeGb = root.AvailableFreeSpace / bytesToGb;
+				double usedGb = totalGb - freeGb;
+				disks.Add(new DiskMetricsItem {
+					Name = root.Name,
+					DriveFormat = SafeGet(() => root.DriveFormat) ?? "",
+					DriveType = root.DriveType.ToString(),
+					TotalGb = Math.Round(totalGb, 2),
+					FreeGb = Math.Round(freeGb, 2),
+					UsedGb = Math.Round(usedGb, 2),
+					UsagePercent = totalGb == 0 ? 0 : Math.Round(usedGb / totalGb * 100, 1)
+				});
+			}
 		}
 		catch {
 			/* leave disks empty on failure */
@@ -853,6 +830,64 @@ public class DashboardService(
 		catch {
 			return null;
 		}
+	}
+
+	private static async Task<string> RunProcess(string fileName, string args, CancellationToken ct) {
+		using Process? p = Process.Start(new ProcessStartInfo { FileName = fileName, Arguments = args, RedirectStandardOutput = true, UseShellExecute = false });
+		if (p == null) return "";
+		string output = await p.StandardOutput.ReadToEndAsync(ct);
+		await p.WaitForExitAsync(ct);
+		return output;
+	}
+
+	// Total RAM comes from hw.memsize (exact physical memory); usage is derived from vm_stat using the
+	// page size reported in its header (4 KB on Intel, 16 KB on Apple Silicon) rather than a hard-coded value.
+	private static async Task<(double totalGb, double freeGb, double usedGb, double usagePercent)> GetMacMemory(CancellationToken ct) {
+		const double bytesToGb = 1024.0 * 1024 * 1024;
+		double totalBytes = 0;
+		try {
+			totalBytes = double.Parse((await RunProcess("sysctl", "-n hw.memsize", ct)).Trim());
+		}
+		catch {
+			/* fallback below */
+		}
+
+		double pageSize = 4096, active = 0, wired = 0, compressor = 0, free = 0, inactive = 0, speculative = 0;
+		try {
+			string[] lines = (await RunProcess("vm_stat", "", ct)).Split('\n');
+			int marker = lines[0].IndexOf("page size of ", StringComparison.Ordinal);
+			if (marker >= 0) {
+				string digits = new(lines[0][(marker + 13)..].TakeWhile(char.IsDigit).ToArray());
+				if (double.TryParse(digits, out double ps) && ps > 0) pageSize = ps;
+			}
+
+			foreach (string line in lines) {
+				int colon = line.IndexOf(':');
+				if (colon < 0) continue;
+				if (!double.TryParse(line[(colon + 1)..].Trim().TrimEnd('.'), out double val)) continue;
+				switch (line[..colon].Trim()) {
+					case "Pages active": active = val; break;
+					case "Pages wired down": wired = val; break;
+					case "Pages occupied by compressor": compressor = val; break;
+					case "Pages free": free = val; break;
+					case "Pages inactive": inactive = val; break;
+					case "Pages speculative": speculative = val; break;
+				}
+			}
+		}
+		catch {
+			/* fallback below */
+		}
+
+		if (totalBytes <= 0) totalBytes = (active + wired + compressor + free + inactive + speculative) * pageSize;
+		double usedBytes = Math.Min((active + wired + compressor) * pageSize, totalBytes);
+		double freeBytes = totalBytes - usedBytes;
+		return (
+			totalBytes / bytesToGb,
+			freeBytes / bytesToGb,
+			usedBytes / bytesToGb,
+			totalBytes == 0 ? 0 : usedBytes / totalBytes * 100
+		);
 	}
 
 	private static ulong ToUlong(Win32FileTime ft) => ((ulong)ft.dwHighDateTime << 32) | ft.dwLowDateTime;
