@@ -33,44 +33,11 @@ public sealed class OsMetricsResponse {
 	public double MemoryFreeGb { get; set; }
 	public double MemoryUsagePercent { get; set; }
 
-	// Disks
-	public DiskMetricsItem? Disk { get; set; }
-
-	// Current process
-	public double ProcessWorkingSetMb { get; set; }
-	public double ProcessPrivateMemoryMb { get; set; }
-	public int ProcessThreadCount { get; set; }
-	public int? ProcessHandleCount { get; set; }
-
-	// GC
-	public double GcTotalMemoryMb { get; set; }
-	public int Gen0Collections { get; set; }
-	public int Gen1Collections { get; set; }
-	public int Gen2Collections { get; set; }
-	public bool IsServerGc { get; set; }
-
-	// Network
-	public List<NetworkInterfaceMetricsItem> NetworkInterfaces { get; set; } = [];
-}
-
-public sealed class DiskMetricsItem {
-	public string Name { get; set; } = "";
-	public string DriveFormat { get; set; } = "";
-	public string DriveType { get; set; } = "";
-	public double TotalGb { get; set; }
-	public double FreeGb { get; set; }
-	public double UsedGb { get; set; }
-	public double UsagePercent { get; set; }
-}
-
-public sealed class NetworkInterfaceMetricsItem {
-	public string Name { get; set; } = "";
-	public string Description { get; set; } = "";
-	public string Type { get; set; } = "";
-	public string Status { get; set; } = "";
-	public double SpeedMbps { get; set; }
-	public double BytesSentMb { get; set; }
-	public double BytesReceivedMb { get; set; }
+	// Disk (GB)
+	public double DiskTotalGb { get; set; }
+	public double DiskUsedGb { get; set; }
+	public double DiskFreeGb { get; set; }
+	public double DiskUsagePercent { get; set; }
 }
 
 public sealed record SystemMetricsResponse(

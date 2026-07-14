@@ -1,6 +1,3 @@
-using System.Net.NetworkInformation;
-using System.Runtime;
-
 namespace SinaMN75U.Services;
 
 public interface IDashboardService {
@@ -419,7 +416,6 @@ public class DashboardService(
 		if (!userData.IsAdmin) return new UResponse<OsMetricsResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		const double bytesToGb = 1024.0 * 1024 * 1024;
-		const double bytesToMb = 1024.0 * 1024;
 
 		double cpuUsage = 0, memUsage = 0, totalMemGb = 0, freeMemGb = 0;
 		double? load1 = null, load5 = null, load15 = null;
@@ -523,88 +519,18 @@ public class DashboardService(
 			}
 		}
 
-		// Report only the server's primary disk (the system/root volume) instead of every mounted volume.
-		// Windows: the drive holding the OS (not always C:). Linux/macOS: the "/" root filesystem.
-		DiskMetricsItem disk = new();
-		try {
-			string rootName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-				? Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\"
-				: "/";
-			DriveInfo[] ready = DriveInfo.GetDrives().Where(d => d.IsReady).ToArray();
-			DriveInfo? root = ready.FirstOrDefault(d => string.Equals(d.Name, rootName, StringComparison.OrdinalIgnoreCase))
-				?? ready.FirstOrDefault(d => d.Name is "/" or "C:\\")
-				?? ready.MaxBy(d => d.TotalSize);
-			if (root != null) {
-				double totalGb = root.TotalSize / bytesToGb;
-				double freeGb = root.AvailableFreeSpace / bytesToGb;
-				double usedGb = totalGb - freeGb;
-				disk = new DiskMetricsItem {
-					Name = root.Name,
-					DriveFormat = SafeGet(() => root.DriveFormat) ?? "",
-					DriveType = root.DriveType.ToString(),
-					TotalGb = Math.Round(totalGb, 2),
-					FreeGb = Math.Round(freeGb, 2),
-					UsedGb = Math.Round(usedGb, 2),
-					UsagePercent = totalGb == 0 ? 0 : Math.Round(usedGb / totalGb * 100, 1)
-				};
-			}
-		}
-		catch {
-			/* leave disks empty on failure */
-		}
+		// Storage is read per-platform (like CPU and memory): df on Linux/macOS, DriveInfo on Windows.
+		(double diskTotalGb, double diskUsedGb, double diskFreeGb, double diskUsagePercent) = await GetDisk(ct);
 
-		double processWorkingSetMb = 0, processPrivateMemoryMb = 0;
-		int processThreadCount = 0;
-		int? processHandleCount = null;
 		DateTime processStartedAt = DateTime.UtcNow;
 		double processUptimeSeconds = 0;
 		try {
 			Process current = Process.GetCurrentProcess();
-			processWorkingSetMb = Math.Round(current.WorkingSet64 / bytesToMb, 2);
-			processPrivateMemoryMb = Math.Round(current.PrivateMemorySize64 / bytesToMb, 2);
-			processThreadCount = current.Threads.Count;
 			processStartedAt = current.StartTime.ToUniversalTime();
 			processUptimeSeconds = (DateTime.UtcNow - processStartedAt).TotalSeconds;
-			try {
-				processHandleCount = current.HandleCount;
-			}
-			catch {
-				processHandleCount = null;
-			}
 		}
 		catch {
-			/* leave process metrics at defaults */
-		}
-
-		List<NetworkInterfaceMetricsItem> networkInterfaces = [];
-		try {
-			networkInterfaces = NetworkInterface.GetAllNetworkInterfaces()
-				.Where(n => n.NetworkInterfaceType != NetworkInterfaceType.Loopback)
-				.Select(n => {
-					double sentMb = 0, receivedMb = 0;
-					try {
-						IPv4InterfaceStatistics stats = n.GetIPv4Statistics();
-						sentMb = Math.Round(stats.BytesSent / bytesToMb, 2);
-						receivedMb = Math.Round(stats.BytesReceived / bytesToMb, 2);
-					}
-					catch {
-						/* stats unavailable on this platform/interface */
-					}
-
-					return new NetworkInterfaceMetricsItem {
-						Name = n.Name,
-						Description = n.Description,
-						Type = n.NetworkInterfaceType.ToString(),
-						Status = n.OperationalStatus.ToString(),
-						SpeedMbps = n.Speed > 0 ? Math.Round(n.Speed / 1_000_000.0, 1) : 0,
-						BytesSentMb = sentMb,
-						BytesReceivedMb = receivedMb
-					};
-				})
-				.ToList();
-		}
-		catch {
-			/* leave network interfaces empty on failure */
+			/* leave process uptime at defaults */
 		}
 
 		return new UResponse<OsMetricsResponse?>(new OsMetricsResponse {
@@ -629,17 +555,10 @@ public class DashboardService(
 			MemoryUsedGb = Math.Round(totalMemGb - freeMemGb, 2),
 			MemoryFreeGb = Math.Round(freeMemGb, 2),
 			MemoryUsagePercent = Math.Round(memUsage, 1),
-			Disk = disk,
-			ProcessWorkingSetMb = processWorkingSetMb,
-			ProcessPrivateMemoryMb = processPrivateMemoryMb,
-			ProcessThreadCount = processThreadCount,
-			ProcessHandleCount = processHandleCount,
-			GcTotalMemoryMb = Math.Round(GC.GetTotalMemory(false) / bytesToMb, 2),
-			Gen0Collections = GC.CollectionCount(0),
-			Gen1Collections = GC.CollectionCount(1),
-			Gen2Collections = GC.CollectionCount(2),
-			IsServerGc = GCSettings.IsServerGC,
-			NetworkInterfaces = networkInterfaces
+			DiskTotalGb = diskTotalGb,
+			DiskUsedGb = diskUsedGb,
+			DiskFreeGb = diskFreeGb,
+			DiskUsagePercent = diskUsagePercent
 		});
 	}
 
@@ -887,6 +806,59 @@ public class DashboardService(
 			freeBytes / bytesToGb,
 			usedBytes / bytesToGb,
 			totalBytes == 0 ? 0 : usedBytes / totalBytes * 100
+		);
+	}
+
+	// Primary storage volume, read per-platform (like CPU and memory). Linux/macOS use `df` on the root
+	// filesystem and derive used as total - available, so shared-space filesystems (APFS containers)
+	// report real usage rather than a single volume's. Windows uses DriveInfo on the system drive.
+	private static async Task<(double totalGb, double usedGb, double freeGb, double usagePercent)> GetDisk(CancellationToken ct) {
+		const double bytesToGb = 1024.0 * 1024 * 1024;
+		double totalBytes = 0, freeBytes = 0;
+
+		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+			try {
+				string rootName = Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\";
+				DriveInfo[] ready = DriveInfo.GetDrives().Where(d => d.IsReady).ToArray();
+				DriveInfo? root = ready.FirstOrDefault(d => string.Equals(d.Name, rootName, StringComparison.OrdinalIgnoreCase))
+					?? ready.FirstOrDefault(d => d.Name == "C:\\")
+					?? ready.MaxBy(d => d.TotalSize);
+				if (root != null) {
+					totalBytes = root.TotalSize;
+					freeBytes = root.AvailableFreeSpace;
+				}
+			}
+			catch {
+				/* leave zeros */
+			}
+		}
+		else {
+			try {
+				string[] lines = (await RunProcess("df", "-kP /", ct)).Split('\n', StringSplitOptions.RemoveEmptyEntries);
+				string[] cols = lines[^1].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+				totalBytes = double.Parse(cols[1]) * 1024;
+				freeBytes = double.Parse(cols[3]) * 1024;
+			}
+			catch {
+				try {
+					DriveInfo root = DriveInfo.GetDrives().First(d => d is { IsReady: true, Name: "/" });
+					totalBytes = root.TotalSize;
+					freeBytes = root.AvailableFreeSpace;
+				}
+				catch {
+					/* leave zeros */
+				}
+			}
+		}
+
+		double totalGb = totalBytes / bytesToGb;
+		double freeGb = freeBytes / bytesToGb;
+		double usedGb = totalGb - freeGb;
+		return (
+			Math.Round(totalGb, 2),
+			Math.Round(usedGb, 2),
+			Math.Round(freeGb, 2),
+			totalGb == 0 ? 0 : Math.Round(usedGb / totalGb * 100, 1)
 		);
 	}
 
