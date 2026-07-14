@@ -111,13 +111,11 @@ public static partial class AspNetConfig {
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
 		app.UseMiddleware<ApiKeyMiddleware>();
-		// ApiLog must wrap the exception handlers so every handled exception (generic + DB) is captured for logging;
-		// Exception (generic catch-all) must wrap DbException so DB-specific errors are handled before the generic fallback.
 		app.UseMiddleware<ApiLogMiddleware>();
-		// app.UseMiddleware<ExceptionMiddleware>();
-		// app.UseMiddleware<DbExceptionMiddleware>();
+		app.UseMiddleware<ExceptionMiddleware>();
+		app.UseMiddleware<DbExceptionMiddleware>();
 		app.UseMiddleware<RefreshTokenMiddleware>();
-		app.UseDeveloperExceptionPage();
+		if (app.Environment.IsDevelopment()) app.UseDeveloperExceptionPage();
 
 		app.MapAuthRoutes(RouteTags.Auth);
 		app.MapUserRoutes(RouteTags.User);
