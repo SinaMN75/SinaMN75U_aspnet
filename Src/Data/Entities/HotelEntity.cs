@@ -10,7 +10,6 @@ public class HotelEntity : BaseEntity<TagHotel, HotelJson> {
 	[Required, MaxLength(20)]
 	public required string CityCode { get; set; }
 
-	// Star rating 0-5.
 	public int Stars { get; set; }
 
 	[MaxLength(500)]
@@ -27,7 +26,6 @@ public class HotelEntity : BaseEntity<TagHotel, HotelJson> {
 	public ICollection<MediaEntity> Media { get; set; } = [];
 }
 
-// Rich, less-queried hotel content stored as JSON.
 public sealed class HotelJson : BaseJson {
 	public string? Description { get; set; }
 	public string? Policies { get; set; }
@@ -43,7 +41,6 @@ public class HotelRoomEntity : BaseEntity<TagRoom, HotelRoomJson> {
 	[Required, MaxLength(100)]
 	public required string Title { get; set; }
 
-	// Maximum occupancy (guests) for the room.
 	public required int Capacity { get; set; }
 
 	[Required, Column(TypeName = "decimal(24,2)")]
@@ -52,10 +49,8 @@ public class HotelRoomEntity : BaseEntity<TagRoom, HotelRoomJson> {
 	[MaxLength(20)]
 	public string? RoomNumber { get; set; }
 
-	// Number of identical physical rooms of this type.
 	public int Quantity { get; set; } = 1;
 
-	// Out-of-service flag; false = not bookable.
 	public bool IsAvailable { get; set; } = true;
 
 	public required Guid HotelId { get; set; }
@@ -85,7 +80,6 @@ public sealed class HotelReservationEntity : BaseEntity<TagHotelReservation, Hot
 	[Required, Column(TypeName = "decimal(24,2)")]
 	public required decimal TotalPrice { get; set; }
 
-	// The guest.
 	public required Guid UserId { get; set; }
 	public UserEntity User { get; set; } = null!;
 
