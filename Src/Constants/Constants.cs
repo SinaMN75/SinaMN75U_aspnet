@@ -32,6 +32,7 @@ public static class RouteTags {
 	public const string Pn = "api/Pn/";
 	public const string Hotel = "api/Hotel/";
 	public const string Blog = "api/Blog/";
+	public const string FileManager = "api/FileManager/";
 }
 
 public static class UConstants {
