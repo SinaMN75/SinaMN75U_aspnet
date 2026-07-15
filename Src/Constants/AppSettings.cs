@@ -1,19 +1,23 @@
 namespace SinaMN75U.Constants;
 
+public sealed class AppSettingsUpdateParams : BaseParams {
+	public required AppSettings Settings { get; set; }
+}
+
 public sealed class AppSettings {
-	public required string BaseUrl { get; init; }
-	public required string ApiKey { get; init; }
+	public required string BaseUrl { get; set; }
+	public required string ApiKey { get; set; }
 	public required bool Test { get; set; }
-	public required ConnectionStrings ConnectionStrings { get; init; }
-	public required Jwt Jwt { get; init; }
-	public required Middleware Middleware { get; init; }
-	public required SmsPanel SmsPanel { get; init; }
-	public required ItHub ItHub { get; init; }
-	public required Mobtakeran Mobtakeran { get; init; }
-	public required BasicSettings BasicSettings { get; init; }
-	public required Ipg Ipg { get; init; }
-	public required Avreen Avreen { get; init; }
-	public required Pn Pn { get; init; }
+	public required ConnectionStrings ConnectionStrings { get; set; }
+	public required Jwt Jwt { get; set; }
+	public required Middleware Middleware { get; set; }
+	public required SmsPanel SmsPanel { get; set; }
+	public required ItHub ItHub { get; set; }
+	public required Mobtakeran Mobtakeran { get; set; }
+	public required BasicSettings BasicSettings { get; set; }
+	public required Ipg Ipg { get; set; }
+	public required Avreen Avreen { get; set; }
+	public required Pn Pn { get; set; }
 	public required DefaultUsers Users { get; init; }
 	public required ApiCallCosts ApiCallCosts { get; set; }
 	public required IEnumerable<ChargeInternet> ChargeInternet { get; set; }
