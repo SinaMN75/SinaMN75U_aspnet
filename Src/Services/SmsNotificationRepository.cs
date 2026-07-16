@@ -63,13 +63,8 @@ public class SmsNotificationService(
 	}
 }
 
-public class SmsNotificationServiceFake(
-	IHttpClientService http,
-	ILocalStorageService cache
-) : ISmsNotificationService {
-	private static async Task Send() {
-		await Task.Delay(1000);
-	}
+public class SmsNotificationServiceFake(ILocalStorageService cache) : ISmsNotificationService {
+	private static async Task Send() => await Task.Delay(1000);
 
 	public async Task<bool> SendOtpSms(UserResponse user) {
 		if (cache.Get($"otp_{user.Id}") != null) return false;

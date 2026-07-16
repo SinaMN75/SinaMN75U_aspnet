@@ -368,8 +368,7 @@ public class TerminalService(
 		string raw = cell.CellValue?.InnerText ?? "";
 		if (cell.DataType?.Value == CellValues.SharedString && sst != null && int.TryParse(raw, out int idx))
 			return sst.SharedStringTable.Elements<SharedStringItem>().ElementAt(idx).InnerText;
-		if (cell.DataType?.Value == CellValues.InlineString) return cell.InnerText;
-		return raw;
+		return cell.DataType?.Value == CellValues.InlineString ? cell.InnerText : raw;
 	}
 
 	// Extracts the column letters from a cell reference like "B12" -> "B"

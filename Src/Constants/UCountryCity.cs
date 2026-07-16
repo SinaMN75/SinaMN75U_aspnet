@@ -21,10 +21,22 @@ public class UCountry {
 	public IReadOnlyList<UProvince> Provinces { get; }
 
 	public UCountry(
-		string code, string nameEn, string nameFa, string dialCode, string flag,
-		string capitalEn, string capitalFa, string continentEn, string continentFa,
-		string primaryReligionEn, string primaryReligionFa, string currency,
-		string primaryLanguageEn, string primaryLanguageFa, IReadOnlyList<UProvince> provinces) {
+		string code,
+		string nameEn,
+		string nameFa,
+		string dialCode,
+		string flag,
+		string capitalEn,
+		string capitalFa,
+		string continentEn,
+		string continentFa,
+		string primaryReligionEn,
+		string primaryReligionFa,
+		string currency,
+		string primaryLanguageEn,
+		string primaryLanguageFa,
+		IReadOnlyList<UProvince> provinces
+	) {
 		Code = code;
 		NameEn = nameEn;
 		NameFa = nameFa;
@@ -79,8 +91,8 @@ public enum UCodeType {
 public static class UCountries {
 	public static string? CityFullName(string cityCode) {
 		if (cityCode == null) return null;
-		foreach (var province in IranProvinces)
-		foreach (var city in province.Cities)
+		foreach (UProvince province in IranProvinces)
+		foreach (UCity city in province.Cities)
 			if (city.Code == cityCode)
 				return $"{province.NameFa} - {city.NameFa}";
 		return cityCode;
@@ -98,7 +110,7 @@ public static class UCountries {
 		}
 	}
 
-	public static string CountryCodeOf(string code) {
+	public static string? CountryCodeOf(string code) {
 		switch (CodeType(code)) {
 			case UCodeType.Country: return null;
 			case UCodeType.Province: return code.Substring(0, 3);
@@ -107,12 +119,12 @@ public static class UCountries {
 		}
 	}
 
-	public static string ProvinceCodeOf(string code) {
+	public static string? ProvinceCodeOf(string code) {
 		if (CodeType(code) != UCodeType.City) return null;
 		return "001" + code.Substring(0, 3).PadLeft(4, '0');
 	}
 
-	public static string ParentCodeOf(string code) {
+	public static string? ParentCodeOf(string code) {
 		switch (CodeType(code)) {
 			case UCodeType.City: return ProvinceCodeOf(code);
 			case UCodeType.Province: return CountryCodeOf(code);
@@ -120,22 +132,21 @@ public static class UCountries {
 		}
 	}
 
-	public static UCountry CountryByCode(string code) {
+	public static UCountry? CountryByCode(string code) {
 		string cc = CodeType(code) == UCodeType.Country ? code : CountryCodeOf(code);
-		if (cc == null) return null;
-		return Countries.FirstOrDefault(c => c.Code == cc);
+		return cc == null ? null : Countries.FirstOrDefault(c => c.Code == cc);
 	}
 
-	public static UProvince ProvinceByCode(string code) {
+	public static UProvince? ProvinceByCode(string code) {
 		string pc = CodeType(code) == UCodeType.Province ? code : ProvinceCodeOf(code);
-		var c = CountryByCode(code);
+		UCountry? c = CountryByCode(code);
 		if (pc == null || c == null) return null;
 		return c.Provinces.FirstOrDefault(p => p.Code == pc);
 	}
 
-	public static UCity CityByCode(string code) {
+	public static UCity? CityByCode(string code) {
 		if (CodeType(code) != UCodeType.City) return null;
-		var p = ProvinceByCode(code);
+		UProvince? p = ProvinceByCode(code);
 		return p?.Cities.FirstOrDefault(city => city.Code == code);
 	}
 

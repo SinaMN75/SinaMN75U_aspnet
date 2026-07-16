@@ -67,7 +67,6 @@ public sealed class ApiLogMiddleware(RequestDelegate next, ITokenService ts, IAp
 				UserEmail = userData.Email,
 				UserRoles = userData.Roles,
 				IpAddress = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim() ?? context.Connection.RemoteIpAddress?.ToString(),
-				TraceId = context.TraceIdentifier,
 				QueryString = context.Request.QueryString.HasValue ? context.Request.QueryString.Value : null,
 				RequestBody = requestBody,
 				ResponseBody = responseBody,
