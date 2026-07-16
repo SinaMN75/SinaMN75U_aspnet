@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
-
 public class UCountry {
 	public string Code { get; }
 	public string NameEn { get; }
@@ -988,7 +983,7 @@ public static class UCountries {
 
 	// All countries with their provinces.
 	public static readonly List<UCountry> Countries = [
-		new UCountry(
+		new(
 			code: "001",
 			nameEn: "Iran",
 			nameFa: "ایران",
@@ -1005,8 +1000,7 @@ public static class UCountries {
 			primaryLanguageFa: "فارسی",
 			provinces: IranProvinces
 		),
-
-		new UCountry(
+		new(
 			code: "002",
 			nameEn: "Andorra",
 			nameFa: "آندورا",
@@ -1031,8 +1025,7 @@ public static class UCountries {
 				new(code: "0020007", nameEn: "Sant Julià de Lòria", nameFa: "سنت خولیا د لوریا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "003",
 			nameEn: "United Arab Emirates",
 			nameFa: "امارات متحده عربی",
@@ -1057,8 +1050,7 @@ public static class UCountries {
 				new(code: "0030007", nameEn: "Umm Al Quwain", nameFa: "ام القوین"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "004",
 			nameEn: "Afghanistan",
 			nameFa: "افغانستان",
@@ -1110,8 +1102,7 @@ public static class UCountries {
 				new(code: "0040034", nameEn: "Zabul", nameFa: "زابل"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "005",
 			nameEn: "Antigua and Barbuda",
 			nameFa: "آنتیگوا و باربودا",
@@ -1137,8 +1128,7 @@ public static class UCountries {
 				new(code: "0050008", nameEn: "Saint Philip", nameFa: "سنت فیلیپ"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "006",
 			nameEn: "Anguilla",
 			nameFa: "آنگویلا",
@@ -1170,8 +1160,7 @@ public static class UCountries {
 				new(code: "0060014", nameEn: "West End", nameFa: "وست اند"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "007",
 			nameEn: "Albania",
 			nameFa: "آلبانی",
@@ -1201,8 +1190,7 @@ public static class UCountries {
 				new(code: "0070012", nameEn: "Vlorë", nameFa: "ولوره"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "008",
 			nameEn: "Armenia",
 			nameFa: "ارمنستان",
@@ -1231,8 +1219,7 @@ public static class UCountries {
 				new(code: "0080011", nameEn: "Yerevan", nameFa: "ایروان"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "009",
 			nameEn: "Angola",
 			nameFa: "آنگولا",
@@ -1268,8 +1255,7 @@ public static class UCountries {
 				new(code: "0090018", nameEn: "Zaire", nameFa: "زئیر"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "010",
 			nameEn: "Antarctica",
 			nameFa: "جنوبگان",
@@ -1284,10 +1270,9 @@ public static class UCountries {
 			currency: "None",
 			primaryLanguageEn: "None",
 			primaryLanguageFa: "ندارد",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "011",
 			nameEn: "Argentina",
 			nameFa: "آرژانتین",
@@ -1329,8 +1314,7 @@ public static class UCountries {
 				new(code: "0110024", nameEn: "Tucumán", nameFa: "توکومان"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "012",
 			nameEn: "American Samoa",
 			nameFa: "ساموآی آمریکا",
@@ -1353,8 +1337,7 @@ public static class UCountries {
 				new(code: "0120005", nameEn: "Western", nameFa: "غربی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "013",
 			nameEn: "Austria",
 			nameFa: "اتریش",
@@ -1381,8 +1364,7 @@ public static class UCountries {
 				new(code: "0130009", nameEn: "Vorarlberg", nameFa: "فورآرلبرگ"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "014",
 			nameEn: "Australia",
 			nameFa: "استرالیا",
@@ -1408,8 +1390,7 @@ public static class UCountries {
 				new(code: "0140008", nameEn: "Western Australia", nameFa: "استرالیای غربی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "015",
 			nameEn: "Aruba",
 			nameFa: "آروبا",
@@ -1436,8 +1417,7 @@ public static class UCountries {
 				new(code: "0150009", nameEn: "Savaneta", nameFa: "ساوانتا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "016",
 			nameEn: "Åland Islands",
 			nameFa: "جزایر الند",
@@ -1471,8 +1451,7 @@ public static class UCountries {
 				new(code: "0160016", nameEn: "Vårdö", nameFa: "واردو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "017",
 			nameEn: "Azerbaijan",
 			nameFa: "آذربایجان",
@@ -1568,8 +1547,7 @@ public static class UCountries {
 				new(code: "0170078", nameEn: "Zardab", nameFa: "زرداب"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "018",
 			nameEn: "Bosnia and Herzegovina",
 			nameFa: "بوسنی و هرزگوین",
@@ -1590,8 +1568,7 @@ public static class UCountries {
 				new(code: "0180003", nameEn: "Republika Srpska", nameFa: "جمهوری صربسکا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "019",
 			nameEn: "Barbados",
 			nameFa: "باربادوس",
@@ -1620,8 +1597,7 @@ public static class UCountries {
 				new(code: "0190011", nameEn: "Saint Thomas", nameFa: "سنت توماس"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "020",
 			nameEn: "Bangladesh",
 			nameFa: "بنگلادش",
@@ -1711,8 +1687,7 @@ public static class UCountries {
 				new(code: "0200072", nameEn: "Thakurgaon", nameFa: "تاکورگان"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "021",
 			nameEn: "Belgium",
 			nameFa: "بلژیک",
@@ -1743,8 +1718,7 @@ public static class UCountries {
 				new(code: "0210013", nameEn: "West Flanders", nameFa: "فلاندر غربی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "022",
 			nameEn: "Burkina Faso",
 			nameFa: "بورکینافاسو",
@@ -1820,8 +1794,7 @@ public static class UCountries {
 				new(code: "0220058", nameEn: "Zoundwéogo", nameFa: "زوندهوگو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "023",
 			nameEn: "Bulgaria",
 			nameFa: "بلغارستان",
@@ -1867,8 +1840,7 @@ public static class UCountries {
 				new(code: "0230028", nameEn: "Yambol", nameFa: "یامبول"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "024",
 			nameEn: "Bahrain",
 			nameFa: "بحرین",
@@ -1890,8 +1862,7 @@ public static class UCountries {
 				new(code: "0240004", nameEn: "Southern", nameFa: "جنوبی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "025",
 			nameEn: "Burundi",
 			nameFa: "بوروندی",
@@ -1927,8 +1898,7 @@ public static class UCountries {
 				new(code: "0250018", nameEn: "Ruyigi", nameFa: "روییجی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "026",
 			nameEn: "Benin",
 			nameFa: "بنین",
@@ -1958,8 +1928,7 @@ public static class UCountries {
 				new(code: "0260012", nameEn: "Zou", nameFa: "زو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "027",
 			nameEn: "Saint Barthélemy",
 			nameFa: "سن-بارتلمی",
@@ -1978,8 +1947,7 @@ public static class UCountries {
 				new(code: "0270001", nameEn: "Saint-Barthélemy", nameFa: "Saint-Barthélemy"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "028",
 			nameEn: "Bermuda",
 			nameFa: "برمودا",
@@ -2006,8 +1974,7 @@ public static class UCountries {
 				new(code: "0280009", nameEn: "Warwick", nameFa: "وارویک"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "029",
 			nameEn: "Brunei",
 			nameFa: "برونئی",
@@ -2029,8 +1996,7 @@ public static class UCountries {
 				new(code: "0290004", nameEn: "Tutong", nameFa: "توتونگ"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "030",
 			nameEn: "Bolivia",
 			nameFa: "بولیوی",
@@ -2057,8 +2023,7 @@ public static class UCountries {
 				new(code: "0300009", nameEn: "Tarija", nameFa: "تاریجا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "031",
 			nameEn: "Caribbean Netherlands",
 			nameFa: "بونیر",
@@ -2079,8 +2044,7 @@ public static class UCountries {
 				new(code: "0310003", nameEn: "Sint Eustatius", nameFa: "سنت یوستاتیوس"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "032",
 			nameEn: "Brazil",
 			nameFa: "برزیل",
@@ -2125,8 +2089,7 @@ public static class UCountries {
 				new(code: "0320027", nameEn: "Tocantins", nameFa: "توکانتین‌ها"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "033",
 			nameEn: "Bahamas",
 			nameFa: "باهاما",
@@ -2176,8 +2139,7 @@ public static class UCountries {
 				new(code: "0330032", nameEn: "West Grand Bahama", nameFa: "وست گرند باهاما"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "034",
 			nameEn: "Bhutan",
 			nameFa: "بوتان",
@@ -2215,8 +2177,7 @@ public static class UCountries {
 				new(code: "0340020", nameEn: "Zhemgang", nameFa: "Zhemgang"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "035",
 			nameEn: "Bouvet Island",
 			nameFa: "جزیره بووه",
@@ -2231,10 +2192,9 @@ public static class UCountries {
 			currency: "NOK",
 			primaryLanguageEn: "Norwegian",
 			primaryLanguageFa: "نروژی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "036",
 			nameEn: "Botswana",
 			nameFa: "بوتسوانا",
@@ -2268,8 +2228,7 @@ public static class UCountries {
 				new(code: "0360016", nameEn: "Sowa Town", nameFa: "شهر سوا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "037",
 			nameEn: "Belarus",
 			nameFa: "بلاروس",
@@ -2294,8 +2253,7 @@ public static class UCountries {
 				new(code: "0370007", nameEn: "Vitebsk", nameFa: "ویتبسک"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "038",
 			nameEn: "Belize",
 			nameFa: "بلیز",
@@ -2319,8 +2277,7 @@ public static class UCountries {
 				new(code: "0380006", nameEn: "Toledo", nameFa: "تولدو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "039",
 			nameEn: "Canada",
 			nameFa: "کانادا",
@@ -2351,8 +2308,7 @@ public static class UCountries {
 				new(code: "0390013", nameEn: "Yukon", nameFa: "یوکان"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "040",
 			nameEn: "Cocos (Keeling) Islands",
 			nameFa: "جزایر کوکوس",
@@ -2367,10 +2323,9 @@ public static class UCountries {
 			currency: "AUD",
 			primaryLanguageEn: "English",
 			primaryLanguageFa: "انگلیسی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "041",
 			nameEn: "Democratic Republic of the Congo",
 			nameFa: "جمهوری کنگو",
@@ -2414,8 +2369,7 @@ public static class UCountries {
 				new(code: "0410026", nameEn: "Équateur", nameFa: "استوا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "042",
 			nameEn: "Central African Republic",
 			nameFa: "جمهوری آفریقای مرکزی",
@@ -2450,8 +2404,7 @@ public static class UCountries {
 				new(code: "0420017", nameEn: "Vakaga", nameFa: "واکاگا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "043",
 			nameEn: "Republic of the Congo",
 			nameFa: "کنگو",
@@ -2481,8 +2434,7 @@ public static class UCountries {
 				new(code: "0430012", nameEn: "Sangha", nameFa: "سنگها"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "044",
 			nameEn: "Switzerland",
 			nameFa: "سوئیس",
@@ -2526,8 +2478,7 @@ public static class UCountries {
 				new(code: "0440026", nameEn: "Zürich", nameFa: "زوریخ"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "045",
 			nameEn: "Ivory Coast",
 			nameFa: "ساحل عاج",
@@ -2559,8 +2510,7 @@ public static class UCountries {
 				new(code: "0450014", nameEn: "Zanzan", nameFa: "زانزان"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "046",
 			nameEn: "Cook Islands",
 			nameFa: "جزایر کوک",
@@ -2575,10 +2525,9 @@ public static class UCountries {
 			currency: "NZD",
 			primaryLanguageEn: "English",
 			primaryLanguageFa: "انگلیسی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "047",
 			nameEn: "Chile",
 			nameFa: "شیلی",
@@ -2612,8 +2561,7 @@ public static class UCountries {
 				new(code: "0470016", nameEn: "Ñuble", nameFa: "نبل"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "048",
 			nameEn: "Cameroon",
 			nameFa: "کامرون",
@@ -2641,8 +2589,7 @@ public static class UCountries {
 				new(code: "0480010", nameEn: "West", nameFa: "غرب"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "049",
 			nameEn: "China",
 			nameFa: "چین",
@@ -2694,8 +2641,7 @@ public static class UCountries {
 				new(code: "0490034", nameEn: "Zhejiang", nameFa: "ژجیانگ"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "050",
 			nameEn: "Colombia",
 			nameFa: "کلمبیا",
@@ -2746,8 +2692,7 @@ public static class UCountries {
 				new(code: "0500033", nameEn: "Vichada", nameFa: "ویچادا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "051",
 			nameEn: "Costa Rica",
 			nameFa: "کاستاریکا",
@@ -2772,8 +2717,7 @@ public static class UCountries {
 				new(code: "0510007", nameEn: "San José", nameFa: "سن خوزه"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "052",
 			nameEn: "Cuba",
 			nameFa: "کوبا",
@@ -2807,8 +2751,7 @@ public static class UCountries {
 				new(code: "0520016", nameEn: "Villa Clara", nameFa: "ویلا کلارا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "053",
 			nameEn: "Cape Verde",
 			nameFa: "کیپ ورد",
@@ -2850,8 +2793,7 @@ public static class UCountries {
 				new(code: "0530024", nameEn: "Tarrafal de São Nicolau", nameFa: "ترافال د سائو نیکولائو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "054",
 			nameEn: "Curaçao",
 			nameFa: "کوراسائو",
@@ -2866,10 +2808,9 @@ public static class UCountries {
 			currency: "ANG",
 			primaryLanguageEn: "Dutch",
 			primaryLanguageFa: "هلندی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "055",
 			nameEn: "Christmas Island",
 			nameFa: "جزیره کریسمس",
@@ -2884,10 +2825,9 @@ public static class UCountries {
 			currency: "AUD",
 			primaryLanguageEn: "English",
 			primaryLanguageFa: "انگلیسی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "056",
 			nameEn: "Cyprus",
 			nameFa: "قبرس",
@@ -2911,8 +2851,7 @@ public static class UCountries {
 				new(code: "0560006", nameEn: "Paphos (Pafos)", nameFa: "پافوس (پافوس)"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "057",
 			nameEn: "Czech Republic",
 			nameFa: "جمهوری چک",
@@ -3020,8 +2959,7 @@ public static class UCountries {
 				new(code: "0570090", nameEn: "Žďár nad Sázavou", nameFa: "ژدار ناد سازاوو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "058",
 			nameEn: "Germany",
 			nameFa: "آلمان",
@@ -3055,8 +2993,7 @@ public static class UCountries {
 				new(code: "0580016", nameEn: "Thuringia", nameFa: "تورینگن"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "059",
 			nameEn: "Djibouti",
 			nameFa: "جیبوتی",
@@ -3080,8 +3017,7 @@ public static class UCountries {
 				new(code: "0590006", nameEn: "Tadjourah", nameFa: "تاجورا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "060",
 			nameEn: "Denmark",
 			nameFa: "دانمارک",
@@ -3104,8 +3040,7 @@ public static class UCountries {
 				new(code: "0600005", nameEn: "Zealand", nameFa: "زلاند"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "061",
 			nameEn: "Dominica",
 			nameFa: "دومینیکا",
@@ -3133,8 +3068,7 @@ public static class UCountries {
 				new(code: "0610010", nameEn: "Saint Peter", nameFa: "سنت پیتر"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "062",
 			nameEn: "Dominican Republic",
 			nameFa: "جمهوری دومینیکن",
@@ -3194,8 +3128,7 @@ public static class UCountries {
 				new(code: "0620042", nameEn: "Yuma", nameFa: "یوما"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "063",
 			nameEn: "Algeria",
 			nameFa: "الجزایر",
@@ -3271,8 +3204,7 @@ public static class UCountries {
 				new(code: "0630058", nameEn: "Tébessa", nameFa: "تبسا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "064",
 			nameEn: "Ecuador",
 			nameFa: "اکوادور",
@@ -3314,8 +3246,7 @@ public static class UCountries {
 				new(code: "0640024", nameEn: "Zamora Chinchipe", nameFa: "زامورا چینچیپه"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "065",
 			nameEn: "Estonia",
 			nameFa: "استونی",
@@ -3427,8 +3358,7 @@ public static class UCountries {
 				new(code: "0650094", nameEn: "Võru", nameFa: "وورو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "066",
 			nameEn: "Egypt",
 			nameFa: "مصر",
@@ -3473,8 +3403,7 @@ public static class UCountries {
 				new(code: "0660027", nameEn: "Suez", nameFa: "سوئز"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "067",
 			nameEn: "Western Sahara",
 			nameFa: "جمهوری دموکراتیک عربی صحرا",
@@ -3489,10 +3418,9 @@ public static class UCountries {
 			currency: "MAD",
 			primaryLanguageEn: "Arabic",
 			primaryLanguageFa: "عربی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "068",
 			nameEn: "Eritrea",
 			nameFa: "اریتره",
@@ -3516,8 +3444,7 @@ public static class UCountries {
 				new(code: "0680006", nameEn: "Southern Red Sea", nameFa: "دریای سرخ جنوبی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "069",
 			nameEn: "Spain",
 			nameFa: "اسپانیا",
@@ -3604,8 +3531,7 @@ public static class UCountries {
 				new(code: "0690069", nameEn: "Ávila", nameFa: "آویلا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "070",
 			nameEn: "Ethiopia",
 			nameFa: "اتیوپی",
@@ -3636,8 +3562,7 @@ public static class UCountries {
 				new(code: "0700013", nameEn: "Tigray", nameFa: "تیگری"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "071",
 			nameEn: "Finland",
 			nameFa: "فنلاند",
@@ -3673,8 +3598,7 @@ public static class UCountries {
 				new(code: "0710018", nameEn: "Uusimaa", nameFa: "اوسیما"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "072",
 			nameEn: "Fiji",
 			nameFa: "فیجی",
@@ -3711,8 +3635,7 @@ public static class UCountries {
 				new(code: "0720019", nameEn: "Western", nameFa: "غربی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "073",
 			nameEn: "Falkland Islands",
 			nameFa: "جزایر فالکلند",
@@ -3727,10 +3650,9 @@ public static class UCountries {
 			currency: "FKP",
 			primaryLanguageEn: "English",
 			primaryLanguageFa: "انگلیسی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "074",
 			nameEn: "Micronesia",
 			nameFa: "ایالات فدرال میکرونزی",
@@ -3752,8 +3674,7 @@ public static class UCountries {
 				new(code: "0740004", nameEn: "Yap", nameFa: "یاپ"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "075",
 			nameEn: "Faroe Islands",
 			nameFa: "جزایر فارو",
@@ -3777,8 +3698,7 @@ public static class UCountries {
 				new(code: "0750006", nameEn: "Vágar", nameFa: "وگار"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "076",
 			nameEn: "France",
 			nameFa: "فرانسه",
@@ -3920,8 +3840,7 @@ public static class UCountries {
 				new(code: "0760124", nameEn: "Île-de-France", nameFa: "ایل-دو-فرانس"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "077",
 			nameEn: "Gabon",
 			nameFa: "گابن",
@@ -3948,8 +3867,7 @@ public static class UCountries {
 				new(code: "0770009", nameEn: "Woleu-Ntem", nameFa: "ولو-نتم"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "078",
 			nameEn: "United Kingdom",
 			nameFa: "بریتانیای کبیر و ایرلند شمالی",
@@ -4188,8 +4106,7 @@ public static class UCountries {
 				new(code: "0780221", nameEn: "York", nameFa: "یورک"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "079",
 			nameEn: "England",
 			nameFa: "England",
@@ -4204,10 +4121,9 @@ public static class UCountries {
 			currency: "GBP",
 			primaryLanguageEn: "English",
 			primaryLanguageFa: "انگلیسی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "080",
 			nameEn: "Northern Ireland",
 			nameFa: "Northern Ireland",
@@ -4222,10 +4138,9 @@ public static class UCountries {
 			currency: "GBP",
 			primaryLanguageEn: "English",
 			primaryLanguageFa: "انگلیسی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "081",
 			nameEn: "Scotland",
 			nameFa: "Scotland",
@@ -4240,10 +4155,9 @@ public static class UCountries {
 			currency: "GBP",
 			primaryLanguageEn: "English",
 			primaryLanguageFa: "انگلیسی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "082",
 			nameEn: "Wales",
 			nameFa: "Wales",
@@ -4258,10 +4172,9 @@ public static class UCountries {
 			currency: "GBP",
 			primaryLanguageEn: "English",
 			primaryLanguageFa: "انگلیسی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "083",
 			nameEn: "Grenada",
 			nameFa: "گرنادا",
@@ -4286,8 +4199,7 @@ public static class UCountries {
 				new(code: "0830007", nameEn: "Saint Patrick", nameFa: "سنت پاتریک"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "084",
 			nameEn: "Georgia",
 			nameFa: "گرجستان",
@@ -4317,8 +4229,7 @@ public static class UCountries {
 				new(code: "0840012", nameEn: "Tbilisi", nameFa: "تفلیس"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "085",
 			nameEn: "French Guiana",
 			nameFa: "گویان فرانسه",
@@ -4337,8 +4248,7 @@ public static class UCountries {
 				new(code: "0850001", nameEn: "Guyane", nameFa: "Guyane"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "086",
 			nameEn: "Guernsey",
 			nameFa: "گرنزی",
@@ -4368,8 +4278,7 @@ public static class UCountries {
 				new(code: "0860012", nameEn: "Vale", nameFa: "ویل"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "087",
 			nameEn: "Ghana",
 			nameFa: "غنا",
@@ -4403,8 +4312,7 @@ public static class UCountries {
 				new(code: "0870016", nameEn: "Western North", nameFa: "شمال غربی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "088",
 			nameEn: "Gibraltar",
 			nameFa: "جبل‌طارق",
@@ -4419,10 +4327,9 @@ public static class UCountries {
 			currency: "GIP",
 			primaryLanguageEn: "English",
 			primaryLanguageFa: "انگلیسی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "089",
 			nameEn: "Greenland",
 			nameFa: "گرینلند",
@@ -4445,8 +4352,7 @@ public static class UCountries {
 				new(code: "0890005", nameEn: "Sermersooq", nameFa: "سرمرسوک"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "090",
 			nameEn: "Gambia",
 			nameFa: "گامبیا",
@@ -4470,8 +4376,7 @@ public static class UCountries {
 				new(code: "0900006", nameEn: "West Coast", nameFa: "ساحل غربی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "091",
 			nameEn: "Guinea",
 			nameFa: "گینه",
@@ -4530,8 +4435,7 @@ public static class UCountries {
 				new(code: "0910041", nameEn: "Yomou", nameFa: "یومو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "092",
 			nameEn: "Guadeloupe",
 			nameFa: "جزیره گوادلوپ",
@@ -4551,8 +4455,7 @@ public static class UCountries {
 				new(code: "0920002", nameEn: "Pointe-à-Pitre", nameFa: "پوئنت-ا-پیتر"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "093",
 			nameEn: "Equatorial Guinea",
 			nameFa: "گینه استوایی",
@@ -4580,8 +4483,7 @@ public static class UCountries {
 				new(code: "0930010", nameEn: "Wele-Nzas", nameFa: "وله-نزاس"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "094",
 			nameEn: "Greece",
 			nameFa: "یونان",
@@ -4614,8 +4516,7 @@ public static class UCountries {
 				new(code: "0940015", nameEn: "West Macedonia", nameFa: "مقدونیه غربی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "095",
 			nameEn: "South Georgia",
 			nameFa: "جزایر جورجیای جنوبی و ساندویچ جنوبی",
@@ -4630,10 +4531,9 @@ public static class UCountries {
 			currency: "GBP",
 			primaryLanguageEn: "English",
 			primaryLanguageFa: "انگلیسی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "096",
 			nameEn: "Guatemala",
 			nameFa: "گواتمالا",
@@ -4673,8 +4573,7 @@ public static class UCountries {
 				new(code: "0960022", nameEn: "Zacapa", nameFa: "زاکاپا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "097",
 			nameEn: "Guam",
 			nameFa: "گوام",
@@ -4711,8 +4610,7 @@ public static class UCountries {
 				new(code: "0970019", nameEn: "Yona", nameFa: "یونا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "098",
 			nameEn: "Guinea-Bissau",
 			nameFa: "گینه بیسائو",
@@ -4742,8 +4640,7 @@ public static class UCountries {
 				new(code: "0980012", nameEn: "Tombali", nameFa: "تومبالی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "099",
 			nameEn: "Guyana",
 			nameFa: "گویان",
@@ -4771,8 +4668,7 @@ public static class UCountries {
 				new(code: "0990010", nameEn: "Upper Takutu-Upper Essequibo", nameFa: "تاکوتو بالایی-اسکیبو بالایی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "100",
 			nameEn: "Hong Kong",
 			nameFa: "هنگ‌کنگ",
@@ -4808,8 +4704,7 @@ public static class UCountries {
 				new(code: "1000018", nameEn: "Yuen Long", nameFa: "یوئن لانگ"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "101",
 			nameEn: "Heard Island and McDonald Islands",
 			nameFa: "جزیره هرد و جزایر مک‌دونالد",
@@ -4824,10 +4719,9 @@ public static class UCountries {
 			currency: "AUD",
 			primaryLanguageEn: "English",
 			primaryLanguageFa: "انگلیسی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "102",
 			nameEn: "Honduras",
 			nameFa: "هندوراس",
@@ -4863,8 +4757,7 @@ public static class UCountries {
 				new(code: "1020018", nameEn: "Yoro", nameFa: "یورو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "103",
 			nameEn: "Croatia",
 			nameFa: "کرواسی",
@@ -4902,8 +4795,7 @@ public static class UCountries {
 				new(code: "1030020", nameEn: "Šibenik-Knin", nameFa: "شیبنیک-کینین"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "104",
 			nameEn: "Haiti",
 			nameFa: "هائیتی",
@@ -4931,8 +4823,7 @@ public static class UCountries {
 				new(code: "1040010", nameEn: "Sud-Est", nameFa: "سود-شرق"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "105",
 			nameEn: "Hungary",
 			nameFa: "مجارستان",
@@ -4993,8 +4884,7 @@ public static class UCountries {
 				new(code: "1050043", nameEn: "Érd", nameFa: "ارد"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "106",
 			nameEn: "Indonesia",
 			nameFa: "اندونزی",
@@ -5057,8 +4947,7 @@ public static class UCountries {
 				new(code: "1060045", nameEn: "Sumatera Utara", nameFa: "سوماترا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "107",
 			nameEn: "Ireland",
 			nameFa: "ایرلند",
@@ -5106,8 +4995,7 @@ public static class UCountries {
 				new(code: "1070030", nameEn: "Wicklow", nameFa: "ویکلو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "108",
 			nameEn: "Israel",
 			nameFa: "اسرائیل",
@@ -5131,8 +5019,7 @@ public static class UCountries {
 				new(code: "1080006", nameEn: "Tel Aviv", nameFa: "تل آویو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "109",
 			nameEn: "Isle of Man",
 			nameFa: "جزیره من",
@@ -5156,8 +5043,7 @@ public static class UCountries {
 				new(code: "1090006", nameEn: "Rushen", nameFa: "راشن"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "110",
 			nameEn: "India",
 			nameFa: "هند",
@@ -5211,8 +5097,7 @@ public static class UCountries {
 				new(code: "1100036", nameEn: "West Bengal", nameFa: "بنگال غربی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "111",
 			nameEn: "British Indian Ocean Territory",
 			nameFa: "قلمرو بریتانیا در اقیانوس هند",
@@ -5227,10 +5112,9 @@ public static class UCountries {
 			currency: "USD",
 			primaryLanguageEn: "English",
 			primaryLanguageFa: "انگلیسی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "112",
 			nameEn: "Iraq",
 			nameFa: "عراق",
@@ -5267,8 +5151,7 @@ public static class UCountries {
 				new(code: "1120019", nameEn: "Wasit", nameFa: "واسط"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "113",
 			nameEn: "Iceland",
 			nameFa: "ایسلند",
@@ -5358,8 +5241,7 @@ public static class UCountries {
 				new(code: "1130072", nameEn: "Þingeyjarsveit", nameFa: "اینگیجارسویت"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "114",
 			nameEn: "Italy",
 			nameFa: "ایتالیا",
@@ -5503,8 +5385,7 @@ public static class UCountries {
 				new(code: "1140126", nameEn: "Viterbo", nameFa: "ویتربو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "115",
 			nameEn: "Jersey",
 			nameFa: "جرزی",
@@ -5534,8 +5415,7 @@ public static class UCountries {
 				new(code: "1150012", nameEn: "Trinity", nameFa: "ترینیتی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "116",
 			nameEn: "Jamaica",
 			nameFa: "جامائیکا",
@@ -5567,8 +5447,7 @@ public static class UCountries {
 				new(code: "1160014", nameEn: "Westmoreland", nameFa: "وستمورلند"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "117",
 			nameEn: "Jordan",
 			nameFa: "اردن",
@@ -5598,8 +5477,7 @@ public static class UCountries {
 				new(code: "1170012", nameEn: "Zarqa", nameFa: "زرقا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "118",
 			nameEn: "Japan",
 			nameFa: "ژاپن",
@@ -5664,8 +5542,7 @@ public static class UCountries {
 				new(code: "1180047", nameEn: "Ōsaka", nameFa: "اوساکا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "119",
 			nameEn: "Kenya",
 			nameFa: "کنیا",
@@ -5730,8 +5607,7 @@ public static class UCountries {
 				new(code: "1190047", nameEn: "West Pokot", nameFa: "وست پوکوت"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "120",
 			nameEn: "Kyrgyzstan",
 			nameFa: "قرقیزستان",
@@ -5758,8 +5634,7 @@ public static class UCountries {
 				new(code: "1200009", nameEn: "Talas", nameFa: "تالاس"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "121",
 			nameEn: "Cambodia",
 			nameFa: "کامبوج",
@@ -5802,8 +5677,7 @@ public static class UCountries {
 				new(code: "1210025", nameEn: "Tboung Khmum", nameFa: "تبونگ خموم"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "122",
 			nameEn: "Kiribati",
 			nameFa: "کیریباتی",
@@ -5824,8 +5698,7 @@ public static class UCountries {
 				new(code: "1220003", nameEn: "Phoenix", nameFa: "فینیکس"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "123",
 			nameEn: "Comoros",
 			nameFa: "کومور",
@@ -5846,8 +5719,7 @@ public static class UCountries {
 				new(code: "1230003", nameEn: "Mohéli", nameFa: "موهلی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "124",
 			nameEn: "Saint Kitts and Nevis",
 			nameFa: "سنت کیتس و نویس",
@@ -5881,8 +5753,7 @@ public static class UCountries {
 				new(code: "1240016", nameEn: "Trinity Palmetto Point", nameFa: "ترینیتی پالمتو پوینت"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "125",
 			nameEn: "North Korea",
 			nameFa: "کره جنوبی",
@@ -5913,8 +5784,7 @@ public static class UCountries {
 				new(code: "1250013", nameEn: "South Pyongan", nameFa: "پیونگان جنوبی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "126",
 			nameEn: "South Korea",
 			nameFa: "کره شمالی",
@@ -5949,8 +5819,7 @@ public static class UCountries {
 				new(code: "1260017", nameEn: "Ulsan", nameFa: "اولسان"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "127",
 			nameEn: "Kuwait",
 			nameFa: "کویت",
@@ -5974,8 +5843,7 @@ public static class UCountries {
 				new(code: "1270006", nameEn: "Mubarak Al-Kabeer", nameFa: "مبارک الکبیر"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "128",
 			nameEn: "Cayman Islands",
 			nameFa: "جزایر کیمن",
@@ -5996,8 +5864,7 @@ public static class UCountries {
 				new(code: "1280003", nameEn: "Little Cayman", nameFa: "لیتل کیمن"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "129",
 			nameEn: "Kazakhstan",
 			nameFa: "قزاقستان",
@@ -6035,8 +5902,7 @@ public static class UCountries {
 				new(code: "1290020", nameEn: "West Kazakhstan", nameFa: "قزاقستان غربی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "130",
 			nameEn: "Laos",
 			nameFa: "لائوس",
@@ -6072,8 +5938,7 @@ public static class UCountries {
 				new(code: "1300018", nameEn: "Xiangkhouang", nameFa: "شیانگخوانگ"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "131",
 			nameEn: "Lebanon",
 			nameFa: "لبنان",
@@ -6099,8 +5964,7 @@ public static class UCountries {
 				new(code: "1310008", nameEn: "South", nameFa: "جنوب"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "132",
 			nameEn: "Saint Lucia",
 			nameFa: "سنت لوسیا",
@@ -6128,8 +5992,7 @@ public static class UCountries {
 				new(code: "1320010", nameEn: "Vieux Fort", nameFa: "قلعه ویو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "133",
 			nameEn: "Liechtenstein",
 			nameFa: "لیختن‌اشتاین",
@@ -6158,8 +6021,7 @@ public static class UCountries {
 				new(code: "1330011", nameEn: "Vaduz", nameFa: "فادوتس"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "134",
 			nameEn: "Sri Lanka",
 			nameFa: "سری‌لانکا",
@@ -6211,8 +6073,7 @@ public static class UCountries {
 				new(code: "1340034", nameEn: "Western", nameFa: "غربی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "135",
 			nameEn: "Liberia",
 			nameFa: "لیبریا",
@@ -6245,8 +6106,7 @@ public static class UCountries {
 				new(code: "1350015", nameEn: "Sinoe", nameFa: "سینوئه"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "136",
 			nameEn: "Lesotho",
 			nameFa: "لسوتو",
@@ -6274,8 +6134,7 @@ public static class UCountries {
 				new(code: "1360010", nameEn: "Thaba-Tseka", nameFa: "تابا-تسکا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "137",
 			nameEn: "Lithuania",
 			nameFa: "لیتوانی",
@@ -6363,8 +6222,7 @@ public static class UCountries {
 				new(code: "1370070", nameEn: "Švenčionys", nameFa: "شونسیونیس"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "138",
 			nameEn: "Luxembourg",
 			nameFa: "لوکزامبورگ",
@@ -6394,8 +6252,7 @@ public static class UCountries {
 				new(code: "1380012", nameEn: "Wiltz", nameFa: "ویلتز"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "139",
 			nameEn: "Latvia",
 			nameFa: "لتونی",
@@ -6456,8 +6313,7 @@ public static class UCountries {
 				new(code: "1390043", nameEn: "Ķekava", nameFa: "Ķekava"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "140",
 			nameEn: "Libya",
 			nameFa: "لیبی",
@@ -6497,8 +6353,7 @@ public static class UCountries {
 				new(code: "1400022", nameEn: "Zawiya", nameFa: "زاویه"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "141",
 			nameEn: "Morocco",
 			nameFa: "مراکش",
@@ -6603,8 +6458,7 @@ public static class UCountries {
 				new(code: "1410087", nameEn: "Zagora", nameFa: "زاگورا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "142",
 			nameEn: "Monaco",
 			nameFa: "موناکو",
@@ -6639,8 +6493,7 @@ public static class UCountries {
 				new(code: "1420017", nameEn: "Vallon de la Rousse", nameFa: "والون د لا روس"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "143",
 			nameEn: "Moldova",
 			nameFa: "مولداوی",
@@ -6695,8 +6548,7 @@ public static class UCountries {
 				new(code: "1430037", nameEn: "Ștefan Vodă", nameFa: "استیفان وودا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "144",
 			nameEn: "Montenegro",
 			nameFa: "مونته‌نگرو",
@@ -6739,8 +6591,7 @@ public static class UCountries {
 				new(code: "1440025", nameEn: "Žabljak", nameFa: "ژابلیاک"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "145",
 			nameEn: "Saint Martin",
 			nameFa: "سینت مارتن",
@@ -6759,8 +6610,7 @@ public static class UCountries {
 				new(code: "1450001", nameEn: "Saint-Martin", nameFa: "Saint-Martin"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "146",
 			nameEn: "Madagascar",
 			nameFa: "ماداگاسکار",
@@ -6784,8 +6634,7 @@ public static class UCountries {
 				new(code: "1460006", nameEn: "Toliara", nameFa: "تولیارا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "147",
 			nameEn: "Marshall Islands",
 			nameFa: "جزایر مارشال",
@@ -6829,8 +6678,7 @@ public static class UCountries {
 				new(code: "1470026", nameEn: "Wotje", nameFa: "ووتجه"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "148",
 			nameEn: "North Macedonia",
 			nameFa: "ﻢﻗﺩﻮﻨﯿﻫ ﺶﻣﺎﻠﯾ",
@@ -6928,8 +6776,7 @@ public static class UCountries {
 				new(code: "1480080", nameEn: "Želino", nameFa: "ژلینو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "149",
 			nameEn: "Mali",
 			nameFa: "مالی",
@@ -6958,8 +6805,7 @@ public static class UCountries {
 				new(code: "1490011", nameEn: "Tombouctou", nameFa: "تومبوکتو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "150",
 			nameEn: "Myanmar",
 			nameFa: "میانمار",
@@ -6992,8 +6838,7 @@ public static class UCountries {
 				new(code: "1500015", nameEn: "Yangon", nameFa: "یانگون"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "151",
 			nameEn: "Mongolia",
 			nameFa: "مغولستان",
@@ -7033,8 +6878,7 @@ public static class UCountries {
 				new(code: "1510022", nameEn: "Övörkhangai", nameFa: "اوورخانگای"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "152",
 			nameEn: "Macau",
 			nameFa: "مکائو",
@@ -7049,10 +6893,9 @@ public static class UCountries {
 			currency: "MOP",
 			primaryLanguageEn: "Chinese",
 			primaryLanguageFa: "چینی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "153",
 			nameEn: "Northern Mariana Islands",
 			nameFa: "جزایر ماریانای شمالی",
@@ -7067,10 +6910,9 @@ public static class UCountries {
 			currency: "USD",
 			primaryLanguageEn: "English",
 			primaryLanguageFa: "انگلیسی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "154",
 			nameEn: "Martinique",
 			nameFa: "مونتسرات",
@@ -7092,8 +6934,7 @@ public static class UCountries {
 				new(code: "1540004", nameEn: "Saint-Pierre", nameFa: "سن پیر"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "155",
 			nameEn: "Mauritania",
 			nameFa: "موریتانی",
@@ -7126,8 +6967,7 @@ public static class UCountries {
 				new(code: "1550015", nameEn: "Trarza", nameFa: "تراسا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "156",
 			nameEn: "Montserrat",
 			nameFa: "مایوت",
@@ -7148,8 +6988,7 @@ public static class UCountries {
 				new(code: "1560003", nameEn: "Saint Peter", nameFa: "سنت پیتر"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "157",
 			nameEn: "Malta",
 			nameFa: "مالت",
@@ -7235,8 +7074,7 @@ public static class UCountries {
 				new(code: "1570068", nameEn: "Żurrieq", nameFa: "زوریک"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "158",
 			nameEn: "Mauritius",
 			nameFa: "موریس",
@@ -7266,8 +7104,7 @@ public static class UCountries {
 				new(code: "1580012", nameEn: "Savanne", nameFa: "ساوان"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "159",
 			nameEn: "Maldives",
 			nameFa: "مالدیو",
@@ -7306,8 +7143,7 @@ public static class UCountries {
 				new(code: "1590021", nameEn: "Vaavu", nameFa: "واوو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "160",
 			nameEn: "Malawi",
 			nameFa: "مالاوی",
@@ -7356,8 +7192,7 @@ public static class UCountries {
 				new(code: "1600031", nameEn: "Zomba", nameFa: "زومبا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "161",
 			nameEn: "Mexico",
 			nameFa: "مکزیک",
@@ -7407,8 +7242,7 @@ public static class UCountries {
 				new(code: "1610032", nameEn: "Zacatecas", nameFa: "زاکاتکاس"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "162",
 			nameEn: "Malaysia",
 			nameFa: "مالزی",
@@ -7442,8 +7276,7 @@ public static class UCountries {
 				new(code: "1620016", nameEn: "Terengganu", nameFa: "ترنگانو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "163",
 			nameEn: "Mozambique",
 			nameFa: "موزامبیک",
@@ -7472,8 +7305,7 @@ public static class UCountries {
 				new(code: "1630011", nameEn: "Zambezia", nameFa: "زامبزیا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "164",
 			nameEn: "Namibia",
 			nameFa: "نامیبیا",
@@ -7505,8 +7337,7 @@ public static class UCountries {
 				new(code: "1640014", nameEn: "Zambezi", nameFa: "زامبزی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "165",
 			nameEn: "New Caledonia",
 			nameFa: "کالدونیای جدید",
@@ -7527,8 +7358,7 @@ public static class UCountries {
 				new(code: "1650003", nameEn: "South Province", nameFa: "استان جنوبی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "166",
 			nameEn: "Niger",
 			nameFa: "نیجر",
@@ -7554,8 +7384,7 @@ public static class UCountries {
 				new(code: "1660008", nameEn: "Zinder", nameFa: "زیندر"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "167",
 			nameEn: "Norfolk Island",
 			nameFa: "جزیره نورفک",
@@ -7570,10 +7399,9 @@ public static class UCountries {
 			currency: "AUD",
 			primaryLanguageEn: "English",
 			primaryLanguageFa: "انگلیسی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "168",
 			nameEn: "Nigeria",
 			nameFa: "نیجریه",
@@ -7628,8 +7456,7 @@ public static class UCountries {
 				new(code: "1680037", nameEn: "Zamfara", nameFa: "زامفارا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "169",
 			nameEn: "Nicaragua",
 			nameFa: "نیکاراگوئه",
@@ -7664,8 +7491,7 @@ public static class UCountries {
 				new(code: "1690017", nameEn: "South Caribbean Coast", nameFa: "ساحل کارائیب جنوبی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "170",
 			nameEn: "Netherlands",
 			nameFa: "پادشاهی هلند",
@@ -7695,8 +7521,7 @@ public static class UCountries {
 				new(code: "1700012", nameEn: "Zeeland", nameFa: "زیلاند"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "171",
 			nameEn: "Norway",
 			nameFa: "نروژ",
@@ -7731,8 +7556,7 @@ public static class UCountries {
 				new(code: "1710017", nameEn: "Østfold", nameFa: "اوستفولد"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "172",
 			nameEn: "Nepal",
 			nameFa: "نپال",
@@ -7757,8 +7581,7 @@ public static class UCountries {
 				new(code: "1720007", nameEn: "Sudurpashchim", nameFa: "سودورپاشچیم"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "173",
 			nameEn: "Nauru",
 			nameFa: "نائورو",
@@ -7790,8 +7613,7 @@ public static class UCountries {
 				new(code: "1730014", nameEn: "Yaren", nameFa: "یارن"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "174",
 			nameEn: "Niue",
 			nameFa: "نیووی",
@@ -7823,8 +7645,7 @@ public static class UCountries {
 				new(code: "1740014", nameEn: "Vaiea", nameFa: "وایه"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "175",
 			nameEn: "New Zealand",
 			nameFa: "نیوزیلند",
@@ -7859,8 +7680,7 @@ public static class UCountries {
 				new(code: "1750017", nameEn: "West Coast", nameFa: "ساحل غربی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "176",
 			nameEn: "Oman",
 			nameFa: "عمان",
@@ -7889,8 +7709,7 @@ public static class UCountries {
 				new(code: "1760011", nameEn: "Muscat", nameFa: "مسقط"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "177",
 			nameEn: "Panama",
 			nameFa: "پاناما",
@@ -7922,8 +7741,7 @@ public static class UCountries {
 				new(code: "1770014", nameEn: "Veraguas", nameFa: "وراگوئاس"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "178",
 			nameEn: "Peru",
 			nameFa: "پرو",
@@ -7967,8 +7785,7 @@ public static class UCountries {
 				new(code: "1780026", nameEn: "Áncash", nameFa: "پول نقد"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "179",
 			nameEn: "French Polynesia",
 			nameFa: "پلی‌نزی فرانسه",
@@ -7991,8 +7808,7 @@ public static class UCountries {
 				new(code: "1790005", nameEn: "Windward Islands", nameFa: "جزایر ویندوارد"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "180",
 			nameEn: "Papua New Guinea",
 			nameFa: "پاپوآ گینه نو",
@@ -8032,8 +7848,7 @@ public static class UCountries {
 				new(code: "1800022", nameEn: "Western Highlands", nameFa: "ارتفاعات غربی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "181",
 			nameEn: "Philippines",
 			nameFa: "جزایر الندفیلیپین",
@@ -8150,8 +7965,7 @@ public static class UCountries {
 				new(code: "1810099", nameEn: "Zamboanga del Sur", nameFa: "زامبوانگا دل سور"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "182",
 			nameEn: "Pakistan",
 			nameFa: "پاکستان",
@@ -8176,8 +7990,7 @@ public static class UCountries {
 				new(code: "1820007", nameEn: "Sindh", nameFa: "سند"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "183",
 			nameEn: "Poland",
 			nameFa: "لهستان",
@@ -8211,8 +8024,7 @@ public static class UCountries {
 				new(code: "1830016", nameEn: "Łódź", nameFa: "ووچ"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "184",
 			nameEn: "Saint Pierre and Miquelon",
 			nameFa: "سن پیر و میکلن",
@@ -8231,8 +8043,7 @@ public static class UCountries {
 				new(code: "1840001", nameEn: "Saint-Pierre and Miquelon", nameFa: "Saint-Pierre and Miquelon"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "185",
 			nameEn: "Pitcairn Islands",
 			nameFa: "پیتکرن",
@@ -8247,10 +8058,9 @@ public static class UCountries {
 			currency: "NZD",
 			primaryLanguageEn: "English",
 			primaryLanguageFa: "انگلیسی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "186",
 			nameEn: "Puerto Rico",
 			nameFa: "پورتو ریکو",
@@ -8346,8 +8156,7 @@ public static class UCountries {
 				new(code: "1860078", nameEn: "Yauco", nameFa: "یاوکو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "187",
 			nameEn: "Palestine",
 			nameFa: "فلسطین",
@@ -8381,8 +8190,7 @@ public static class UCountries {
 				new(code: "1870016", nameEn: "Tulkarm", nameFa: "طولکرم"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "188",
 			nameEn: "Portugal",
 			nameFa: "پرتغال",
@@ -8420,8 +8228,7 @@ public static class UCountries {
 				new(code: "1880020", nameEn: "Évora", nameFa: "اوورا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "189",
 			nameEn: "Palau",
 			nameFa: "پالائو",
@@ -8455,8 +8262,7 @@ public static class UCountries {
 				new(code: "1890016", nameEn: "Sonsorol", nameFa: "سونسورول"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "190",
 			nameEn: "Paraguay",
 			nameFa: "پاراگوئه",
@@ -8492,8 +8298,7 @@ public static class UCountries {
 				new(code: "1900018", nameEn: "Ñeembucú", nameFa: "نییمبوکو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "191",
 			nameEn: "Qatar",
 			nameFa: "قطر",
@@ -8519,8 +8324,7 @@ public static class UCountries {
 				new(code: "1910008", nameEn: "Umm Salal", nameFa: "ام صلال"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "192",
 			nameEn: "Réunion",
 			nameFa: "رئونیون",
@@ -8542,8 +8346,7 @@ public static class UCountries {
 				new(code: "1920004", nameEn: "Saint-Pierre", nameFa: "سن پیر"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "193",
 			nameEn: "Romania",
 			nameFa: "رومانی",
@@ -8603,8 +8406,7 @@ public static class UCountries {
 				new(code: "1930042", nameEn: "Vâlcea", nameFa: "والسیا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "194",
 			nameEn: "Serbia",
 			nameFa: "صربستان",
@@ -8654,8 +8456,7 @@ public static class UCountries {
 				new(code: "1940032", nameEn: "Šumadija", nameFa: "شومادیجا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "195",
 			nameEn: "Russia",
 			nameFa: "روسیه",
@@ -8756,8 +8557,7 @@ public static class UCountries {
 				new(code: "1950083", nameEn: "Zabaykalsky", nameFa: "زابایکالسکی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "196",
 			nameEn: "Rwanda",
 			nameFa: "رواندا",
@@ -8780,8 +8580,7 @@ public static class UCountries {
 				new(code: "1960005", nameEn: "Western", nameFa: "غربی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "197",
 			nameEn: "Saudi Arabia",
 			nameFa: "عربستان سعودی",
@@ -8812,8 +8611,7 @@ public static class UCountries {
 				new(code: "1970013", nameEn: "Tabuk", nameFa: "تبوک"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "198",
 			nameEn: "Solomon Islands",
 			nameFa: "جزایر سلیمان",
@@ -8841,8 +8639,7 @@ public static class UCountries {
 				new(code: "1980010", nameEn: "Western", nameFa: "غربی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "199",
 			nameEn: "Seychelles",
 			nameFa: "سیشل",
@@ -8887,8 +8684,7 @@ public static class UCountries {
 				new(code: "1990027", nameEn: "Takamaka", nameFa: "تاکاماکا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "200",
 			nameEn: "Sudan",
 			nameFa: "سودان",
@@ -8924,8 +8720,7 @@ public static class UCountries {
 				new(code: "2000018", nameEn: "White Nile", nameFa: "نیل سفید"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "201",
 			nameEn: "Sweden",
 			nameFa: "سوئد",
@@ -8964,8 +8759,7 @@ public static class UCountries {
 				new(code: "2010021", nameEn: "Östergötland", nameFa: "اوستریوتلند"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "202",
 			nameEn: "Singapore",
 			nameFa: "سنگاپور",
@@ -8988,8 +8782,7 @@ public static class UCountries {
 				new(code: "2020005", nameEn: "South West", nameFa: "جنوب غربی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "203",
 			nameEn: "Saint Helena",
 			nameFa: "سنت هلنا، اسنشن و تریستان دا کونا",
@@ -9015,8 +8808,7 @@ public static class UCountries {
 				new(code: "2030008", nameEn: "Sandy Bay", nameFa: "خلیج سندی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "204",
 			nameEn: "Slovenia",
 			nameFa: "اسلوونی",
@@ -9246,8 +9038,7 @@ public static class UCountries {
 				new(code: "2040212", nameEn: "Žužemberk", nameFa: "ژوژمبرک"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "205",
 			nameEn: "Svalbard and Jan Mayen",
 			nameFa: "سوالبارد و یان ماین",
@@ -9262,10 +9053,9 @@ public static class UCountries {
 			currency: "NOK",
 			primaryLanguageEn: "Norwegian",
 			primaryLanguageFa: "نروژی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "206",
 			nameEn: "Slovakia",
 			nameFa: "اسلواکی",
@@ -9291,8 +9081,7 @@ public static class UCountries {
 				new(code: "2060008", nameEn: "Žilina", nameFa: "ژیلینا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "207",
 			nameEn: "Sierra Leone",
 			nameFa: "سیرالئون",
@@ -9315,8 +9104,7 @@ public static class UCountries {
 				new(code: "2070005", nameEn: "Western", nameFa: "غربی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "208",
 			nameEn: "San Marino",
 			nameFa: "سان مارینو",
@@ -9343,8 +9131,7 @@ public static class UCountries {
 				new(code: "2080009", nameEn: "Serravalle", nameFa: "سراوال"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "209",
 			nameEn: "Senegal",
 			nameFa: "سنگال",
@@ -9376,8 +9163,7 @@ public static class UCountries {
 				new(code: "2090014", nameEn: "Ziguinchor", nameFa: "زیگینچور"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "210",
 			nameEn: "Somalia",
 			nameFa: "سومالی",
@@ -9413,8 +9199,7 @@ public static class UCountries {
 				new(code: "2100018", nameEn: "Woqooyi Galbeed", nameFa: "ووقویی گالبید"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "211",
 			nameEn: "Suriname",
 			nameFa: "سورینام",
@@ -9442,8 +9227,7 @@ public static class UCountries {
 				new(code: "2110010", nameEn: "Wanica", nameFa: "وانیکا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "212",
 			nameEn: "South Sudan",
 			nameFa: "سودان جنوبی",
@@ -9471,8 +9255,7 @@ public static class UCountries {
 				new(code: "2120010", nameEn: "Western Equatoria", nameFa: "استوای غربی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "213",
 			nameEn: "São Tomé and Príncipe",
 			nameFa: "کواترو دو فرویرو",
@@ -9497,8 +9280,7 @@ public static class UCountries {
 				new(code: "2130007", nameEn: "Água Grande", nameFa: "آگوا گرانده"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "214",
 			nameEn: "El Salvador",
 			nameFa: "السالوادور",
@@ -9530,8 +9312,7 @@ public static class UCountries {
 				new(code: "2140014", nameEn: "Usulután", nameFa: "اوسولوتان"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "215",
 			nameEn: "Sint Maarten",
 			nameFa: "سینت مارتن",
@@ -9546,10 +9327,9 @@ public static class UCountries {
 			currency: "ANG",
 			primaryLanguageEn: "Dutch",
 			primaryLanguageFa: "هلندی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "216",
 			nameEn: "Syria",
 			nameFa: "سوریه",
@@ -9581,8 +9361,7 @@ public static class UCountries {
 				new(code: "2160014", nameEn: "Tartus", nameFa: "طرطوس"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "217",
 			nameEn: "Eswatini",
 			nameFa: "سوازیلند",
@@ -9604,8 +9383,7 @@ public static class UCountries {
 				new(code: "2170004", nameEn: "Shiselweni", nameFa: "شیسلونی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "218",
 			nameEn: "Turks and Caicos Islands",
 			nameFa: "جزایر تورکس و کایکوس",
@@ -9629,8 +9407,7 @@ public static class UCountries {
 				new(code: "2180006", nameEn: "South Caicos", nameFa: "کایکوس جنوبی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "219",
 			nameEn: "Chad",
 			nameFa: "چاد",
@@ -9671,8 +9448,7 @@ public static class UCountries {
 				new(code: "2190023", nameEn: "Wadi Fira", nameFa: "وادی فیرا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "220",
 			nameEn: "French Southern Territories",
 			nameFa: "سرزمین‌های جنوبی و جنوبگانی فرانسه",
@@ -9695,8 +9471,7 @@ public static class UCountries {
 				new(code: "2200005", nameEn: "Scattered Islands", nameFa: "Scattered Islands"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "221",
 			nameEn: "Togo",
 			nameFa: "توگو",
@@ -9719,8 +9494,7 @@ public static class UCountries {
 				new(code: "2210005", nameEn: "Savanes", nameFa: "ساوانز"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "222",
 			nameEn: "Thailand",
 			nameFa: "تایلند",
@@ -9816,8 +9590,7 @@ public static class UCountries {
 				new(code: "2220078", nameEn: "Yasothon", nameFa: "یاسوتون"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "223",
 			nameEn: "Tajikistan",
 			nameFa: "تاجیکستان",
@@ -9840,8 +9613,7 @@ public static class UCountries {
 				new(code: "2230005", nameEn: "Sughd", nameFa: "Sughd"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "224",
 			nameEn: "Tokelau",
 			nameFa: "توکلائو",
@@ -9856,10 +9628,9 @@ public static class UCountries {
 			currency: "NZD",
 			primaryLanguageEn: "Tokelauan",
 			primaryLanguageFa: "توکلائویی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "225",
 			nameEn: "Timor-Leste",
 			nameFa: "تیمور شرقی",
@@ -9890,8 +9661,7 @@ public static class UCountries {
 				new(code: "2250013", nameEn: "Viqueque", nameFa: "ویکوکه"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "226",
 			nameEn: "Turkmenistan",
 			nameFa: "ترکمنستان",
@@ -9915,8 +9685,7 @@ public static class UCountries {
 				new(code: "2260006", nameEn: "Mary", nameFa: "مری"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "227",
 			nameEn: "Tunisia",
 			nameFa: "تونس",
@@ -9958,8 +9727,7 @@ public static class UCountries {
 				new(code: "2270024", nameEn: "Zaghouan", nameFa: "زغوان"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "228",
 			nameEn: "Tonga",
 			nameFa: "تونگا",
@@ -9982,8 +9750,7 @@ public static class UCountries {
 				new(code: "2280005", nameEn: "ʻEua", nameFa: "اِوا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "229",
 			nameEn: "Turkey",
 			nameFa: "ترکیه",
@@ -10082,8 +9849,7 @@ public static class UCountries {
 				new(code: "2290081", nameEn: "Şırnak", nameFa: "شرناق"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "230",
 			nameEn: "Trinidad and Tobago",
 			nameFa: "ترینیداد و توباگو",
@@ -10118,8 +9884,7 @@ public static class UCountries {
 				new(code: "2300017", nameEn: "Western Tobago", nameFa: "توباگوی غربی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "231",
 			nameEn: "Tuvalu",
 			nameFa: "تووالو",
@@ -10145,8 +9910,7 @@ public static class UCountries {
 				new(code: "2310008", nameEn: "Vaitupu", nameFa: "وایتوپو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "232",
 			nameEn: "Taiwan",
 			nameFa: "تایوان",
@@ -10186,8 +9950,7 @@ public static class UCountries {
 				new(code: "2320022", nameEn: "Yunlin", nameFa: "یونلین"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "233",
 			nameEn: "Tanzania",
 			nameFa: "تانزانیا",
@@ -10236,8 +9999,7 @@ public static class UCountries {
 				new(code: "2330031", nameEn: "Zanzibar West", nameFa: "زنگبار غربی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "234",
 			nameEn: "Ukraine",
 			nameFa: "وکراین",
@@ -10282,8 +10044,7 @@ public static class UCountries {
 				new(code: "2340027", nameEn: "Zhytomyrska", nameFa: "ژیتومیرسکا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "235",
 			nameEn: "Uganda",
 			nameFa: "اوگاندا",
@@ -10440,8 +10201,7 @@ public static class UCountries {
 				new(code: "2350139", nameEn: "Zombo", nameFa: "زومبو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "236",
 			nameEn: "United States Minor Outlying Islands",
 			nameFa: "جزایر کوچک حاشیه‌ای ایالات متحده آمریکا",
@@ -10468,8 +10228,7 @@ public static class UCountries {
 				new(code: "2360009", nameEn: "Wake Island", nameFa: "جزیره ویک"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "237",
 			nameEn: "United States",
 			nameFa: "ایالات متحده آمریکا",
@@ -10547,8 +10306,7 @@ public static class UCountries {
 				new(code: "2370060", nameEn: "Wyoming", nameFa: "وایومینگ"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "238",
 			nameEn: "Uruguay",
 			nameFa: "اروگوئه",
@@ -10585,8 +10343,7 @@ public static class UCountries {
 				new(code: "2380019", nameEn: "Treinta y Tres", nameFa: "ترینتا و ترس"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "239",
 			nameEn: "Uzbekistan",
 			nameFa: "ازبکستان",
@@ -10618,8 +10375,7 @@ public static class UCountries {
 				new(code: "2390014", nameEn: "Xorazm", nameFa: "خوارزم"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "240",
 			nameEn: "Vatican City",
 			nameFa: "سریر مقدس",
@@ -10634,10 +10390,9 @@ public static class UCountries {
 			currency: "EUR",
 			primaryLanguageEn: "Italian",
 			primaryLanguageFa: "ایتالیایی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "241",
 			nameEn: "Saint Vincent and the Grenadines",
 			nameFa: "سنت وینسنت و گرنادین‌ها",
@@ -10661,8 +10416,7 @@ public static class UCountries {
 				new(code: "2410006", nameEn: "Saint Patrick", nameFa: "سنت پاتریک"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "242",
 			nameEn: "Venezuela",
 			nameFa: "ونزوئلا",
@@ -10705,8 +10459,7 @@ public static class UCountries {
 				new(code: "2420025", nameEn: "Zulia", nameFa: "زولیا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "243",
 			nameEn: "British Virgin Islands",
 			nameFa: "جزایر ویرجین بریتانیا",
@@ -10721,10 +10474,9 @@ public static class UCountries {
 			currency: "USD",
 			primaryLanguageEn: "English",
 			primaryLanguageFa: "انگلیسی",
-			provinces: new List<UProvince> { }
+			provinces: new List<UProvince>()
 		),
-
-		new UCountry(
+		new(
 			code: "244",
 			nameEn: "U.S. Virgin Islands",
 			nameFa: "جزایر ویرجین آمریکا",
@@ -10745,8 +10497,7 @@ public static class UCountries {
 				new(code: "2440003", nameEn: "Saint Thomas", nameFa: "سنت توماس"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "245",
 			nameEn: "Vietnam",
 			nameFa: "ویتنام",
@@ -10798,8 +10549,7 @@ public static class UCountries {
 				new(code: "2450034", nameEn: "Đồng Tháp", nameFa: "دونگ تاپ"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "246",
 			nameEn: "Vanuatu",
 			nameFa: "وانواتو",
@@ -10823,8 +10573,7 @@ public static class UCountries {
 				new(code: "2460006", nameEn: "Torba", nameFa: "توربا"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "247",
 			nameEn: "Wallis and Futuna",
 			nameFa: "والیس و فوتونا",
@@ -10845,8 +10594,7 @@ public static class UCountries {
 				new(code: "2470003", nameEn: "Uvea", nameFa: "یووه آ"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "248",
 			nameEn: "Samoa",
 			nameFa: "ساموآ",
@@ -10875,8 +10623,7 @@ public static class UCountries {
 				new(code: "2480011", nameEn: "Vaisigano", nameFa: "وایسیگانو"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "249",
 			nameEn: "Yemen",
 			nameFa: "یمن",
@@ -10916,8 +10663,7 @@ public static class UCountries {
 				new(code: "2490022", nameEn: "Ta'izz", nameFa: "تعزیه"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "250",
 			nameEn: "Mayotte",
 			nameFa: "مایوت",
@@ -10952,8 +10698,7 @@ public static class UCountries {
 				new(code: "2500017", nameEn: "Tsingoni", nameFa: "تسینگونی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "251",
 			nameEn: "South Africa",
 			nameFa: "آفریقای جنوبی",
@@ -10980,8 +10725,7 @@ public static class UCountries {
 				new(code: "2510009", nameEn: "Western Cape", nameFa: "کیپ غربی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "252",
 			nameEn: "Zambia",
 			nameFa: "زامبیا",
@@ -11009,8 +10753,7 @@ public static class UCountries {
 				new(code: "2520010", nameEn: "Western", nameFa: "غربی"),
 			}
 		),
-
-		new UCountry(
+		new(
 			code: "253",
 			nameEn: "Zimbabwe",
 			nameFa: "زیمباوه",
