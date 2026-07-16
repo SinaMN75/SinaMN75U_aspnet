@@ -10,7 +10,6 @@ public sealed class ApiLogCreateParams {
 	public string? UserEmail { get; set; }
 	public string? UserRoles { get; set; }
 	public string? IpAddress { get; set; }
-	public string? TraceId { get; set; }
 	public string? QueryString { get; set; }
 	public string? RequestBody { get; set; }
 	public string? ResponseBody { get; set; }
@@ -33,7 +32,6 @@ public sealed class ApiLogReadParams : BaseReadParams<TagApiLog> {
 	public long? MaxDurationMs { get; set; }
 	public Guid? UserId { get; set; }
 	public string? IpAddress { get; set; }
-	public string? TraceId { get; set; }
 	public bool? OnlyErrors { get; set; }
 }
 

@@ -5,7 +5,6 @@ namespace SinaMN75U.Data.Entities;
 [Microsoft.EntityFrameworkCore.Index(nameof(StatusCode), Name = "IX_ApiLogs_StatusCode")]
 [Microsoft.EntityFrameworkCore.Index(nameof(DurationMs), Name = "IX_ApiLogs_DurationMs")]
 [Microsoft.EntityFrameworkCore.Index(nameof(UserId), Name = "IX_ApiLogs_UserId")]
-[Microsoft.EntityFrameworkCore.Index(nameof(TraceId), Name = "IX_ApiLogs_TraceId")]
 public sealed class ApiLogEntity : BaseEntity<TagApiLog, ApiLogJson> {
 	[Required, MaxLength(500)]
 	public required string Path { get; set; }
@@ -20,9 +19,6 @@ public sealed class ApiLogEntity : BaseEntity<TagApiLog, ApiLogJson> {
 
 	[MaxLength(64)]
 	public string? IpAddress { get; set; }
-
-	[MaxLength(100)]
-	public string? TraceId { get; set; }
 }
 
 public sealed class ApiLogJson : BaseJson {

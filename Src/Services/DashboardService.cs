@@ -614,7 +614,6 @@ public class DashboardService(
 			DurationMs = p.DurationMs,
 			UserId = p.UserId,
 			IpAddress = Truncate(p.IpAddress, 64),
-			TraceId = Truncate(p.TraceId, 100),
 			Tags = tags,
 			JsonData = new ApiLogJson {
 				Method = p.Method,
@@ -719,7 +718,6 @@ public class DashboardService(
 		if (p.MaxDurationMs.HasValue) q = q.Where(x => x.DurationMs <= p.MaxDurationMs.Value);
 		if (p.UserId.HasValue) q = q.Where(x => x.UserId == p.UserId.Value);
 		if (!string.IsNullOrWhiteSpace(p.IpAddress)) q = q.Where(x => x.IpAddress == p.IpAddress);
-		if (!string.IsNullOrWhiteSpace(p.TraceId)) q = q.Where(x => x.TraceId == p.TraceId);
 		if (p.OnlyErrors == true) q = q.Where(x => x.StatusCode >= 400);
 		return q;
 	}

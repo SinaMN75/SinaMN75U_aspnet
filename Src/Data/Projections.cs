@@ -179,7 +179,6 @@ public static class Projections {
 			DurationMs = x.DurationMs,
 			UserId = x.UserId,
 			IpAddress = x.IpAddress,
-			TraceId = x.TraceId,
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator)

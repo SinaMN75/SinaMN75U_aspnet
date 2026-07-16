@@ -6,7 +6,6 @@ public sealed class ApiLogResponse : BaseResponse<TagApiLog, ApiLogJson> {
 	public required long DurationMs { get; set; }
 	public Guid? UserId { get; set; }
 	public string? IpAddress { get; set; }
-	public string? TraceId { get; set; }
 }
 
 public sealed class ApiLogBucketResponse {
