@@ -27,6 +27,7 @@ public static class RouteTags {
 	public const string Bed = "api/Bed/";
 	public const string ChargeInternet = "api/ChargeInternet/";
 	public const string Merchant = "api/Merchant/";
+	public const string Moadi = "api/Moadi/";
 	public const string AppSettings = "api/AppSettings/";
 	public const string Process = "api/Process/";
 	public const string Pn = "api/Pn/";
@@ -64,7 +65,7 @@ public static class ProcessIds {
 }
 
 public static class RandomTexts {
-	public static List<string> Sentences = [
+	public static readonly List<string> Sentences = [
 		"گربه‌ی جدی، بستنی را خیلی آهسته خورد.",
 		"فیلِ کوچولو، با دمپایی رفت خرید.",
 		"کلاغِ خوش‌تیپ، برای خودش سوت زد.",

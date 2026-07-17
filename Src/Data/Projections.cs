@@ -89,6 +89,10 @@ public sealed class MerchantSelectorArgs : BaseSelectorArgs {
 	public TerminalSelectorArgs? Terminal { get; set; }
 }
 
+public sealed class MoadiSelectorArgs : BaseSelectorArgs {
+	public UserSelectorArgs? User { get; set; }
+}
+
 public sealed class WalletTxnSelectorArgs : BaseSelectorArgs {
 	public UserSelectorArgs? Sender { get; set; }
 	public UserSelectorArgs? Receiver { get; set; }
@@ -359,6 +363,35 @@ public static class Projections {
 			MerchantId = x.MerchantId,
 			PhoneNumber = x.PhoneNumber,
 			Terminals = args.Terminal == null ? null : x.Terminals.AsQueryable().Select(TerminalSelector(args.Terminal)).ToList(),
+			User = x.User == null ? null : (args.User != null ? UserSelector(args.User) : u => null!).Invoke(x.User),
+			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<MoadiEntity, MoadiResponse>> MoadiSelector(MoadiSelectorArgs args) {
+		Expression<Func<MoadiEntity, MoadiResponse>> selector = x => new MoadiResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			AdminUserIds = x.AdminUserIds,
+			UserId = x.UserId,
+			Name = x.Name,
+			EconomicCode = x.EconomicCode,
+			LegalEntity = x.LegalEntity,
+			UniqueTaxCode = x.UniqueTaxCode,
+			NationalCode = x.NationalCode,
+			PostalCode = x.PostalCode,
+			RegistrationDate = x.RegistrationDate,
+			RegistrationNumber = x.RegistrationNumber,
+			Address = x.Address,
+			StartInvoiceNumber = x.StartInvoiceNumber,
+			IntroductionCode = x.IntroductionCode,
+			OwnerName = x.OwnerName,
+			OwnerMobile = x.OwnerMobile,
+			OwnerNationalCode = x.OwnerNationalCode,
 			User = x.User == null ? null : (args.User != null ? UserSelector(args.User) : u => null!).Invoke(x.User),
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
 		};

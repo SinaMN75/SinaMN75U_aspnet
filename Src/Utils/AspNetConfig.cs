@@ -89,6 +89,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IDataSeedService, DataSeedService>();
 		builder.Services.AddScoped<IVasService, VasService>();
 		builder.Services.AddScoped<IMerchantService, MerchantService>();
+		builder.Services.AddScoped<IMoadiService, MoadiService>();
 		builder.Services.AddScoped<IPnService, PnService>();
 		builder.Services.AddScoped<IProcessService, ProcessService>();
 		builder.Services.AddScoped<IHotelService, HotelService>();
@@ -145,6 +146,7 @@ public static partial class AspNetConfig {
 		app.MapDataSeedRoutes(RouteTags.DataSeeder);
 		app.MapChargeInternetRoutes(RouteTags.ChargeInternet);
 		app.MapMerchantRoutes(RouteTags.Merchant);
+		app.MapMoadiRoutes(RouteTags.Moadi);
 		app.MapAppSettingsRoutes(RouteTags.AppSettings);
 		app.MapProcessRoutes(RouteTags.Process);
 		app.MapPnRoutes(RouteTags.Pn);

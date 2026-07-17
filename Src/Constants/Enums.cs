@@ -344,6 +344,12 @@ public enum TagMerchant {
 	Normal = 101
 }
 
+public enum TagMoadi {
+	Pending = 101,
+	Approved = 102,
+	Rejected = 103
+}
+
 public enum TagFieldType {
 	Text = 101,
 	DropDown = 102,

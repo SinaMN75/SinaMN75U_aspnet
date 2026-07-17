@@ -231,7 +231,24 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "AvreenAddMerchantFailed", "Failed to register merchant in Avreen." },
 		{ "AvreenMerchantIdMissing", "Merchant registration succeeded but merchant identifier was not returned by Avreen." },
 		{ "AvreenBindTerminalFailed", "Failed to bind terminal to merchant in Avreen." },
-		{ "UnexpectedError", "An unexpected error occurred. Please try again later." }
+		{ "UnexpectedError", "An unexpected error occurred. Please try again later." },
+
+		// ===== Moadi =====
+		{ "NameNotValid", "Name is not valid." },
+		{ "EconomicCodeRequired", "Economic Code is Required." },
+		{ "EconomicCodeNotValid", "Economic Code is not valid." },
+		{ "LegalEntityRequired", "Legal Entity is Required." },
+		{ "LegalEntityNotValid", "Legal Entity is not valid." },
+		{ "UniqueTaxCodeRequired", "Unique Tax Code is Required." },
+		{ "UniqueTaxCodeNotValid", "Unique Tax Code is not valid." },
+		{ "OwnerMobileRequired", "Owner Mobile is Required." },
+		{ "OwnerMobileNotValid", "Owner Mobile is not valid." },
+		{ "OwnerNationalCodeRequired", "Owner National Code is Required." },
+		{ "OwnerNationalCodeNotValid", "Owner National Code is not valid." },
+		{ "MoadiNotFound", "Taxpayer request not found." },
+		{ "MoadiAlreadyApproved", "This taxpayer request is already approved." },
+		{ "MoadiEconomicCodeExists", "A taxpayer with this economic code already exists." },
+		{ "MoadiRegistrationFailed", "Taxpayer registration in Namat system failed." }
 	};
 
 	private readonly Dictionary<string, string> _fa = new() {
@@ -460,7 +477,24 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "AvreenAddMerchantFailed", "ثبت پذیرنده در سامانه آورین با خطا مواجه شد." },
 		{ "AvreenMerchantIdMissing", "ثبت پذیرنده انجام شد اما شناسه پذیرنده از سامانه آورین دریافت نشد." },
 		{ "AvreenBindTerminalFailed", "اتصال ترمینال به پذیرنده در سامانه آورین با خطا مواجه شد." },
-		{ "UnexpectedError", "خطای غیرمنتظره‌ای رخ داد. لطفاً مجدداً تلاش کنید." }
+		{ "UnexpectedError", "خطای غیرمنتظره‌ای رخ داد. لطفاً مجدداً تلاش کنید." },
+
+		// ===== Moadi =====
+		{ "NameNotValid", "نام معتبر نیست." },
+		{ "EconomicCodeRequired", "کد اقتصادی الزامی است." },
+		{ "EconomicCodeNotValid", "کد اقتصادی معتبر نیست." },
+		{ "LegalEntityRequired", "نوع شخصیت حقوقی الزامی است." },
+		{ "LegalEntityNotValid", "نوع شخصیت حقوقی معتبر نیست." },
+		{ "UniqueTaxCodeRequired", "شناسه یکتای مالیاتی الزامی است." },
+		{ "UniqueTaxCodeNotValid", "شناسه یکتای مالیاتی معتبر نیست." },
+		{ "OwnerMobileRequired", "شماره موبایل مالک الزامی است." },
+		{ "OwnerMobileNotValid", "شماره موبایل مالک معتبر نیست." },
+		{ "OwnerNationalCodeRequired", "کد ملی مالک الزامی است." },
+		{ "OwnerNationalCodeNotValid", "کد ملی مالک معتبر نیست." },
+		{ "MoadiNotFound", "درخواست مودی یافت نشد." },
+		{ "MoadiAlreadyApproved", "این درخواست مودی قبلاً تایید شده است." },
+		{ "MoadiEconomicCodeExists", "مودی با این کد اقتصادی قبلاً ثبت شده است." },
+		{ "MoadiRegistrationFailed", "ثبت مودی در سامانه نما با خطا مواجه شد." }
 	};
 
 	public string Get(string key, string? locale = null) {
