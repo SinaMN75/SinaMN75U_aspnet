@@ -109,8 +109,8 @@ public static partial class AspNetConfig {
 	}
 
 	public static void UseUServices(this WebApplication app) {
-		app.UseStaticFiles();
 		app.UseCors();
+		app.UseStaticFiles();
 		app.UseUSwagger();
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
