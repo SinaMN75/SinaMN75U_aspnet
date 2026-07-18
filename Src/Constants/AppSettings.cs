@@ -89,6 +89,7 @@ public sealed class Ipg {
 	public required string Title { get; set; }
 	public required string Token { get; set; }
 	public required string CallBackUrl { get; set; }
+	public string[] AllowedReturnUrls { get; set; } = [];
 }
 
 public sealed class DefaultUsers {

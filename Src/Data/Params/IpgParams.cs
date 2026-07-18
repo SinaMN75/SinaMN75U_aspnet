@@ -3,6 +3,8 @@ namespace SinaMN75U.Data.Params;
 public sealed class IpgSaleParams : BaseParams {
 	[UValidationRequired("AmountRequired")]
 	public decimal Amount { get; set; }
+
+	public string? ReturnUrl { get; set; }
 }
 
 public sealed class IpgVerifyParams : BaseParams {
