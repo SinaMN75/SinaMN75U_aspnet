@@ -1,54 +1,85 @@
 ### =====================================================================
 ### Content API  (base route: api/content/)
-### TagContent: 101 AboutUs, 102 Terms, 103 ContactUs, 201 HomeSlider1 ...
+### TagContent: 101 AboutUs, 102 Terms, 103 ContactUs, 201/202 HomeSlider,
+###   301 AboutSection, 302 ServicesCarousel, 303 HeroBanner,
+###   304 Footer, 305 LatestBlogPosts
+### Icons/images are stored as base64 strings inside jsonData.
 ### =====================================================================
 @host = http://localhost:5000
 @apiKey = your-dev-api-key
 @token =
 
-### Create - full with extra list
+### Create - Hero banner
 POST {{host}}/api/content/Create
 Content-Type: application/json
 
 {
   "apiKey": "{{apiKey}}",
   "token": "{{token}}",
-  "title": "About Us",
-  "subTitle": "Who we are",
-  "description": "Company description...",
-  "instagram": "@company",
-  "telegram": "@company",
-  "whatsapp": "+989120000000",
-  "phone": "+982100000000",
-  "tags": [101],
-  "extra": [
-    { "title": "Mission", "subtitle": "Our mission", "description": "..." },
-    { "title": "Vision", "subtitle": "Our vision", "description": "..." }
+  "tags": [303],
+  "title": "Rest starts here",
+  "subTitle": "Find your dorm",
+  "description": "Landing hero description...",
+  "imageBase64": "data:image/webp;base64,UklGR...",
+  "buttonText": "Search",
+  "buttonLink": "/dormitories",
+  "order": 1
+}
+
+### Create - Services carousel (items with base64 icons)
+POST {{host}}/api/content/Create
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "tags": [302],
+  "title": "Our services",
+  "items": [
+    { "title": "24/7 Support", "description": "...", "iconBase64": "data:image/png;base64,iVBOR...", "order": 1 },
+    { "title": "Security", "description": "...", "iconBase64": "data:image/png;base64,iVBOR...", "order": 2 }
   ]
 }
 
-### Create - minimal
+### Create - Footer (links)
 POST {{host}}/api/content/Create
 Content-Type: application/json
 
 {
   "apiKey": "{{apiKey}}",
   "token": "{{token}}",
-  "title": "Terms",
-  "tags": [102]
+  "tags": [304],
+  "title": "Khabroom",
+  "description": "Footer description",
+  "instagram": "https://instagram.com/",
+  "links": [
+    { "title": "About", "url": "/about-us" },
+    { "title": "Contact", "url": "/contact-us" }
+  ]
 }
 
-### Read
+### Read - by tag
 POST {{host}}/api/content/Read
 Content-Type: application/json
 
 {
   "apiKey": "{{apiKey}}",
   "token": "{{token}}",
-  "tags": [101],
+  "tags": [303],
   "pageSize": 20,
   "pageNumber": 1,
-  "selectorArgs": {}
+  "selectorArgs": { "media": {} }
+}
+
+### ReadById
+POST {{host}}/api/content/ReadById
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "selectorArgs": { "media": {} }
 }
 
 ### Update
@@ -59,8 +90,8 @@ Content-Type: application/json
   "apiKey": "{{apiKey}}",
   "token": "{{token}}",
   "id": "00000000-0000-0000-0000-000000000000",
-  "title": "About Us (v2)",
-  "description": "Updated"
+  "title": "Hero (v2)",
+  "imageBase64": "data:image/webp;base64,UklGRC..."
 }
 
 ### Delete
@@ -71,4 +102,14 @@ Content-Type: application/json
   "apiKey": "{{apiKey}}",
   "token": "{{token}}",
   "id": "00000000-0000-0000-0000-000000000000"
+}
+
+### DeleteRange
+POST {{host}}/api/content/DeleteRange
+Content-Type: application/json
+
+{
+  "apiKey": "{{apiKey}}",
+  "token": "{{token}}",
+  "ids": ["00000000-0000-0000-0000-000000000000"]
 }

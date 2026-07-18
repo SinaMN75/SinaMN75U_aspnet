@@ -45,7 +45,8 @@ public static class DbModelBuilder {
 		builder.Entity<DormBedInvoiceEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<ContentEntity>().OwnsOne(e => e.JsonData, b => {
 			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
-			b.OwnsMany(i => i.Extra);
+			b.OwnsMany(i => i.Items);
+			b.OwnsMany(i => i.Links);
 		});
 		builder.Entity<CommentEntity>().OwnsOne(e => e.JsonData, b => {
 			RelationalOwnedNavigationBuilderExtensions.ToJson(b);

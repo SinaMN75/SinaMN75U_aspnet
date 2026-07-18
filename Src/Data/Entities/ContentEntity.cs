@@ -9,18 +9,36 @@ public sealed class ContentJson : BaseJson {
 	public string? Title { get; set; }
 	public string? SubTitle { get; set; }
 	public string? Description { get; set; }
+
+	public string? ImageBase64 { get; set; }
+	public string? IconBase64 { get; set; }
+
+	public string? ButtonText { get; set; }
+	public string? ButtonLink { get; set; }
+	public string? Link { get; set; }
+	public int? Order { get; set; }
+
 	public string? Instagram { get; set; }
 	public string? Telegram { get; set; }
 	public string? Whatsapp { get; set; }
 	public string? Phone { get; set; }
-	public List<ContentExtra> Extra { get; set; } = [];
+
+	public List<ContentLink> Links { get; set; } = [];
+	public List<ContentItem> Items { get; set; } = [];
 }
 
-public sealed class ContentExtra {
-	public required string Title { get; set; }
-	public required string Subtitle { get; set; }
-	public required string Description { get; set; }
-	public string? Icon1 { get; set; }
-	public string? Icon2 { get; set; }
-	public string? Icon3 { get; set; }
+public sealed class ContentItem {
+	public string? Title { get; set; }
+	public string? SubTitle { get; set; }
+	public string? Description { get; set; }
+	public string? IconBase64 { get; set; }
+	public string? ImageBase64 { get; set; }
+	public string? Link { get; set; }
+	public int? Order { get; set; }
+}
+
+public sealed class ContentLink {
+	public string? Title { get; set; }
+	public string? Url { get; set; }
+	public string? IconBase64 { get; set; }
 }

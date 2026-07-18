@@ -219,6 +219,11 @@ public enum TagContent {
 	ContactUs = 103,
 	HomeSlider1 = 201,
 	HomeSlider2 = 202,
+	AboutSection = 301,
+	ServicesCarousel = 302,
+	HeroBanner = 303,
+	Footer = 304,
+	LatestBlogPosts = 305,
 }
 
 public enum TagTicket {

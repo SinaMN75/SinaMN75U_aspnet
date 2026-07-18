@@ -226,6 +226,61 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 		// Contents table is skipped, so this endpoint is safe to call repeatedly.
 		List<ContentEntity> defaults = [
 			BuildContent(
+				tag: TagContent.HeroBanner,
+				title: "بالش‌ت را بردار، جای خواب اینجاست :)",
+				subTitle: "خواب اینجا، سامانه معرفی و تبلیغات خوابگاه و پانسیون.",
+				description: "اینجا می‌توانید بهترین خوابگاه‌ها و پانسیون‌های نزدیک خودتان را پیدا کنید. اطلاعات تکمیلی هر اقامتگاه، امکانات، بازخورد دانشجویان و شرایط رزرو در اختیار شماست.",
+				buttonText: "جستجوی خوابگاه",
+				buttonLink: "/dormitories",
+				order: 1
+			),
+			BuildContent(
+				tag: TagContent.AboutSection,
+				title: "تعهد ما: آرامش و استاندارد زندگی شماست",
+				subTitle: "چرا خواب‌روم؟",
+				description: "پیدا کردن اقامتگاهی در تهران که همزمان امن، یکپارچه، استاندارد و دارای دسترسی عالی باشد، یک انتخاب دشوار است.",
+				order: 2,
+				items: [
+					new ContentItem { Title = "آرامش و آسایش در سطح هتل", Description = "واحدهای مستقل با خدمات کامل خانه‌داری و پشتیبانی ۲۴ ساعته.", Order = 1 },
+					new ContentItem { Title = "امنیت ۳۶۰ درجه و مطمئن", Description = "حضور مسئول مقیم، دسترسی کنترل‌شده و سیستم مانیتورینگ.", Order = 2 },
+					new ContentItem { Title = "هوشمندی مکانیک سوئیت", Description = "حسگرهای محیطی، قفل‌های هوشمند و امکانات رفاهی دیجیتال.", Order = 3 }
+				]
+			),
+			BuildContent(
+				tag: TagContent.ServicesCarousel,
+				title: "خدمات ما",
+				subTitle: "هر آنچه برای یک اقامت راحت نیاز دارید",
+				order: 3,
+				items: [
+					new ContentItem { Title = "پشتیبانی ۲۴ ساعته", Description = "همراه همیشگی شما در تمام ساعات شبانه‌روز.", Order = 1 },
+					new ContentItem { Title = "اینترنت پرسرعت", Description = "دسترسی پایدار به اینترنت در تمام واحدها.", Order = 2 },
+					new ContentItem { Title = "خانه‌داری منظم", Description = "نظافت و نگهداری دوره‌ای فضاها.", Order = 3 },
+					new ContentItem { Title = "امنیت کامل", Description = "کنترل دسترسی و مانیتورینگ ۲۴ ساعته.", Order = 4 }
+				]
+			),
+			BuildContent(
+				tag: TagContent.LatestBlogPosts,
+				title: "آخرین بلاگ",
+				subTitle: "تازه‌ترین مطالب و راهنماها",
+				link: "/blog",
+				order: 4
+			),
+			BuildContent(
+				tag: TagContent.Footer,
+				title: "خواب‌روم",
+				description: "سامانه معرفی و تبلیغات خوابگاه و پانسیون.",
+				instagram: "https://instagram.com/",
+				telegram: "https://t.me/",
+				whatsapp: "https://wa.me/",
+				phone: "02100000000",
+				links: [
+					new ContentLink { Title = "درباره ما", Url = "/about-us" },
+					new ContentLink { Title = "تماس با ما", Url = "/contact-us" },
+					new ContentLink { Title = "قوانین و مقررات", Url = "/terms" },
+					new ContentLink { Title = "بلاگ", Url = "/blog" }
+				]
+			),
+			BuildContent(
 				tag: TagContent.AboutUs,
 				title: "درباره ما",
 				subTitle: "معرفی مجموعه",
@@ -236,9 +291,9 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 				telegram: "https://t.me/",
 				whatsapp: "https://wa.me/",
 				phone: "02100000000",
-				extra: [
-					new ContentExtra { Title = "کیفیت", Subtitle = "بالاترین استانداردها", Description = "تعهد ما به کیفیت در تمام مراحل کار." },
-					new ContentExtra { Title = "پشتیبانی", Subtitle = "همراه همیشگی شما", Description = "پشتیبانی سریع و پاسخگو در تمام ساعات." }
+				items: [
+					new ContentItem { Title = "کیفیت", SubTitle = "بالاترین استانداردها", Description = "تعهد ما به کیفیت در تمام مراحل کار.", Order = 1 },
+					new ContentItem { Title = "پشتیبانی", SubTitle = "همراه همیشگی شما", Description = "پشتیبانی سریع و پاسخگو در تمام ساعات.", Order = 2 }
 				]
 			),
 			BuildContent(
@@ -294,11 +349,16 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 		string? description = null,
 		string detail1 = "",
 		string detail2 = "",
+		string? buttonText = null,
+		string? buttonLink = null,
+		string? link = null,
+		int? order = null,
 		string? instagram = null,
 		string? telegram = null,
 		string? whatsapp = null,
 		string? phone = null,
-		List<ContentExtra>? extra = null
+		List<ContentItem>? items = null,
+		List<ContentLink>? links = null
 	) => new() {
 		Id = Guid.CreateVersion7(),
 		CreatedAt = DateTime.UtcNow,
@@ -310,11 +370,16 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 			Description = description,
 			Detail1 = detail1,
 			Detail2 = detail2,
+			ButtonText = buttonText,
+			ButtonLink = buttonLink,
+			Link = link,
+			Order = order,
 			Instagram = instagram,
 			Telegram = telegram,
 			Whatsapp = whatsapp,
 			Phone = phone,
-			Extra = extra ?? []
+			Items = items ?? [],
+			Links = links ?? []
 		}
 	};
 }
