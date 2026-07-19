@@ -32,6 +32,7 @@ public sealed class RegisterParams : BaseParams {
 	public string? PhoneNumber { get; set; }
 	public string? FirstName { get; set; }
 	public string? LastName { get; set; }
+	public string? NationalCode { get; set; }
 }
 
 public sealed class VerifyMobileForLoginParams : BaseParams {

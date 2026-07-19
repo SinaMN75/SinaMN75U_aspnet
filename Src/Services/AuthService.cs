@@ -7,6 +7,7 @@ public interface IAuthService {
 	Task<UResponse<LoginResponse?>> RefreshToken(RefreshTokenParams p, CancellationToken ct);
 	Task<UResponse> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> VerifyCodeForLogin(VerifyMobileForLoginParams p, CancellationToken ct);
+	Task<UResponse<LoginResponse?>> LoginOrRegister(RegisterParams p, CancellationToken ct);
 }
 
 public class AuthService(
@@ -35,6 +36,7 @@ public class AuthService(
 			Tags = p.Tags,
 			FirstName = p.FirstName,
 			LastName = p.LastName,
+			NationalCode = p.NationalCode,
 			JsonData = new UserJson(),
 			Wallets = [new WalletEntity { Id = userId, CreatorId = userId, CreatedAt = now, JsonData = new WalletJson(), Tags = [TagWallet.Primary], Balance = 0 }]
 		};
@@ -45,7 +47,6 @@ public class AuthService(
 		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = ts.GenerateJwt(e),
 			RefreshToken = e.RefreshToken,
-			Expires = Core.App.Jwt.Expires,
 			User = e.MapToResponse()
 		});
 	}
@@ -92,7 +93,6 @@ public class AuthService(
 		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = ts.GenerateJwt(user),
 			RefreshToken = user.RefreshToken,
-			Expires = Core.App.Jwt.Expires,
 			User = user.MapToResponse()
 		});
 	}
@@ -111,7 +111,6 @@ public class AuthService(
 		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = ts.GenerateJwt(user),
 			RefreshToken = user.RefreshToken,
-			Expires = Core.App.Jwt.Expires,
 			User = user.MapToResponse()
 		});
 	}
@@ -160,10 +159,20 @@ public class AuthService(
 			? new UResponse<LoginResponse?>(new LoginResponse {
 					Token = ts.GenerateJwt(user),
 					RefreshToken = user.RefreshToken,
-					User = user.MapToResponse(),
-					Expires = Core.App.Jwt.Expires
+					User = user.MapToResponse()
 				}
 			)
 			: new UResponse<LoginResponse?>(null, Usc.WrongVerificationCode, ls.Get("OtpInvalid"));
+	}
+
+	public async Task<UResponse<LoginResponse?>> LoginOrRegister(RegisterParams p, CancellationToken ct) {
+		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber && x.NationalCode == p.NationalCode, ct);
+		if (user == null) return await Register(p, ct);
+
+		return new UResponse<LoginResponse?>(new LoginResponse {
+			Token = ts.GenerateJwt(user),
+			RefreshToken = ts.GenerateRefreshToken(),
+			User = user.MapToResponse()
+		});
 	}
 }
