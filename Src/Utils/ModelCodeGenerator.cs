@@ -530,8 +530,8 @@ public static partial class ModelCodeGenerator {
 			if (!models.TryGetValue(t, out Model? m) || !seen.Add(t)) continue;
 			order.Add(m);
 			foreach (Prop p in m.props)
-				foreach (Type lt in LeafTypes(p.clr))
-					queue.Enqueue(lt);
+			foreach (Type lt in LeafTypes(p.clr))
+				queue.Enqueue(lt);
 		}
 
 		return order;
@@ -543,205 +543,213 @@ public static partial class ModelCodeGenerator {
 	private static partial Regex TypeDeclRegex();
 
 	private const string HtmlTemplate = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SinaMN75 API</title>
-<style>
-  :root { --bg:#0f1419; --panel:#1a1f29; --panel2:#141922; --border:#2a3140; --text:#e6e9ef; --muted:#8b93a3; --accent:#4fa3ff; --accent2:#2d3648; }
-  * { box-sizing:border-box; }
-  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; }
-  header { padding:12px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:16px; background:var(--panel2); }
-  header h1 { font-size:16px; margin:0; font-weight:600; }
-  .nav { display:flex; gap:4px; }
-  .navbtn { padding:6px 16px; font-size:13px; border-radius:6px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; }
-  .navbtn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
-  .wrap { flex:1; display:flex; min-height:0; }
-  aside { width:300px; border-right:1px solid var(--border); overflow-y:auto; background:var(--panel2); }
-  aside .search { padding:10px; position:sticky; top:0; background:var(--panel2); border-bottom:1px solid var(--border); }
-  aside input { width:100%; padding:8px 10px; border-radius:6px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:13px; outline:none; }
-  .group-title { padding:12px 14px 4px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
-  .item { padding:6px 14px; font-size:13px; cursor:pointer; color:var(--text); border-left:3px solid transparent; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .item:hover { background:var(--panel); }
-  .item.active { background:var(--accent2); border-left-color:var(--accent); color:#fff; }
-  .m { display:inline-block; min-width:42px; font-size:10px; font-weight:700; padding:1px 5px; border-radius:4px; margin-right:6px; text-align:center; }
-  .m-post { background:#1c3a2e; color:#4ade80; }
-  .m-get { background:#1c2f45; color:#60a5fa; }
-  .m-put { background:#3a331c; color:#fbbf24; }
-  .m-delete { background:#3a1c1c; color:#f87171; }
-  main { flex:1; display:flex; flex-direction:column; min-width:0; }
-  .tabs { display:flex; gap:2px; padding:12px 20px 0; border-bottom:1px solid var(--border); flex-wrap:wrap; }
-  .tab { padding:8px 16px; font-size:13px; cursor:pointer; color:var(--muted); border:1px solid transparent; border-bottom:none; border-radius:6px 6px 0 0; }
-  .tab:hover { color:var(--text); }
-  .tab.active { color:#fff; background:var(--panel); border-color:var(--border); }
-  .codebar { display:flex; align-items:center; justify-content:space-between; padding:12px 20px 0; }
-  .codebar .name { font-size:15px; font-weight:600; }
-  .copy { padding:6px 12px; font-size:12px; border-radius:6px; border:1px solid var(--border); background:var(--panel); color:var(--text); cursor:pointer; }
-  .copy:hover { border-color:var(--accent); color:var(--accent); }
-  .codewrap { flex:1; overflow:auto; padding:0 0 24px; }
-  pre { margin:0 20px 6px; background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px; font-size:13px; line-height:1.55; font-family:"SF Mono",Menlo,Consolas,monospace; white-space:pre; overflow:auto; }
-  .empty { color:var(--muted); padding:40px 20px; }
-  .apihead { padding:16px 20px 2px; }
-  .apipath { font-size:15px; font-weight:600; margin-left:4px; }
-  .blockhead { display:flex; align-items:center; justify-content:space-between; padding:16px 20px 6px; }
-  .btitle { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
-</style>
-</head>
-<body>
-<header>
-  <h1>SinaMN75</h1>
-  <div class="nav">
-    <button class="navbtn active" data-view="models">Models</button>
-    <button class="navbtn" data-view="apis">APIs</button>
-  </div>
-</header>
-<div class="wrap">
-  <aside>
-    <div class="search"><input id="search" placeholder="Filter..." autocomplete="off"></div>
-    <div id="list"></div>
-  </aside>
-  <main>
-    <div class="tabs" id="tabs"></div>
-    <div class="codewrap" id="panel"><div class="empty">Pick an item from the left.</div></div>
-  </main>
-</div>
-<script>
-  const DATA = /*__DATA__*/;
-  const MODEL_LANGS = [["dart","Dart"],["kotlin","Kotlin"],["java","Java"],["csharp","C#"],["typescript","TypeScript"]];
-  const API_LANGS = [["json","JSON"],["dart","Dart"],["kotlin","Kotlin"],["java","Java"],["csharp","C#"],["typescript","TypeScript"]];
-  const GROUP_ORDER = ["Params","Responses","Models","Enums"];
-  const byName = {};
-  for (const s of DATA.sections) byName[s.name] = s;
+	                                    <!DOCTYPE html>
+	                                    <html lang="en">
+	                                    <head>
+	                                    <meta charset="utf-8">
+	                                    <meta name="viewport" content="width=device-width, initial-scale=1">
+	                                    <title>SinaMN75 API</title>
+	                                    <style>
+	                                      :root { --bg:#0f1419; --panel:#1a1f29; --panel2:#141922; --border:#2a3140; --text:#e6e9ef; --muted:#8b93a3; --accent:#4fa3ff; --accent2:#2d3648; }
+	                                      * { box-sizing:border-box; }
+	                                      body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; }
+	                                      header { padding:12px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:16px; background:var(--panel2); }
+	                                      header h1 { font-size:16px; margin:0; font-weight:600; }
+	                                      .nav { display:flex; gap:4px; }
+	                                      .navbtn { padding:6px 16px; font-size:13px; border-radius:6px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; }
+	                                      .navbtn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+	                                      .wrap { flex:1; display:flex; min-height:0; }
+	                                      aside { width:300px; border-right:1px solid var(--border); overflow-y:auto; background:var(--panel2); }
+	                                      aside .search { padding:10px; position:sticky; top:0; background:var(--panel2); border-bottom:1px solid var(--border); }
+	                                      aside input { width:100%; padding:8px 10px; border-radius:6px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:13px; outline:none; }
+	                                      .group-title { padding:9px 14px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); cursor:pointer; user-select:none; display:flex; align-items:center; gap:7px; }
+	                                      .group-title:hover { color:var(--text); }
+	                                      .chev { display:inline-block; width:9px; font-size:9px; }
+	                                      .cnt { margin-left:auto; font-size:10px; color:var(--muted); background:var(--panel); padding:0 7px; border-radius:9px; }
+	                                      .item { padding:6px 14px; font-size:13px; cursor:pointer; color:var(--text); border-left:3px solid transparent; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+	                                      .item:hover { background:var(--panel); }
+	                                      .item.active { background:var(--accent2); border-left-color:var(--accent); color:#fff; }
+	                                      .m { display:inline-block; min-width:42px; font-size:10px; font-weight:700; padding:1px 5px; border-radius:4px; margin-right:6px; text-align:center; }
+	                                      .m-post { background:#1c3a2e; color:#4ade80; }
+	                                      .m-get { background:#1c2f45; color:#60a5fa; }
+	                                      .m-put { background:#3a331c; color:#fbbf24; }
+	                                      .m-delete { background:#3a1c1c; color:#f87171; }
+	                                      main { flex:1; display:flex; flex-direction:column; min-width:0; }
+	                                      .tabs { display:flex; gap:2px; padding:12px 20px 0; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+	                                      .tab { padding:8px 16px; font-size:13px; cursor:pointer; color:var(--muted); border:1px solid transparent; border-bottom:none; border-radius:6px 6px 0 0; }
+	                                      .tab:hover { color:var(--text); }
+	                                      .tab.active { color:#fff; background:var(--panel); border-color:var(--border); }
+	                                      .codebar { display:flex; align-items:center; justify-content:space-between; padding:12px 20px 0; }
+	                                      .codebar .name { font-size:15px; font-weight:600; }
+	                                      .copy { padding:6px 12px; font-size:12px; border-radius:6px; border:1px solid var(--border); background:var(--panel); color:var(--text); cursor:pointer; }
+	                                      .copy:hover { border-color:var(--accent); color:var(--accent); }
+	                                      .codewrap { flex:1; overflow:auto; padding:0 0 24px; }
+	                                      pre { margin:0 20px 6px; background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px; font-size:13px; line-height:1.55; font-family:"SF Mono",Menlo,Consolas,monospace; white-space:pre; overflow:auto; }
+	                                      .empty { color:var(--muted); padding:40px 20px; }
+	                                      .apihead { padding:16px 20px 2px; }
+	                                      .apipath { font-size:15px; font-weight:600; margin-left:4px; }
+	                                      .blockhead { display:flex; align-items:center; justify-content:space-between; padding:16px 20px 6px; }
+	                                      .btitle { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+	                                    </style>
+	                                    </head>
+	                                    <body>
+	                                    <header>
+	                                      <h1>SinaMN75</h1>
+	                                      <div class="nav">
+	                                        <button class="navbtn active" data-view="models">Models</button>
+	                                        <button class="navbtn" data-view="apis">APIs</button>
+	                                      </div>
+	                                    </header>
+	                                    <div class="wrap">
+	                                      <aside>
+	                                        <div class="search"><input id="search" placeholder="Filter..." autocomplete="off"></div>
+	                                        <div id="list"></div>
+	                                      </aside>
+	                                      <main>
+	                                        <div class="tabs" id="tabs"></div>
+	                                        <div class="codewrap" id="panel"><div class="empty">Pick an item from the left.</div></div>
+	                                      </main>
+	                                    </div>
+	                                    <script>
+	                                      const DATA = /*__DATA__*/;
+	                                      const MODEL_LANGS = [["dart","Dart"],["kotlin","Kotlin"],["java","Java"],["csharp","C#"],["typescript","TypeScript"]];
+	                                      const API_LANGS = [["json","JSON"],["dart","Dart"],["kotlin","Kotlin"],["java","Java"],["csharp","C#"],["typescript","TypeScript"]];
+	                                      const GROUP_ORDER = ["Params","Responses","Models","Enums"];
+	                                      const byName = {};
+	                                      for (const s of DATA.sections) byName[s.name] = s;
 
-  let view = "models";
-  let modelLang = "dart";
-  let apiLang = "json";
-  let currentSection = null;
-  let currentApi = -1;
+	                                      let view = "models";
+	                                      let modelLang = "dart";
+	                                      let apiLang = "json";
+	                                      let currentSection = null;
+	                                      let currentApi = -1;
+	                                      const expanded = new Set();
 
-  const listEl = document.getElementById("list");
-  const tabsEl = document.getElementById("tabs");
-  const panelEl = document.getElementById("panel");
-  const searchEl = document.getElementById("search");
+	                                      const listEl = document.getElementById("list");
+	                                      const tabsEl = document.getElementById("tabs");
+	                                      const panelEl = document.getElementById("panel");
+	                                      const searchEl = document.getElementById("search");
 
-  const langs = () => view === "models" ? MODEL_LANGS : API_LANGS;
-  const curLang = () => view === "models" ? modelLang : apiLang;
-  const setLang = l => { if (view === "models") modelLang = l; else apiLang = l; };
+	                                      const langs = () => view === "models" ? MODEL_LANGS : API_LANGS;
+	                                      const curLang = () => view === "models" ? modelLang : apiLang;
+	                                      const setLang = l => { if (view === "models") modelLang = l; else apiLang = l; };
 
-  function addTitle(text) {
-    const t = document.createElement("div");
-    t.className = "group-title";
-    t.textContent = text;
-    listEl.appendChild(t);
-  }
+	                                      function groupHeader(key, label, count, searching) {
+	                                        const open = searching || expanded.has(key);
+	                                        const t = document.createElement("div");
+	                                        t.className = "group-title";
+	                                        t.innerHTML = '<span class="chev">' + (open ? "▾" : "▸") + '</span><span>' + label + '</span><span class="cnt">' + count + '</span>';
+	                                        t.onclick = () => { if (expanded.has(key)) expanded.delete(key); else expanded.add(key); renderList(); };
+	                                        listEl.appendChild(t);
+	                                        return open;
+	                                      }
 
-  function renderNav() {
-    document.querySelectorAll(".navbtn").forEach(b => b.classList.toggle("active", b.dataset.view === view));
-  }
+	                                      function renderNav() {
+	                                        document.querySelectorAll(".navbtn").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+	                                      }
 
-  function renderTabs() {
-    tabsEl.innerHTML = "";
-    for (const [id, label] of langs()) {
-      const t = document.createElement("div");
-      t.className = "tab" + (id === curLang() ? " active" : "");
-      t.textContent = label;
-      t.onclick = () => { setLang(id); renderTabs(); renderPanel(); };
-      tabsEl.appendChild(t);
-    }
-  }
+	                                      function renderTabs() {
+	                                        tabsEl.innerHTML = "";
+	                                        for (const [id, label] of langs()) {
+	                                          const t = document.createElement("div");
+	                                          t.className = "tab" + (id === curLang() ? " active" : "");
+	                                          t.textContent = label;
+	                                          t.onclick = () => { setLang(id); renderTabs(); renderPanel(); };
+	                                          tabsEl.appendChild(t);
+	                                        }
+	                                      }
 
-  function renderList() {
-    const f = searchEl.value.toLowerCase();
-    listEl.innerHTML = "";
-    if (view === "models") {
-      for (const g of GROUP_ORDER) {
-        const secs = DATA.sections.filter(s => s.group === g && (s.name.toLowerCase().includes(f) || s.items.some(n => n.toLowerCase().includes(f))));
-        if (!secs.length) continue;
-        addTitle(g);
-        for (const s of secs) {
-          const d = document.createElement("div");
-          d.className = "item" + (s.name === currentSection ? " active" : "");
-          d.textContent = s.name;
-          d.onclick = () => { currentSection = s.name; renderList(); renderPanel(); };
-          listEl.appendChild(d);
-        }
-      }
-    } else {
-      const tags = [];
-      for (const a of DATA.apis) if (!tags.includes(a.tag)) tags.push(a.tag);
-      for (const tag of tags) {
-        const items = DATA.apis.map((a, i) => ({ a, i })).filter(o => o.a.tag === tag && (o.a.path.toLowerCase().includes(f) || o.a.method.toLowerCase().includes(f)));
-        if (!items.length) continue;
-        addTitle(tag);
-        for (const o of items) {
-          const d = document.createElement("div");
-          d.className = "item" + (o.i === currentApi ? " active" : "");
-          d.innerHTML = '<span class="m m-' + o.a.method.toLowerCase() + '">' + o.a.method + '</span>' + o.a.path;
-          d.onclick = () => { currentApi = o.i; renderList(); renderPanel(); };
-          listEl.appendChild(d);
-        }
-      }
-    }
-  }
+	                                      function renderList() {
+	                                        const f = searchEl.value.toLowerCase();
+	                                        const searching = f.trim() !== "";
+	                                        listEl.innerHTML = "";
+	                                        if (view === "models") {
+	                                          for (const g of GROUP_ORDER) {
+	                                            const secs = DATA.sections.filter(s => s.group === g && (s.name.toLowerCase().includes(f) || s.items.some(n => n.toLowerCase().includes(f))));
+	                                            if (!secs.length) continue;
+	                                            if (!groupHeader("m:" + g, g, secs.length, searching)) continue;
+	                                            for (const s of secs) {
+	                                              const d = document.createElement("div");
+	                                              d.className = "item" + (s.name === currentSection ? " active" : "");
+	                                              d.textContent = s.name;
+	                                              d.onclick = () => { currentSection = s.name; renderList(); renderPanel(); };
+	                                              listEl.appendChild(d);
+	                                            }
+	                                          }
+	                                        } else {
+	                                          const tags = [];
+	                                          for (const a of DATA.apis) if (!tags.includes(a.tag)) tags.push(a.tag);
+	                                          for (const tag of tags) {
+	                                            const items = DATA.apis.map((a, i) => ({ a, i })).filter(o => o.a.tag === tag && (o.a.path.toLowerCase().includes(f) || o.a.method.toLowerCase().includes(f)));
+	                                            if (!items.length) continue;
+	                                            if (!groupHeader("a:" + tag, tag, items.length, searching)) continue;
+	                                            for (const o of items) {
+	                                              const d = document.createElement("div");
+	                                              d.className = "item" + (o.i === currentApi ? " active" : "");
+	                                              d.innerHTML = '<span class="m m-' + o.a.method.toLowerCase() + '">' + o.a.method + '</span>' + o.a.path;
+	                                              d.onclick = () => { currentApi = o.i; renderList(); renderPanel(); };
+	                                              listEl.appendChild(d);
+	                                            }
+	                                          }
+	                                        }
+	                                      }
 
-  function makeBlock(title, code) {
-    const head = document.createElement("div");
-    head.className = "blockhead";
-    const t = document.createElement("span");
-    t.className = "btitle";
-    t.textContent = title;
-    const btn = document.createElement("button");
-    btn.className = "copy";
-    btn.textContent = "Copy";
-    btn.onclick = () => { navigator.clipboard.writeText(code); btn.textContent = "Copied"; setTimeout(() => btn.textContent = "Copy", 1200); };
-    head.appendChild(t);
-    head.appendChild(btn);
-    panelEl.appendChild(head);
-    const pre = document.createElement("pre");
-    pre.textContent = code;
-    panelEl.appendChild(pre);
-  }
+	                                      function makeBlock(title, code) {
+	                                        const head = document.createElement("div");
+	                                        head.className = "blockhead";
+	                                        const t = document.createElement("span");
+	                                        t.className = "btitle";
+	                                        t.textContent = title;
+	                                        const btn = document.createElement("button");
+	                                        btn.className = "copy";
+	                                        btn.textContent = "Copy";
+	                                        btn.onclick = () => { navigator.clipboard.writeText(code); btn.textContent = "Copied"; setTimeout(() => btn.textContent = "Copy", 1200); };
+	                                        head.appendChild(t);
+	                                        head.appendChild(btn);
+	                                        panelEl.appendChild(head);
+	                                        const pre = document.createElement("pre");
+	                                        pre.textContent = code;
+	                                        panelEl.appendChild(pre);
+	                                      }
 
-  function renderPanel() {
-    panelEl.innerHTML = "";
-    if (view === "models") {
-      if (!currentSection) { panelEl.innerHTML = '<div class="empty">Pick a file from the left.</div>'; return; }
-      const s = byName[currentSection];
-      makeBlock(currentSection, s.items.map(n => DATA.types[n][modelLang]).join("\n\n"));
-    } else {
-      if (currentApi < 0) { panelEl.innerHTML = '<div class="empty">Pick an endpoint from the left.</div>'; return; }
-      const a = DATA.apis[currentApi];
-      const h = document.createElement("div");
-      h.className = "apihead";
-      h.innerHTML = '<span class="m m-' + a.method.toLowerCase() + '">' + a.method + '</span> <span class="apipath">' + a.path + '</span>';
-      panelEl.appendChild(h);
-      const c = a.code[apiLang];
-      makeBlock("Request", c.request);
-      makeBlock("Response", c.response);
-    }
-  }
+	                                      function renderPanel() {
+	                                        panelEl.innerHTML = "";
+	                                        if (view === "models") {
+	                                          if (!currentSection) { panelEl.innerHTML = '<div class="empty">Pick a file from the left.</div>'; return; }
+	                                          const s = byName[currentSection];
+	                                          makeBlock(currentSection, s.items.map(n => DATA.types[n][modelLang]).join("\n\n"));
+	                                        } else {
+	                                          if (currentApi < 0) { panelEl.innerHTML = '<div class="empty">Pick an endpoint from the left.</div>'; return; }
+	                                          const a = DATA.apis[currentApi];
+	                                          const h = document.createElement("div");
+	                                          h.className = "apihead";
+	                                          h.innerHTML = '<span class="m m-' + a.method.toLowerCase() + '">' + a.method + '</span> <span class="apipath">' + a.path + '</span>';
+	                                          panelEl.appendChild(h);
+	                                          const c = a.code[apiLang];
+	                                          makeBlock("Request", c.request);
+	                                          makeBlock("Response", c.response);
+	                                        }
+	                                      }
 
-  function switchView(v) {
-    if (v === view) return;
-    view = v;
-    searchEl.value = "";
-    renderNav();
-    renderTabs();
-    renderList();
-    renderPanel();
-  }
+	                                      function switchView(v) {
+	                                        if (v === view) return;
+	                                        view = v;
+	                                        searchEl.value = "";
+	                                        renderNav();
+	                                        renderTabs();
+	                                        renderList();
+	                                        renderPanel();
+	                                      }
 
-  document.querySelectorAll(".navbtn").forEach(b => b.onclick = () => switchView(b.dataset.view));
-  searchEl.oninput = renderList;
+	                                      document.querySelectorAll(".navbtn").forEach(b => b.onclick = () => switchView(b.dataset.view));
+	                                      searchEl.oninput = renderList;
 
-  renderNav();
-  renderTabs();
-  renderList();
-  renderPanel();
-</script>
-</body>
-</html>
-""";
+	                                      renderNav();
+	                                      renderTabs();
+	                                      renderList();
+	                                      renderPanel();
+	                                    </script>
+	                                    </body>
+	                                    </html>
+	                                    """;
 }
