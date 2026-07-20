@@ -7,7 +7,7 @@ public class MoadiResponse : BaseResponse<TagMoadi, MoadiJson> {
 	public required string UniqueTaxCode { get; set; }
 	public string? NationalCode { get; set; }
 	public string? PostalCode { get; set; }
-	public string? RegistrationDate { get; set; }
+	public DateTime? RegistrationDate { get; set; }
 	public string? RegistrationNumber { get; set; }
 	public string? Address { get; set; }
 	public int? StartInvoiceNumber { get; set; }

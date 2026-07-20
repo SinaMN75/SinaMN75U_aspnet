@@ -25,7 +25,7 @@ public class MoadiCreateParams : BaseCreateParams<TagMoadi> {
 	public Guid? UserId { get; set; }
 	public string? NationalCode { get; set; }
 	public string? PostalCode { get; set; }
-	public string? RegistrationDate { get; set; }
+	public DateTime? RegistrationDate { get; set; }
 	public string? RegistrationNumber { get; set; }
 	public string? Address { get; set; }
 	public int? StartInvoiceNumber { get; set; }
@@ -39,7 +39,7 @@ public class MoadiUpdateParams : BaseUpdateParams<TagMoadi> {
 	public string? UniqueTaxCode { get; set; }
 	public string? NationalCode { get; set; }
 	public string? PostalCode { get; set; }
-	public string? RegistrationDate { get; set; }
+	public DateTime? RegistrationDate { get; set; }
 	public string? RegistrationNumber { get; set; }
 	public string? Address { get; set; }
 	public int? StartInvoiceNumber { get; set; }
