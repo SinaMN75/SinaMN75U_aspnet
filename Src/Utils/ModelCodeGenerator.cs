@@ -42,8 +42,8 @@ public static partial class ModelCodeGenerator {
 	}
 
 	public static void MapUModelsPage(this WebApplication app) {
-		app.MapGet("/models", () => Results.Content(BuildHtml(), "text/html; charset=utf-8"));
-		app.MapGet("/models/json", () => Results.Content(JsonSerializer.Serialize(BuildPayload()), "application/json; charset=utf-8"));
+		app.MapGet("/models", (EndpointDataSource eds) => Results.Content(BuildHtml(eds), "text/html; charset=utf-8"));
+		app.MapGet("/models/json", (EndpointDataSource eds) => Results.Content(JsonSerializer.Serialize(BuildPayload(eds)), "application/json; charset=utf-8"));
 	}
 
 	private static bool DerivesFromBaseParams(Type t) => typeof(BaseParams).IsAssignableFrom(t) && t != typeof(BaseParams);
@@ -388,7 +388,7 @@ public static partial class ModelCodeGenerator {
 		return sections;
 	}
 
-	private static object BuildPayload() {
+	private static object BuildPayload(EndpointDataSource eds) {
 		List<SrcFile>? files = null;
 		string? root = FindSrcRoot();
 		if (root != null)
@@ -433,151 +433,315 @@ public static partial class ModelCodeGenerator {
 		var outSections = sections.Where(s => s.items.Count > 0)
 			.Select(s => new { name = s.name, group = s.group, items = s.items.Select(n => Out(byName[n])).ToList() })
 			.ToList();
-		return new { sections = outSections, types };
+		return new { sections = outSections, types, apis = BuildApis(eds, models) };
 	}
 
-	private static string BuildHtml() => HtmlTemplate.Replace("/*__DATA__*/", JsonSerializer.Serialize(BuildPayload()).Replace("<", "\\u003c"));
+	// ---------- apis ----------
+
+	private static readonly JsonSerializerOptions ExampleOpts = new() { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+
+	private static string ExampleJson(Type? t) => t == null ? "null" : JsonSerializer.Serialize(BuildExample(t, []), ExampleOpts);
+
+	private static object? BuildExample(Type t, HashSet<Type> stack) {
+		Type u = Nullable.GetUnderlyingType(t) ?? t;
+		if (u == typeof(byte[])) return "string";
+		if (u.IsEnum) {
+			Array vals = u.GetEnumValues();
+			return vals.Length > 0 ? Convert.ToInt64(vals.GetValue(0)) : 0L;
+		}
+
+		if (u == typeof(string) || u == typeof(char)) return "string";
+		if (u == typeof(Guid)) return "00000000-0000-0000-0000-000000000000";
+		if (u == typeof(bool)) return true;
+		if (u == typeof(DateTime) || u == typeof(DateTimeOffset)) return "2024-01-01T00:00:00Z";
+		if (u == typeof(float) || u == typeof(double) || u == typeof(decimal)) return 0.0;
+		if (u == typeof(byte) || u == typeof(sbyte) || u == typeof(short) || u == typeof(ushort) || u == typeof(int) || u == typeof(uint) || u == typeof(long) || u == typeof(ulong)) return 0L;
+
+		Type? elem = ElementType(u);
+		if (elem != null) {
+			Type ek = Nullable.GetUnderlyingType(elem) ?? elem;
+			if (ek.Assembly == Asm && ek.IsClass && stack.Contains(ek)) return new List<object?>();
+			return new List<object?> { BuildExample(elem, stack) };
+		}
+
+		if (u.Assembly == Asm && u.IsClass) {
+			if (!stack.Add(u)) return null;
+			Dictionary<string, object?> dict = new();
+			foreach (PropertyInfo p in u.GetProperties(BindingFlags.Public | BindingFlags.Instance)) {
+				if (p.Name is "ApiKey" or "Token" || p.GetIndexParameters().Length > 0) continue;
+				dict[Camel(p.Name)] = BuildExample(p.PropertyType, stack);
+			}
+
+			stack.Remove(u);
+			return dict;
+		}
+
+		return null;
+	}
+
+	private static List<object> BuildApis(EndpointDataSource eds, Dictionary<Type, Model> models) {
+		List<(string tag, string method, string path, object code)> rows = [];
+
+		foreach (RouteEndpoint ep in eds.Endpoints.OfType<RouteEndpoint>()) {
+			string? raw = ep.RoutePattern.RawText;
+			if (string.IsNullOrEmpty(raw)) continue;
+			string path = "/" + raw.TrimStart('/');
+			if (path.StartsWith("/models", Oic) || path.StartsWith("/swagger", Oic)) continue;
+
+			string method = ep.Metadata.GetMetadata<HttpMethodMetadata>()?.HttpMethods.FirstOrDefault(x => x is not ("OPTIONS" or "HEAD")) ?? "POST";
+			string tag = ep.Metadata.GetMetadata<Microsoft.AspNetCore.Http.Metadata.ITagsMetadata>()?.Tags.FirstOrDefault() ?? "default";
+			Type? reqType = ep.Metadata.GetMetadata<Microsoft.AspNetCore.Http.Metadata.IAcceptsMetadata>()?.RequestType;
+			Type? respType = ep.Metadata.OfType<Microsoft.AspNetCore.Http.Metadata.IProducesResponseTypeMetadata>()
+				.OrderBy(x => x.StatusCode == 200 ? 0 : 1)
+				.Select(x => x.Type)
+				.FirstOrDefault();
+
+			List<Model> req = Closure(reqType, models);
+			List<Model> resp = Closure(respType, models);
+
+			object code = new {
+				json = new { request = reqType != null ? ExampleJson(reqType) : "// (no request body)", response = respType != null ? ExampleJson(respType) : "// (no declared response)" },
+				dart = new { request = Block(req, GenDart), response = Block(resp, GenDart) },
+				kotlin = new { request = Block(req, GenKotlin), response = Block(resp, GenKotlin) },
+				java = new { request = Block(req, GenJava), response = Block(resp, GenJava) },
+				csharp = new { request = Block(req, GenCsharp), response = Block(resp, GenCsharp) },
+				typescript = new { request = Block(req, GenTs), response = Block(resp, GenTs) }
+			};
+			rows.Add((tag, method, path, code));
+		}
+
+		return rows
+			.OrderBy(r => r.tag, StringComparer.Ordinal).ThenBy(r => r.path, StringComparer.Ordinal).ThenBy(r => r.method, StringComparer.Ordinal)
+			.Select(r => (object)new { method = r.method, path = r.path, tag = r.tag, code = r.code })
+			.ToList();
+	}
+
+	private static string Block(List<Model> list, Func<Model, string> gen) => list.Count == 0 ? "// (none)" : string.Join("\n\n", list.Select(gen));
+
+	// Transitive set of generated models reachable from a type (unwraps the UResponse<T> envelope, collections, nullables).
+	private static List<Model> Closure(Type? start, Dictionary<Type, Model> models) {
+		List<Model> order = [];
+		if (start == null) return order;
+		HashSet<Type> seen = [];
+		Queue<Type> queue = new();
+		foreach (Type lt in LeafTypes(start)) queue.Enqueue(lt);
+		while (queue.Count > 0) {
+			Type t = queue.Dequeue();
+			if (!models.TryGetValue(t, out Model? m) || !seen.Add(t)) continue;
+			order.Add(m);
+			foreach (Prop p in m.props)
+				foreach (Type lt in LeafTypes(p.clr))
+					queue.Enqueue(lt);
+		}
+
+		return order;
+	}
+
+	private static string BuildHtml(EndpointDataSource eds) => HtmlTemplate.Replace("/*__DATA__*/", JsonSerializer.Serialize(BuildPayload(eds)).Replace("<", "\\u003c"));
 
 	[GeneratedRegex(@"\b(?:class|record|struct|enum)\s+([A-Za-z_]\w*)")]
 	private static partial Regex TypeDeclRegex();
 
 	private const string HtmlTemplate = """
-	                                    <!DOCTYPE html>
-	                                    <html lang="en">
-	                                    <head>
-	                                    <meta charset="utf-8">
-	                                    <meta name="viewport" content="width=device-width, initial-scale=1">
-	                                    <title>SinaMN75 Models</title>
-	                                    <style>
-	                                      :root { --bg:#0f1419; --panel:#1a1f29; --panel2:#141922; --border:#2a3140; --text:#e6e9ef; --muted:#8b93a3; --accent:#4fa3ff; --accent2:#2d3648; }
-	                                      * { box-sizing:border-box; }
-	                                      body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; }
-	                                      header { padding:14px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:14px; background:var(--panel2); }
-	                                      header h1 { font-size:16px; margin:0; font-weight:600; }
-	                                      header .sub { color:var(--muted); font-size:12px; }
-	                                      .wrap { flex:1; display:flex; min-height:0; }
-	                                      aside { width:280px; border-right:1px solid var(--border); overflow-y:auto; background:var(--panel2); }
-	                                      aside .search { padding:10px; position:sticky; top:0; background:var(--panel2); border-bottom:1px solid var(--border); }
-	                                      aside input { width:100%; padding:8px 10px; border-radius:6px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:13px; outline:none; }
-	                                      .group-title { padding:12px 14px 4px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
-	                                      .item { padding:6px 14px; font-size:13px; cursor:pointer; color:var(--text); border-left:3px solid transparent; }
-	                                      .item:hover { background:var(--panel); }
-	                                      .item.active { background:var(--accent2); border-left-color:var(--accent); color:#fff; }
-	                                      main { flex:1; display:flex; flex-direction:column; min-width:0; }
-	                                      .tabs { display:flex; gap:2px; padding:12px 20px 0; border-bottom:1px solid var(--border); flex-wrap:wrap; }
-	                                      .tab { padding:8px 16px; font-size:13px; cursor:pointer; color:var(--muted); border:1px solid transparent; border-bottom:none; border-radius:6px 6px 0 0; }
-	                                      .tab:hover { color:var(--text); }
-	                                      .tab.active { color:#fff; background:var(--panel); border-color:var(--border); }
-	                                      .codebar { display:flex; align-items:center; justify-content:space-between; padding:12px 20px 0; }
-	                                      .codebar .name { font-size:15px; font-weight:600; }
-	                                      .copy { padding:6px 12px; font-size:12px; border-radius:6px; border:1px solid var(--border); background:var(--panel); color:var(--text); cursor:pointer; }
-	                                      .copy:hover { border-color:var(--accent); color:var(--accent); }
-	                                      .codewrap { flex:1; overflow:auto; padding:12px 20px 24px; }
-	                                      pre { margin:0; background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px; font-size:13px; line-height:1.55; font-family:"SF Mono",Menlo,Consolas,monospace; white-space:pre; overflow:auto; }
-	                                      .empty { color:var(--muted); padding:40px 20px; }
-	                                    </style>
-	                                    </head>
-	                                    <body>
-	                                    <header>
-	                                      <h1>SinaMN75 Models</h1>
-	                                      <span class="sub">Dart · Kotlin · Java · C# · TypeScript</span>
-	                                    </header>
-	                                    <div class="wrap">
-	                                      <aside>
-	                                        <div class="search"><input id="search" placeholder="Filter files..." autocomplete="off"></div>
-	                                        <div id="list"></div>
-	                                      </aside>
-	                                      <main>
-	                                        <div class="codebar"><span class="name" id="typeName">Select a file</span><button class="copy" id="copyBtn" style="display:none">Copy</button></div>
-	                                        <div class="tabs" id="tabs"></div>
-	                                        <div class="codewrap"><pre id="code" class="empty">Pick a file from the left to see its models.</pre></div>
-	                                      </main>
-	                                    </div>
-	                                    <script>
-	                                      const DATA = /*__DATA__*/;
-	                                      const LANGS = [["dart","Dart"],["kotlin","Kotlin"],["java","Java"],["csharp","C#"],["typescript","TypeScript"]];
-	                                      const GROUP_ORDER = ["Params","Responses","Models","Enums"];
-	                                      const byName = {};
-	                                      for (const s of DATA.sections) byName[s.name] = s;
-	                                      let current = null;
-	                                      let lang = "dart";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SinaMN75 API</title>
+<style>
+  :root { --bg:#0f1419; --panel:#1a1f29; --panel2:#141922; --border:#2a3140; --text:#e6e9ef; --muted:#8b93a3; --accent:#4fa3ff; --accent2:#2d3648; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; }
+  header { padding:12px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:16px; background:var(--panel2); }
+  header h1 { font-size:16px; margin:0; font-weight:600; }
+  .nav { display:flex; gap:4px; }
+  .navbtn { padding:6px 16px; font-size:13px; border-radius:6px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; }
+  .navbtn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .wrap { flex:1; display:flex; min-height:0; }
+  aside { width:300px; border-right:1px solid var(--border); overflow-y:auto; background:var(--panel2); }
+  aside .search { padding:10px; position:sticky; top:0; background:var(--panel2); border-bottom:1px solid var(--border); }
+  aside input { width:100%; padding:8px 10px; border-radius:6px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:13px; outline:none; }
+  .group-title { padding:12px 14px 4px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  .item { padding:6px 14px; font-size:13px; cursor:pointer; color:var(--text); border-left:3px solid transparent; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .item:hover { background:var(--panel); }
+  .item.active { background:var(--accent2); border-left-color:var(--accent); color:#fff; }
+  .m { display:inline-block; min-width:42px; font-size:10px; font-weight:700; padding:1px 5px; border-radius:4px; margin-right:6px; text-align:center; }
+  .m-post { background:#1c3a2e; color:#4ade80; }
+  .m-get { background:#1c2f45; color:#60a5fa; }
+  .m-put { background:#3a331c; color:#fbbf24; }
+  .m-delete { background:#3a1c1c; color:#f87171; }
+  main { flex:1; display:flex; flex-direction:column; min-width:0; }
+  .tabs { display:flex; gap:2px; padding:12px 20px 0; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+  .tab { padding:8px 16px; font-size:13px; cursor:pointer; color:var(--muted); border:1px solid transparent; border-bottom:none; border-radius:6px 6px 0 0; }
+  .tab:hover { color:var(--text); }
+  .tab.active { color:#fff; background:var(--panel); border-color:var(--border); }
+  .codebar { display:flex; align-items:center; justify-content:space-between; padding:12px 20px 0; }
+  .codebar .name { font-size:15px; font-weight:600; }
+  .copy { padding:6px 12px; font-size:12px; border-radius:6px; border:1px solid var(--border); background:var(--panel); color:var(--text); cursor:pointer; }
+  .copy:hover { border-color:var(--accent); color:var(--accent); }
+  .codewrap { flex:1; overflow:auto; padding:0 0 24px; }
+  pre { margin:0 20px 6px; background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px; font-size:13px; line-height:1.55; font-family:"SF Mono",Menlo,Consolas,monospace; white-space:pre; overflow:auto; }
+  .empty { color:var(--muted); padding:40px 20px; }
+  .apihead { padding:16px 20px 2px; }
+  .apipath { font-size:15px; font-weight:600; margin-left:4px; }
+  .blockhead { display:flex; align-items:center; justify-content:space-between; padding:16px 20px 6px; }
+  .btitle { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>SinaMN75</h1>
+  <div class="nav">
+    <button class="navbtn active" data-view="models">Models</button>
+    <button class="navbtn" data-view="apis">APIs</button>
+  </div>
+</header>
+<div class="wrap">
+  <aside>
+    <div class="search"><input id="search" placeholder="Filter..." autocomplete="off"></div>
+    <div id="list"></div>
+  </aside>
+  <main>
+    <div class="tabs" id="tabs"></div>
+    <div class="codewrap" id="panel"><div class="empty">Pick an item from the left.</div></div>
+  </main>
+</div>
+<script>
+  const DATA = /*__DATA__*/;
+  const MODEL_LANGS = [["dart","Dart"],["kotlin","Kotlin"],["java","Java"],["csharp","C#"],["typescript","TypeScript"]];
+  const API_LANGS = [["json","JSON"],["dart","Dart"],["kotlin","Kotlin"],["java","Java"],["csharp","C#"],["typescript","TypeScript"]];
+  const GROUP_ORDER = ["Params","Responses","Models","Enums"];
+  const byName = {};
+  for (const s of DATA.sections) byName[s.name] = s;
 
-	                                      const listEl = document.getElementById("list");
-	                                      const tabsEl = document.getElementById("tabs");
-	                                      const codeEl = document.getElementById("code");
-	                                      const nameEl = document.getElementById("typeName");
-	                                      const copyBtn = document.getElementById("copyBtn");
-	                                      const searchEl = document.getElementById("search");
+  let view = "models";
+  let modelLang = "dart";
+  let apiLang = "json";
+  let currentSection = null;
+  let currentApi = -1;
 
-	                                      function sectionCode(name) {
-	                                        const s = byName[name];
-	                                        return s.items.map(n => DATA.types[n][lang]).join("\n\n");
-	                                      }
+  const listEl = document.getElementById("list");
+  const tabsEl = document.getElementById("tabs");
+  const panelEl = document.getElementById("panel");
+  const searchEl = document.getElementById("search");
 
-	                                      function matches(s, f) {
-	                                        if (!f) return true;
-	                                        if (s.name.toLowerCase().includes(f)) return true;
-	                                        return s.items.some(n => n.toLowerCase().includes(f));
-	                                      }
+  const langs = () => view === "models" ? MODEL_LANGS : API_LANGS;
+  const curLang = () => view === "models" ? modelLang : apiLang;
+  const setLang = l => { if (view === "models") modelLang = l; else apiLang = l; };
 
-	                                      function renderList() {
-	                                        const f = searchEl.value.toLowerCase();
-	                                        listEl.innerHTML = "";
-	                                        for (const g of GROUP_ORDER) {
-	                                          const secs = DATA.sections.filter(s => s.group === g && matches(s, f));
-	                                          if (!secs.length) continue;
-	                                          const t = document.createElement("div");
-	                                          t.className = "group-title";
-	                                          t.textContent = g;
-	                                          listEl.appendChild(t);
-	                                          for (const s of secs) {
-	                                            const d = document.createElement("div");
-	                                            d.className = "item" + (s.name === current ? " active" : "");
-	                                            d.textContent = s.name;
-	                                            d.onclick = () => select(s.name);
-	                                            listEl.appendChild(d);
-	                                          }
-	                                        }
-	                                      }
+  function addTitle(text) {
+    const t = document.createElement("div");
+    t.className = "group-title";
+    t.textContent = text;
+    listEl.appendChild(t);
+  }
 
-	                                      function renderTabs() {
-	                                        tabsEl.innerHTML = "";
-	                                        for (const [id, label] of LANGS) {
-	                                          const t = document.createElement("div");
-	                                          t.className = "tab" + (id === lang ? " active" : "");
-	                                          t.textContent = label;
-	                                          t.onclick = () => { lang = id; renderTabs(); renderCode(); };
-	                                          tabsEl.appendChild(t);
-	                                        }
-	                                      }
+  function renderNav() {
+    document.querySelectorAll(".navbtn").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+  }
 
-	                                      function renderCode() {
-	                                        if (!current) return;
-	                                        codeEl.className = "";
-	                                        codeEl.textContent = sectionCode(current);
-	                                      }
+  function renderTabs() {
+    tabsEl.innerHTML = "";
+    for (const [id, label] of langs()) {
+      const t = document.createElement("div");
+      t.className = "tab" + (id === curLang() ? " active" : "");
+      t.textContent = label;
+      t.onclick = () => { setLang(id); renderTabs(); renderPanel(); };
+      tabsEl.appendChild(t);
+    }
+  }
 
-	                                      function select(name) {
-	                                        current = name;
-	                                        nameEl.textContent = name;
-	                                        copyBtn.style.display = "";
-	                                        renderList();
-	                                        renderCode();
-	                                      }
+  function renderList() {
+    const f = searchEl.value.toLowerCase();
+    listEl.innerHTML = "";
+    if (view === "models") {
+      for (const g of GROUP_ORDER) {
+        const secs = DATA.sections.filter(s => s.group === g && (s.name.toLowerCase().includes(f) || s.items.some(n => n.toLowerCase().includes(f))));
+        if (!secs.length) continue;
+        addTitle(g);
+        for (const s of secs) {
+          const d = document.createElement("div");
+          d.className = "item" + (s.name === currentSection ? " active" : "");
+          d.textContent = s.name;
+          d.onclick = () => { currentSection = s.name; renderList(); renderPanel(); };
+          listEl.appendChild(d);
+        }
+      }
+    } else {
+      const tags = [];
+      for (const a of DATA.apis) if (!tags.includes(a.tag)) tags.push(a.tag);
+      for (const tag of tags) {
+        const items = DATA.apis.map((a, i) => ({ a, i })).filter(o => o.a.tag === tag && (o.a.path.toLowerCase().includes(f) || o.a.method.toLowerCase().includes(f)));
+        if (!items.length) continue;
+        addTitle(tag);
+        for (const o of items) {
+          const d = document.createElement("div");
+          d.className = "item" + (o.i === currentApi ? " active" : "");
+          d.innerHTML = '<span class="m m-' + o.a.method.toLowerCase() + '">' + o.a.method + '</span>' + o.a.path;
+          d.onclick = () => { currentApi = o.i; renderList(); renderPanel(); };
+          listEl.appendChild(d);
+        }
+      }
+    }
+  }
 
-	                                      copyBtn.onclick = () => {
-	                                        if (!current) return;
-	                                        navigator.clipboard.writeText(sectionCode(current));
-	                                        copyBtn.textContent = "Copied";
-	                                        setTimeout(() => copyBtn.textContent = "Copy", 1200);
-	                                      };
+  function makeBlock(title, code) {
+    const head = document.createElement("div");
+    head.className = "blockhead";
+    const t = document.createElement("span");
+    t.className = "btitle";
+    t.textContent = title;
+    const btn = document.createElement("button");
+    btn.className = "copy";
+    btn.textContent = "Copy";
+    btn.onclick = () => { navigator.clipboard.writeText(code); btn.textContent = "Copied"; setTimeout(() => btn.textContent = "Copy", 1200); };
+    head.appendChild(t);
+    head.appendChild(btn);
+    panelEl.appendChild(head);
+    const pre = document.createElement("pre");
+    pre.textContent = code;
+    panelEl.appendChild(pre);
+  }
 
-	                                      searchEl.oninput = renderList;
+  function renderPanel() {
+    panelEl.innerHTML = "";
+    if (view === "models") {
+      if (!currentSection) { panelEl.innerHTML = '<div class="empty">Pick a file from the left.</div>'; return; }
+      const s = byName[currentSection];
+      makeBlock(currentSection, s.items.map(n => DATA.types[n][modelLang]).join("\n\n"));
+    } else {
+      if (currentApi < 0) { panelEl.innerHTML = '<div class="empty">Pick an endpoint from the left.</div>'; return; }
+      const a = DATA.apis[currentApi];
+      const h = document.createElement("div");
+      h.className = "apihead";
+      h.innerHTML = '<span class="m m-' + a.method.toLowerCase() + '">' + a.method + '</span> <span class="apipath">' + a.path + '</span>';
+      panelEl.appendChild(h);
+      const c = a.code[apiLang];
+      makeBlock("Request", c.request);
+      makeBlock("Response", c.response);
+    }
+  }
 
-	                                      renderTabs();
-	                                      renderList();
-	                                    </script>
-	                                    </body>
-	                                    </html>
-	                                    """;
+  function switchView(v) {
+    if (v === view) return;
+    view = v;
+    searchEl.value = "";
+    renderNav();
+    renderTabs();
+    renderList();
+    renderPanel();
+  }
+
+  document.querySelectorAll(".navbtn").forEach(b => b.onclick = () => switchView(b.dataset.view));
+  searchEl.oninput = renderList;
+
+  renderNav();
+  renderTabs();
+  renderList();
+  renderPanel();
+</script>
+</body>
+</html>
+""";
 }
