@@ -19,6 +19,7 @@ public class MoadiService(
 	public async Task<UResponse<Guid?>> Create(MoadiCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		if (await db.Set<MoadiEntity>().AnyAsync(x => x.EconomicCode == p.EconomicCode, ct))
 			return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("MoadiEconomicCodeExists"));
@@ -110,6 +111,7 @@ public class MoadiService(
 	public async Task<UResponse<MoadiResponse?>> Approve(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<MoadiResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<MoadiResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		if (!userData.IsAdmin) return new UResponse<MoadiResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		MoadiEntity? e = await db.Set<MoadiEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);

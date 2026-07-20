@@ -18,6 +18,7 @@ public class CommentService(
 	public async Task<UResponse<Guid?>> Create(CommentCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		CommentEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),

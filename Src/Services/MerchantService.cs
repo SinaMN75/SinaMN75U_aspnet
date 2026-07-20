@@ -15,6 +15,7 @@ public class MerchantService(
 	public async Task<UResponse<Guid?>> Create(MerchantCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		bool paidViaGateway = await db.Set<TxnEntity>().AnyAsync(x => x.UserId == userData.Id && x.Tags.Contains(TagTxn.MerchantCreationFee), ct);
 		bool paidViaWallet = await db.Set<WalletTxnEntity>().AnyAsync(x => x.SenderId == userData.Id && x.Tags.Contains(TagWalletTxn.MerchantCreationFee), ct);

@@ -96,6 +96,7 @@ public class FollowService(
 	public async Task<UResponse<IEnumerable<UserEntity>>> ReadFollowers(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IEnumerable<UserEntity>>([], Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<UserEntity>>([], Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		List<UserEntity> followers = await db.Set<FollowEntity>()
 			.Where(x => x.UserId == p.Id)
@@ -108,6 +109,7 @@ public class FollowService(
 	public async Task<UResponse<IEnumerable<UserEntity>>> ReadFollowedUsers(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IEnumerable<UserEntity>>([], Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<UserEntity>>([], Usc.ExpiredToken, ls.Get("TokenExpired"));
 		List<UserEntity> following = (await db.Set<FollowEntity>()
 			.Where(x => x.CreatorId == p.Id)
 			.Select(x => x.User)
@@ -119,6 +121,7 @@ public class FollowService(
 	public async Task<UResponse<IEnumerable<ProductEntity>>> ReadFollowedProducts(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IEnumerable<ProductEntity>>([], Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<ProductEntity>>([], Usc.ExpiredToken, ls.Get("TokenExpired"));
 		List<ProductEntity> following = (await db.Set<FollowEntity>()
 			.Where(x => x.CreatorId == p.Id)
 			.Select(x => x.Product)
@@ -130,6 +133,7 @@ public class FollowService(
 	public async Task<UResponse<IEnumerable<CategoryEntity>>> ReadFollowedCategories(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IEnumerable<CategoryEntity>>([], Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<CategoryEntity>>([], Usc.ExpiredToken, ls.Get("TokenExpired"));
 		List<CategoryEntity> following = (await db.Set<FollowEntity>()
 			.Where(x => x.CreatorId == p.Id)
 			.Select(x => x.Category)
@@ -149,6 +153,7 @@ public class FollowService(
 	public async Task<UResponse<bool?>> IsFollowingUser(FollowParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<bool?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<bool?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		p.CreatorId ??= userData.Id;
 		bool isFollowing = await db.Set<FollowEntity>().AnyAsync(x => x.CreatorId == p.CreatorId && x.UserId == p.UserId, ct);
 		return new UResponse<bool?>(isFollowing);
@@ -157,6 +162,7 @@ public class FollowService(
 	public async Task<UResponse<bool?>> IsFollowingProduct(FollowParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<bool?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<bool?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		p.CreatorId ??= userData.Id;
 		bool isFollowing = await db.Set<FollowEntity>().AnyAsync(x => x.CreatorId == p.CreatorId && x.ProductId == p.ProductId, ct);
 		return new UResponse<bool?>(isFollowing);
@@ -165,6 +171,7 @@ public class FollowService(
 	public async Task<UResponse<bool?>> IsFollowingCategory(FollowParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<bool?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<bool?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		bool isFollowing = await db.Set<FollowEntity>().AnyAsync(x => x.CreatorId == (p.CreatorId ?? userData.Id) && x.CategoryId == p.CategoryId, ct);
 		return new UResponse<bool?>(isFollowing);
 	}

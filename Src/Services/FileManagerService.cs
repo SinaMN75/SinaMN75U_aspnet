@@ -163,6 +163,7 @@ public class FileManagerService(
 	private UResponse<T>? GuardAdmin<T>(string? token) {
 		JwtClaimData? userData = ts.ExtractClaims(token);
 		if (userData == null) return new UResponse<T>(default!, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<T>(default!, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		if (!userData.Tags.Contains(TagUser.SystemAdmin)) return new UResponse<T>(default!, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 		return null;
 	}

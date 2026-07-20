@@ -157,6 +157,7 @@ public class DashboardService(
 	public async Task<UResponse<FinancialOpsDashboardResponse?>> ReadFinancialOpsDashboard(DashboardRangeParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<FinancialOpsDashboardResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<FinancialOpsDashboardResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		if (!userData.IsAdmin) return new UResponse<FinancialOpsDashboardResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		DateTime to = p.ToDate ?? DateTime.UtcNow;
@@ -277,6 +278,7 @@ public class DashboardService(
 	public async Task<UResponse<PropertyDashboardResponse?>> ReadPropertyDashboard(DashboardRangeParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<PropertyDashboardResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<PropertyDashboardResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		if (!userData.IsAdmin) return new UResponse<PropertyDashboardResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		DateTime now = DateTime.UtcNow;
@@ -413,6 +415,7 @@ public class DashboardService(
 	public async Task<UResponse<OsMetricsResponse?>> ReadOsMetrics(BaseParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<OsMetricsResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<OsMetricsResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		if (!userData.IsAdmin) return new UResponse<OsMetricsResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		const double bytesToGb = 1024.0 * 1024 * 1024;

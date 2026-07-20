@@ -23,6 +23,7 @@ public class TerminalService(
 	public async Task<UResponse<Guid?>> Create(TerminalCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		TerminalEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -47,6 +48,7 @@ public class TerminalService(
 	public async Task<UResponse> Update(TerminalUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<TerminalResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		if (!userData.IsAdmin) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		TerminalEntity? e = await db.Set<TerminalEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
@@ -69,6 +71,7 @@ public class TerminalService(
 	public async Task<UResponse<TerminalResponse?>> Assign(TerminalAssignParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<TerminalResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<TerminalResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		TerminalEntity? terminal = await db.Set<TerminalEntity>().AsTracking().FirstOrDefaultAsync(x => x.Serial == p.Serial && x.SimCardSerial == p.SimCardSerial, ct);
 		if (terminal == null) return new UResponse<TerminalResponse?>(null, Usc.NotFound, ls.Get("TerminalNotFoundCheckDetails"));
@@ -193,6 +196,7 @@ public class TerminalService(
 	public async Task<UResponse<TerminalSupportPasswordResponse?>> ReadSupportPassword(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		TerminalEntity? e = await db.Set<TerminalEntity>().Select(x => new TerminalEntity {
 			Serial = x.Serial,
@@ -257,6 +261,7 @@ public class TerminalService(
 	public async Task<UResponse<TerminalImportResponse?>> Import(TerminalImportParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<TerminalImportResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<TerminalImportResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		if (p.File.IsNullOrEmpty()) return new UResponse<TerminalImportResponse?>(null, Usc.BadRequest, ls.Get("FileRequired"));
 
 		// Decode the base64 file into a seekable stream and read every row

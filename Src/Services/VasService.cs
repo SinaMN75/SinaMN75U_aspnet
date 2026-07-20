@@ -13,6 +13,7 @@ public class VasService(
 	public async Task<UResponse<Guid?>> Create(VasCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		VasEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),

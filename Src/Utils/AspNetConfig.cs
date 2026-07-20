@@ -117,7 +117,6 @@ public static partial class AspNetConfig {
 		app.UseRateLimiter();
 		app.UseMiddleware<ApiKeyMiddleware>();
 		app.UseMiddleware<DbExceptionMiddleware>();
-		app.UseMiddleware<RefreshTokenMiddleware>();
 		app.UseMiddleware<ApiLogMiddleware>();
 		app.UseMiddleware<ExceptionMiddleware>();
 		if (app.Environment.IsDevelopment()) app.UseDeveloperExceptionPage();

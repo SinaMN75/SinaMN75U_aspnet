@@ -39,6 +39,7 @@ public class UserService(
 	public async Task<UResponse<Guid?>> Create(UserCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		if (!userData.IsAdmin && !userData.HasPermission(TagUser.PermissionManageUsers)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 		if (!userData.IsAdmin && TouchesRoleOrPermissionTags(p.Tags, null, null)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
@@ -128,6 +129,7 @@ public class UserService(
 	public async Task<UResponse<IEnumerable<UserResponse>?>> Read(UserReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IEnumerable<UserResponse>?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<UserResponse>?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		if (!userData.IsAdmin && !userData.HasPermission(TagUser.PermissionManageUsers)) return new UResponse<IEnumerable<UserResponse>?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		IQueryable<UserEntity> q = db.Set<UserEntity>().ApplyReadParams(p);
@@ -161,6 +163,7 @@ public class UserService(
 	public async Task<UResponse<UserResponse?>> ReadById(IdParams<UserSelectorArgs> p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<UserResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<UserResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		if (userData.Id != p.Id && !userData.IsAdmin && !userData.HasPermission(TagUser.PermissionManageUsers))
 			return new UResponse<UserResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
@@ -243,6 +246,7 @@ public class UserService(
 	public async Task<UResponse<string?>> DownloadUserData(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<string?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<string?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		if (!userData.IsAdmin && !userData.HasPermission(TagUser.PermissionManageUsers)) return new UResponse<string?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
@@ -296,6 +300,7 @@ public class UserService(
 	public async Task<UResponse<bool?>> IsUserAuthenticated(BaseParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<bool?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<bool?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		UserResponse? e = await db.Set<UserEntity>()
 			.Select(Projections.UserSelector(new UserSelectorArgs {

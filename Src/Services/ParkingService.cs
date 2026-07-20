@@ -24,6 +24,7 @@ public class ParkingService(
 	public async Task<UResponse<Guid?>> CreateParking(ParkingCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		ParkingEntity e = new() {
 			Id = Guid.CreateVersion7(),
@@ -84,6 +85,7 @@ public class ParkingService(
 	public async Task<UResponse<Guid?>> CreateParkingUser(ParkingUserCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		ParkingEntity? parking = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == p.ParkingId, ct);
 		if (parking == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("ParkingNotFound"));
@@ -120,6 +122,7 @@ public class ParkingService(
 	public async Task<UResponse<IEnumerable<UserResponse>?>> ReadParkingUsers(ParkingUserReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IEnumerable<UserResponse>?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<UserResponse>?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		ParkingEntity? parking = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == p.ParkingId, ct);
 		if (parking == null) return new UResponse<IEnumerable<UserResponse>?>(null, Usc.NotFound, ls.Get("ParkingNotFound"));
@@ -149,6 +152,7 @@ public class ParkingService(
 	public async Task<UResponse<Guid?>> CreateParkingReport(ParkingReportCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		VehicleEntity? vehicle = await db.Set<VehicleEntity>().FirstOrDefaultAsync(x => x.LicencePlate == p.NumberPlate, ct);
 		if (vehicle == null) {

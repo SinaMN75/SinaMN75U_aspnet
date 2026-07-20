@@ -24,6 +24,7 @@ public class ContentService(
 	public async Task<UResponse<Guid?>> Create(ContentCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		ContentEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),

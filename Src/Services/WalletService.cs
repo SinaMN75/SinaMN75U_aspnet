@@ -19,6 +19,7 @@ public class WalletService(
 	public async Task<UResponse> Purchase(WalletPurchaseParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<TagTxnErrorCodes>(TagTxnErrorCodes.Unauthorized, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		Guid receiverId;
 		decimal amount;
@@ -119,6 +120,7 @@ public class WalletService(
 	public async Task<UResponse<WalletTxnResponse?>> Transfer(WalletTransferParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<WalletTxnResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<WalletTxnResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		Guid senderId = p.SenderId ?? userData.Id;
 

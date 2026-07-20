@@ -15,6 +15,7 @@ public class VehicleService(
 	public async Task<UResponse<Guid?>> Create(VehicleCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		VehicleEntity e = new() {
 			Id = Guid.CreateVersion7(),

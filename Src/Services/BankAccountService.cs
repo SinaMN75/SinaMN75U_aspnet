@@ -15,6 +15,7 @@ public class BankAccountService(
 	public async Task<UResponse<Guid?>> Create(BankAccountCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		BankAccountEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -37,6 +38,7 @@ public class BankAccountService(
 	public async Task<UResponse<IEnumerable<BankAccountResponse>?>> Read(BankAccountReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IEnumerable<BankAccountResponse>?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<BankAccountResponse>?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		if (!userData.IsAdmin) return new UResponse<IEnumerable<BankAccountResponse>?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		IQueryable<BankAccountEntity> q = db.Set<BankAccountEntity>().ApplyReadParams(p);

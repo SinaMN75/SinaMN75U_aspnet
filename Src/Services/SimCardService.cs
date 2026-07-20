@@ -15,6 +15,7 @@ public class SimCardService(
 	public async Task<UResponse<Guid?>> Create(SimCardCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		SimCardEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),

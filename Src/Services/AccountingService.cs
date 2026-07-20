@@ -1,7 +1,6 @@
 namespace SinaMN75U.Services;
 
 public interface IAccountingService {
-	// Money-in vs money-out report. Per-user when p.UserId is set, otherwise system-wide.
 	Task<UResponse<AccountingReportResponse?>> Report(AccountingReportParams p, CancellationToken ct);
 }
 
@@ -10,7 +9,6 @@ public class AccountingService(
 	ILocalizationService ls,
 	ITokenService ts
 ) : IAccountingService {
-	// Wallet-txn tags that represent spending/consumption (everything except internal Charge/Transfer).
 	private static readonly TagWalletTxn[] SpendingTags = [
 		TagWalletTxn.MobileAndNationalCodeVerification, TagWalletTxn.ZipCodeToAddressDetail,
 		TagWalletTxn.VehicleViolationsDetail, TagWalletTxn.DrivingLicenceStatus, TagWalletTxn.LicencePlateDetail,
@@ -19,15 +17,14 @@ public class AccountingService(
 	];
 
 	public async Task<UResponse<AccountingReportResponse?>> Report(AccountingReportParams p, CancellationToken ct) {
-		// Only admins may view the system-wide books.
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<AccountingReportResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<AccountingReportResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		if (p.UserId == null && !userData.IsAdmin) return new UResponse<AccountingReportResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		DateTime from = p.FromDate ?? DateTime.UtcNow.AddMonths(-1);
 		DateTime to = p.ToDate ?? DateTime.UtcNow;
 
-		// Fetch the filtered rows, then aggregate in memory (tag collections are awkward to group in SQL).
 		IQueryable<WalletTxnEntity> wq = db.Set<WalletTxnEntity>().AsNoTracking().Where(x => x.CreatedAt >= from && x.CreatedAt <= to);
 		if (p.UserId != null) wq = wq.Where(x => x.SenderId == p.UserId || x.ReceiverId == p.UserId);
 		List<WalletTxnEntity> walletRows = await wq.ToListAsync(ct);
@@ -45,14 +42,12 @@ public class AccountingService(
 		if (p.UserId != null) BuildPerUser(r, walletRows, p.UserId.Value);
 		else BuildSystemWide(r, walletRows);
 
-		// Gateway (Txn) breakdown is informational for both modes.
 		r.GatewayByType = txnRows
 			.SelectMany(x => x.Tags.Select(t => (Tag: t, x.Amount)))
 			.GroupBy(x => x.Tag)
 			.Select(g => new AccountingBreakdownItem { Tag = (int)g.Key, TagName = g.Key.ToString(), Amount = g.Sum(i => i.Amount), Count = g.Count() })
 			.OrderByDescending(i => i.Amount).ToList();
 
-		// Wallet balance liability (sum of balances) scoped to the report.
 		r.TotalWalletBalance = p.UserId == null
 			? await db.Set<WalletEntity>().SumAsync(x => (decimal?)x.Balance, ct) ?? 0
 			: await db.Set<WalletEntity>().Where(x => x.CreatorId == p.UserId).SumAsync(x => (decimal?)x.Balance, ct) ?? 0;
@@ -62,7 +57,6 @@ public class AccountingService(
 		return new UResponse<AccountingReportResponse?>(r);
 	}
 
-	// Per-user: credits = received into wallet, debits = sent out of wallet.
 	private static void BuildPerUser(AccountingReportResponse r, List<WalletTxnEntity> rows, Guid userId) {
 		List<WalletTxnEntity> incoming = rows.Where(x => x.ReceiverId == userId).ToList();
 		List<WalletTxnEntity> outgoing = rows.Where(x => x.SenderId == userId).ToList();
@@ -74,7 +68,6 @@ public class AccountingService(
 		r.SpendingByType = GroupByTag(outgoing);
 	}
 
-	// System-wide: in = wallet top-ups (Charge), out = service consumption (spending tags).
 	private static void BuildSystemWide(AccountingReportResponse r, List<WalletTxnEntity> rows) {
 		List<WalletTxnEntity> incoming = rows.Where(x => x.Tags.Contains(TagWalletTxn.Charge)).ToList();
 		List<WalletTxnEntity> outgoing = rows.Where(x => x.Tags.Any(t => SpendingTags.Contains(t))).ToList();
@@ -92,7 +85,6 @@ public class AccountingService(
 		.Select(g => new AccountingBreakdownItem { Tag = (int)g.Key, TagName = g.Key.ToString(), Amount = g.Sum(i => i.Amount), Count = g.Count() })
 		.OrderByDescending(i => i.Amount).ToList();
 
-	// Daily in/out timeline; direction depends on report scope.
 	private static void BuildTimeline(AccountingReportResponse r, List<WalletTxnEntity> rows, Guid? userId) {
 		r.Timeline = rows
 			.GroupBy(x => x.CreatedAt.Date)

@@ -34,6 +34,7 @@ public class InquiryService(
 	public async Task<UResponse<bool?>> MobileAndNationalCodeVerification(VerifyNationalCodeAndPhoneNumber p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<bool?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<bool?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadMobileAndNationalCodeVerificationHistory(p.NationalCode, p.PhoneNumber, ct);
 		if (inquiryHistory != null) return new UResponse<bool?>(inquiryHistory.Tags.Contains(TagInquiryHistory.Verified));
@@ -62,6 +63,7 @@ public class InquiryService(
 	public async Task<UResponse<ZipCodeToAddressDetailResponse?>> ZipCodeToAddressDetail(ZipCodeToAddressDetailParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadZipCodeToAddressHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
@@ -120,6 +122,7 @@ public class InquiryService(
 	public async Task<UResponse<VehicleViolationDetailResponse?>> VehicleViolationsDetail(VehicleViolationDetailParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadVehicleViolationsDetailHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
@@ -205,6 +208,7 @@ public class InquiryService(
 	public async Task<UResponse<DrivingLicenceDetailResponse?>> DrivingLicenceDetail(DrivingLicenceDetailParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadDrivingLicenceDetailHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
@@ -261,6 +265,7 @@ public class InquiryService(
 	public async Task<UResponse<LicencePlateDetailResponse?>> LicencePlateDetail(LicencePlateDetailParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<LicencePlateDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<LicencePlateDetailResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadLicencePlateStatusHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
@@ -321,6 +326,7 @@ public class InquiryService(
 	public async Task<UResponse<DrivingLicenceNegativePointResponse?>> DrivingLicenceNegativePoint(DrivingLicenceNegativePointParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadDrivingLicenceNegativePointHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
@@ -367,6 +373,7 @@ public class InquiryService(
 	public async Task<UResponse<FreewayTollsResponse?>> FreewayTolls(FreewayTollsParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<FreewayTollsResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<FreewayTollsResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadFreewayTollsHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
@@ -424,6 +431,7 @@ public class InquiryService(
 	public async Task<UResponse<IBanToBankAccountDetailResponse?>> IBanToBankAccountDetail(IBanToBankAccountDetailParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadIBanToBankAccountDetailHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
@@ -665,6 +673,7 @@ public class InquiryServiceFake(
 	public async Task<UResponse<bool?>> MobileAndNationalCodeVerification(VerifyNationalCodeAndPhoneNumber p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<bool?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<bool?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.MobileAndNationalCodeVerification, Token = p.Token }, ct);
 		return new UResponse<bool?>(true);
 	}
@@ -672,6 +681,7 @@ public class InquiryServiceFake(
 	public async Task<UResponse<ZipCodeToAddressDetailResponse?>> ZipCodeToAddressDetail(ZipCodeToAddressDetailParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.ZipCodeToAddressDetail, Token = p.Token }, ct);
 		return new UResponse<ZipCodeToAddressDetailResponse?>(new ZipCodeToAddressDetailResponse {
 			BuildingName = "برج آسمان",
@@ -695,6 +705,7 @@ public class InquiryServiceFake(
 	public async Task<UResponse<VehicleViolationDetailResponse?>> VehicleViolationsDetail(VehicleViolationDetailParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.VehicleViolationsDetail, Token = p.Token }, ct);
 		return new UResponse<VehicleViolationDetailResponse?>(new VehicleViolationDetailResponse {
 			PlateDictation = "21 الف 345 ایران 99",
@@ -745,6 +756,7 @@ public class InquiryServiceFake(
 	public async Task<UResponse<DrivingLicenceDetailResponse?>> DrivingLicenceDetail(DrivingLicenceDetailParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceStatus, Token = p.Token }, ct);
 		return new UResponse<DrivingLicenceDetailResponse?>(new DrivingLicenceDetailResponse {
 			NationalCode = "0012345678",
@@ -765,6 +777,7 @@ public class InquiryServiceFake(
 	public async Task<UResponse<LicencePlateDetailResponse?>> LicencePlateDetail(LicencePlateDetailParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<LicencePlateDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<LicencePlateDetailResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.LicencePlateDetail, Token = p.Token }, ct);
 		return new UResponse<LicencePlateDetailResponse?>(new LicencePlateDetailResponse {
 			Status = "فعال",
@@ -789,6 +802,7 @@ public class InquiryServiceFake(
 	public async Task<UResponse<DrivingLicenceNegativePointResponse?>> DrivingLicenceNegativePoint(DrivingLicenceNegativePointParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceNegativePoint, Token = p.Token }, ct);
 		return new UResponse<DrivingLicenceNegativePointResponse?>(new DrivingLicenceNegativePointResponse {
 			Point = "8",
@@ -800,6 +814,7 @@ public class InquiryServiceFake(
 	public async Task<UResponse<FreewayTollsResponse?>> FreewayTolls(FreewayTollsParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<FreewayTollsResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<FreewayTollsResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.FreewayTolls, Token = p.Token }, ct);
 		return new UResponse<FreewayTollsResponse?>(new FreewayTollsResponse {
 			TotalPrice = "780,000",
@@ -832,6 +847,7 @@ public class InquiryServiceFake(
 	public async Task<UResponse<IBanToBankAccountDetailResponse?>> IBanToBankAccountDetail(IBanToBankAccountDetailParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.IBanToBankAccountDetail, Token = p.Token }, ct);
 		return new UResponse<IBanToBankAccountDetailResponse?>(new IBanToBankAccountDetailResponse {
 			DepositNumber = "0101234567001",

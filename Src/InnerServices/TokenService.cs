@@ -14,7 +14,9 @@ public class TokenService : ITokenService {
 		return Convert.ToBase64String(randomNumber);
 	}
 
-	public string GenerateJwt(UserEntity user) => new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
+	public string GenerateJwt(UserEntity user) {
+		DateTime expires = DateTime.UtcNow.AddMinutes(double.TryParse(Core.App.Jwt.Expires, out double minutes) ? minutes : 5);
+		return new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
 			Core.App.Jwt.Issuer,
 			Core.App.Jwt.Audience,
 			[
@@ -26,13 +28,13 @@ public class TokenService : ITokenService {
 				new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName ?? ""),
 				new Claim(JwtRegisteredClaimNames.NameId, user.NationalCode ?? ""),
 				new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()),
-				new Claim(ClaimTypes.Expiration, DateTime.UtcNow.AddMinutes(60).ToString(CultureInfo.InvariantCulture)),
+				new Claim(ClaimTypes.Expiration, expires.ToString(CultureInfo.InvariantCulture)),
 				new Claim(ClaimTypes.Role, string.Join(",", user.Tags.Select(x => (int)x)))
 			],
-			expires: DateTime.UtcNow.AddMinutes(60),
+			expires: expires,
 			signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Core.App.Jwt.Key)), SecurityAlgorithms.HmacSha256)
-		)
-	);
+		));
+	}
 
 	public JwtClaimData? ExtractClaims(string? token) {
 		if (token.IsNullOrEmpty()) return null;

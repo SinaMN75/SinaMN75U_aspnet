@@ -9,6 +9,7 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 	public async Task<UResponse<IpgPayResponse?>> GetSaleIpgLink(IpgSaleParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IpgPayResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<IpgPayResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		if (p.Amount <= 0) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("AmountRequired"));
 		string trackingNumber = Guid.CreateVersion7().ToString("N");
 		int orderId = Math.Abs(Guid.NewGuid().GetHashCode());

@@ -15,6 +15,7 @@ public class TxnService(
 	public async Task<UResponse<Guid?>> Create(TxnCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		TxnEntity e = new() {
 			Id = Guid.CreateVersion7(),

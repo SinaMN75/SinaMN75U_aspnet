@@ -9,6 +9,7 @@ public class ProcessService(DbContext db, ILocalizationService ls, ITokenService
 	public async Task<UResponse<UProcessStepGetResponse?>> Get(IdStringParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<UProcessStepGetResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<UProcessStepGetResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		return p.Id switch {
 			ProcessIds.Kyc => await KycGet(userData.Id, ct),
@@ -19,6 +20,7 @@ public class ProcessService(DbContext db, ILocalizationService ls, ITokenService
 	public async Task<UResponse<UProcessStepGetResponse?>> Send(UProcessStepSend p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<UProcessStepGetResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<UProcessStepGetResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 
 		UserEntity? u = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == userData.Id, ct);

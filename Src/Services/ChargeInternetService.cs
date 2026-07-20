@@ -22,6 +22,7 @@ public class ChargeInternetService(
 	public async Task<UResponse<ChargeInternetReserveResponse?>> Pin(ReserveChargeParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
@@ -97,6 +98,7 @@ public class ChargeInternetService(
 	public async Task<UResponse<ChargeInternetReserveResponse?>> Topup(TopupChargeParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
@@ -150,6 +152,7 @@ public class ChargeInternetService(
 	public async Task<UResponse<ChargeInternetReserveResponse?>> InternetReserve(InternetReserveParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
@@ -451,6 +454,7 @@ public class ChargeInternetServiceFake(
 	public async Task<UResponse<ChargeInternetReserveResponse?>> Pin(ReserveChargeParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null || SimulateUnauthorized) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		if (SimulateLowBalance || !await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 		if (SimulateUpstreamFailure) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
 
@@ -473,6 +477,7 @@ public class ChargeInternetServiceFake(
 	public async Task<UResponse<ChargeInternetReserveResponse?>> Topup(TopupChargeParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null || SimulateUnauthorized) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		if (SimulateLowBalance || !await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 		if (SimulateUpstreamFailure) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
 
@@ -483,6 +488,7 @@ public class ChargeInternetServiceFake(
 	public async Task<UResponse<ChargeInternetReserveResponse?>> InternetReserve(InternetReserveParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null || SimulateUnauthorized) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		if (SimulateLowBalance || !await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 		if (SimulateUpstreamFailure) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
 
@@ -591,6 +597,7 @@ public class ChargeInternetServiceFake(
 // 	public async Task<UResponse<ChargeInternetReserveResponse?>> Pin(ReserveChargeParams p, CancellationToken ct) {
 // 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 // 		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+//		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 // 		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 //
 // 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
@@ -659,6 +666,7 @@ public class ChargeInternetServiceFake(
 // 	public async Task<UResponse<ChargeInternetReserveResponse?>> Topup(TopupChargeParams p, CancellationToken ct) {
 // 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 // 		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+//		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 // 		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 //
 // 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
@@ -706,6 +714,7 @@ public class ChargeInternetServiceFake(
 // 	public async Task<UResponse<ChargeInternetReserveResponse?>> InternetReserve(InternetReserveParams p, CancellationToken ct) {
 // 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 // 		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+//		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 // 		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 //
 // 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);

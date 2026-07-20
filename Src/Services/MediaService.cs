@@ -20,6 +20,7 @@ public class MediaService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		
 		IEnumerable<string> allowedExtensions = [".png", ".gif", ".jpg", ".jpeg", ".svg", ".webp", ".mp4", ".mov", ".mp3", ".pdf", ".aac", ".apk", ".zip", ".rar", ".mkv"];
 		if (!allowedExtensions.Contains(Path.GetExtension(p.File.FileName.ToLower()))) return new UResponse<Guid?>(null, Usc.MediaTypeNotSupported, ls.Get("MediaTypeNotSupported"));
