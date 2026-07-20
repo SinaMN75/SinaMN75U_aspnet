@@ -15,7 +15,7 @@ public class TokenService : ITokenService {
 	}
 
 	public string GenerateJwt(UserEntity user) {
-		DateTime expires = DateTime.UtcNow.AddMinutes(double.TryParse(Core.App.Jwt.Expires, out double minutes) ? minutes : 5);
+		DateTime expires = DateTime.UtcNow.AddMinutes(Core.App.Jwt.Expires);
 		return new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
 			Core.App.Jwt.Issuer,
 			Core.App.Jwt.Audience,
