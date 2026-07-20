@@ -3,8 +3,6 @@ namespace SinaMN75U.Services;
 public interface IIpgService {
 	Task<UResponse<IpgPayResponse?>> GetSaleIpgLink(IpgSaleParams p, CancellationToken ct);
 	Task Verify(string token, short status, string? cardNumberMasked, long? rrn, string additionalData, CancellationToken ct);
-	Task<UResponse<IpgVerifyResponse?>> ReadVerifyState(IpgVerifyParams p, CancellationToken ct);
-	bool IsAllowedReturnUrl(string? returnUrl);
 }
 
 public class IpgService(IHttpClientService http, DbContext db, ILocalizationService ls, ITokenService ts, IHttpContextAccessor httpContext) : IIpgService {
@@ -12,7 +10,6 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IpgPayResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		if (p.Amount <= 0) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("AmountRequired"));
-		if (!p.ReturnUrl.IsNullOrEmpty() && !IsAllowedReturnUrl(p.ReturnUrl)) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("InvalidReturnUrl"));
 		string trackingNumber = Guid.CreateVersion7().ToString("N");
 		int orderId = Math.Abs(Guid.NewGuid().GetHashCode());
 		
@@ -33,14 +30,13 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 		string basePath = request.Path.Value![..(request.Path.Value!.LastIndexOf('/') + 1)];
 		string verifyUrl = $"{Core.App.BaseUrl}{basePath}Verify";
 		string gatewayUrl = $"{Core.App.BaseUrl}{basePath}Gateway";
-		string returnUrlQuery = p.ReturnUrl.IsNullOrEmpty() ? "" : $"&returnUrl={Uri.EscapeDataString(p.ReturnUrl!)}";
 
 		if (Core.App.Test) {
 			txn.JsonData.Detail2 = "FAKE";
 			db.Set<TxnEntity>().Update(txn);
 			await db.SaveChangesAsync(ct);
 			return new UResponse<IpgPayResponse?>(new IpgPayResponse {
-				Url = $"{gatewayUrl}?additionalData={trackingNumber}&amount={(long)p.Amount}{returnUrlQuery}",
+				Url = $"{gatewayUrl}?additionalData={trackingNumber}&amount={(long)p.Amount}",
 				TrackingNumber = trackingNumber
 			});
 		}
@@ -50,7 +46,7 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 					CorporationPin = Core.App.Ipg.Token,
 					Amount = (long)p.Amount,
 					OrderId = orderId,
-					CallBackUrl = $"{verifyUrl}?additionalData={trackingNumber}{returnUrlQuery}",
+					CallBackUrl = $"{verifyUrl}?additionalData={trackingNumber}",
 					AdditionalData = trackingNumber,
 					Originator = userData.PhoneNumber ?? ""
 				}
@@ -135,32 +131,6 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 		catch (Exception ex) {
 			httpContext.CaptureForApiLog(ex);
 		}
-	}
-
-	public async Task<UResponse<IpgVerifyResponse?>> ReadVerifyState(IpgVerifyParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<IpgVerifyResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-
-		TxnEntity? txn = await db.Set<TxnEntity>().FirstOrDefaultAsync(x => x.TrackingNumber == p.TrackingNumber && x.UserId == userData.Id, ct);
-		if (txn == null) return new UResponse<IpgVerifyResponse?>(null, Usc.NotFound, ls.Get("TxnNotFound"));
-
-		WalletEntity? wallet = await db.Set<WalletEntity>().FirstOrDefaultAsync(x => x.CreatorId == userData.Id, ct);
-		return new UResponse<IpgVerifyResponse?>(new IpgVerifyResponse {
-			Paid = txn.Tags.Contains(TagTxn.Paid),
-			Failed = txn.Tags.Contains(TagTxn.Failed),
-			Balance = wallet?.Balance ?? 0
-		});
-	}
-
-	// Only origins configured in Ipg.AllowedReturnUrls may be redirected to, so the callback can't be turned into an open redirect.
-	public bool IsAllowedReturnUrl(string? returnUrl) {
-		if (returnUrl.IsNullOrEmpty()) return false;
-		if (!Uri.TryCreate(returnUrl, UriKind.Absolute, out Uri? uri)) return false;
-		if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps) return false;
-		return Core.App.Ipg.AllowedReturnUrls.Any(x =>
-			Uri.TryCreate(x, UriKind.Absolute, out Uri? allowed) &&
-			string.Equals(allowed.Scheme, uri.Scheme, StringComparison.OrdinalIgnoreCase) &&
-			string.Equals(allowed.Authority, uri.Authority, StringComparison.OrdinalIgnoreCase));
 	}
 
 	private async Task MarkFailed(TxnEntity txn, CancellationToken ct) {

@@ -8,37 +8,28 @@ public static class IpgRoutes {
 		r.MapPost("Pay", async (IpgSaleParams p, IIpgService s, CancellationToken c) => (await s.GetSaleIpgLink(p, c)).ToResult()).Produces<UResponse<IpgPayResponse?>>();
 
 		// 2) Test-only fake gateway PAGE (what Pay opens in test mode): two buttons that redirect to the callback (Verify).
-		r.MapGet("Gateway", ([FromQuery] string additionalData, [FromQuery] long amount, [FromQuery] string? returnUrl, HttpContext ctx) => {
+		r.MapGet("Gateway", ([FromQuery] string additionalData, [FromQuery] long amount, HttpContext ctx) => {
 			// Build the callback (Verify) url from this same host (.../api/ipg/Gateway -> .../api/ipg/Verify).
 			HttpRequest req = ctx.Request;
 			string basePath = req.Path.Value![..(req.Path.Value!.LastIndexOf('/') + 1)];
 			string verify = $"{req.Scheme}://{req.Host}{basePath}Verify";
-			string ret = returnUrl.IsNullOrEmpty() ? "" : $"&returnUrl={Uri.EscapeDataString(returnUrl!)}";
-			string successUrl = $"{verify}?additionalData={additionalData}&token=FAKE&status=0&rrn=123456789&cardNumberMasked=627412******2424{ret}";
-			string errorUrl = $"{verify}?additionalData={additionalData}&token=FAKE&status=1{ret}";
+			string successUrl = $"{verify}?additionalData={additionalData}&token=FAKE&status=0&rrn=123456789&cardNumberMasked=627412******2424";
+			string errorUrl = $"{verify}?additionalData={additionalData}&token=FAKE&status=1";
 			return Results.Content(GatewayPage(amount, successUrl, errorUrl), "text/html");
 		});
 
 		// 3) The callback the gateway redirects to (success/cancel/error). Confirms + credits the wallet, fully server-side.
-		// On web there is no WebView to sniff the url, so when the client supplied an allow-listed returnUrl we bounce back to it
-		// (the web equivalent of a deeplink) instead of rendering the result page.
 		r.MapGet("Verify", async (
 			[FromQuery] string additionalData,
 			[FromQuery] string? token,
 			[FromQuery] short status,
 			[FromQuery] string? cardNumberMasked,
 			[FromQuery] long? rrn,
-			[FromQuery] string? returnUrl,
 			IIpgService s,
 			CancellationToken c) => {
 			await s.Verify(token ?? "", status, cardNumberMasked, rrn, additionalData, c);
-			if (!s.IsAllowedReturnUrl(returnUrl)) return Results.Content(ResultPage(status), "text/html");
-			string separator = returnUrl!.Contains('?') ? "&" : "?";
-			return Results.Redirect($"{returnUrl}{separator}ipgTrackingNumber={Uri.EscapeDataString(additionalData)}&ipgStatus={status}");
+			return Results.Content(ResultPage(status, additionalData), "text/html");
 		});
-
-		// 4) Client-side source of truth for a charge: the app polls this after coming back from the gateway.
-		r.MapPost("Verify", async (IpgVerifyParams p, IIpgService s, CancellationToken c) => (await s.ReadVerifyState(p, c)).ToResult()).Produces<UResponse<IpgVerifyResponse?>>();
 	}
 
 	// Fake gateway: shows the amount and two buttons that redirect to the callback with a success/error status.
@@ -70,32 +61,40 @@ public static class IpgRoutes {
     </div>
 </body>
 </html>";
-
-	// Shown after the callback runs; the WebView detects this url (the Verify callback) and closes itself.
-	private static string ResultPage(short status) {
+	private static string ResultPage(short status, string additionalData) {
 		bool success = status == 0;
-		return $@"
-<!DOCTYPE html>
-<html lang='fa' dir='rtl'>
-<head>
-    <meta charset='UTF-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <title>نتیجه پرداخت</title>
-    <style>
-        body {{ font-family: Tahoma, Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; margin: 0; padding: 20px; }}
-        .container {{ background: white; border-radius: 20px; padding: 40px; max-width: 450px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }}
-        .icon {{ font-size: 72px; margin-bottom: 16px; }}
-        .success {{ color: #4CAF50; }}
-        .error {{ color: #f44336; }}
-        h2 {{ color: #333; }}
-    </style>
-</head>
-<body>
-    <div class='container'>
-        <div class='icon {(success ? "success" : "error")}'>{(success ? "✅" : "❌")}</div>
-        <h2>{(success ? "پرداخت موفق" : "پرداخت ناموفق")}</h2>
-    </div>
-</body>
-</html>";
+		string trackingJs = System.Text.Json.JsonSerializer.Serialize(additionalData);
+		return $$"""
+
+		         <!DOCTYPE html>
+		         <html lang='fa' dir='rtl'>
+		         <head>
+		             <meta charset='UTF-8'>
+		             <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+		             <title>نتیجه پرداخت</title>
+		             <style>
+		                 body { font-family: Tahoma, Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; margin: 0; padding: 20px; }
+		                 .container { background: white; border-radius: 20px; padding: 40px; max-width: 450px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+		                 .icon { font-size: 72px; margin-bottom: 16px; }
+		                 .success { color: #4CAF50; }
+		                 .error { color: #f44336; }
+		                 h2 { color: #333; }
+		             </style>
+		         </head>
+		         <body>
+		             <div class='container'>
+		                 <div class='icon {{(success ? "success" : "error")}}'>{{(success ? "✅" : "❌")}}</div>
+		                 <h2>{{(success ? "پرداخت موفق" : "پرداخت ناموفق")}}</h2>
+		             </div>
+		             <script>
+		                 (function() {
+		                     try {
+		                         window.parent.postMessage({ source: 'avahamrah_ipg', trackingNumber: {{trackingJs}}, status: {{status}} }, '*');
+		                     } catch (e) {}
+		                 })();
+		             </script>
+		         </body>
+		         </html>
+		         """;
 	}
 }
