@@ -112,6 +112,7 @@ public static partial class AspNetConfig {
 		app.UseCors();
 		app.UseStaticFiles();
 		app.UseUSwagger();
+		app.MapUModelsPage();
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
 		app.UseMiddleware<ApiKeyMiddleware>();

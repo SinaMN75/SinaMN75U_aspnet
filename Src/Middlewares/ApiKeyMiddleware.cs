@@ -2,7 +2,7 @@ namespace SinaMN75U.Middlewares;
 
 public sealed class ApiKeyMiddleware(RequestDelegate next, ILocalizationService ls) {
 	public async Task InvokeAsync(HttpContext context) {
-		if (!Core.App.Middleware.RequireApiKey) {
+		if (context.Request.Path.StartsWithSegments("/models", StringComparison.OrdinalIgnoreCase) || !Core.App.Middleware.RequireApiKey) {
 			await next(context);
 			return;
 		}

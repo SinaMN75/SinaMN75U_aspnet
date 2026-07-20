@@ -2,7 +2,7 @@ namespace SinaMN75U.Middlewares;
 
 public sealed class RefreshTokenMiddleware(RequestDelegate next, ILocalizationService ls, ITokenService ts) {
 	public async Task InvokeAsync(HttpContext context) {
-		if (!Core.App.Middleware.RequireRefreshToken) {
+		if (context.Request.Path.StartsWithSegments("/models", StringComparison.OrdinalIgnoreCase) || !Core.App.Middleware.RequireRefreshToken) {
 			await next(context);
 			return;
 		}
