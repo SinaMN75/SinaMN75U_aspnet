@@ -10,6 +10,7 @@ public sealed class AppSettings {
 	public required bool Test { get; set; }
 	public required ConnectionStrings ConnectionStrings { get; set; }
 	public required Jwt Jwt { get; set; }
+	public required Cors Cors { get; set; }
 	public required Middleware Middleware { get; set; }
 	public required SmsPanel SmsPanel { get; set; }
 	public required ItHub ItHub { get; set; }
@@ -33,6 +34,10 @@ public sealed class Jwt {
 	public required string Issuer { get; init; }
 	public required string Audience { get; init; }
 	public required int Expires { get; init; }
+}
+
+public sealed class Cors {
+	public required string[] AllowedOrigins { get; init; }
 }
 
 public sealed class Middleware {

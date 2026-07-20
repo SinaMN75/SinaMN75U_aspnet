@@ -4,11 +4,20 @@ public static partial class AspNetConfig {
 	public static void AddUServices<T>(this WebApplicationBuilder builder) where T : DbContext {
 		builder.Services.Configure<KestrelServerOptions>(o => o.AllowSynchronousIO = false);
 		builder.Services.Configure<IISServerOptions>(o => o.AllowSynchronousIO = false);
-		builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+		builder.Services.AddCors(options => options.AddDefaultPolicy(policy => {
+			if (builder.Environment.IsDevelopment())
+				policy.AllowAnyOrigin();
+			else
+				policy.WithOrigins(Core.App.Cors.AllowedOrigins);
+			policy.AllowAnyMethod().AllowAnyHeader();
+		}));
 		builder.Services.AddUSwagger();
 		builder.Services.AddHttpContextAccessor();
-		builder.Services.AddHttpClient<IHttpClientService, HttpClientService>().ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler {
-			ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+		builder.Services.AddHttpClient<IHttpClientService, HttpClientService>().ConfigurePrimaryHttpMessageHandler(() => {
+			HttpClientHandler handler = new();
+			if (builder.Environment.IsDevelopment())
+				handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+			return handler;
 		});
 		builder.Services.AddURateLimiter();
 		builder.Services.AddMemoryCache();
