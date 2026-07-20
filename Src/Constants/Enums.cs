@@ -67,6 +67,7 @@ public enum Usc {
 	NotFound = 404,
 	Conflict = 409,
 	PayloadTooLarge = 413,
+	TooManyRequests = 429,
 	MediaTypeNotSupported = 451,
 	SecurityError = 452,
 

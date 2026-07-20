@@ -82,10 +82,17 @@ public class AuthService(
 
 	public async Task<UResponse<LoginResponse?>> Login(LoginParams p, CancellationToken ct) {
 		if (p.Email.IsNullOrEmpty() && p.UserName.IsNullOrEmpty()) return new UResponse<LoginResponse?>(null, Usc.NotFound, ls.Get("InvalidCredentials"));
-		
-		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => (p.UserName != null && x.UserName == p.UserName) || (p.Email != null && x.Email == p.Email), ct);
-		if (user == null || !UPasswordHasher.Verify(p.Password, user.Password)) return new UResponse<LoginResponse?>(null, Usc.NotFound, ls.Get("InvalidCredentials"));
 
+		string lockKey = "lockout_login_" + (p.UserName.IsNotNullOrEmpty() ? p.UserName : p.Email);
+		if (IsLockedOut(lockKey)) return new UResponse<LoginResponse?>(null, Usc.TooManyRequests, ls.Get("TooManyAttempts"));
+
+		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => (p.UserName != null && x.UserName == p.UserName) || (p.Email != null && x.Email == p.Email), ct);
+		if (user == null || !UPasswordHasher.Verify(p.Password, user.Password)) {
+			RegisterFailedAttempt(lockKey);
+			return new UResponse<LoginResponse?>(null, Usc.NotFound, ls.Get("InvalidCredentials"));
+		}
+
+		ResetFailedAttempts(lockKey);
 		user.RefreshToken = ts.GenerateRefreshToken();
 		db.Set<UserEntity>().Update(user);
 		await db.SaveChangesAsync(ct);
@@ -155,14 +162,20 @@ public class AuthService(
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
 		if (user == null) return new UResponse<LoginResponse?>(null, Usc.UserNotFound, ls.Get("UserNotFound"));
 
-		return p.Otp == Core.App.BasicSettings.DefaultVerificationKey || p.Otp == cache.Get("otp_" + user.Id)
-			? new UResponse<LoginResponse?>(new LoginResponse {
-					Token = ts.GenerateJwt(user),
-					RefreshToken = user.RefreshToken,
-					User = user.MapToResponse()
-				}
-			)
-			: new UResponse<LoginResponse?>(null, Usc.WrongVerificationCode, ls.Get("OtpInvalid"));
+		string lockKey = "lockout_otp_" + p.PhoneNumber;
+		if (IsLockedOut(lockKey)) return new UResponse<LoginResponse?>(null, Usc.TooManyRequests, ls.Get("TooManyAttempts"));
+
+		if (p.Otp != Core.App.BasicSettings.DefaultVerificationKey && p.Otp != cache.Get("otp_" + user.Id)) {
+			RegisterFailedAttempt(lockKey);
+			return new UResponse<LoginResponse?>(null, Usc.WrongVerificationCode, ls.Get("OtpInvalid"));
+		}
+
+		ResetFailedAttempts(lockKey);
+		return new UResponse<LoginResponse?>(new LoginResponse {
+			Token = ts.GenerateJwt(user),
+			RefreshToken = user.RefreshToken,
+			User = user.MapToResponse()
+		});
 	}
 
 	public async Task<UResponse<LoginResponse?>> LoginOrRegister(RegisterParams p, CancellationToken ct) {
@@ -175,4 +188,16 @@ public class AuthService(
 			User = user.MapToResponse()
 		});
 	}
+
+	private const int MaxFailedAttempts = 5;
+	private static readonly TimeSpan LockoutWindow = TimeSpan.FromMinutes(15);
+
+	private bool IsLockedOut(string key) => int.TryParse(cache.Get(key), out int attempts) && attempts >= MaxFailedAttempts;
+
+	private void RegisterFailedAttempt(string key) {
+		int attempts = int.TryParse(cache.Get(key), out int a) ? a : 0;
+		cache.Set(key, (attempts + 1).ToString(), LockoutWindow);
+	}
+
+	private void ResetFailedAttempts(string key) => cache.Set(key, "0", TimeSpan.FromSeconds(1));
 }

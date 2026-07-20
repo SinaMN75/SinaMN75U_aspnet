@@ -14,6 +14,17 @@ public static class RateLimiter {
 				opts.QueueLimit = 10;
 			});
 
+			// Strict per-IP limit for auth endpoints (login, OTP request/verify, refresh) to blunt brute-force and OTP guessing.
+			o.AddPolicy("auth", ctx => RateLimitPartition.GetFixedWindowLimiter(
+				ctx.GetRealIp() ?? "unknown",
+				_ => new FixedWindowRateLimiterOptions {
+					PermitLimit = 10,
+					Window = TimeSpan.FromMinutes(1),
+					QueueLimit = 0
+				}));
+
+			o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
 			o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(ctx =>
 				RateLimitPartition.GetFixedWindowLimiter(
 					ctx.GetRealIp() ?? "unknown",
