@@ -114,6 +114,7 @@ public static partial class ModelCodeGenerator {
 			HashSet<string> propSeen = [];
 
 			foreach (PropertyInfo p in t.GetProperties(BindingFlags.Public | BindingFlags.Instance)) {
+				if (p.Name is "ApiKey" or "Token") continue;
 				if (p.GetIndexParameters().Length > 0 || !propSeen.Add(p.Name)) continue;
 				bool nullable = Nullable.GetUnderlyingType(p.PropertyType) != null || nic.Create(p).ReadState == NullabilityState.Nullable;
 				m.Props.Add(new Prop { Pascal = p.Name, Clr = p.PropertyType, Nullable = nullable });
