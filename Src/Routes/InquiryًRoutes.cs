@@ -11,5 +11,6 @@ public static class InquiryRoutes {
 		r.MapPost("DrivingLicenceNegativePoint", async (DrivingLicenceNegativePointParams p, IInquiryService s, CancellationToken c) => (await s.DrivingLicenceNegativePoint(p, c)).ToResult()).Produces<UResponse<DrivingLicenceNegativePointResponse>>();
 		r.MapPost("FreewayTolls", async (FreewayTollsParams p, IInquiryService s, CancellationToken c) => (await s.FreewayTolls(p, c)).ToResult()).Produces<UResponse<FreewayTollsResponse>>();
 		r.MapPost("IBanToBankAccountDetail", async (IBanToBankAccountDetailParams p, IInquiryService s, CancellationToken c) => (await s.IBanToBankAccountDetail(p, c)).ToResult()).Produces<UResponse<IBanToBankAccountDetailResponse>>();
+		r.MapPost("CacheStatus", async (InquiryCacheStatusParams p, IInquiryService s, CancellationToken c) => (await s.InquiryCacheStatus(p, c)).ToResult()).Produces<UResponse<InquiryCacheStatusResponse>>();
 	}
 }

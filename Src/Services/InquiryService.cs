@@ -9,6 +9,7 @@ public interface IInquiryService {
 	Task<UResponse<DrivingLicenceNegativePointResponse?>> DrivingLicenceNegativePoint(DrivingLicenceNegativePointParams p, CancellationToken ct);
 	Task<UResponse<FreewayTollsResponse?>> FreewayTolls(FreewayTollsParams p, CancellationToken ct);
 	Task<UResponse<IBanToBankAccountDetailResponse?>> IBanToBankAccountDetail(IBanToBankAccountDetailParams p, CancellationToken ct);
+	Task<UResponse<InquiryCacheStatusResponse?>> InquiryCacheStatus(InquiryCacheStatusParams p, CancellationToken ct);
 	UResponse<BillInfoResponse?> BillInfo(BillInfoParams p, CancellationToken ct);
 }
 
@@ -44,19 +45,16 @@ public class InquiryService(
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null) return new UResponse<bool?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
-		HttpResponseMessage? response = await httpClient.Post(
-			"https://gateway.itsaaz.ir/hub/api/v1/Shahkar/MixVerifyMobile",
-			new { nationalCode = p.NationalCode, mobile = p.PhoneNumber },
-			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" } }
-		);
+		// Charge the wallet before the billable third-party call so any external hit is always paid for
+		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.MobileAndNationalCodeVerification, Token = p.Token }, ct);
+
+		HttpResponseMessage? response = await SendMobileAndNationalCodeVerification(p, tokenResponse.AccessToken, ct);
 		if (response == null) return new UResponse<bool?>(null);
 
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
 		bool data = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("data").GetBoolean();
 
 		await CreateMobileAndNationalCodeVerificationHistory(p.NationalCode, p.PhoneNumber, data, ct);
-		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.MobileAndNationalCodeVerification, Token = p.Token }, ct);
-
 		return new UResponse<bool?>(data);
 	}
 
@@ -74,11 +72,10 @@ public class InquiryService(
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
-			HttpResponseMessage? response = await httpClient.Post(
-				"https://gateway.itsaaz.ir/hub/api/v1/Address/DetailsTypeA",
-				new { postcode = p.ZipCode, orderId = 1 },
-				new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
-			);
+			// Charge the wallet before the billable third-party call so any external hit is always paid for
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.ZipCodeToAddressDetail, Token = p.Token }, ct);
+
+			HttpResponseMessage? response = await SendZipCodeToAddressDetail(p, tokenResponse.AccessToken, ct);
 
 			if (response == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null);
 			responseBody = await response.Content.ReadAsStringAsync(ct);
@@ -91,7 +88,6 @@ public class InquiryService(
 
 			if (!response.IsSuccessStatusCode) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
 			await CreateZipCodeToAddressHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.ZipCodeToAddressDetail], "", p, ct);
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.ZipCodeToAddressDetail, Token = p.Token }, ct);
 		}
 
 		if (inquiryHistory?.Tags.Contains(TagInquiryHistory.Error) ?? false) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ThirdPartyError, inquiryHistory.JsonData.Detail1);
@@ -101,6 +97,7 @@ public class InquiryService(
 		return new UResponse<ZipCodeToAddressDetailResponse?>(new ZipCodeToAddressDetailResponse {
 			IsCached = inquiryHistory != null,
 			CachedAt = inquiryHistory?.CreatedAt,
+			CacheExpiresAt = inquiryHistory == null ? null : inquiryHistory.CreatedAt.AddDays(Core.App.InquiryCacheDurations.ZipCodeToAddressDetail),
 			BuildingName = json.GetStringOrNull("BuildingName"),
 			Description = json.GetStringOrNull("description"),
 			Floor = json.GetStringOrNull("floor"),
@@ -134,18 +131,10 @@ public class InquiryService(
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
-			HttpResponseMessage? response = await httpClient.Post(
-				"https://api-ithub.itsaaz.ir/api/v1/CarServices/VehicleviolationsDetails",
-				new {
-					nationalCode = p.NationalCode,
-					cellPhone = p.PhoneNumber,
-					plk1 = p.LicencePlate[..2],
-					plk2 = p.LicencePlate.Substring(2, 1),
-					plk3 = p.LicencePlate.Substring(3, 3),
-					plkSrl = p.LicencePlate.Substring(6, 2)
-				},
-				new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
-			);
+			// Charge the wallet before the billable third-party call so any external hit is always paid for
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.VehicleViolationsDetail, Token = p.Token }, ct);
+
+			HttpResponseMessage? response = await SendVehicleViolationsDetail(p, tokenResponse.AccessToken, ct);
 
 			if (response == null) return new UResponse<VehicleViolationDetailResponse?>(null);
 			responseBody = await response.Content.ReadAsStringAsync(ct);
@@ -159,7 +148,6 @@ public class InquiryService(
 
 			if (!response.IsSuccessStatusCode) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
 			await CreateVehicleViolationsDetailHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.VehicleViolationsDetail], "", p, ct);
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.VehicleViolationsDetail, Token = p.Token }, ct);
 		}
 
 		if (inquiryHistory?.Tags.Contains(TagInquiryHistory.Error) ?? false) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ThirdPartyError, inquiryHistory.JsonData.Detail1);
@@ -169,6 +157,7 @@ public class InquiryService(
 		return new UResponse<VehicleViolationDetailResponse?>(new VehicleViolationDetailResponse {
 			IsCached = inquiryHistory != null,
 			CachedAt = inquiryHistory?.CreatedAt,
+			CacheExpiresAt = inquiryHistory == null ? null : inquiryHistory.CreatedAt.AddDays(Core.App.InquiryCacheDurations.VehicleViolationsDetail),
 			PlateDictation = data.GetStringOrNull("plateDictation"),
 			PlateChar = data.GetStringOrNull("plateChar"),
 			ComplaintStatus = data.GetStringOrNull("complaintStatus"),
@@ -220,11 +209,10 @@ public class InquiryService(
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
-			HttpResponseMessage? response = await httpClient.Post(
-				"https://gateway.itsaaz.ir/hub/api/v1/CarServices/GavahinameStatusInquiry",
-				new { nationalCode = p.NationalCode, cellphone = p.PhoneNumber },
-				new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
-			);
+			// Charge the wallet before the billable third-party call so any external hit is always paid for
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceStatus, Token = p.Token }, ct);
+
+			HttpResponseMessage? response = await SendDrivingLicenceDetail(p, tokenResponse.AccessToken, ct);
 
 			if (response == null) return new UResponse<DrivingLicenceDetailResponse?>(null);
 			responseBody = await response.Content.ReadAsStringAsync(ct);
@@ -237,7 +225,6 @@ public class InquiryService(
 
 			if (!response.IsSuccessStatusCode) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
 			await CreateDrivingLicenceStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceDetail], "", p, ct);
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceStatus, Token = p.Token }, ct);
 		}
 
 		if (inquiryHistory?.Tags.Contains(TagInquiryHistory.Error) ?? false) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ThirdPartyError, inquiryHistory.JsonData.Detail1);
@@ -247,6 +234,7 @@ public class InquiryService(
 		return new UResponse<DrivingLicenceDetailResponse?>(new DrivingLicenceDetailResponse {
 			IsCached = inquiryHistory != null,
 			CachedAt = inquiryHistory?.CreatedAt,
+			CacheExpiresAt = inquiryHistory == null ? null : inquiryHistory.CreatedAt.AddDays(Core.App.InquiryCacheDurations.DrivingLicenceStatus),
 			NationalCode = data.GetStringOrNull("nationalNo"),
 			FirstName = data.GetStringOrNull("firstName"),
 			LastName = data.GetStringOrNull("lastName"),
@@ -277,17 +265,10 @@ public class InquiryService(
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<LicencePlateDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
-			HttpResponseMessage? response = await httpClient.Post(
-				"https://api-ithub.itsaaz.ir/api/v1/CarServices/PlateHistoryInquiry",
-				new {
-					nationalCode = p.NationalCode,
-					plk1 = p.LicencePlate[..2],
-					plk2 = p.LicencePlate.Substring(2, 1),
-					plk3 = p.LicencePlate.Substring(3, 3),
-					plkSrl = p.LicencePlate.Substring(6, 2)
-				},
-				new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
-			);
+			// Charge the wallet before the billable third-party call so any external hit is always paid for
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.LicencePlateDetail, Token = p.Token }, ct);
+
+			HttpResponseMessage? response = await SendLicencePlateDetail(p, tokenResponse.AccessToken, ct);
 
 			if (response == null) return new UResponse<LicencePlateDetailResponse?>(null);
 			responseBody = await response.Content.ReadAsStringAsync(ct);
@@ -300,7 +281,6 @@ public class InquiryService(
 
 			if (!response.IsSuccessStatusCode) return new UResponse<LicencePlateDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
 			await CreateLicencePlateStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.LicencePlateDetail], "", p, ct);
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.LicencePlateDetail, Token = p.Token }, ct);
 		}
 
 		if (inquiryHistory?.Tags.Contains(TagInquiryHistory.Error) ?? false) return new UResponse<LicencePlateDetailResponse?>(null, Usc.ThirdPartyError, inquiryHistory.JsonData.Detail1);
@@ -310,6 +290,7 @@ public class InquiryService(
 		return new UResponse<LicencePlateDetailResponse?>(new LicencePlateDetailResponse {
 			IsCached = inquiryHistory != null,
 			CachedAt = inquiryHistory?.CreatedAt,
+			CacheExpiresAt = inquiryHistory == null ? null : inquiryHistory.CreatedAt.AddDays(Core.App.InquiryCacheDurations.LicencePlateDetail),
 			Status = data.GetStringOrNull("plateStatus"),
 			TracePlate = data.GetStringOrNull("tracePlate"),
 			Items = data.GetProperty("historyPlate")
@@ -332,16 +313,17 @@ public class InquiryService(
 		string? responseBody = inquiryHistory?.Response;
 
 		if (inquiryHistory == null || responseBody == null) {
+			// Group A gate: without an explicit paid refresh, never auto-charge - signal the app to show the payment screen first
+			if (!p.Refresh) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.InquiryNotCached, ls.Get("InquiryNotCached"));
 			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.DrivingLicenceNegativePoint, ct)) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
-			HttpResponseMessage? response = await httpClient.Post(
-				"https://api-ithub.itsaaz.ir/api/v1/CarServices/DriversLicensePointsInquiry",
-				new { licenseNo = p.DrivingLicenceNumber, nationalCode = p.NationalCode, cellphone = p.PhoneNumber },
-				new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
-			);
+			// Charge the wallet before the billable third-party call so any external hit is always paid for
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceNegativePoint, Token = p.Token }, ct);
+
+			HttpResponseMessage? response = await SendDrivingLicenceNegativePoint(p, tokenResponse.AccessToken, ct);
 
 			if (response == null) return new UResponse<DrivingLicenceNegativePointResponse?>(null);
 			responseBody = await response.Content.ReadAsStringAsync(ct);
@@ -354,7 +336,6 @@ public class InquiryService(
 
 			if (!response.IsSuccessStatusCode) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
 			await CreateDrivingLicenceNegativePointHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceNegativePoint], "", p, ct);
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceNegativePoint, Token = p.Token }, ct);
 		}
 
 		if (inquiryHistory?.Tags.Contains(TagInquiryHistory.Error) ?? false) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ThirdPartyError, inquiryHistory.JsonData.Detail1);
@@ -364,6 +345,7 @@ public class InquiryService(
 		return new UResponse<DrivingLicenceNegativePointResponse?>(new DrivingLicenceNegativePointResponse {
 			IsCached = inquiryHistory != null,
 			CachedAt = inquiryHistory?.CreatedAt,
+			CacheExpiresAt = inquiryHistory == null ? null : inquiryHistory.CreatedAt.AddDays(Core.App.InquiryCacheDurations.DrivingLicenceNegativePoint),
 			Allowable = data.GetStringOrNull("allowable") == "1",
 			Point = data.GetStringOrNull("negPoint"),
 			RuleId = data.GetStringOrNull("ruleId")
@@ -379,22 +361,17 @@ public class InquiryService(
 		string? responseBody = inquiryHistory?.Response;
 
 		if (inquiryHistory == null || responseBody == null) {
+			// Group A gate: without an explicit paid refresh, never auto-charge - signal the app to show the payment screen first
+			if (!p.Refresh) return new UResponse<FreewayTollsResponse?>(null, Usc.InquiryNotCached, ls.Get("InquiryNotCached"));
 			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.FreewayToll, ct)) return new UResponse<FreewayTollsResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<FreewayTollsResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
-			HttpResponseMessage? response = await httpClient.Post(
-				"https://api-ithub.itsaaz.ir/api/v1/CarServices/GetFreewayTollsQuery",
-				new {
-					requestId = "1",
-					plk1 = p.LicencePlate[..2],
-					plk2 = p.LicencePlate.Substring(2, 1),
-					plk3 = p.LicencePlate.Substring(3, 3),
-					plkSrl = p.LicencePlate.Substring(6, 2)
-				},
-				new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
-			);
+			// Charge the wallet before the billable third-party call so any external hit is always paid for
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.FreewayTolls, Token = p.Token }, ct);
+
+			HttpResponseMessage? response = await SendFreewayTolls(p, tokenResponse.AccessToken, ct);
 
 			if (response == null) return new UResponse<FreewayTollsResponse?>(null);
 			responseBody = await response.Content.ReadAsStringAsync(ct);
@@ -407,7 +384,6 @@ public class InquiryService(
 
 			if (!response.IsSuccessStatusCode) return new UResponse<FreewayTollsResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
 			await CreateFreewayTollsHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.FreewayTolls], "", p, ct);
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.FreewayTolls, Token = p.Token }, ct);
 		}
 
 		if (inquiryHistory?.Tags.Contains(TagInquiryHistory.Error) ?? false) return new UResponse<FreewayTollsResponse?>(null, Usc.ThirdPartyError, inquiryHistory.JsonData.Detail1);
@@ -417,6 +393,7 @@ public class InquiryService(
 		return new UResponse<FreewayTollsResponse?>(new FreewayTollsResponse {
 			IsCached = inquiryHistory != null,
 			CachedAt = inquiryHistory?.CreatedAt,
+			CacheExpiresAt = inquiryHistory == null ? null : inquiryHistory.CreatedAt.AddDays(Core.App.InquiryCacheDurations.FreewayToll),
 			TotalPrice = data.GetIntOrNull("total_price").ToString(),
 			Items = data.GetProperty("items").EnumerateArray().Select(x => new FreewayTollsResponse.FreewayTollsItem {
 				Id = x.GetStringOrNull("id"),
@@ -442,11 +419,10 @@ public class InquiryService(
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
 
-			HttpResponseMessage? response = await httpClient.Post(
-				"https://api-ithub.itsaaz.ir/api/v1/CarServices/DriversLicensePointsInquiry",
-				new { iban = p.IBan },
-				new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
-			);
+			// Charge the wallet before the billable third-party call so any external hit is always paid for
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.IBanToBankAccountDetail, Token = p.Token }, ct);
+
+			HttpResponseMessage? response = await SendIBanToBankAccountDetail(p, tokenResponse.AccessToken, ct);
 
 			if (response == null) return new UResponse<IBanToBankAccountDetailResponse?>(null);
 			responseBody = await response.Content.ReadAsStringAsync(ct);
@@ -459,7 +435,6 @@ public class InquiryService(
 
 			if (!response.IsSuccessStatusCode) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
 			await CreateIBanToBankAccountDetailHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.IBanToBankAccountDetail], "", p, ct);
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.IBanToBankAccountDetail, Token = p.Token }, ct);
 		}
 
 		if (inquiryHistory?.Tags.Contains(TagInquiryHistory.Error) ?? false) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.ThirdPartyError, inquiryHistory.JsonData.Detail1);
@@ -469,12 +444,35 @@ public class InquiryService(
 		return new UResponse<IBanToBankAccountDetailResponse?>(new IBanToBankAccountDetailResponse {
 			IsCached = inquiryHistory != null,
 			CachedAt = inquiryHistory?.CreatedAt,
+			CacheExpiresAt = inquiryHistory == null ? null : inquiryHistory.CreatedAt.AddDays(Core.App.InquiryCacheDurations.IBanToBankAccountDetail),
 			DepositNumber = data.GetStringOrNull("depositNumber"),
 			IBanType = data.GetStringOrNull("iBanType"),
 			BankCode = data.GetStringOrNull("bankCode"),
 			BankName = data.GetStringOrNull("bankName"),
 			OwnerName = data.GetProperty("ownersInfo").EnumerateArray().Select(x => $"{x.GetStringOrNull("firstName")} {x.GetStringOrNull("lastName")}").First()
 		});
+	}
+
+	// Read-only: reports which vehicle inquiries are already cached (and their expiry) without touching the wallet or any third-party API.
+	public async Task<UResponse<InquiryCacheStatusResponse?>> InquiryCacheStatus(InquiryCacheStatusParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<InquiryCacheStatusResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<InquiryCacheStatusResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+
+		InquiryHistoryEntity? violation = await ReadVehicleViolationsDetailHistory(new VehicleViolationDetailParams { NationalCode = p.NationalCode, PhoneNumber = p.PhoneNumber, LicencePlate = p.LicencePlate }, ct);
+		InquiryHistoryEntity? licence = await ReadDrivingLicenceDetailHistory(new DrivingLicenceDetailParams { NationalCode = p.NationalCode, PhoneNumber = p.PhoneNumber }, ct);
+		InquiryHistoryEntity? plate = await ReadLicencePlateStatusHistory(new LicencePlateDetailParams { NationalCode = p.NationalCode, LicencePlate = p.LicencePlate }, ct);
+		InquiryHistoryEntity? freeway = await ReadFreewayTollsHistory(new FreewayTollsParams { LicencePlate = p.LicencePlate }, ct);
+
+		return new UResponse<InquiryCacheStatusResponse?>(new InquiryCacheStatusResponse {
+			VehicleViolation = Item(violation, Core.App.InquiryCacheDurations.VehicleViolationsDetail),
+			DrivingLicence = Item(licence, Core.App.InquiryCacheDurations.DrivingLicenceStatus),
+			LicencePlate = Item(plate, Core.App.InquiryCacheDurations.LicencePlateDetail),
+			FreewayTolls = Item(freeway, Core.App.InquiryCacheDurations.FreewayToll)
+		});
+
+		static InquiryCacheStatusResponse.CacheStatusItem? Item(InquiryHistoryEntity? h, int days) =>
+			h == null ? null : new InquiryCacheStatusResponse.CacheStatusItem { CachedAt = h.CreatedAt, CacheExpiresAt = h.CreatedAt.AddDays(days) };
 	}
 
 	private async Task CreateMobileAndNationalCodeVerificationHistory(string nationalCode, string phoneNumber, bool isVerified, CancellationToken ct) {
@@ -588,55 +586,146 @@ public class InquiryService(
 		await db.SaveChangesAsync(ct);
 	}
 	
-	private async Task<InquiryHistoryEntity?> ReadMobileAndNationalCodeVerificationHistory(string nationalCode, string phoneNumber, CancellationToken ct) =>
-		await db.Set<InquiryHistoryEntity>()
-			.Where(x => x.NationalCode == nationalCode && x.PhoneNumber == phoneNumber && x.Tags.Contains(TagInquiryHistory.ValidateNationalCodeAndPhoneNumber))
+	private async Task<InquiryHistoryEntity?> ReadMobileAndNationalCodeVerificationHistory(string nationalCode, string phoneNumber, CancellationToken ct) {
+		DateTime minDate = DateTime.UtcNow.AddDays(-Core.App.InquiryCacheDurations.MobileAndNationalCodeVerification);
+		return await db.Set<InquiryHistoryEntity>()
+			.Where(x => x.NationalCode == nationalCode && x.PhoneNumber == phoneNumber && x.Tags.Contains(TagInquiryHistory.ValidateNationalCodeAndPhoneNumber) && x.CreatedAt >= minDate)
 			.OrderByDescending(x => x.CreatedAt)
 			.FirstOrDefaultAsync(ct);
+	}
 
-	private async Task<InquiryHistoryEntity?> ReadDrivingLicenceDetailHistory(DrivingLicenceDetailParams p, CancellationToken ct) =>
-		await db.Set<InquiryHistoryEntity>()
-			.Where(x => x.PhoneNumber == p.PhoneNumber && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.DrivingLicenceDetail) && !x.Tags.Contains(TagInquiryHistory.Error))
+	private async Task<InquiryHistoryEntity?> ReadDrivingLicenceDetailHistory(DrivingLicenceDetailParams p, CancellationToken ct) {
+		DateTime minDate = DateTime.UtcNow.AddDays(-Core.App.InquiryCacheDurations.DrivingLicenceStatus);
+		return await db.Set<InquiryHistoryEntity>()
+			.Where(x => x.PhoneNumber == p.PhoneNumber && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.DrivingLicenceDetail) && !x.Tags.Contains(TagInquiryHistory.Error) && x.CreatedAt >= minDate)
 			.OrderByDescending(x => x.CreatedAt)
 			.FirstOrDefaultAsync(ct);
+	}
 
-	private async Task<InquiryHistoryEntity?> ReadLicencePlateStatusHistory(LicencePlateDetailParams p, CancellationToken ct) =>
-		await db.Set<InquiryHistoryEntity>()
-			.Where(x => x.LicencePlate == p.LicencePlate && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.LicencePlateDetail) && !x.Tags.Contains(TagInquiryHistory.Error))
+	private async Task<InquiryHistoryEntity?> ReadLicencePlateStatusHistory(LicencePlateDetailParams p, CancellationToken ct) {
+		DateTime minDate = DateTime.UtcNow.AddDays(-Core.App.InquiryCacheDurations.LicencePlateDetail);
+		return await db.Set<InquiryHistoryEntity>()
+			.Where(x => x.LicencePlate == p.LicencePlate && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.LicencePlateDetail) && !x.Tags.Contains(TagInquiryHistory.Error) && x.CreatedAt >= minDate)
 			.OrderByDescending(x => x.CreatedAt)
 			.FirstOrDefaultAsync(ct);
+	}
 
-	private async Task<InquiryHistoryEntity?> ReadDrivingLicenceNegativePointHistory(DrivingLicenceNegativePointParams p, CancellationToken ct) =>
-		await db.Set<InquiryHistoryEntity>()
-			.Where(x => x.DrivingLicenceNumber == p.DrivingLicenceNumber && x.NationalCode == p.NationalCode && x.PhoneNumber == p.PhoneNumber && x.Tags.Contains(TagInquiryHistory.DrivingLicenceNegativePoint) && !x.Tags.Contains(TagInquiryHistory.Error))
+	private async Task<InquiryHistoryEntity?> ReadDrivingLicenceNegativePointHistory(DrivingLicenceNegativePointParams p, CancellationToken ct) {
+		DateTime minDate = DateTime.UtcNow.AddDays(-Core.App.InquiryCacheDurations.DrivingLicenceNegativePoint);
+		return await db.Set<InquiryHistoryEntity>()
+			.Where(x => x.DrivingLicenceNumber == p.DrivingLicenceNumber && x.NationalCode == p.NationalCode && x.PhoneNumber == p.PhoneNumber && x.Tags.Contains(TagInquiryHistory.DrivingLicenceNegativePoint) && !x.Tags.Contains(TagInquiryHistory.Error) && x.CreatedAt >= minDate)
 			.OrderByDescending(x => x.CreatedAt)
 			.FirstOrDefaultAsync(ct);
+	}
 
-	private async Task<InquiryHistoryEntity?> ReadIBanToBankAccountDetailHistory(IBanToBankAccountDetailParams p, CancellationToken ct) =>
-		await db.Set<InquiryHistoryEntity>()
-			.Where(x => x.IBan == p.IBan && x.Tags.Contains(TagInquiryHistory.IBanToBankAccountDetail) && !x.Tags.Contains(TagInquiryHistory.Error))
+	private async Task<InquiryHistoryEntity?> ReadIBanToBankAccountDetailHistory(IBanToBankAccountDetailParams p, CancellationToken ct) {
+		DateTime minDate = DateTime.UtcNow.AddDays(-Core.App.InquiryCacheDurations.IBanToBankAccountDetail);
+		return await db.Set<InquiryHistoryEntity>()
+			.Where(x => x.IBan == p.IBan && x.Tags.Contains(TagInquiryHistory.IBanToBankAccountDetail) && !x.Tags.Contains(TagInquiryHistory.Error) && x.CreatedAt >= minDate)
 			.OrderByDescending(x => x.CreatedAt)
 			.FirstOrDefaultAsync(ct);
+	}
 
-	private async Task<InquiryHistoryEntity?> ReadFreewayTollsHistory(FreewayTollsParams p, CancellationToken ct) =>
-		await db.Set<InquiryHistoryEntity>()
-			.Where(x => x.LicencePlate == p.LicencePlate && x.Tags.Contains(TagInquiryHistory.FreewayTolls) && !x.Tags.Contains(TagInquiryHistory.Error))
+	private async Task<InquiryHistoryEntity?> ReadFreewayTollsHistory(FreewayTollsParams p, CancellationToken ct) {
+		DateTime minDate = DateTime.UtcNow.AddDays(-Core.App.InquiryCacheDurations.FreewayToll);
+		return await db.Set<InquiryHistoryEntity>()
+			.Where(x => x.LicencePlate == p.LicencePlate && x.Tags.Contains(TagInquiryHistory.FreewayTolls) && !x.Tags.Contains(TagInquiryHistory.Error) && x.CreatedAt >= minDate)
 			.OrderByDescending(x => x.CreatedAt)
 			.FirstOrDefaultAsync(ct);
+	}
 
-	private async Task<InquiryHistoryEntity?> ReadZipCodeToAddressHistory(ZipCodeToAddressDetailParams p, CancellationToken ct) =>
-		await db.Set<InquiryHistoryEntity>()
-			.Where(x => x.ZipCode == p.ZipCode && x.Tags.Contains(TagInquiryHistory.ZipCodeToAddressDetail) && !x.Tags.Contains(TagInquiryHistory.Error))
+	private async Task<InquiryHistoryEntity?> ReadZipCodeToAddressHistory(ZipCodeToAddressDetailParams p, CancellationToken ct) {
+		DateTime minDate = DateTime.UtcNow.AddDays(-Core.App.InquiryCacheDurations.ZipCodeToAddressDetail);
+		return await db.Set<InquiryHistoryEntity>()
+			.Where(x => x.ZipCode == p.ZipCode && x.Tags.Contains(TagInquiryHistory.ZipCodeToAddressDetail) && !x.Tags.Contains(TagInquiryHistory.Error) && x.CreatedAt >= minDate)
 			.OrderByDescending(x => x.CreatedAt)
 			.FirstOrDefaultAsync(ct);
+	}
 
-	private async Task<InquiryHistoryEntity?> ReadVehicleViolationsDetailHistory(VehicleViolationDetailParams p, CancellationToken ct) =>
-		await db.Set<InquiryHistoryEntity>()
-			.Where(x => x.PhoneNumber == p.PhoneNumber && x.LicencePlate == p.LicencePlate && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.VehicleViolationsDetail) && !x.Tags.Contains(TagInquiryHistory.Error))
+	private async Task<InquiryHistoryEntity?> ReadVehicleViolationsDetailHistory(VehicleViolationDetailParams p, CancellationToken ct) {
+		DateTime minDate = DateTime.UtcNow.AddDays(-Core.App.InquiryCacheDurations.VehicleViolationsDetail);
+		return await db.Set<InquiryHistoryEntity>()
+			.Where(x => x.PhoneNumber == p.PhoneNumber && x.LicencePlate == p.LicencePlate && x.NationalCode == p.NationalCode && x.Tags.Contains(TagInquiryHistory.VehicleViolationsDetail) && !x.Tags.Contains(TagInquiryHistory.Error) && x.CreatedAt >= minDate)
 			.OrderByDescending(x => x.CreatedAt)
 			.FirstOrDefaultAsync(ct);
+	}
 
-	private async Task<GetAccessTokenResponse?> GetAccessToken(CancellationToken ct) {
+	protected virtual Task<HttpResponseMessage?> SendMobileAndNationalCodeVerification(VerifyNationalCodeAndPhoneNumber p, string accessToken, CancellationToken ct) =>
+		httpClient.Post(
+			"https://gateway.itsaaz.ir/hub/api/v1/Shahkar/MixVerifyMobile",
+			new { nationalCode = p.NationalCode, mobile = p.PhoneNumber },
+			new Dictionary<string, string> { { "Authorization", $"Bearer {accessToken}" } }
+		);
+
+	protected virtual Task<HttpResponseMessage?> SendZipCodeToAddressDetail(ZipCodeToAddressDetailParams p, string accessToken, CancellationToken ct) =>
+		httpClient.Post(
+			"https://gateway.itsaaz.ir/hub/api/v1/Address/DetailsTypeA",
+			new { postcode = p.ZipCode, orderId = 1 },
+			new Dictionary<string, string> { { "Authorization", $"Bearer {accessToken}" }, { "Accept", "application/json" } }
+		);
+
+	protected virtual Task<HttpResponseMessage?> SendVehicleViolationsDetail(VehicleViolationDetailParams p, string accessToken, CancellationToken ct) =>
+		httpClient.Post(
+			"https://api-ithub.itsaaz.ir/api/v1/CarServices/VehicleviolationsDetails",
+			new {
+				nationalCode = p.NationalCode,
+				cellPhone = p.PhoneNumber,
+				plk1 = p.LicencePlate[..2],
+				plk2 = p.LicencePlate.Substring(2, 1),
+				plk3 = p.LicencePlate.Substring(3, 3),
+				plkSrl = p.LicencePlate.Substring(6, 2)
+			},
+			new Dictionary<string, string> { { "Authorization", $"Bearer {accessToken}" }, { "Accept", "application/json" } }
+		);
+
+	protected virtual Task<HttpResponseMessage?> SendDrivingLicenceDetail(DrivingLicenceDetailParams p, string accessToken, CancellationToken ct) =>
+		httpClient.Post(
+			"https://gateway.itsaaz.ir/hub/api/v1/CarServices/GavahinameStatusInquiry",
+			new { nationalCode = p.NationalCode, cellphone = p.PhoneNumber },
+			new Dictionary<string, string> { { "Authorization", $"Bearer {accessToken}" }, { "Accept", "application/json" } }
+		);
+
+	protected virtual Task<HttpResponseMessage?> SendLicencePlateDetail(LicencePlateDetailParams p, string accessToken, CancellationToken ct) =>
+		httpClient.Post(
+			"https://api-ithub.itsaaz.ir/api/v1/CarServices/PlateHistoryInquiry",
+			new {
+				nationalCode = p.NationalCode,
+				plk1 = p.LicencePlate[..2],
+				plk2 = p.LicencePlate.Substring(2, 1),
+				plk3 = p.LicencePlate.Substring(3, 3),
+				plkSrl = p.LicencePlate.Substring(6, 2)
+			},
+			new Dictionary<string, string> { { "Authorization", $"Bearer {accessToken}" }, { "Accept", "application/json" } }
+		);
+
+	protected virtual Task<HttpResponseMessage?> SendDrivingLicenceNegativePoint(DrivingLicenceNegativePointParams p, string accessToken, CancellationToken ct) =>
+		httpClient.Post(
+			"https://api-ithub.itsaaz.ir/api/v1/CarServices/DriversLicensePointsInquiry",
+			new { licenseNo = p.DrivingLicenceNumber, nationalCode = p.NationalCode, cellphone = p.PhoneNumber },
+			new Dictionary<string, string> { { "Authorization", $"Bearer {accessToken}" }, { "Accept", "application/json" } }
+		);
+
+	protected virtual Task<HttpResponseMessage?> SendFreewayTolls(FreewayTollsParams p, string accessToken, CancellationToken ct) =>
+		httpClient.Post(
+			"https://api-ithub.itsaaz.ir/api/v1/CarServices/GetFreewayTollsQuery",
+			new {
+				requestId = "1",
+				plk1 = p.LicencePlate[..2],
+				plk2 = p.LicencePlate.Substring(2, 1),
+				plk3 = p.LicencePlate.Substring(3, 3),
+				plkSrl = p.LicencePlate.Substring(6, 2)
+			},
+			new Dictionary<string, string> { { "Authorization", $"Bearer {accessToken}" }, { "Accept", "application/json" } }
+		);
+
+	protected virtual Task<HttpResponseMessage?> SendIBanToBankAccountDetail(IBanToBankAccountDetailParams p, string accessToken, CancellationToken ct) =>
+		httpClient.Post(
+			"https://api-ithub.itsaaz.ir/api/v1/CarServices/DriversLicensePointsInquiry",
+			new { iban = p.IBan },
+			new Dictionary<string, string> { { "Authorization", $"Bearer {accessToken}" }, { "Accept", "application/json" } }
+		);
+
+	protected virtual async Task<GetAccessTokenResponse?> GetAccessToken(CancellationToken ct) {
 		HttpResponseMessage? response = await httpClient.PostForm(
 			"https://gateway.itsaaz.ir/sts/connect/token",
 			new Dictionary<string, string> {
@@ -656,205 +745,45 @@ public class InquiryService(
 	}
 }
 
+// Test-mode implementation (appsettings "Test": true): inherits the real InquiryService so caching, the payment gate,
+// balance checks, wallet charge-before-call and history writes are IDENTICAL to prod - it only swaps the external
+// itsaaz/ithub calls for fixed fake data, so nothing hits a paid third-party API.
 public class InquiryServiceFake(
+	DbContext db,
+	IHttpClientService httpClient,
 	ILocalizationService ls,
 	ITokenService ts,
 	IWalletService walletService
-) : IInquiryService {
-	public UResponse<BillInfoResponse?> BillInfo(BillInfoParams p, CancellationToken ct) {
-		BillParser parser = new();
-		try {
-			return new UResponse<BillInfoResponse?>(parser.Parse(p.BillId, p.PaymentId));
-		}
-		catch (Exception e) {
-			return new UResponse<BillInfoResponse?>(null, Usc.ThirdPartyError, e.Message);
-		}
-	}
-	public async Task<UResponse<bool?>> MobileAndNationalCodeVerification(VerifyNationalCodeAndPhoneNumber p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<bool?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<bool?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.MobileAndNationalCodeVerification, Token = p.Token }, ct);
-		return new UResponse<bool?>(true);
-	}
+) : InquiryService(db, httpClient, ls, ts, walletService) {
+	// A non-null token so the base ShahkarException guard passes without hitting the real STS.
+	protected override Task<GetAccessTokenResponse?> GetAccessToken(CancellationToken ct) =>
+		Task.FromResult<GetAccessTokenResponse?>(new GetAccessTokenResponse { AccessToken = "FAKE", ExpiresIn = 3600 });
 
-	public async Task<UResponse<ZipCodeToAddressDetailResponse?>> ZipCodeToAddressDetail(ZipCodeToAddressDetailParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.ZipCodeToAddressDetail, Token = p.Token }, ct);
-		return new UResponse<ZipCodeToAddressDetailResponse?>(new ZipCodeToAddressDetailResponse {
-			BuildingName = "برج آسمان",
-			Description = "واحد جنوبی",
-			Floor = "5",
-			HouseNumber = "18",
-			LocalityName = "سعادت آباد",
-			LocalityType = "محله",
-			ZipCode = "1998754312",
-			Province = "تهران",
-			SideFloor = "راست",
-			Street = "بلوار سرو",
-			Street2 = "کوچه گلستان",
-			SubLocality = "ناحیه ۲",
-			TownShip = "تهران",
-			TraceId = "ZIP2406300001",
-			Village = ""
-		});
-	}
+	// Each override returns provider-shaped JSON so the base parser + history caching behave exactly like prod.
+	protected override Task<HttpResponseMessage?> SendMobileAndNationalCodeVerification(VerifyNationalCodeAndPhoneNumber p, string accessToken, CancellationToken ct) =>
+		FakeOk("""{"data":true}""");
 
-	public async Task<UResponse<VehicleViolationDetailResponse?>> VehicleViolationsDetail(VehicleViolationDetailParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.VehicleViolationsDetail, Token = p.Token }, ct);
-		return new UResponse<VehicleViolationDetailResponse?>(new VehicleViolationDetailResponse {
-			PlateDictation = "21 الف 345 ایران 99",
-			PlateChar = "الف",
-			ComplaintStatus = "ندارد",
-			Complaint = "0",
-			DateTime = "1405/04/09 11:25",
-			PriceStatus = "پرداخت نشده",
-			TraceId = "VV240630001",
-			PaperId = "812345678901",
-			PaymentId = "456123789654",
-			WarningPrice = "3,150,000",
-			InquirePrice = "2,850,000",
-			EjrInquireNo = "EJR548796",
-			WarningId = "WRN874512",
-			InquirePriceDictation = "دو میلیون و هشتصد و پنجاه هزار ریال",
-			Items = [
-				new VehicleViolationDetailResponse.VehicleViolationDetailItem {
-					SerialNo = "100001",
-					Date = "1405/03/28 14:20",
-					Type = "دوربین",
-					Address = "بزرگراه همت",
-					ViolationType = "سرعت غیرمجاز",
-					FinalPrice = "1,500,000",
-					PaperId = "100000001",
-					PaymentId = "500000001",
-					WarningId = "W100001",
-					InvestigationAbility = "دارد",
-					HasImage = true
-				},
-				new VehicleViolationDetailResponse.VehicleViolationDetailItem {
-					SerialNo = "100002",
-					Date = "1405/04/02 09:15",
-					Type = "مامور",
-					Address = "خیابان ولیعصر",
-					ViolationType = "توقف ممنوع",
-					FinalPrice = "1,350,000",
-					PaperId = "100000002",
-					PaymentId = "500000002",
-					WarningId = "W100002",
-					InvestigationAbility = "ندارد",
-					HasImage = false
-				}
-			]
-		});
-	}
+	protected override Task<HttpResponseMessage?> SendZipCodeToAddressDetail(ZipCodeToAddressDetailParams p, string accessToken, CancellationToken ct) =>
+		FakeOk("""{"data":{"BuildingName":"برج آسمان","description":"واحد جنوبی","floor":"5","houseNumber":"18","localityName":"سعادت آباد","localityType":"محله","zipCode":"1998754312","province":"تهران","sideFloor":"راست","street":"بلوار سرو","street2":"کوچه گلستان","subLocality":"ناحیه ۲","townShip":"تهران","traceId":"ZIP2406300001","village":""}}""");
 
-	public async Task<UResponse<DrivingLicenceDetailResponse?>> DrivingLicenceDetail(DrivingLicenceDetailParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceStatus, Token = p.Token }, ct);
-		return new UResponse<DrivingLicenceDetailResponse?>(new DrivingLicenceDetailResponse {
-			NationalCode = "0012345678",
-			FirstName = "علی",
-			LastName = "محمدی",
-			RequestDate = "1404/10/15",
-			Title = "آماده تحویل",
-			ConfirmDate = "1404/10/18",
-			RahvarStatus = "تحویل به پست",
-			PacketNo = "PK987654321",
-			Barcode = "626123456789012345",
-			PrintNnumber = "PR140500123",
-			PrintDate = "1404/10/16",
-			ValidYears = "10"
-		});
-	}
+	protected override Task<HttpResponseMessage?> SendVehicleViolationsDetail(VehicleViolationDetailParams p, string accessToken, CancellationToken ct) =>
+		FakeOk("""{"data":{"body":{"plateDictation":"21 الف 345 ایران 99","plateChar":"الف","complaintStatus":"ندارد","complaint":"0","sysDate":"1405/04/09","sysTime":"11:25","priceStatus":"پرداخت نشده","traceId":"VV240630001","paperId":"812345678901","paymentId":"456123789654","warningPrice":"3,150,000","inquirePrice":"2,850,000","ejrInquireNo":"EJR548796","warningId":"WRN874512","inquirePriceDictation":"دو میلیون و هشتصد و پنجاه هزار ریال","warningDTOs":[{"serialNo":"100001","violationOccureDate":"1405/03/28 14:20","violationDeliveryType":{"violationDeliveryType":"دوربین"},"violatoinAddress":"بزرگراه همت","violationTypeDTO":{"violationType":"سرعت غیرمجاز"},"finalPrice":"1,500,000","paperId":"100000001","paymentId":"500000001","warningId":"W100001","investigationAbility":"دارد","hasImage":"1"},{"serialNo":"100002","violationOccureDate":"1405/04/02 09:15","violationDeliveryType":{"violationDeliveryType":"مامور"},"violatoinAddress":"خیابان ولیعصر","violationTypeDTO":{"violationType":"توقف ممنوع"},"finalPrice":"1,350,000","paperId":"100000002","paymentId":"500000002","warningId":"W100002","investigationAbility":"ندارد","hasImage":"0"}]}}}""");
 
-	public async Task<UResponse<LicencePlateDetailResponse?>> LicencePlateDetail(LicencePlateDetailParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<LicencePlateDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<LicencePlateDetailResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.LicencePlateDetail, Token = p.Token }, ct);
-		return new UResponse<LicencePlateDetailResponse?>(new LicencePlateDetailResponse {
-			Status = "فعال",
-			TracePlate = "21الف34599",
-			Items = [
-				new LicencePlateDetailResponse.LicencePlateHistoryItem {
-					System = "سواری",
-					Type = "شخصی",
-					InstallDate = "1401/05/20",
-					Model = "پژو 207"
-				},
-				new LicencePlateDetailResponse.LicencePlateHistoryItem {
-					System = "سواری",
-					Type = "شخصی",
-					InstallDate = "1398/11/15",
-					Model = "پژو 206"
-				}
-			]
-		});
-	}
+	protected override Task<HttpResponseMessage?> SendDrivingLicenceDetail(DrivingLicenceDetailParams p, string accessToken, CancellationToken ct) =>
+		FakeOk("""{"data":{"body":[{"nationalNo":"0012345678","firstName":"علی","lastName":"محمدی","requestDate":"1404/10/15","title":"آماده تحویل","printConfirmDate":"1404/10/18","rahvarStatus":"تحویل به پست","packetNo":"PK987654321","barcode":"626123456789012345","printNum":"PR140500123","printLicDate":"1404/10/16","validYears":"10"}]}}""");
 
-	public async Task<UResponse<DrivingLicenceNegativePointResponse?>> DrivingLicenceNegativePoint(DrivingLicenceNegativePointParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceNegativePoint, Token = p.Token }, ct);
-		return new UResponse<DrivingLicenceNegativePointResponse?>(new DrivingLicenceNegativePointResponse {
-			Point = "8",
-			Allowable = true,
-			RuleId = "NP-1405-001"
-		});
-	}
+	protected override Task<HttpResponseMessage?> SendLicencePlateDetail(LicencePlateDetailParams p, string accessToken, CancellationToken ct) =>
+		FakeOk("""{"data":{"body":{"plateStatus":"فعال","tracePlate":"21الف34599","historyPlate":[{"type":"شخصی","installDate":"1401/05/20","model":"پژو 207","system":"سواری"},{"type":"شخصی","installDate":"1398/11/15","model":"پژو 206","system":"سواری"}]}}}""");
 
-	public async Task<UResponse<FreewayTollsResponse?>> FreewayTolls(FreewayTollsParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<FreewayTollsResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<FreewayTollsResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.FreewayTolls, Token = p.Token }, ct);
-		return new UResponse<FreewayTollsResponse?>(new FreewayTollsResponse {
-			TotalPrice = "780,000",
-			Items = [
-				new FreewayTollsResponse.FreewayTollsItem {
-					Id = "T001",
-					Date = "1405/03/15 08:20",
-					Price = "250,000",
-					Gateway = "عوارض تهران-قم",
-					Freeway = "آزادراه تهران قم"
-				},
-				new FreewayTollsResponse.FreewayTollsItem {
-					Id = "T002",
-					Date = "1405/03/20 18:40",
-					Price = "280,000",
-					Gateway = "عوارض قم-کاشان",
-					Freeway = "آزادراه امیرکبیر"
-				},
-				new FreewayTollsResponse.FreewayTollsItem {
-					Id = "T003",
-					Date = "1405/03/25 12:05",
-					Price = "250,000",
-					Gateway = "عوارض تهران-پردیس",
-					Freeway = "آزادراه پردیس"
-				}
-			]
-		});
-	}
+	protected override Task<HttpResponseMessage?> SendDrivingLicenceNegativePoint(DrivingLicenceNegativePointParams p, string accessToken, CancellationToken ct) =>
+		FakeOk("""{"data":{"body":{"allowable":"1","negPoint":"8","ruleId":"NP-1405-001"}}}""");
 
-	public async Task<UResponse<IBanToBankAccountDetailResponse?>> IBanToBankAccountDetail(IBanToBankAccountDetailParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.IBanToBankAccountDetail, Token = p.Token }, ct);
-		return new UResponse<IBanToBankAccountDetailResponse?>(new IBanToBankAccountDetailResponse {
-			DepositNumber = "0101234567001",
-			IBanType = "جاری",
-			BankCode = "017",
-			BankName = "بانک ملی ایران",
-			OwnerName = "علی محمدی"
-		});
-	}
+	protected override Task<HttpResponseMessage?> SendFreewayTolls(FreewayTollsParams p, string accessToken, CancellationToken ct) =>
+		FakeOk("""{"total_price":780000,"items":[{"id":"T001","date":"1405/03/15 08:20","price":250000,"gateway":"عوارض تهران-قم","freeway":"آزادراه تهران قم"},{"id":"T002","date":"1405/03/20 18:40","price":280000,"gateway":"عوارض قم-کاشان","freeway":"آزادراه امیرکبیر"},{"id":"T003","date":"1405/03/25 12:05","price":250000,"gateway":"عوارض تهران-پردیس","freeway":"آزادراه پردیس"}]}""");
+
+	protected override Task<HttpResponseMessage?> SendIBanToBankAccountDetail(IBanToBankAccountDetailParams p, string accessToken, CancellationToken ct) =>
+		FakeOk("""{"data":{"depositNumber":"0101234567001","iBanType":"جاری","bankCode":"017","bankName":"بانک ملی ایران","ownersInfo":[{"firstName":"علی","lastName":"محمدی"}]}}""");
+
+	private static Task<HttpResponseMessage?> FakeOk(string body) =>
+		Task.FromResult<HttpResponseMessage?>(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body) });
 }

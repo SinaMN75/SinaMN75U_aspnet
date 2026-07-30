@@ -84,3 +84,14 @@ public sealed class IBanToBankAccountDetailParams : BaseParams {
 
 	public bool Refresh { get; set; }
 }
+// Read-only cache lookup for a vehicle: reports which vehicle inquiries are already cached and when they expire. Never charges.
+public sealed class InquiryCacheStatusParams : BaseParams {
+	[UValidationRequired("NationalCodeRequired"), UValidationStringLength(10, 10, "NationalCodeInvalid")]
+	public string NationalCode { get; set; } = null!;
+
+	[UValidationRequired("PhoneNumberRequired"), UValidationStringLength(9, 15, "PhoneNumberInvalid")]
+	public string PhoneNumber { get; set; } = null!;
+
+	[UValidationRequired("LicencePlateRequired"), UValidationStringLength(4, 10, "LicencePlateInvalid")]
+	public string LicencePlate { get; set; } = null!;
+}

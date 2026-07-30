@@ -22,6 +22,7 @@ public sealed class AppSettings {
 	public required Namat Namat { get; set; }
 	public required DefaultUsers Users { get; init; }
 	public required ApiCallCosts ApiCallCosts { get; set; }
+	public required InquiryCacheDurations InquiryCacheDurations { get; set; }
 	public required IEnumerable<ChargeInternet> ChargeInternet { get; set; }
 }
 
@@ -112,6 +113,18 @@ public sealed class ApiCallCosts {
 	public required decimal LicencePlateDetail { get; set; }
 	public required decimal DrivingLicenceNegativePoint { get; set; }
 	public required decimal IBanToBankAccountDetail { get; set; }
+}
+
+// How long a cached inquiry result stays valid, per inquiry type (in days). After this it is treated as a miss.
+public sealed class InquiryCacheDurations {
+	public required int MobileAndNationalCodeVerification { get; set; }
+	public required int ZipCodeToAddressDetail { get; set; }
+	public required int VehicleViolationsDetail { get; set; }
+	public required int DrivingLicenceStatus { get; set; }
+	public required int FreewayToll { get; set; }
+	public required int LicencePlateDetail { get; set; }
+	public required int DrivingLicenceNegativePoint { get; set; }
+	public required int IBanToBankAccountDetail { get; set; }
 }
 
 public sealed class ChargeInternet {
