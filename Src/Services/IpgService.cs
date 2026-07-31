@@ -18,14 +18,12 @@ public class IpgService(
 		if (userData == null) return new UResponse<IpgPayResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		if (userData.IsExpired) return new UResponse<IpgPayResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		if (p.Amount <= 0) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("AmountRequired"));
-		string trackingNumber = Random.Shared.NextInt64(20).ToString();
-		string additionalData = Convert.ToBase64String(JsonSerializer.SerializeToUtf8Bytes(new IpgAdditionalData {
-					TrackingNumber = trackingNumber,
-					Tag = p.Tag,
-					InvoiceId = p.InvoiceId
-				}
-			)
-		);
+		string trackingNumber = Guid.CreateVersion7().ToString("N");
+		string additionalData = JsonSerializer.SerializeToUtf8Bytes(new IpgAdditionalData {
+			TrackingNumber = trackingNumber,
+			Tag = p.Tag,
+			InvoiceId = p.InvoiceId
+		}).ToBase64Url();
 
 		TxnEntity txn = new() {
 			Id = Guid.CreateVersion7(),
@@ -94,7 +92,13 @@ public class IpgService(
 	public async Task Verify(string token, short status, string? cardNumberMasked, long? rrn, string additionalData, CancellationToken ct) {
 		if (additionalData.IsNullOrEmpty()) return;
 
-		IpgAdditionalData? data = JsonSerializer.Deserialize<IpgAdditionalData>(Convert.FromBase64String(additionalData));
+		IpgAdditionalData? data;
+		try {
+			data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase64Url());
+		}
+		catch {
+			return;
+		}
 		if (data == null) return;
 
 		TxnEntity? txn = await db.Set<TxnEntity>().AsTracking().FirstOrDefaultAsync(x => x.TrackingNumber == data.TrackingNumber, ct);

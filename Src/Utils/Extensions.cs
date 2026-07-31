@@ -19,6 +19,12 @@ public static class UExtensions {
 	public static string? ToBase64(this byte[]? s) => s == null ? null : Convert.ToBase64String(s);
 	public static Guid ToGuid(this string s) => Guid.Parse(s);
 	public static byte[]? FromBase64(this string? s) => s == null ? null : Convert.FromBase64String(s);
+	public static string ToBase64Url(this byte[] s) => Convert.ToBase64String(s).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+	public static byte[] FromBase64Url(this string s) {
+		string t = s.Replace('-', '+').Replace('_', '/');
+		return Convert.FromBase64String(t.PadRight(t.Length + (4 - t.Length % 4) % 4, '='));
+	}
+
 	public static T FromJson<T>(this string json) => JsonSerializer.Deserialize<T>(json, Core.Default)!;
 
 	public static T Random<T>(this List<T> list) => list[new Random().Next(list.Count)];

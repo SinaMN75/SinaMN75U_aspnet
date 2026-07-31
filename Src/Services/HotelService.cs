@@ -1168,12 +1168,13 @@ public class HotelService(
 		DormBedInvoiceEntity? e = await db.Set<DormBedInvoiceEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.InvoiceId, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("InvoiceNotFound"));
 
-		await ws.Transfer(new WalletTransferParams {
+		UResponse<WalletTxnResponse?> transfer = await ws.Transfer(new WalletTransferParams {
 			SenderId = p.UserId,
 			ReceiverId = Core.App.Users.SystemAdmin.Id,
 			Amount = e.DebtAmount + e.PenaltyAmount - e.CreditorAmount,
 			TagWalletTxn = [TagWalletTxn.DormBedInvoice],
 		}, ct);
+		if (transfer.Result == null) return new UResponse(transfer.Status, transfer.Message);
 
 		e.PaidAmount = e.DebtAmount + e.PenaltyAmount - e.CreditorAmount;
 		e.Tags = [TagDormBedInvoice.PaidOnline];

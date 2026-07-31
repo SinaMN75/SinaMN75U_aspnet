@@ -68,7 +68,7 @@ public static class HotelRoutes {
 		r.MapPost("DormBedInvoice/Read", async (DormBedInvoiceReadParams p, IHotelService s, CancellationToken c) => (await s.ReadDormBedInvoices(p, c)).ToResult()).Produces<UResponse<IEnumerable<DormBedInvoiceResponse>>>();
 		r.MapPost("DormBedInvoice/Update", async (DormBedInvoiceUpdateParams p, IHotelService s, CancellationToken c) => (await s.UpdateDormBedInvoice(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("DormBedInvoice/Delete", async (IdParams p, IHotelService s, CancellationToken c) => (await s.DeleteDormBedInvoice(p, c)).ToResult()).Produces<UResponse>();
-		r.MapPost("DormBedInvoice/Pay", async (IdParams p, IHotelService s, CancellationToken c) => (await s.PayDormBedInvoice(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("DormBedInvoice/Pay", async (DormBedInvoicePayParams p, IHotelService s, CancellationToken c) => (await s.PayDormBedInvoice(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("DormBedInvoice/ChartData", async (BaseParams p, IHotelService s, CancellationToken c) => (await s.ReadDormBedInvoiceChartData(p, c)).ToResult()).Produces<UResponse>();
 	}
 }

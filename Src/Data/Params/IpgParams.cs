@@ -4,14 +4,9 @@ public sealed class IpgSaleParams : BaseParams {
 	[UValidationRequired("AmountRequired")]
 	public decimal Amount { get; set; }
 
-	public required TagTxn Tag { get; set; }
+	public TagTxn Tag { get; set; } = TagTxn.ChargeWallet;
 
 	public string? InvoiceId { get; set; }
-}
-
-public sealed class IpgVerifyParams : BaseParams {
-	[UValidationRequired("TrackingNumberRequired")]
-	public required string TrackingNumber { get; set; }
 }
 
 public sealed class IpgAdditionalData {
