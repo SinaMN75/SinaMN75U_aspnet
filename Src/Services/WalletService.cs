@@ -118,13 +118,7 @@ public class WalletService(
 	}
 
 	public async Task<UResponse<WalletTxnResponse?>> Transfer(WalletTransferParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<WalletTxnResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<WalletTxnResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-
-		Guid senderId = p.SenderId ?? userData.Id;
-
-		WalletEntity? senderWallet = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == senderId, ct);
+		WalletEntity? senderWallet = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == p.SenderId, ct);
 		WalletEntity? receiverWallet = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == p.ReceiverId, ct);
 		if (senderWallet == null) return new UResponse<WalletTxnResponse?>(null, Usc.NotFound, ls.Get("SenderWalletNotFound"));
 		if (receiverWallet == null) return new UResponse<WalletTxnResponse?>(null, Usc.NotFound, ls.Get("ReceiverWalletNotFound"));
@@ -138,9 +132,9 @@ public class WalletService(
 
 		WalletTxnEntity e = new() {
 			Id = Guid.CreateVersion7(),
-			CreatorId = userData.Id,
+			CreatorId = p.SenderId,
 			CreatedAt = DateTime.UtcNow,
-			SenderId = senderId,
+			SenderId = p.SenderId,
 			ReceiverId = p.ReceiverId,
 			Amount = p.Amount,
 			JsonData = new BaseJson { Detail1 = p.Detail1 ?? "" },

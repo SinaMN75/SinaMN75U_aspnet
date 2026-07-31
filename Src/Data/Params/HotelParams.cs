@@ -382,3 +382,8 @@ public sealed class DormBedInvoiceReadParams : BaseReadParams<TagDormBedInvoice>
 	public decimal? MinDebtAmount { get; set; }
 	public decimal? MaxDebtAmount { get; set; }
 }
+
+public sealed class DormBedInvoicePayParams {
+	public required Guid InvoiceId { get; set; }
+	public required Guid UserId { get; set; }
+}

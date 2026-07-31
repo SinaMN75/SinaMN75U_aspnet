@@ -5,15 +5,28 @@ public interface IIpgService {
 	Task Verify(string token, short status, string? cardNumberMasked, long? rrn, string additionalData, CancellationToken ct);
 }
 
-public class IpgService(IHttpClientService http, DbContext db, ILocalizationService ls, ITokenService ts, IHttpContextAccessor httpContext) : IIpgService {
+public class IpgService(
+	IHttpClientService http,
+	DbContext db,
+	ILocalizationService ls,
+	ITokenService ts,
+	IHttpContextAccessor httpContext,
+	IHotelService hs
+) : IIpgService {
 	public async Task<UResponse<IpgPayResponse?>> GetSaleIpgLink(IpgSaleParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IpgPayResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		if (userData.IsExpired) return new UResponse<IpgPayResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 		if (p.Amount <= 0) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("AmountRequired"));
-		string trackingNumber = Guid.CreateVersion7().ToString("N");
-		int orderId = Math.Abs(Guid.NewGuid().GetHashCode());
-		
+		string trackingNumber = Random.Shared.NextInt64(20).ToString();
+		string additionalData = Convert.ToBase64String(JsonSerializer.SerializeToUtf8Bytes(new IpgAdditionalData {
+					TrackingNumber = trackingNumber,
+					Tag = p.Tag,
+					InvoiceId = p.InvoiceId
+				}
+			)
+		);
+
 		TxnEntity txn = new() {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
@@ -21,7 +34,7 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 			UserId = userData.Id,
 			Amount = p.Amount,
 			TrackingNumber = trackingNumber,
-			Tags = [TagTxn.ChargeWallet, TagTxn.Pending],
+			Tags = [TagTxn.ChargeWallet, p.Tag, TagTxn.Pending],
 			JsonData = new BaseJson { Detail1 = "IPG" }
 		};
 		await db.Set<TxnEntity>().AddAsync(txn, ct);
@@ -37,7 +50,7 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 			db.Set<TxnEntity>().Update(txn);
 			await db.SaveChangesAsync(ct);
 			return new UResponse<IpgPayResponse?>(new IpgPayResponse {
-				Url = $"{gatewayUrl}?additionalData={trackingNumber}&amount={(long)p.Amount}",
+				Url = $"{gatewayUrl}?additionalData={additionalData}&amount={(long)p.Amount}",
 				TrackingNumber = trackingNumber
 			});
 		}
@@ -46,9 +59,9 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 			HttpResponseMessage? response = await http.Post("https://pna.shaparak.ir/mhipg/api/Payment/NormalSale", new {
 					CorporationPin = Core.App.Ipg.Token,
 					Amount = (long)p.Amount,
-					OrderId = orderId,
-					CallBackUrl = $"{verifyUrl}?additionalData={trackingNumber}",
-					AdditionalData = trackingNumber,
+					OrderId = Math.Abs(Guid.NewGuid().GetHashCode()),
+					CallBackUrl = $"{verifyUrl}?additionalData={additionalData}",
+					AdditionalData = additionalData,
 					Originator = userData.PhoneNumber ?? ""
 				}
 			);
@@ -81,7 +94,10 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 	public async Task Verify(string token, short status, string? cardNumberMasked, long? rrn, string additionalData, CancellationToken ct) {
 		if (additionalData.IsNullOrEmpty()) return;
 
-		TxnEntity? txn = await db.Set<TxnEntity>().AsTracking().FirstOrDefaultAsync(x => x.TrackingNumber == additionalData, ct);
+		IpgAdditionalData? data = JsonSerializer.Deserialize<IpgAdditionalData>(Convert.FromBase64String(additionalData));
+		if (data == null) return;
+
+		TxnEntity? txn = await db.Set<TxnEntity>().AsTracking().FirstOrDefaultAsync(x => x.TrackingNumber == data.TrackingNumber, ct);
 		if (txn == null) return;
 
 		if (txn.Tags.Contains(TagTxn.Paid)) return;
@@ -106,7 +122,7 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 				if (confirmData.GetProperty("Status").GetInt16() != 0) return;
 			}
 
-			txn.Tags = [TagTxn.ChargeWallet, TagTxn.Paid];
+			txn.Tags = [TagTxn.ChargeWallet, TagTxn.Paid, data.Tag];
 			txn.JsonData.Detail1 = $"Card:{cardNumberMasked}";
 			txn.JsonData.Detail2 = $"RRN:{rrn}";
 			db.Set<TxnEntity>().Update(txn);
@@ -115,7 +131,7 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 				Id = Guid.CreateVersion7(),
 				CreatorId = Core.App.Users.SystemAdmin.Id,
 				CreatedAt = DateTime.UtcNow,
-				JsonData = new BaseJson { Detail1 = $"RRN:{rrn}", Detail2 = "شارژ کیف پول" },
+				JsonData = new BaseJson { Detail2 = "شارژ کیف پول" },
 				Tags = [TagWalletTxn.Charge],
 				SenderId = Core.App.Users.AvaPlus.Id,
 				ReceiverId = txn.UserId,
@@ -126,8 +142,15 @@ public class IpgService(IHttpClientService http, DbContext db, ILocalizationServ
 			if (wallet == null) return;
 			wallet.Balance += txn.Amount;
 			db.Update(wallet);
-
 			await db.SaveChangesAsync(ct);
+
+			if (data is { Tag: TagTxn.DormInvoice, InvoiceId: not null }) {
+				await hs.PayDormBedInvoice(new DormBedInvoicePayParams {
+					InvoiceId = data.InvoiceId.ToGuid(),
+					UserId = txn.UserId
+				}, ct);
+			}
+			
 		}
 		catch (Exception ex) {
 			httpContext.CaptureForApiLog(ex);

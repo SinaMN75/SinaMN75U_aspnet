@@ -17,6 +17,7 @@ public static class UExtensions {
 	public static int ToInt(this decimal s) => (int)s;
 	public static string ToIntString(this decimal s) => ((int)s).ToString();
 	public static string? ToBase64(this byte[]? s) => s == null ? null : Convert.ToBase64String(s);
+	public static Guid ToGuid(this string s) => Guid.Parse(s);
 	public static byte[]? FromBase64(this string? s) => s == null ? null : Convert.FromBase64String(s);
 	public static T FromJson<T>(this string json) => JsonSerializer.Deserialize<T>(json, Core.Default)!;
 

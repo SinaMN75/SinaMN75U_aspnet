@@ -240,7 +240,8 @@ public enum TagTxn {
 	Failed = 203,
 	Refunded = 204,
 	ChargeWallet = 301,
-	MerchantCreationFee = 302
+	MerchantCreationFee = 302,
+	DormInvoice = 303
 }
 
 public enum TagParking {
@@ -276,6 +277,7 @@ public enum TagWalletTxn {
 	IBanToBankAccountDetail = 207,
 	FreewayTolls = 208,
 	MerchantCreationFee = 209,
+	DormBedInvoice = 210,
 
 	ChargeSimPin = 301,
 	ChargeSimTopup = 302,

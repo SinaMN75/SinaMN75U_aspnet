@@ -1,6 +1,5 @@
 namespace SinaMN75U.Services;
 
-
 public interface IHotelService {
 	// Hotel
 	public Task<UResponse<Guid?>> CreateHotel(HotelCreateParams p, CancellationToken ct);
@@ -66,12 +65,16 @@ public interface IHotelService {
 	public Task<UResponse<IEnumerable<DormBedInvoiceResponse>?>> ReadDormBedInvoices(DormBedInvoiceReadParams p, CancellationToken ct);
 	public Task<UResponse> UpdateDormBedInvoice(DormBedInvoiceUpdateParams p, CancellationToken ct);
 	public Task<UResponse> DeleteDormBedInvoice(IdParams p, CancellationToken ct);
-	public Task<UResponse> PayDormBedInvoice(IdParams p, CancellationToken ct);
+	public Task<UResponse> PayDormBedInvoice(DormBedInvoicePayParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<DormBedInvoiceChartResponse>?>> ReadDormBedInvoiceChartData(BaseParams p, CancellationToken ct);
 }
 
-public class HotelService(DbContext db, ILocalizationService ls, ITokenService ts) : IHotelService {
-
+public class HotelService(
+	DbContext db,
+	ILocalizationService ls,
+	ITokenService ts,
+	IWalletService ws
+) : IHotelService {
 	// ===================== Hotel =====================
 
 	public async Task<UResponse<Guid?>> CreateHotel(HotelCreateParams p, CancellationToken ct) {
@@ -215,7 +218,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 		if (p.MaxCapacity.HasValue) q = q.Where(x => x.Capacity <= p.MaxCapacity);
 		if (p.MinPrice.HasValue) q = q.Where(x => x.PricePerNight >= p.MinPrice);
 		if (p.MaxPrice.HasValue) q = q.Where(x => x.PricePerNight <= p.MaxPrice);
-		
+
 		IQueryable<HotelRoomResponse> projected = q.Select(Projections.HotelRoomSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
@@ -227,6 +230,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 			Guid uid = userData?.Id ?? Guid.Empty;
 			q = q.Where(x => x.Hotel.CreatorId == uid || x.Hotel.AdminUserIds.Count == 0 || x.Hotel.AdminUserIds.Contains(uid));
 		}
+
 		HotelRoomResponse? e = await q.Select(Projections.HotelRoomSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<HotelRoomResponse?>(null, Usc.NotFound, ls.Get("HotelRoomNotFound")) : new UResponse<HotelRoomResponse?>(e);
 	}
@@ -382,6 +386,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 			Guid uid = userData?.Id ?? Guid.Empty;
 			q = q.Where(x => x.UserId == uid || x.Hotel.CreatorId == uid || x.Hotel.AdminUserIds.Count == 0 || x.Hotel.AdminUserIds.Contains(uid));
 		}
+
 		HotelReservationResponse? e = await q.Select(Projections.HotelReservationSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<HotelReservationResponse?>(null, Usc.NotFound, ls.Get("ReservationNotFound")) : new UResponse<HotelReservationResponse?>(e);
 	}
@@ -704,6 +709,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 			Guid uid = userData?.Id ?? Guid.Empty;
 			q = q.Where(x => x.Dorm.CreatorId == uid || x.Dorm.AdminUserIds.Count == 0 || x.Dorm.AdminUserIds.Contains(uid));
 		}
+
 		DormRoomResponse? e = await q.Select(Projections.DormRoomSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<DormRoomResponse?>(null, Usc.NotFound, ls.Get("DormRoomNotFound")) : new UResponse<DormRoomResponse?>(e);
 	}
@@ -783,7 +789,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 		if (p.MaxDeposit.HasValue) q = q.Where(x => x.Deposit <= p.MaxDeposit);
 		if (p.MinMonthlyRent.HasValue) q = q.Where(x => x.MonthlyRent >= p.MinMonthlyRent);
 		if (p.MaxMonthlyRent.HasValue) q = q.Where(x => x.MonthlyRent <= p.MaxMonthlyRent);
-		
+
 		IQueryable<DormBedResponse> projected = q.Select(Projections.DormBedSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
@@ -795,6 +801,7 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 			Guid uid = userData?.Id ?? Guid.Empty;
 			q = q.Where(x => x.Room.Dorm.CreatorId == uid || x.Room.Dorm.AdminUserIds.Count == 0 || x.Room.Dorm.AdminUserIds.Contains(uid));
 		}
+
 		DormBedResponse? e = await q.Select(Projections.DormBedSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<DormBedResponse?>(null, Usc.NotFound, ls.Get("DormBedNotFound")) : new UResponse<DormBedResponse?>(e);
 	}
@@ -1157,22 +1164,19 @@ public class HotelService(DbContext db, ILocalizationService ls, ITokenService t
 		return new UResponse();
 	}
 
-	public async Task<UResponse> PayDormBedInvoice(IdParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-
-		DormBedInvoiceEntity? e = await db.Set<DormBedInvoiceEntity>().AsTracking().Include(x => x.Contract).ThenInclude(x => x!.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+	public async Task<UResponse> PayDormBedInvoice(DormBedInvoicePayParams p, CancellationToken ct) {
+		DormBedInvoiceEntity? e = await db.Set<DormBedInvoiceEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.InvoiceId, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("InvoiceNotFound"));
 
-		if (e.Contract != null && (!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Contract.Bed.Room.Dorm.CreatorId, e.Contract.Bed.Room.Dorm.AdminUserIds)))
-			return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
-		if (!userData.HasPermission(TagUser.PermissionPayInvoices)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		await ws.Transfer(new WalletTransferParams {
+			SenderId = p.UserId,
+			ReceiverId = Core.App.Users.SystemAdmin.Id,
+			Amount = e.DebtAmount + e.PenaltyAmount - e.CreditorAmount,
+			TagWalletTxn = [TagWalletTxn.DormBedInvoice],
+		}, ct);
 
-		// Include any accrued penalty so the invoice isn't marked paid while still owing a late fee.
 		e.PaidAmount = e.DebtAmount + e.PenaltyAmount - e.CreditorAmount;
 		e.Tags = [TagDormBedInvoice.PaidOnline];
-		db.Update(e);
-
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();

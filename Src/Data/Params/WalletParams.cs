@@ -12,7 +12,8 @@ public sealed class WalletChargeParams : BaseParams {
 }
 
 public sealed class WalletTransferParams : BaseParams {
-	public Guid? SenderId { get; set; }
+	[UValidationRequired("UserIdRequired")]
+	public required Guid SenderId { get; set; }
 
 	[UValidationRequired("UserIdRequired")]
 	public Guid ReceiverId { get; set; }
