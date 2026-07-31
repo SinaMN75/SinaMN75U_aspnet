@@ -148,7 +148,7 @@ public class IpgService(
 			db.Update(wallet);
 			await db.SaveChangesAsync(ct);
 
-			if (data is { Tag: TagTxn.DormInvoice, InvoiceId: not null }) {
+			if (data is { InvoiceId: not null }) {
 				await hs.PayDormBedInvoice(new DormBedInvoicePayParams {
 					InvoiceId = data.InvoiceId.ToGuid(),
 					UserId = txn.UserId
