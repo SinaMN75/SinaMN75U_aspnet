@@ -48,6 +48,12 @@ public static class LinqExtensions {
 		Guid uid = userData?.Id ?? Guid.Empty;
 		return q.Where(x => x.CreatorId == uid || x.AdminUserIds.Count == 0 || x.AdminUserIds.Contains(uid));
 	}
+	
+	public static IQueryable<TEntity> ApplyOwnerScope<TEntity, TTag>(this IQueryable<TEntity> q, JwtClaimData? userData) where TEntity : BaseEntity<TTag> where TTag : Enum {
+		if (userData is { IsSuperAdmin: true }) return q;
+		Guid uid = userData?.Id ?? Guid.Empty;
+		return q.Where(x => x.CreatorId == uid || x.AdminUserIds.Contains(uid));
+	}
 
 	public static TEntity ApplyUpdateParam<TEntity, TTag, TJson>(this TEntity e, BaseUpdateParams<TTag> p)
 		where TEntity : BaseEntity<TTag, TJson>

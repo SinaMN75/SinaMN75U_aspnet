@@ -111,7 +111,7 @@ public class HotelService(
 
 	public async Task<UResponse<IEnumerable<HotelResponse>?>> ReadHotels(HotelReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		IQueryable<HotelEntity> q = db.Set<HotelEntity>().ApplyReadParams(p).ApplyAdminScope<HotelEntity, TagHotel>(userData);
+		IQueryable<HotelEntity> q = db.Set<HotelEntity>().ApplyReadParams(p).ApplyOwnerScope<HotelEntity, TagHotel>(userData);
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.CityCode.IsNotNullOrEmpty()) q = q.Where(x => x.CityCode == p.CityCode);
@@ -122,7 +122,7 @@ public class HotelService(
 
 	public async Task<UResponse<HotelResponse?>> ReadHotelById(IdParams<HotelSelectorArgs> p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		HotelResponse? e = await db.Set<HotelEntity>().ApplyAdminScope<HotelEntity, TagHotel>(userData).Select(Projections.HotelSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		HotelResponse? e = await db.Set<HotelEntity>().ApplyOwnerScope<HotelEntity, TagHotel>(userData).Select(Projections.HotelSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<HotelResponse?>(null, Usc.NotFound, ls.Get("HotelNotFound")) : new UResponse<HotelResponse?>(e);
 	}
 
@@ -209,7 +209,7 @@ public class HotelService(
 		IQueryable<HotelRoomEntity> q = db.Set<HotelRoomEntity>().ApplyReadParams(p);
 		if (userData is not { IsSuperAdmin: true }) {
 			Guid uid = userData?.Id ?? Guid.Empty;
-			q = q.Where(x => x.Hotel.CreatorId == uid || x.Hotel.AdminUserIds.Count == 0 || x.Hotel.AdminUserIds.Contains(uid));
+			q = q.Where(x => x.Hotel.CreatorId == uid || x.Hotel.AdminUserIds.Contains(uid));
 		}
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
@@ -228,7 +228,7 @@ public class HotelService(
 		IQueryable<HotelRoomEntity> q = db.Set<HotelRoomEntity>();
 		if (userData is not { IsSuperAdmin: true }) {
 			Guid uid = userData?.Id ?? Guid.Empty;
-			q = q.Where(x => x.Hotel.CreatorId == uid || x.Hotel.AdminUserIds.Count == 0 || x.Hotel.AdminUserIds.Contains(uid));
+			q = q.Where(x => x.Hotel.CreatorId == uid || x.Hotel.AdminUserIds.Contains(uid));
 		}
 
 		HotelRoomResponse? e = await q.Select(Projections.HotelRoomSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
@@ -359,7 +359,6 @@ public class HotelService(
 			q = q.Where(x =>
 				x.UserId == uid ||
 				x.Hotel.CreatorId == uid ||
-				x.Hotel.AdminUserIds.Count == 0 ||
 				x.Hotel.AdminUserIds.Contains(uid));
 		}
 
@@ -384,7 +383,7 @@ public class HotelService(
 		IQueryable<HotelReservationEntity> q = db.Set<HotelReservationEntity>();
 		if (userData is not { IsSuperAdmin: true }) {
 			Guid uid = userData?.Id ?? Guid.Empty;
-			q = q.Where(x => x.UserId == uid || x.Hotel.CreatorId == uid || x.Hotel.AdminUserIds.Count == 0 || x.Hotel.AdminUserIds.Contains(uid));
+			q = q.Where(x => x.UserId == uid || x.Hotel.CreatorId == uid || x.Hotel.AdminUserIds.Contains(uid));
 		}
 
 		HotelReservationResponse? e = await q.Select(Projections.HotelReservationSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
@@ -489,7 +488,6 @@ public class HotelService(
 				x.Reservation != null && (
 					x.Reservation.UserId == uid ||
 					x.Reservation.Hotel.CreatorId == uid ||
-					x.Reservation.Hotel.AdminUserIds.Count == 0 ||
 					x.Reservation.Hotel.AdminUserIds.Contains(uid)));
 		}
 
@@ -614,7 +612,7 @@ public class HotelService(
 
 	public async Task<UResponse<IEnumerable<DormResponse>?>> ReadDorms(DormReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		IQueryable<DormEntity> q = db.Set<DormEntity>().ApplyReadParams(p).ApplyAdminScope<DormEntity, TagDorm>(userData);
+		IQueryable<DormEntity> q = db.Set<DormEntity>().ApplyReadParams(p).ApplyOwnerScope<DormEntity, TagDorm>(userData);
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.CityCode.IsNotNullOrEmpty()) q = q.Where(x => x.CityCode.Contains(p.CityCode!));
@@ -625,7 +623,7 @@ public class HotelService(
 
 	public async Task<UResponse<DormResponse?>> ReadDormById(IdParams<DormSelectorArgs> p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		DormResponse? e = await db.Set<DormEntity>().ApplyAdminScope<DormEntity, TagDorm>(userData).Select(Projections.DormSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		DormResponse? e = await db.Set<DormEntity>().ApplyOwnerScope<DormEntity, TagDorm>(userData).Select(Projections.DormSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<DormResponse?>(null, Usc.NotFound, ls.Get("DormNotFound")) : new UResponse<DormResponse?>(e);
 	}
 
@@ -692,7 +690,7 @@ public class HotelService(
 		IQueryable<DormRoomEntity> q = db.Set<DormRoomEntity>().ApplyReadParams(p);
 		if (userData is not { IsSuperAdmin: true }) {
 			Guid uid = userData?.Id ?? Guid.Empty;
-			q = q.Where(x => x.Dorm.CreatorId == uid || x.Dorm.AdminUserIds.Count == 0 || x.Dorm.AdminUserIds.Contains(uid));
+			q = q.Where(x => x.Dorm.CreatorId == uid || x.Dorm.AdminUserIds.Contains(uid));
 		}
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
@@ -707,7 +705,7 @@ public class HotelService(
 		IQueryable<DormRoomEntity> q = db.Set<DormRoomEntity>();
 		if (userData is not { IsSuperAdmin: true }) {
 			Guid uid = userData?.Id ?? Guid.Empty;
-			q = q.Where(x => x.Dorm.CreatorId == uid || x.Dorm.AdminUserIds.Count == 0 || x.Dorm.AdminUserIds.Contains(uid));
+			q = q.Where(x => x.Dorm.CreatorId == uid || x.Dorm.AdminUserIds.Contains(uid));
 		}
 
 		DormRoomResponse? e = await q.Select(Projections.DormRoomSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
@@ -779,7 +777,7 @@ public class HotelService(
 		IQueryable<DormBedEntity> q = db.Set<DormBedEntity>().ApplyReadParams(p);
 		if (userData is not { IsSuperAdmin: true }) {
 			Guid uid = userData?.Id ?? Guid.Empty;
-			q = q.Where(x => x.Room.Dorm.CreatorId == uid || x.Room.Dorm.AdminUserIds.Count == 0 || x.Room.Dorm.AdminUserIds.Contains(uid));
+			q = q.Where(x => x.Room.Dorm.CreatorId == uid || x.Room.Dorm.AdminUserIds.Contains(uid));
 		}
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
@@ -799,7 +797,7 @@ public class HotelService(
 		IQueryable<DormBedEntity> q = db.Set<DormBedEntity>();
 		if (userData is not { IsSuperAdmin: true }) {
 			Guid uid = userData?.Id ?? Guid.Empty;
-			q = q.Where(x => x.Room.Dorm.CreatorId == uid || x.Room.Dorm.AdminUserIds.Count == 0 || x.Room.Dorm.AdminUserIds.Contains(uid));
+			q = q.Where(x => x.Room.Dorm.CreatorId == uid || x.Room.Dorm.AdminUserIds.Contains(uid));
 		}
 
 		DormBedResponse? e = await q.Select(Projections.DormBedSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
@@ -977,7 +975,6 @@ public class HotelService(
 			q = q.Where(x =>
 				x.UserId == uid ||
 				x.Bed.Room.Dorm.CreatorId == uid ||
-				x.Bed.Room.Dorm.AdminUserIds.Count == 0 ||
 				x.Bed.Room.Dorm.AdminUserIds.Contains(uid));
 		}
 
@@ -1079,7 +1076,6 @@ public class HotelService(
 				x.Contract != null && (
 					x.Contract.UserId == uid ||
 					x.Contract.Bed.Room.Dorm.CreatorId == uid ||
-					x.Contract.Bed.Room.Dorm.AdminUserIds.Count == 0 ||
 					x.Contract.Bed.Room.Dorm.AdminUserIds.Contains(uid)));
 		}
 
@@ -1195,7 +1191,6 @@ public class HotelService(
 				x.Contract != null && (
 					x.Contract.UserId == uid ||
 					x.Contract.Bed.Room.Dorm.CreatorId == uid ||
-					x.Contract.Bed.Room.Dorm.AdminUserIds.Count == 0 ||
 					x.Contract.Bed.Room.Dorm.AdminUserIds.Contains(uid)));
 		}
 
