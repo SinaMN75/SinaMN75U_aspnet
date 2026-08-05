@@ -20,7 +20,7 @@ public sealed class MoadiEntity : BaseEntity<TagMoadi, MoadiJson> {
 	[StringLength(10)]
 	public string? PostalCode { get; set; } // کد پستی
 
-	public DateTime? RegistrationDate { get; set; } // تاریخ ثبت (Y-m-d)
+	public DateTime? RegisterDate { get; set; } // تاریخ ثبت (Y-m-d)
 
 	[StringLength(10)]
 	public string? RegistrationNumber { get; set; } // شماره ثبت

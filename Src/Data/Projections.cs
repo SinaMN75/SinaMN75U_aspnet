@@ -384,7 +384,7 @@ public static class Projections {
 			UniqueTaxCode = x.UniqueTaxCode,
 			NationalCode = x.NationalCode,
 			PostalCode = x.PostalCode,
-			RegistrationDate = x.RegistrationDate,
+			RegisterDate = x.RegisterDate,
 			RegistrationNumber = x.RegistrationNumber,
 			Address = x.Address,
 			StartInvoiceNumber = x.StartInvoiceNumber,

@@ -36,7 +36,7 @@ public class MoadiService(
 			UniqueTaxCode = p.UniqueTaxCode,
 			NationalCode = p.NationalCode,
 			PostalCode = p.PostalCode,
-			RegistrationDate = p.RegistrationDate,
+			RegisterDate = p.RegisterDate,
 			RegistrationNumber = p.RegistrationNumber,
 			Address = p.Address,
 			StartInvoiceNumber = p.StartInvoiceNumber,
@@ -89,7 +89,7 @@ public class MoadiService(
 		if (p.UniqueTaxCode.IsNotNullOrEmpty()) e.UniqueTaxCode = p.UniqueTaxCode;
 		if (p.NationalCode.IsNotNull()) e.NationalCode = p.NationalCode;
 		if (p.PostalCode.IsNotNull()) e.PostalCode = p.PostalCode;
-		if (p.RegistrationDate.IsNotNull()) e.RegistrationDate = p.RegistrationDate.Value;
+		if (p.RegisterDate.IsNotNull()) e.RegisterDate = p.RegisterDate.Value;
 		if (p.RegistrationNumber.IsNotNull()) e.RegistrationNumber = p.RegistrationNumber;
 		if (p.Address.IsNotNull()) e.Address = p.Address;
 		if (p.StartInvoiceNumber.IsNotNull()) e.StartInvoiceNumber = p.StartInvoiceNumber;
@@ -184,7 +184,7 @@ public class MoadiService(
 			{ "national_code", e.NationalCode },
 			{ "economic_code", e.EconomicCode },
 			{ "postal_code", e.PostalCode },
-			{ "registration_date", e.RegistrationDate?.ToString("yyyy-MM-dd") },
+			{ "registration_date", e.RegisterDate?.ToString("yyyy-MM-dd") },
 			{ "registration_number", e.RegistrationNumber },
 			{ "address", e.Address },
 			{ "ebill[unique_tax_code]", e.UniqueTaxCode },
