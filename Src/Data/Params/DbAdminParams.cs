@@ -21,6 +21,12 @@ public sealed class DbAdminRowsParams : BaseParams {
 	public int PageNumber { get; set; } = 1;
 	public string? OrderByColumn { get; set; }
 	public bool Descending { get; set; }
+
+	// Raw SQL condition appended as WHERE (SystemAdmin-only, full-power console). Null/empty = no filter.
+	public string? Where { get; set; }
+
+	// When false, the total row count is not recomputed (used while paging/sorting so large tables aren't re-scanned).
+	public bool WithCount { get; set; } = true;
 }
 
 public sealed class DbAdminQueryParams : BaseParams {

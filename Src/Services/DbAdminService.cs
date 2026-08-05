@@ -135,29 +135,40 @@ public class DbAdminService(DbContext db, ITokenService ts, ILocalizationService
 			if (columns.Contains(p.OrderByColumn)) orderBy = $" ORDER BY {Quote(p.OrderByColumn)} {(p.Descending ? "DESC" : "ASC")}";
 		}
 
-		long total;
-		await using (NpgsqlCommand countCmd = new($"SELECT count(*) FROM {relation};", conn))
-			total = Convert.ToInt64(await countCmd.ExecuteScalarAsync(ct) ?? 0L);
+		string where = string.IsNullOrWhiteSpace(p.Where) ? "" : $" WHERE {p.Where}";
 
-		string sql = $"SELECT * FROM {relation}{orderBy} LIMIT @limit OFFSET @offset;";
-		Stopwatch sw = Stopwatch.StartNew();
-		DbAdminQueryResultResponse result;
-		await using (NpgsqlCommand cmd = new(sql, conn)) {
-			cmd.Parameters.AddWithValue("limit", pageSize);
-			cmd.Parameters.AddWithValue("offset", (pageNumber - 1) * pageSize);
-			await using NpgsqlDataReader reader = await cmd.ExecuteReaderAsync(ct);
-			result = await ReadReader(reader, pageSize, ct);
+		try {
+			int? total = null;
+			// count(*) scans the table, so only recompute it when explicitly requested (first load / new filter / new page size).
+			if (p.WithCount) {
+				await using NpgsqlCommand countCmd = new($"SELECT count(*) FROM {relation}{where};", conn);
+				total = Convert.ToInt32(await countCmd.ExecuteScalarAsync(ct) ?? 0);
+			}
+
+			string sql = $"SELECT * FROM {relation}{where}{orderBy} LIMIT @limit OFFSET @offset;";
+			Stopwatch sw = Stopwatch.StartNew();
+			DbAdminQueryResultResponse result;
+			await using (NpgsqlCommand cmd = new(sql, conn)) {
+				cmd.Parameters.AddWithValue("limit", pageSize);
+				cmd.Parameters.AddWithValue("offset", (pageNumber - 1) * pageSize);
+				await using NpgsqlDataReader reader = await cmd.ExecuteReaderAsync(ct);
+				result = await ReadReader(reader, pageSize, ct);
+			}
+
+			sw.Stop();
+			result.ExecutionMs = sw.ElapsedMilliseconds;
+			List<string> pks = await PrimaryKeys(conn, p.Schema, p.Table, ct);
+			result.PrimaryKeyColumn = pks.FirstOrDefault();
+
+			return new UResponse<DbAdminQueryResultResponse?>(result) {
+				TotalCount = total,
+				PageSize = pageSize,
+				PageCount = total == null ? null : (int)Math.Ceiling(total.Value / (decimal)pageSize)
+			};
 		}
-		sw.Stop();
-		result.ExecutionMs = sw.ElapsedMilliseconds;
-		List<string> pks = await PrimaryKeys(conn, p.Schema, p.Table, ct);
-		result.PrimaryKeyColumn = pks.FirstOrDefault();
-
-		return new UResponse<DbAdminQueryResultResponse?>(result) {
-			TotalCount = (int)total,
-			PageSize = pageSize,
-			PageCount = (int)Math.Ceiling(total / (decimal)pageSize)
-		};
+		catch (PostgresException e) {
+			return new UResponse<DbAdminQueryResultResponse?>(null, Usc.BadRequest, e.MessageText);
+		}
 	}
 
 	public async Task<UResponse<DbAdminQueryResultResponse?>> Query(DbAdminQueryParams p, CancellationToken ct) {
