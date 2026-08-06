@@ -164,6 +164,7 @@ public static partial class AspNetConfig {
 		app.MapBlogRoutes(RouteTags.Blog);
 		app.MapFileManagerRoutes(RouteTags.FileManager);
 		app.MapDbAdminRoutes(RouteTags.DbAdmin);
+		app.MapHealthRoutes(RouteTags.Health);
 	}
 
 	private static string CleanAndFormatSql(string sql) {
