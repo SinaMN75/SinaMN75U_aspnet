@@ -160,7 +160,7 @@ public class ParkingService(
 				Id = Guid.CreateVersion7(),
 				CreatedAt = DateTime.UtcNow,
 				JsonData = new BaseJson(),
-				Tags = [TagVehicle.Test],
+				Tags = [TagVehicle.Car],
 				LicencePlate = p.NumberPlate,
 				CreatorId = p.CreatorId ?? userData.Id
 			}, ct);
