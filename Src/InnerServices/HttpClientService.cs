@@ -10,7 +10,10 @@ public interface IHttpClientService {
 	Task<HttpResponseMessage?> Upload(string uri, IFormFile file, string fileName, Dictionary<string, string>? headers = null);
 }
 
-public class HttpClientService(HttpClient httpClient, IDashboardService dashboardService) : IHttpClientService {
+public class HttpClientService(
+	HttpClient httpClient,
+	IDashboardService dashboardService,
+	IHttpContextAccessor httpContextAccessor) : IHttpClientService {
 	public async Task<HttpResponseMessage?> Get(string uri, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Get, uri, null, headers);
 	public async Task<HttpResponseMessage?> Post(string uri, object? body, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Post, uri, body, headers);
 	public async Task<HttpResponseMessage?> Put(string uri, object? body, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Put, uri, body, headers);
@@ -59,6 +62,18 @@ public class HttpClientService(HttpClient httpClient, IDashboardService dashboar
 		return await httpClient.SendAsync(request);
 	}
 
+	private string GetClientIpAddress() {
+		HttpContext? httpContext = httpContextAccessor.HttpContext;
+		if (httpContext == null) return "N/A";
+		string? forwardedFor = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+		if (!string.IsNullOrEmpty(forwardedFor)) {
+			string[] ips = forwardedFor.Split(',', StringSplitOptions.RemoveEmptyEntries);
+			if (ips.Length > 0) return ips[0].Trim();
+		}
+
+		return httpContext.Connection.RemoteIpAddress?.ToString() ?? "N/A";
+	}
+
 	private async Task<HttpResponseMessage?> Send(HttpMethod method, string uri, object? body = null, Dictionary<string, string>? headers = null) {
 		Stopwatch sw = Stopwatch.StartNew();
 		try {
@@ -83,7 +98,8 @@ public class HttpClientService(HttpClient httpClient, IDashboardService dashboar
 				RequestBody = body == null ? "" : JsonSerializer.Serialize(body),
 				ResponseBody = responseBody,
 				RequestSizeBytes = body == null ? 0 : Encoding.UTF8.GetByteCount(JsonSerializer.Serialize(body)),
-				ResponseSizeBytes = Encoding.UTF8.GetByteCount(responseBody)
+				ResponseSizeBytes = Encoding.UTF8.GetByteCount(responseBody),
+				IpAddress = GetClientIpAddress()
 			}, CancellationToken.None);
 
 			return response;
@@ -101,7 +117,8 @@ public class HttpClientService(HttpClient httpClient, IDashboardService dashboar
 				ResponseSizeBytes = 0,
 				ExceptionType = ex.GetType().Name,
 				ExceptionMessage = ex.Message,
-				StackTrace = ex.StackTrace
+				StackTrace = ex.StackTrace,
+				IpAddress = GetClientIpAddress()
 			}, CancellationToken.None);
 
 			Console.WriteLine($"{method} - {uri} - ERROR \nPARAMS: {(body != null ? JsonSerializer.Serialize(body) : "null")} \nRESPONSE: {ex.Message}");
