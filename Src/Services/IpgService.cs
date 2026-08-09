@@ -61,7 +61,8 @@ public class IpgService(
 					CallBackUrl = $"{verifyUrl}?additionalData={additionalData}",
 					AdditionalData = additionalData,
 					Originator = userData.PhoneNumber ?? ""
-				}
+				},
+				headers: new Dictionary<string, string> { { "Referer", Core.App.BaseUrl } }
 			);
 
 			if (response?.IsSuccessStatusCode ?? false) {
@@ -99,6 +100,7 @@ public class IpgService(
 		catch {
 			return;
 		}
+
 		if (data == null) return;
 
 		TxnEntity? txn = await db.Set<TxnEntity>().AsTracking().FirstOrDefaultAsync(x => x.TrackingNumber == data.TrackingNumber, ct);
@@ -154,7 +156,6 @@ public class IpgService(
 					UserId = txn.UserId
 				}, ct);
 			}
-			
 		}
 		catch (Exception ex) {
 			httpContext.CaptureForApiLog(ex);
