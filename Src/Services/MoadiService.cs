@@ -118,7 +118,7 @@ public class MoadiService(
 		if (e == null) return new UResponse<MoadiResponse?>(null, Usc.NotFound, ls.Get("MoadiNotFound"));
 		if (e.Tags.Contains(TagMoadi.Approved)) return new UResponse<MoadiResponse?>(null, Usc.Conflict, ls.Get("MoadiAlreadyApproved"));
 
-		HttpResponseMessage? response = await httpClient.Get(BuildNamatUri(e), new Dictionary<string, string> {
+		HttpResponseMessage? response = await httpClient.Post(BuildNamatUri(e), new Dictionary<string, string> {
 			{ "Authorization", $"Bearer {Core.App.Namat.BranchToken}" },
 			{ "Accept", "application/json" }
 		});
