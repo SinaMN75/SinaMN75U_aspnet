@@ -249,7 +249,11 @@ public enum TagParking {
 }
 
 public enum TagVehicle {
-	Test = 999
+	Motorcycle = 101,
+	Car = 102,
+	Van = 103,
+	Truck = 104,
+	Bus = 105
 }
 
 public enum TagParkingReport {
