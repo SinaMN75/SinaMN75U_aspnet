@@ -19,17 +19,23 @@ public static class IpgRoutes {
 		});
 
 		// 3) The callback the gateway redirects to (success/cancel/error). Confirms + credits the wallet, fully server-side.
+		// The real PNA gateway POSTs its result as application/x-www-form-urlencoded (Token/status/RRN in the body);
+		// only additionalData rides along in the query string. Read the form manually so binding works and to avoid
+		// the auto-antiforgery that [FromForm] would trigger in minimal APIs.
 		r.MapPost("Verify", async (
 			[FromQuery] string additionalData,
-			[FromQuery] string? token,
-			[FromQuery] short status,
-			[FromQuery] string? cardNumberMasked,
-			[FromQuery] long? rrn,
+			HttpContext ctx,
 			IIpgService s,
 			CancellationToken c) => {
-			await s.Verify(token ?? "", status, cardNumberMasked, rrn, additionalData, c);
+			IFormCollection? form = ctx.Request.HasFormContentType ? await ctx.Request.ReadFormAsync(c) : null;
+			string Field(string key) => form?[key].ToString() is { Length: > 0 } f ? f : ctx.Request.Query[key].ToString();
+			string token = Field("Token") is { Length: > 0 } t ? t : Field("token");
+			short status = short.TryParse(Field("status"), out short st) ? st : (short)1;
+			long? rrn = long.TryParse(Field("RRN") is { Length: > 0 } rr ? rr : Field("rrn"), out long r) ? r : null;
+			string? cardNumberMasked = (Field("HashCardNumber") is { Length: > 0 } h ? h : Field("cardNumberMasked")) is { Length: > 0 } cm ? cm : null;
+			await s.Verify(token, status, cardNumberMasked, rrn, additionalData, c);
 			return Results.Content(ResultPage(status, additionalData), "text/html");
-		});
+		}).DisableAntiforgery();
 	}
 
 	// Fake gateway: shows the amount and two buttons that redirect to the callback with a success/error status.
