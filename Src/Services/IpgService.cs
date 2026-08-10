@@ -125,7 +125,7 @@ public class IpgService(
 
 				string confirmBody = await confirmResponse.Content.ReadAsStringAsync(ct);
 				JsonElement confirmData = JsonSerializer.Deserialize<JsonElement>(confirmBody);
-				if (confirmData.GetProperty("Status").GetInt16() != 0) return;
+				if (confirmData.GetProperty("status").GetInt16() != 0) return;
 			}
 
 			txn.Tags = [TagTxn.ChargeWallet, TagTxn.Paid, data.Tag];

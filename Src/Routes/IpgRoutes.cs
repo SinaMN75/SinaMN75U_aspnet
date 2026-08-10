@@ -19,7 +19,7 @@ public static class IpgRoutes {
 		});
 
 		// 3) The callback the gateway redirects to (success/cancel/error). Confirms + credits the wallet, fully server-side.
-		r.MapGet("Verify", async (
+		r.MapPost("Verify", async (
 			[FromQuery] string additionalData,
 			[FromQuery] string? token,
 			[FromQuery] short status,
