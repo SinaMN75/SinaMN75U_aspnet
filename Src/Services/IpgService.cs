@@ -68,8 +68,8 @@ public class IpgService(
 			if (response?.IsSuccessStatusCode ?? false) {
 				string responseBody = await response.Content.ReadAsStringAsync(ct);
 				JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody);
-				if (data.GetProperty("Status").GetInt16() == 0) {
-					string gatewayToken = data.GetProperty("Token").GetString()!;
+				if (data.GetProperty("status").GetInt16() == 0) {
+					string gatewayToken = data.GetStringOrNull("token") ?? "---";
 					txn.JsonData.Detail2 = gatewayToken;
 					db.Set<TxnEntity>().Update(txn);
 					await db.SaveChangesAsync(ct);
