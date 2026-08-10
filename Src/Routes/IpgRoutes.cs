@@ -34,8 +34,15 @@ public static class IpgRoutes {
 			long? rrn = long.TryParse(Field("RRN") is { Length: > 0 } rr ? rr : Field("rrn"), out long r) ? r : null;
 			string? cardNumberMasked = (Field("HashCardNumber") is { Length: > 0 } h ? h : Field("cardNumberMasked")) is { Length: > 0 } cm ? cm : null;
 			await s.Verify(token, status, cardNumberMasked, rrn, additionalData, c);
-			return Results.Content(ResultPage(status, additionalData), "text/html");
+			// The real gateway sends the result in the POST body, so the WebView URL has no status for the app to detect.
+			// Redirect to the GET result page with status in the query so the app's callback detection fires and closes the WebView.
+			HttpRequest req = ctx.Request;
+			string basePath = req.Path.Value![..(req.Path.Value!.LastIndexOf('/') + 1)];
+			return Results.Redirect($"{req.Scheme}://{req.Host}{basePath}Verify?status={status}");
 		}).DisableAntiforgery();
+
+		// GET result page the POST callback redirects to (also what the test gateway's buttons hit). Display only — no settlement.
+		r.MapGet("Verify", ([FromQuery] short status) => Results.Content(ResultPage(status, ""), "text/html")).DisableAntiforgery();
 	}
 
 	// Fake gateway: shows the amount and two buttons that redirect to the callback with a success/error status.
