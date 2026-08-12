@@ -115,15 +115,6 @@ public sealed class UserSelectorArgs {
 	public MerchantSelectorArgs? Merchant { get; set; }
 	public BankAccountSelectorArgs? BankAccount { get; set; }
 	public SimCardSelectorArgs? SimCard { get; set; }
-	public bool NationalCardFront { get; set; }
-	public bool NationalCardBack { get; set; }
-	public bool BirthCertificateFirst { get; set; }
-	public bool BirthCertificateSecond { get; set; }
-	public bool BirthCertificateThird { get; set; }
-	public bool BirthCertificateForth { get; set; }
-	public bool BirthCertificateFifth { get; set; }
-	public bool VisualAuthentication { get; set; }
-	public bool ESignature { get; set; }
 }
 
 public sealed class ProductSelectorArgs : BaseSelectorArgs {
@@ -324,15 +315,15 @@ public static class Projections {
 			CreatedAt = x.CreatedAt,
 			LandLine = x.LandLine,
 			CreatorId = x.CreatorId,
-			NationalCardFront = args.NationalCardFront && x.NationalCardFront != null ? Core.App.BaseUrl + "/Media/" + x.NationalCardFront : null,
-			NationalCardBack = args.NationalCardBack && x.NationalCardBack != null ? Core.App.BaseUrl + "/Media/" + x.NationalCardBack : null,
-			BirthCertificateFirst = args.BirthCertificateFirst && x.BirthCertificateFirst != null ? Core.App.BaseUrl + "/Media/" + x.BirthCertificateFirst : null,
-			BirthCertificateSecond = args.BirthCertificateSecond && x.BirthCertificateSecond != null ? Core.App.BaseUrl + "/Media/" + x.BirthCertificateSecond : null,
-			BirthCertificateThird = args.BirthCertificateThird && x.BirthCertificateThird != null ? Core.App.BaseUrl + "/Media/" + x.BirthCertificateThird : null,
-			BirthCertificateForth = args.BirthCertificateForth && x.BirthCertificateForth != null ? Core.App.BaseUrl + "/Media/" + x.BirthCertificateForth : null,
-			BirthCertificateFifth = args.BirthCertificateFifth && x.BirthCertificateFifth != null ? Core.App.BaseUrl + "/Media/" + x.BirthCertificateFifth : null,
-			VisualAuthentication = args.VisualAuthentication && x.VisualAuthentication != null ? Core.App.BaseUrl + "/Media/" + x.VisualAuthentication : null,
-			ESignature = args.ESignature && x.ESignature != null ? Core.App.BaseUrl + "/Media/" + x.ESignature : null,
+			NationalCardFront = x.NationalCardFront != null ? Core.App.BaseUrl + "/Media/" + x.NationalCardFront : null,
+			NationalCardBack = x.NationalCardBack != null ? Core.App.BaseUrl + "/Media/" + x.NationalCardBack : null,
+			BirthCertificateFirst = x.BirthCertificateFirst != null ? Core.App.BaseUrl + "/Media/" + x.BirthCertificateFirst : null,
+			BirthCertificateSecond = x.BirthCertificateSecond != null ? Core.App.BaseUrl + "/Media/" + x.BirthCertificateSecond : null,
+			BirthCertificateThird = x.BirthCertificateThird != null ? Core.App.BaseUrl + "/Media/" + x.BirthCertificateThird : null,
+			BirthCertificateForth = x.BirthCertificateForth != null ? Core.App.BaseUrl + "/Media/" + x.BirthCertificateForth : null,
+			BirthCertificateFifth = x.BirthCertificateFifth != null ? Core.App.BaseUrl + "/Media/" + x.BirthCertificateFifth : null,
+			VisualAuthentication = x.VisualAuthentication != null ? Core.App.BaseUrl + "/Media/" + x.VisualAuthentication : null,
+			ESignature = x.ESignature != null ? Core.App.BaseUrl + "/Media/" + x.ESignature : null,
 			Categories = args.Category == null ? null : x.Categories.AsQueryable().Select(CategorySelector(args.Category)).ToList(),
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 			Addresses = args.Address == null ? null : x.Addresses.AsQueryable().Select(AddressSelector(args.Address)).ToList(),

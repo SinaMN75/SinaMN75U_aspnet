@@ -305,18 +305,7 @@ public class UserService(
 		if (userData.IsExpired) return new UResponse<bool?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		UserResponse? e = await db.Set<UserEntity>()
-			.Select(Projections.UserSelector(new UserSelectorArgs {
-				Wallet = new WalletSelectorArgs(),
-				NationalCardFront = true,
-				NationalCardBack = true,
-				BirthCertificateFirst = true,
-				BirthCertificateSecond = true,
-				BirthCertificateThird = true,
-				BirthCertificateForth = true,
-				BirthCertificateFifth = true,
-				VisualAuthentication = true,
-				ESignature = true
-			}))
+			.Select(Projections.UserSelector(new UserSelectorArgs { Wallet = new WalletSelectorArgs() }))
 			.FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
 
 		if (e == null) return new UResponse<bool?>(null, Usc.NotFound, ls.Get("UserNotFound"));

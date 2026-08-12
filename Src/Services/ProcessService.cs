@@ -45,11 +45,6 @@ public class ProcessService(DbContext db, ILocalizationService ls, ITokenService
 			.Select(Projections.UserSelector(new UserSelectorArgs {
 				Wallet = new WalletSelectorArgs(),
 				Merchant = new MerchantSelectorArgs { Terminal = new TerminalSelectorArgs() },
-				NationalCardFront = true,
-				NationalCardBack = true,
-				BirthCertificateFirst = true,
-				VisualAuthentication = true,
-				ESignature = true
 			}))
 			.FirstOrDefaultAsync(x => x.Id == userId, ct);
 		if (e == null) return new UResponse<UProcessStepGetResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
@@ -131,7 +126,7 @@ public class ProcessService(DbContext db, ILocalizationService ls, ITokenService
 		}).ToList();
 
 		UProcessStepStatusResponse? currentStatus = stepStatuses.FirstOrDefault(s => s.Status == TagProcessStepStatus.NotStarted);
-		if (currentStatus != null) currentStatus.Status = TagProcessStepStatus.Current;
+		currentStatus?.Status = TagProcessStepStatus.Current;
 
 		if (steps.All(s => s.IsVerified))
 			return new UResponse<UProcessStepGetResponse?>(

@@ -543,11 +543,6 @@ public class PnService(
 		UserResponse? e = await db.Set<UserEntity>()
 			.Select(Projections.UserSelector(new UserSelectorArgs {
 				Merchant = new MerchantSelectorArgs { Terminal = new TerminalSelectorArgs() },
-				NationalCardFront = true,
-				NationalCardBack = true,
-				BirthCertificateFirst = true,
-				VisualAuthentication = true,
-				ESignature = true
 			}))
 			.FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
 
