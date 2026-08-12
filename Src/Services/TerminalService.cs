@@ -416,7 +416,7 @@ public class TerminalService(
 				{ "fatherName", user.JsonData.FatherName ?? "" }
 			},
 			imagesBase64: new Dictionary<string, string> {
-				{ "customerSignature", user.ESignature!.ToBase64()! }
+				// { "customerSignature", user.ESignature!.ToBase64()! }
 			},
 			templatePath: Path.Combine(Directory.GetCurrentDirectory(), "Templates", "atmAgreement.docx")
 		);
