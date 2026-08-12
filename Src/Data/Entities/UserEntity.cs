@@ -38,15 +38,16 @@ public sealed class UserEntity : BaseEntity<TagUser, UserJson> {
 
 	public DateTime? Birthdate { get; set; }
 
-	public byte[]? NationalCardFront { get; set; }
-	public byte[]? NationalCardBack { get; set; }
-	public byte[]? BirthCertificateFirst { get; set; }
-	public byte[]? BirthCertificateSecond { get; set; }
-	public byte[]? BirthCertificateThird { get; set; }
-	public byte[]? BirthCertificateForth { get; set; }
-	public byte[]? BirthCertificateFifth { get; set; }
-	public byte[]? VisualAuthentication { get; set; }
-	public byte[]? ESignature { get; set; }
+	// Identity files are stored on disk under wwwroot/Media; these hold the wwwroot-relative path (e.g. "identity/{userId}/nationalCardFront_{guid}.jpg"), not the bytes.
+	[MaxLength(300)] public string? NationalCardFront { get; set; }
+	[MaxLength(300)] public string? NationalCardBack { get; set; }
+	[MaxLength(300)] public string? BirthCertificateFirst { get; set; }
+	[MaxLength(300)] public string? BirthCertificateSecond { get; set; }
+	[MaxLength(300)] public string? BirthCertificateThird { get; set; }
+	[MaxLength(300)] public string? BirthCertificateForth { get; set; }
+	[MaxLength(300)] public string? BirthCertificateFifth { get; set; }
+	[MaxLength(300)] public string? VisualAuthentication { get; set; }
+	[MaxLength(300)] public string? ESignature { get; set; }
 
 	public ICollection<CategoryEntity> Categories { get; set; } = [];
 

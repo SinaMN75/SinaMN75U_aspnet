@@ -142,8 +142,9 @@ public class PnService(
 			ULog.Info($"No existing user found for {p.PhoneNumber}, creating new user");
 
 			// Create new user
+			Guid userId = Guid.CreateVersion7();
 			UserEntity user = new() {
-				Id = Guid.CreateVersion7(),
+				Id = userId,
 				CreatedAt = DateTime.UtcNow,
 				CreatorId = UConstants.SystemAdminId,
 				RefreshToken = Guid.NewGuid().ToString(),
@@ -155,11 +156,11 @@ public class PnService(
 				Birthdate = p.Birthdate,
 				FirstName = p.FirstName,
 				LastName = p.LastName,
-				BirthCertificateFirst = p.BirthCertificateFirst == null ? null : ImageCompressor.CompressBase64(p.BirthCertificateFirst),
-				NationalCardFront = p.NationalCardFront == null ? null : ImageCompressor.CompressBase64(p.NationalCardFront),
-				NationalCardBack = p.NationalCardBack == null ? null : ImageCompressor.CompressBase64(p.NationalCardBack),
-				ESignature = p.ESignature == null ? null : ImageCompressor.CompressBase64(p.ESignature),
-				VisualAuthentication = p.VisualAuthentication?.FromBase64(),
+				BirthCertificateFirst = UserFileStore.Save(env.WebRootPath, userId, "birthCertificateFirst", p.BirthCertificateFirst, null, 70),
+				NationalCardFront = UserFileStore.Save(env.WebRootPath, userId, "nationalCardFront", p.NationalCardFront, null, 70),
+				NationalCardBack = UserFileStore.Save(env.WebRootPath, userId, "nationalCardBack", p.NationalCardBack, null, 70),
+				ESignature = UserFileStore.Save(env.WebRootPath, userId, "eSignature", p.ESignature, null, 70),
+				VisualAuthentication = UserFileStore.Save(env.WebRootPath, userId, "visualAuthentication", p.VisualAuthentication, null, null),
 				JsonData = new UserJson { FatherName = p.FatherName },
 				Tags = [TagUser.SunUser]
 			};
@@ -228,7 +229,7 @@ public class PnService(
 
 		if (p.NationalCardFront.IsNotNullOrEmpty()) {
 			ULog.Warning($"NationalCardFront re-uploaded - removing verification tag for user {e.Id}");
-			e.NationalCardFront = ImageCompressor.CompressBase64(p.NationalCardFront);
+			e.NationalCardFront = UserFileStore.Save(env.WebRootPath, e.Id, "nationalCardFront", p.NationalCardFront, e.NationalCardFront, 70);
 			e.Tags.Remove(TagUser.NationalCardFrontVerified);
 			e.Tags.Add(TagUser.NationalCardFrontAwaitingVerification);
 			e.JsonData.NationalCardFrontRejectionReason = null;
@@ -238,7 +239,7 @@ public class PnService(
 
 		if (p.NationalCardBack.IsNotNullOrEmpty()) {
 			ULog.Warning($"NationalCardBack re-uploaded - removing verification tag for user {e.Id}");
-			e.NationalCardBack = ImageCompressor.CompressBase64(p.NationalCardBack);
+			e.NationalCardBack = UserFileStore.Save(env.WebRootPath, e.Id, "nationalCardBack", p.NationalCardBack, e.NationalCardBack, 70);
 			e.Tags.Remove(TagUser.NationalCardBackVerified);
 			e.Tags.Add(TagUser.NationalCardBackAwaitingVerification);
 			e.JsonData.NationalCardBackRejectionReason = null;
@@ -248,7 +249,7 @@ public class PnService(
 
 		if (p.BirthCertificateFirst.IsNotNullOrEmpty()) {
 			ULog.Warning($"BirthCertificateFirst re-uploaded - removing verification tag for user {e.Id}");
-			e.BirthCertificateFirst = ImageCompressor.CompressBase64(p.BirthCertificateFirst);
+			e.BirthCertificateFirst = UserFileStore.Save(env.WebRootPath, e.Id, "birthCertificateFirst", p.BirthCertificateFirst, e.BirthCertificateFirst, 70);
 			e.Tags.Remove(TagUser.BirthCertificateFirstVerified);
 			e.Tags.Add(TagUser.BirthCertificateFirstAwaitingVerification);
 			e.JsonData.BirthCertificateFirstRejectionReason = null;
@@ -258,7 +259,7 @@ public class PnService(
 
 		if (p.VisualAuthentication.IsNotNullOrEmpty()) {
 			ULog.Warning($"VisualAuthentication re-uploaded - removing verification tag for user {e.Id}");
-			e.VisualAuthentication = p.VisualAuthentication.FromBase64();
+			e.VisualAuthentication = UserFileStore.Save(env.WebRootPath, e.Id, "visualAuthentication", p.VisualAuthentication, e.VisualAuthentication, null);
 			e.Tags.Remove(TagUser.VisualAuthenticationVerified);
 			e.Tags.Add(TagUser.VisualAuthenticationAwaitingVerification);
 			e.JsonData.VisualAuthenticationRejectionReason = null;
@@ -268,7 +269,7 @@ public class PnService(
 
 		if (p.ESignature.IsNotNullOrEmpty()) {
 			ULog.Warning($"ESignature re-uploaded - removing verification tag for user {e.Id}");
-			e.ESignature = ImageCompressor.CompressBase64(p.ESignature, 10);
+			e.ESignature = UserFileStore.Save(env.WebRootPath, e.Id, "eSignature", p.ESignature, e.ESignature, 10);
 			e.Tags.Remove(TagUser.ESignatureVerified);
 			e.Tags.Add(TagUser.ESignatureAwaitingVerification);
 			e.JsonData.ESignatureRejectionReason = null;
@@ -744,7 +745,7 @@ public class PnService(
 				{ "fatherName", user.JsonData.FatherName ?? "" }
 			},
 			imagesBase64: new Dictionary<string, string> {
-				{ "customerSignature", user.ESignature!.ToBase64()! }
+				// { "customerSignature", user.ESignature!.ToBase64()! }
 			},
 			templatePath: Path.Combine(contentRootPath, "Templates", "atmAgreement.docx")
 		);

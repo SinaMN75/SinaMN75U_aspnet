@@ -15,7 +15,8 @@ public class UserService(
 	DbContext db,
 	ILocalizationService ls,
 	ITokenService ts,
-	IMemoryCache cache
+	IMemoryCache cache,
+	IWebHostEnvironment env
 ) : IUserService {
 	/// <summary>
 	/// Role/permission tags are the keys to the admin panel. Only a full admin (SuperAdmin/SystemAdmin/SystemUser)
@@ -65,15 +66,15 @@ public class UserService(
 			LastName = p.LastName,
 			Bio = p.Bio,
 			Birthdate = p.Birthdate,
-			NationalCardFront = p.NationalCardFront.FromBase64(),
-			NationalCardBack = p.NationalCardBack.FromBase64(),
-			BirthCertificateFirst = p.BirthCertificateFirst.FromBase64(),
-			BirthCertificateSecond = p.BirthCertificateSecond.FromBase64(),
-			BirthCertificateThird = p.BirthCertificateThird.FromBase64(),
-			BirthCertificateForth = p.BirthCertificateForth.FromBase64(),
-			BirthCertificateFifth = p.BirthCertificateFifth.FromBase64(),
-			ESignature = p.ESignature.FromBase64(),
-			VisualAuthentication = p.VisualAuthentication.FromBase64(),
+			NationalCardFront = UserFileStore.Save(env.WebRootPath, userId, "nationalCardFront", p.NationalCardFront, null, 70),
+			NationalCardBack = UserFileStore.Save(env.WebRootPath, userId, "nationalCardBack", p.NationalCardBack, null, 70),
+			BirthCertificateFirst = UserFileStore.Save(env.WebRootPath, userId, "birthCertificateFirst", p.BirthCertificateFirst, null, 70),
+			BirthCertificateSecond = UserFileStore.Save(env.WebRootPath, userId, "birthCertificateSecond", p.BirthCertificateSecond, null, 70),
+			BirthCertificateThird = UserFileStore.Save(env.WebRootPath, userId, "birthCertificateThird", p.BirthCertificateThird, null, 70),
+			BirthCertificateForth = UserFileStore.Save(env.WebRootPath, userId, "birthCertificateForth", p.BirthCertificateForth, null, 70),
+			BirthCertificateFifth = UserFileStore.Save(env.WebRootPath, userId, "birthCertificateFifth", p.BirthCertificateFifth, null, 70),
+			ESignature = UserFileStore.Save(env.WebRootPath, userId, "eSignature", p.ESignature, null, 10),
+			VisualAuthentication = UserFileStore.Save(env.WebRootPath, userId, "visualAuthentication", p.VisualAuthentication, null, null),
 			Categories = categories ?? [],
 			Wallets = [new WalletEntity { Id = userId, CreatorId = userId, CreatedAt = now, JsonData = new WalletJson(), Tags = [TagWallet.Primary], Balance = 0 }]
 		};
@@ -198,15 +199,15 @@ public class UserService(
 		if (p.FatherName.IsNotNullOrEmpty()) e.JsonData.FatherName = p.FatherName;
 		if (p.Weight.IsNotNullOrZero()) e.JsonData.Weight = p.Weight;
 		if (p.Height.IsNotNullOrZero()) e.JsonData.Height = p.Height;
-		if (p.NationalCardFront.IsNotNullOrEmpty()) e.NationalCardFront = ImageCompressor.CompressBase64(p.NationalCardFront);
-		if (p.NationalCardBack.IsNotNullOrEmpty()) e.NationalCardBack = ImageCompressor.CompressBase64(p.NationalCardBack);
-		if (p.BirthCertificateFirst.IsNotNullOrEmpty()) e.BirthCertificateFirst = ImageCompressor.CompressBase64(p.BirthCertificateFirst);
-		if (p.BirthCertificateSecond.IsNotNullOrEmpty()) e.BirthCertificateSecond = ImageCompressor.CompressBase64(p.BirthCertificateSecond);
-		if (p.BirthCertificateThird.IsNotNullOrEmpty()) e.BirthCertificateThird = ImageCompressor.CompressBase64(p.BirthCertificateThird);
-		if (p.BirthCertificateForth.IsNotNullOrEmpty()) e.BirthCertificateForth = ImageCompressor.CompressBase64(p.BirthCertificateForth);
-		if (p.BirthCertificateFifth.IsNotNullOrEmpty()) e.BirthCertificateFifth = ImageCompressor.CompressBase64(p.BirthCertificateFifth);
-		if (p.VisualAuthentication.IsNotNullOrEmpty()) e.VisualAuthentication = p.VisualAuthentication.FromBase64();
-		if (p.ESignature.IsNotNullOrEmpty()) e.ESignature = ImageCompressor.CompressBase64(p.ESignature, 10);
+		if (p.NationalCardFront.IsNotNullOrEmpty()) e.NationalCardFront = UserFileStore.Save(env.WebRootPath, e.Id, "nationalCardFront", p.NationalCardFront, e.NationalCardFront, 70);
+		if (p.NationalCardBack.IsNotNullOrEmpty()) e.NationalCardBack = UserFileStore.Save(env.WebRootPath, e.Id, "nationalCardBack", p.NationalCardBack, e.NationalCardBack, 70);
+		if (p.BirthCertificateFirst.IsNotNullOrEmpty()) e.BirthCertificateFirst = UserFileStore.Save(env.WebRootPath, e.Id, "birthCertificateFirst", p.BirthCertificateFirst, e.BirthCertificateFirst, 70);
+		if (p.BirthCertificateSecond.IsNotNullOrEmpty()) e.BirthCertificateSecond = UserFileStore.Save(env.WebRootPath, e.Id, "birthCertificateSecond", p.BirthCertificateSecond, e.BirthCertificateSecond, 70);
+		if (p.BirthCertificateThird.IsNotNullOrEmpty()) e.BirthCertificateThird = UserFileStore.Save(env.WebRootPath, e.Id, "birthCertificateThird", p.BirthCertificateThird, e.BirthCertificateThird, 70);
+		if (p.BirthCertificateForth.IsNotNullOrEmpty()) e.BirthCertificateForth = UserFileStore.Save(env.WebRootPath, e.Id, "birthCertificateForth", p.BirthCertificateForth, e.BirthCertificateForth, 70);
+		if (p.BirthCertificateFifth.IsNotNullOrEmpty()) e.BirthCertificateFifth = UserFileStore.Save(env.WebRootPath, e.Id, "birthCertificateFifth", p.BirthCertificateFifth, e.BirthCertificateFifth, 70);
+		if (p.VisualAuthentication.IsNotNullOrEmpty()) e.VisualAuthentication = UserFileStore.Save(env.WebRootPath, e.Id, "visualAuthentication", p.VisualAuthentication, e.VisualAuthentication, null);
+		if (p.ESignature.IsNotNullOrEmpty()) e.ESignature = UserFileStore.Save(env.WebRootPath, e.Id, "eSignature", p.ESignature, e.ESignature, 10);
 
 		if (p.NationalCardFrontRejectionReason != null) e.JsonData.NationalCardFrontRejectionReason = p.NationalCardFrontRejectionReason;
 		if (p.NationalCardBackRejectionReason != null) e.JsonData.NationalCardBackRejectionReason = p.NationalCardBackRejectionReason;
@@ -240,6 +241,7 @@ public class UserService(
 
 		db.Set<UserEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
+		UserFileStore.DeleteUserFolder(env.WebRootPath, e.Id);
 		return new UResponse();
 	}
 
@@ -262,11 +264,11 @@ public class UserService(
 		string birthdate = (e.Birthdate ?? DateTime.UtcNow).ToPersianString();
 		string fatherName = e.JsonData.FatherName ?? "---";
 
-		string nationalCardFront = e.NationalCardFront.ToBase64() ?? "";
-		string nationalCardBack = e.NationalCardBack.ToBase64() ?? "";
-		string birthCertificateFirst = e.BirthCertificateFirst.ToBase64() ?? "";
-		string visualAuthentication = e.VisualAuthentication.ToBase64() ?? "";
-		string eSignature = e.ESignature.ToBase64() ?? "";
+		string nationalCardFront = UserFileStore.ReadBase64(env.WebRootPath, e.NationalCardFront) ?? "";
+		string nationalCardBack = UserFileStore.ReadBase64(env.WebRootPath, e.NationalCardBack) ?? "";
+		string birthCertificateFirst = UserFileStore.ReadBase64(env.WebRootPath, e.BirthCertificateFirst) ?? "";
+		string visualAuthentication = UserFileStore.ReadBase64(env.WebRootPath, e.VisualAuthentication) ?? "";
+		string eSignature = UserFileStore.ReadBase64(env.WebRootPath, e.ESignature) ?? "";
 
 		StringBuilder data = new();
 		data.AppendLine($"First Name: {firstName}");

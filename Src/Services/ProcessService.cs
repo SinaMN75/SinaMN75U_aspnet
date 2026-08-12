@@ -5,7 +5,7 @@ public interface IProcessService {
 	Task<UResponse<UProcessStepGetResponse?>> Send(UProcessStepSend p, CancellationToken ct);
 }
 
-public class ProcessService(DbContext db, ILocalizationService ls, ITokenService ts) : IProcessService {
+public class ProcessService(DbContext db, ILocalizationService ls, ITokenService ts, IWebHostEnvironment env) : IProcessService {
 	public async Task<UResponse<UProcessStepGetResponse?>> Get(IdStringParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<UProcessStepGetResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
@@ -195,9 +195,9 @@ public class ProcessService(DbContext db, ILocalizationService ls, ITokenService
 		UProcessField? cert = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.BirthCertificateFirst));
 		if (cert?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("BirthCertificateFirstRequired"));
 
-		u.NationalCardFront = ImageCompressor.CompressBase64(front.Value!);
-		u.NationalCardBack = ImageCompressor.CompressBase64(back.Value!);
-		u.BirthCertificateFirst = ImageCompressor.CompressBase64(cert.Value!);
+		u.NationalCardFront = UserFileStore.Save(env.WebRootPath, u.Id, "nationalCardFront", front.Value, u.NationalCardFront, 70);
+		u.NationalCardBack = UserFileStore.Save(env.WebRootPath, u.Id, "nationalCardBack", back.Value, u.NationalCardBack, 70);
+		u.BirthCertificateFirst = UserFileStore.Save(env.WebRootPath, u.Id, "birthCertificateFirst", cert.Value, u.BirthCertificateFirst, 70);
 		u.Tags.Add(TagUser.NationalCardFrontAwaitingVerification);
 		u.Tags.Add(TagUser.NationalCardBackAwaitingVerification);
 		u.Tags.Add(TagUser.BirthCertificateFirstAwaitingVerification);
@@ -209,7 +209,7 @@ public class ProcessService(DbContext db, ILocalizationService ls, ITokenService
 		UProcessField? video = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.VisualAuthentication));
 		if (video?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("VisualAuthenticationRequired"));
 
-		u.VisualAuthentication = video.Value.FromBase64();
+		u.VisualAuthentication = UserFileStore.Save(env.WebRootPath, u.Id, "visualAuthentication", video.Value, u.VisualAuthentication, null);
 		u.Tags.Add(TagUser.VisualAuthenticationAwaitingVerification);
 
 		return null;
@@ -219,7 +219,7 @@ public class ProcessService(DbContext db, ILocalizationService ls, ITokenService
 		UProcessField? signature = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.ESignature));
 		if (signature?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("SignatureRequired"));
 
-		u.ESignature = ImageCompressor.CompressBase64(signature.Value!);
+		u.ESignature = UserFileStore.Save(env.WebRootPath, u.Id, "eSignature", signature.Value, u.ESignature, 10);
 		u.Tags.Add(TagUser.ESignatureAwaitingVerification);
 
 		return null;
