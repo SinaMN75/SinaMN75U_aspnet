@@ -60,7 +60,7 @@ public class ProcessService(DbContext db, ILocalizationService ls, ITokenService
 					new UProcessField { Key = nameof(UserEntity.FirstName), Label = "نام", Type = TagFieldType.Text, Required = false, Value = e.FirstName, TextFieldConfig = new UTextFieldConfig { Type = TagTextFieldType.Text, MaxLength = 40, MinLength = 2 } },
 					new UProcessField { Key = nameof(UserEntity.LastName), Label = "نام خانوادگی", Type = TagFieldType.Text, Required = false, Value = e.LastName, TextFieldConfig = new UTextFieldConfig { Type = TagTextFieldType.Text, MaxLength = 40, MinLength = 2 } },
 					new UProcessField { Key = nameof(UserEntity.JsonData.FatherName), Label = "نام پدر", Type = TagFieldType.Text, Required = true, Value = e.JsonData.FatherName, TextFieldConfig = new UTextFieldConfig { Type = TagTextFieldType.Text, MaxLength = 40, MinLength = 2 } },
-					new UProcessField { Key = nameof(UserEntity.Birthdate), Label = "تاریخ تولد", Type = TagFieldType.Text, Required = true, Value = e.Birthdate?.ToString(), TextFieldConfig = new UTextFieldConfig { Type = TagTextFieldType.PersianDate } }
+					new UProcessField { Key = nameof(UserEntity.Birthdate), Label = "تاریخ تولد", Type = TagFieldType.Text, Required = true, Value = e.Birthdate?.ToString("yyyy-MM-ddTHH:mm:ss"), TextFieldConfig = new UTextFieldConfig { Type = TagTextFieldType.PersianDate } }
 				]
 			},
 			new() {
@@ -102,7 +102,7 @@ public class ProcessService(DbContext db, ILocalizationService ls, ITokenService
 				]
 			},
 			new() {
-				Id = ProcessStepIds.UserESignature,
+				Id = ProcessStepIds.AdminApproval,
 				Title = "تایید ادمین",
 				Description = "",
 				IsSubmitted = e.ESignature.IsNotNullOrEmpty() && e.Tags.ContainsAny(TagUser.ESignatureVerified, TagUser.ESignatureAwaitingVerification),
