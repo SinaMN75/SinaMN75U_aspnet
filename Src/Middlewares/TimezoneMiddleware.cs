@@ -2,8 +2,19 @@ namespace SinaMN75U.Middlewares;
 
 public sealed class TimezoneMiddleware(RequestDelegate next) {
 	public async Task InvokeAsync(HttpContext context) {
-		UTimeZone.Offset = int.TryParse(context.Request.Headers["Timezone"], out int minutes) ? TimeSpan.FromMinutes(minutes) : UTimeZone.Default;
+		UTimeZone.Offset = ParseOffset(context.Request.Headers["Timezone"]);
 		await next(context);
+	}
+
+	private static TimeSpan ParseOffset(string? value) {
+		if (string.IsNullOrWhiteSpace(value)) return UTimeZone.Default;
+		if (int.TryParse(value, out int minutes)) return TimeSpan.FromMinutes(minutes);
+		try {
+			return TimeZoneInfo.FindSystemTimeZoneById(value).GetUtcOffset(DateTime.UtcNow);
+		}
+		catch {
+			return UTimeZone.Default;
+		}
 	}
 }
 
@@ -24,5 +35,5 @@ public sealed class UDateTimeConverter : JsonConverter<DateTime> {
 			: DateTime.SpecifyKind(reader.GetDateTime(), DateTimeKind.Utc);
 
 	public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options) =>
-		writer.WriteStringValue(new DateTimeOffset(DateTime.SpecifyKind(value, DateTimeKind.Utc)).ToOffset(UTimeZone.Offset).ToString("yyyy-MM-ddTHH:mm:ss.fffzzz", CultureInfo.InvariantCulture));
+		writer.WriteStringValue(new DateTimeOffset(DateTime.SpecifyKind(value, DateTimeKind.Utc)).ToOffset(UTimeZone.Offset).ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture));
 }
