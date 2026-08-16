@@ -28,6 +28,7 @@ public static partial class AspNetConfig {
 			o.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 			o.SerializerOptions.Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
 			o.SerializerOptions.MaxDepth = 128;
+			o.SerializerOptions.Converters.Add(new UDateTimeConverter());
 		});
 		builder.Services.AddDbContextPool<T>(b => {
 			b.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
@@ -125,6 +126,7 @@ public static partial class AspNetConfig {
 		app.MapUModelsPage();
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
+		app.UseMiddleware<TimezoneMiddleware>();
 		app.UseMiddleware<ApiKeyMiddleware>();
 		app.UseMiddleware<DbExceptionMiddleware>();
 		app.UseMiddleware<ApiLogMiddleware>();
