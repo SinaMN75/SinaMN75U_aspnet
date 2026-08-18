@@ -39,15 +39,10 @@ public class InquiryService(
 
 		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadMobileAndNationalCodeVerificationHistory(p.NationalCode, p.PhoneNumber, ct);
 		if (inquiryHistory != null) return new UResponse<bool?>(inquiryHistory.Tags.Contains(TagInquiryHistory.Verified));
-
-		if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.MobileAndNationalCodeVerification, ct)) return new UResponse<bool?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
-
+		
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null) return new UResponse<bool?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
-
-		// Charge the wallet before the billable third-party call so any external hit is always paid for
-		await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.MobileAndNationalCodeVerification, Token = p.Token }, ct);
-
+		
 		HttpResponseMessage? response = await SendMobileAndNationalCodeVerification(p, tokenResponse.AccessToken, ct);
 		if (response == null) return new UResponse<bool?>(null);
 
@@ -745,9 +740,6 @@ public class InquiryService(
 	}
 }
 
-// Test-mode implementation (appsettings "Test": true): inherits the real InquiryService so caching, the payment gate,
-// balance checks, wallet charge-before-call and history writes are IDENTICAL to prod - it only swaps the external
-// itsaaz/ithub calls for fixed fake data, so nothing hits a paid third-party API.
 public class InquiryServiceFake(
 	DbContext db,
 	IHttpClientService httpClient,
@@ -755,11 +747,9 @@ public class InquiryServiceFake(
 	ITokenService ts,
 	IWalletService walletService
 ) : InquiryService(db, httpClient, ls, ts, walletService) {
-	// A non-null token so the base ShahkarException guard passes without hitting the real STS.
 	protected override Task<GetAccessTokenResponse?> GetAccessToken(CancellationToken ct) =>
 		Task.FromResult<GetAccessTokenResponse?>(new GetAccessTokenResponse { AccessToken = "FAKE", ExpiresIn = 3600 });
 
-	// Each override returns provider-shaped JSON so the base parser + history caching behave exactly like prod.
 	protected override Task<HttpResponseMessage?> SendMobileAndNationalCodeVerification(VerifyNationalCodeAndPhoneNumber p, string accessToken, CancellationToken ct) =>
 		FakeOk("""{"data":true}""");
 
