@@ -54,6 +54,7 @@ public class AuthService(
 	public async Task<UResponse> CompleteProfile(AuthCompleteProfileParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData.IsExpired) return new UResponse<bool?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
 
 		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("UserNotFound"));
