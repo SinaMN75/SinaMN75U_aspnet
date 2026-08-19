@@ -1,3 +1,5 @@
+using Lock = System.Threading.Lock;
+
 namespace SinaMN75U.Utils;
 
 using System;
@@ -23,19 +25,60 @@ public static class ULog {
 
 	private static string? _logFilePath;
 
-	private const int MaxBufferedLogs = 2000;
+	private const int MaxBufferedLogs = 5000;
 	private static readonly ConcurrentQueue<ULogEntry> Buffer = new();
+	private static bool _consoleHooked;
 
 	static ULog() => Console.OutputEncoding = Encoding.UTF8;
+
+	// Redirects stdout through a tee so EVERYTHING printed to the console (ULog, Console.WriteLine, framework logs)
+	// is also kept in the in-memory buffer. Wired automatically via the module initializer below.
+	public static void CaptureConsole() {
+		if (_consoleHooked) return;
+		_consoleHooked = true;
+		Console.SetOut(new TeeTextWriter(Console.Out));
+	}
 
 	// Newest first, so a "take N" on the API returns the most recent entries.
 	public static IReadOnlyList<ULogEntry> GetLogs() => Buffer.Reverse().ToList();
 
 	public static void ClearLogs() => Buffer.Clear();
 
-	private static void Capture(string level, string message) {
-		Buffer.Enqueue(new ULogEntry { Time = DateTime.Now, Level = level, Message = message });
+	private static void Capture(string line) {
+		Buffer.Enqueue(new ULogEntry { Time = DateTime.Now, Level = ParseLevel(line), Message = line });
 		while (Buffer.Count > MaxBufferedLogs && Buffer.TryDequeue(out _)) { }
+	}
+
+	private static string ParseLevel(string line) {
+		if (line.Contains("[ERROR]")) return "ERROR";
+		if (line.Contains("[WARNING]")) return "WARNING";
+		if (line.Contains("[SUCCESS]")) return "SUCCESS";
+		if (line.Contains("[DEBUG]")) return "DEBUG";
+		return line.Contains("[INFO]") ? "INFO" : "CONSOLE";
+	}
+
+	private sealed class TeeTextWriter(TextWriter inner) : TextWriter {
+		private readonly StringBuilder _line = new();
+		private readonly Lock _lock = new();
+		public override Encoding Encoding => inner.Encoding;
+		public override void Flush() => inner.Flush();
+		public override void Write(char value) { inner.Write(value); Append(value.ToString()); }
+		public override void Write(string? value) { inner.Write(value); if (value != null) Append(value); }
+		public override void Write(char[] buffer, int index, int count) { inner.Write(buffer, index, count); Append(new string(buffer, index, count)); }
+
+		private void Append(string s) {
+			lock (_lock) {
+				foreach (char c in s) {
+					if (c == '\n') {
+						if (_line.Length > 0) {
+							Capture(_line.ToString());
+							_line.Clear();
+						}
+					}
+					else if (c != '\r') _line.Append(c);
+				}
+			}
+		}
 	}
 
 	public static void EnableFileLogging(string filePath) {
@@ -165,8 +208,6 @@ public static class ULog {
 	}
 
 	private static void LogToFile(string level, string message) {
-		Capture(level, message);
-
 		if (string.IsNullOrEmpty(_logFilePath)) return;
 
 		try {
@@ -177,4 +218,9 @@ public static class ULog {
 			// ignored
 		}
 	}
+}
+
+internal static class ULogModuleInitializer {
+	[System.Runtime.CompilerServices.ModuleInitializer]
+	internal static void Init() => ULog.CaptureConsole();
 }

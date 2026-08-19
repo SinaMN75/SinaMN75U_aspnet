@@ -168,6 +168,7 @@ public static partial class AspNetConfig {
 		app.MapDbAdminRoutes(RouteTags.DbAdmin);
 		app.MapHealthRoutes(RouteTags.Health);
 		app.MapLogRoutes(RouteTags.Log);
+		ULog.Info("App Started in " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
 	}
 
 	private static string CleanAndFormatSql(string sql) {
