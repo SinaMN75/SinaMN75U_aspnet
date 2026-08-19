@@ -36,6 +36,7 @@ public static class RouteTags {
 	public const string FileManager = "api/FileManager/";
 	public const string DbAdmin = "api/DbAdmin/";
 	public const string Health = "api/Health/";
+	public const string Log = "api/Log/";
 }
 
 public static class UConstants {

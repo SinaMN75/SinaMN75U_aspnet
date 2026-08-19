@@ -2,6 +2,7 @@ namespace SinaMN75U.Utils;
 
 using System;
 using System.IO;
+using System.Collections.Concurrent;
 
 public enum ULogLevel {
 	Info = 0,
@@ -11,12 +12,31 @@ public enum ULogLevel {
 	Debug = 4
 }
 
+public sealed class ULogEntry {
+	public DateTime Time { get; init; }
+	public string Level { get; init; } = "";
+	public string Message { get; init; } = "";
+}
+
 public static class ULog {
 	public static bool EnableDebug { get; set; } = false;
 
 	private static string? _logFilePath;
 
+	private const int MaxBufferedLogs = 2000;
+	private static readonly ConcurrentQueue<ULogEntry> Buffer = new();
+
 	static ULog() => Console.OutputEncoding = Encoding.UTF8;
+
+	// Newest first, so a "take N" on the API returns the most recent entries.
+	public static IReadOnlyList<ULogEntry> GetLogs() => Buffer.Reverse().ToList();
+
+	public static void ClearLogs() => Buffer.Clear();
+
+	private static void Capture(string level, string message) {
+		Buffer.Enqueue(new ULogEntry { Time = DateTime.Now, Level = level, Message = message });
+		while (Buffer.Count > MaxBufferedLogs && Buffer.TryDequeue(out _)) { }
+	}
 
 	public static void EnableFileLogging(string filePath) {
 		_logFilePath = filePath;
@@ -145,6 +165,8 @@ public static class ULog {
 	}
 
 	private static void LogToFile(string level, string message) {
+		Capture(level, message);
+
 		if (string.IsNullOrEmpty(_logFilePath)) return;
 
 		try {

@@ -715,17 +715,25 @@ public class InquiryService(
 			new Dictionary<string, string> {
 				{ "grant_type", "password" },
 				{ "client_id", _itHub.ClientId },
-				{ "Client_secret", _itHub.ClientSecret },
+				{ "client_secret", _itHub.ClientSecret },
 				{ "username", _itHub.UserName },
 				{ "password", _itHub.Password }
 			}
 		);
-		if (response == null) return null;
+		if (response == null) {
+			ULog.Error("ItHub token request failed: no response from gateway.itsaaz.ir/sts/connect/token");
+			return null;
+		}
 
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(responseBody);
+		string? accessToken = data.GetStringOrNull("access_token");
+		if (accessToken == null) {
+			ULog.Error($"ItHub token request returned no access_token: HTTP {(int)response.StatusCode} - {responseBody}");
+			return null;
+		}
 
-		return new GetAccessTokenResponse { AccessToken = data.GetStringOrNull("access_token"), ExpiresIn = data.GetIntOrNull("expires_in") };
+		return new GetAccessTokenResponse { AccessToken = accessToken, ExpiresIn = data.GetIntOrNull("expires_in") };
 	}
 }
 
