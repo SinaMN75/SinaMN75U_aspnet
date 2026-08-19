@@ -401,7 +401,7 @@ public class TerminalService(
 	
 
 	private async Task<string> GenerateAgreement(UserEntity user, TerminalEntity terminal) {
-		return await WordPdfGenerator.GenerateWithTextsAndImagesAsync(
+		return await WordPdfGenerator.GenerateWithTextsAsync(
 			texts: new Dictionary<string, string> {
 				{ "day", PersianDateTime.Now.Day.ToString() },
 				{ "month", PersianDateTime.Now.Month.ToString() },
@@ -414,9 +414,6 @@ public class TerminalService(
 				{ "phoneNumber", user.PhoneNumber ?? "" },
 				{ "landLine", user.LandLine ?? "" },
 				{ "fatherName", user.JsonData.FatherName ?? "" }
-			},
-			imagesBase64: new Dictionary<string, string> {
-				// { "customerSignature", user.ESignature!.ToBase64()! }
 			},
 			templatePath: Path.Combine(Directory.GetCurrentDirectory(), "Templates", "atmAgreement.docx")
 		);
