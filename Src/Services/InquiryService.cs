@@ -36,9 +36,6 @@ public class InquiryService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<bool?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		if (userData.IsExpired) return new UResponse<bool?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-
-		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadMobileAndNationalCodeVerificationHistory(p.NationalCode, p.PhoneNumber, ct);
-		if (inquiryHistory != null) return new UResponse<bool?>(inquiryHistory.Tags.Contains(TagInquiryHistory.Verified));
 		
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null) return new UResponse<bool?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
@@ -579,14 +576,6 @@ public class InquiryService(
 			Response = responseBody
 		}, ct);
 		await db.SaveChangesAsync(ct);
-	}
-	
-	private async Task<InquiryHistoryEntity?> ReadMobileAndNationalCodeVerificationHistory(string nationalCode, string phoneNumber, CancellationToken ct) {
-		DateTime minDate = DateTime.UtcNow.AddDays(-Core.App.InquiryCacheDurations.MobileAndNationalCodeVerification);
-		return await db.Set<InquiryHistoryEntity>()
-			.Where(x => x.NationalCode == nationalCode && x.PhoneNumber == phoneNumber && x.Tags.Contains(TagInquiryHistory.ValidateNationalCodeAndPhoneNumber) && x.CreatedAt >= minDate)
-			.OrderByDescending(x => x.CreatedAt)
-			.FirstOrDefaultAsync(ct);
 	}
 
 	private async Task<InquiryHistoryEntity?> ReadDrivingLicenceDetailHistory(DrivingLicenceDetailParams p, CancellationToken ct) {
