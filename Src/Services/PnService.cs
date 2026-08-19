@@ -706,7 +706,7 @@ public class PnService(
 
 	private async Task<GetAccessTokenResponse?> GetAccessToken(CancellationToken ct) {
 		ItHub itHub = Core.App.ItHub;
-		HttpResponseMessage? response = await http.PostForm(
+		HttpResponseMessage? response = await http.Post(
 			"https://gateway.itsaaz.ir/sts/connect/token",
 			new Dictionary<string, string> {
 				{ "grant_type", "password" },

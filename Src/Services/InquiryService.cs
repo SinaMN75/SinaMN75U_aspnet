@@ -721,7 +721,7 @@ public class InquiryService(
 		);
 
 	protected virtual async Task<GetAccessTokenResponse?> GetAccessToken(CancellationToken ct) {
-		HttpResponseMessage? response = await httpClient.PostForm(
+		HttpResponseMessage? response = await httpClient.Post(
 			"https://gateway.itsaaz.ir/sts/connect/token",
 			new Dictionary<string, string> {
 				{ "grant_type", "password" },
