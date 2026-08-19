@@ -7,6 +7,12 @@ public static class SwaggerSetup {
 		services.AddEndpointsApiExplorer();
 
 		services.AddSwaggerGen(c => {
+			c.SwaggerDoc("100", new OpenApiInfo {
+				Title = "SinaMN75 API",
+				Version = "100",
+				Description = "API version 100"
+			});
+			
 			c.UseInlineDefinitionsForEnums();
 			c.OrderActionsBy(s => s.RelativePath);
 
@@ -25,14 +31,8 @@ public static class SwaggerSetup {
 			});
 
 			c.AddSecurityRequirement(document => new OpenApiSecurityRequirement {
-				{
-					new OpenApiSecuritySchemeReference("Locale", document),
-					[]
-				},
-				{
-					new OpenApiSecuritySchemeReference("Timezone", document),
-					[]
-				}
+				{ new OpenApiSecuritySchemeReference("Locale", document), [] },
+				{ new OpenApiSecuritySchemeReference("Timezone", document), [] }
 			});
 		});
 	}
