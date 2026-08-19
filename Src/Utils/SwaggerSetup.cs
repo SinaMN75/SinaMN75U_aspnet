@@ -7,12 +7,12 @@ public static class SwaggerSetup {
 		services.AddEndpointsApiExplorer();
 
 		services.AddSwaggerGen(c => {
-			c.SwaggerDoc("100", new OpenApiInfo {
+			c.SwaggerDoc("v100", new OpenApiInfo {
 				Title = "SinaMN75 API",
-				Version = "100",
+				Version = "v100",
 				Description = "API version 100"
 			});
-			
+
 			c.UseInlineDefinitionsForEnums();
 			c.OrderActionsBy(s => s.RelativePath);
 
@@ -41,6 +41,7 @@ public static class SwaggerSetup {
 		app.UseSwagger();
 
 		app.UseSwaggerUI(c => {
+			c.SwaggerEndpoint("/swagger/v100/swagger.json", "SinaMN75 API v100");
 			c.DocExpansion(DocExpansion.None);
 			c.DefaultModelsExpandDepth(128);
 			c.DocumentTitle = "SinaMN75";
