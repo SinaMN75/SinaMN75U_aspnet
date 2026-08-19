@@ -73,7 +73,9 @@ public class HttpClientService(
 
 			HttpResponseMessage response = await httpClient.SendAsync(request);
 			string responseBody = await response.Content.ReadAsStringAsync();
-			Console.WriteLine($"{method} - {uri} - {(int)response.StatusCode} \nPARAMS: {(body != null ? requestBody : "null")} \nRESPONSE: {responseBody}");
+			string logMessage = $"{method} - {uri} - {(int)response.StatusCode} \nPARAMS: {(body != null ? requestBody : "null")} \nRESPONSE: {responseBody}";
+			if ((int)response.StatusCode >= 400) ULog.Error(logMessage);
+			else ULog.Info(logMessage);
 
 			sw.Stop();
 			await dashboardService.CreateApiLog(new ApiLogCreateParams {
@@ -107,7 +109,7 @@ public class HttpClientService(
 				IpAddress = ServerIpAddress.Value
 			}, CancellationToken.None);
 
-			Console.WriteLine($"{method} - {uri} - ERROR \nPARAMS: {(body != null ? requestBody : "null")} \nRESPONSE: {ex.Message}");
+			ULog.Error($"{method} - {uri} - ERROR \nPARAMS: {(body != null ? requestBody : "null")} \nRESPONSE: {ex.Message}");
 			return null;
 		}
 	}
