@@ -29,8 +29,14 @@ public static class ULog {
 	public static void Debug(string message) => WriteWithColor($"[DEBUG] {message}", ConsoleColor.Cyan);
 	
 	private static void WriteWithColor(string message, ConsoleColor color) {
+		string line = $"[{DateTime.Now:HH:mm:ss}] {message}";
+
+		Buffer.Enqueue(line);
+		while (Buffer.Count > 5000 && Buffer.TryDequeue(out _)) { }
+
+		ConsoleColor original = Console.ForegroundColor;
 		Console.ForegroundColor = color;
-		Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {message}");
-		Console.ForegroundColor = Console.ForegroundColor;
+		Console.WriteLine(line);
+		Console.ForegroundColor = original;
 	}
 }
