@@ -400,22 +400,26 @@ public class TerminalService(
 	}
 	
 
-	private async Task<string> GenerateAgreement(UserEntity user, TerminalEntity terminal) {
-		return await WordPdfGenerator.GenerateWithTextsAsync(
-			texts: new Dictionary<string, string> {
-				{ "day", PersianDateTime.Now.Day.ToString() },
-				{ "month", PersianDateTime.Now.Month.ToString() },
-				{ "number", "NUMBER" },
-				{ "fullName", $"{user.FirstName ?? ""} {user.LastName ?? ""}" },
-				{ "nationalCode", user.NationalCode ?? "" },
-				{ "birthdate", PersianDateTime.FromDateTime(user.Birthdate ?? DateTime.Now).ToString("yyyy-MM-dd") },
-				{ "address", "ADDRESS" },
-				{ "postalCode", terminal.Merchant?.ZipCode ?? "" },
-				{ "phoneNumber", user.PhoneNumber ?? "" },
-				{ "landLine", user.LandLine ?? "" },
-				{ "fatherName", user.JsonData.FatherName ?? "" }
-			},
-			templatePath: Path.Combine(Directory.GetCurrentDirectory(), "Templates", "atmAgreement.docx")
-		);
+	private static async Task<string> GenerateAgreement(UserEntity user, TerminalEntity terminal) {
+		HtmlTemplate template = await HtmlTemplate.FromFile(Path.Combine(Directory.GetCurrentDirectory(), "Templates", "atmAgreement.html"));
+		template.RemoveUnmatchedTokens = true;
+
+		template.Set(new Dictionary<string, string> {
+			{ "day", PersianDateTime.Now.Day.ToString() },
+			{ "month", PersianDateTime.Now.Month.ToString() },
+			{ "number", "NUMBER" },
+			{ "fullName", $"{user.FirstName ?? ""} {user.LastName ?? ""}" },
+			{ "nationalCode", user.NationalCode ?? "" },
+			{ "birthdate", PersianDateTime.FromDateTime(user.Birthdate ?? DateTime.Now).ToString("yyyy-MM-dd") },
+			{ "address", "ADDRESS" },
+			{ "postalCode", terminal.Merchant?.ZipCode ?? "" },
+			{ "phoneNumber", user.PhoneNumber ?? "" },
+			{ "landLine", user.LandLine ?? "" },
+			{ "fatherName", user.JsonData.FatherName ?? "" }
+		});
+
+		await template.SetImageFile("customerSignature", $"{Core.App.BaseUrl}/{user.ESignature}");
+
+		return template.RenderBase64();
 	}
 }

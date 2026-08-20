@@ -725,24 +725,25 @@ public class PnService(
 
 	private static async Task<string> GenerateAgreement(UserEntity user, MerchantEntity merchant, string contentRootPath) {
 		ULog.Debug($"Generating agreement for user {user.Id}, merchant {merchant.Id}");
-		return await WordPdfGenerator.GenerateWithTextsAndImagesAsync(
-			texts: new Dictionary<string, string> {
-				{ "day", PersianDateTime.Now.Day.ToString() },
-				{ "month", PersianDateTime.Now.Month.ToString() },
-				{ "number", "NUMBER" },
-				{ "fullName", $"{user.FirstName ?? ""} {user.LastName ?? ""}" },
-				{ "nationalCode", user.NationalCode ?? "" },
-				{ "birthdate", PersianDateTime.FromDateTime(user.Birthdate ?? DateTime.Now).ToString("yyyy-MM-dd") },
-				{ "address", "ADDRESS" },
-				{ "postalCode", merchant.ZipCode },
-				{ "phoneNumber", user.PhoneNumber ?? "" },
-				{ "landLine", user.LandLine ?? "" },
-				{ "fatherName", user.JsonData.FatherName ?? "" }
-			},
-			imagesBase64: new Dictionary<string, string> {
-				// { "customerSignature", user.ESignature!.ToBase64()! }
-			},
-			templatePath: Path.Combine(contentRootPath, "Templates", "atmAgreement.docx")
-		);
+		HtmlTemplate template = await HtmlTemplate.FromFile(Path.Combine(contentRootPath, "Templates", "atmAgreement.html"));
+		template.RemoveUnmatchedTokens = true;
+
+		template.Set(new Dictionary<string, string> {
+			{ "day", PersianDateTime.Now.Day.ToString() },
+			{ "month", PersianDateTime.Now.Month.ToString() },
+			{ "number", "NUMBER" },
+			{ "fullName", $"{user.FirstName ?? ""} {user.LastName ?? ""}" },
+			{ "nationalCode", user.NationalCode ?? "" },
+			{ "birthdate", PersianDateTime.FromDateTime(user.Birthdate ?? DateTime.Now).ToString("yyyy-MM-dd") },
+			{ "address", "ADDRESS" },
+			{ "postalCode", merchant.ZipCode },
+			{ "phoneNumber", user.PhoneNumber ?? "" },
+			{ "landLine", user.LandLine ?? "" },
+			{ "fatherName", user.JsonData.FatherName ?? "" }
+		});
+
+		await template.SetImageFile("customerSignature", $"{Core.App.BaseUrl}/{user.ESignature}");
+
+		return template.RenderBase64();
 	}
 }
