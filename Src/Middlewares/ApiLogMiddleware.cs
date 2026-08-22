@@ -49,7 +49,7 @@ public sealed class ApiLogMiddleware(RequestDelegate next, ITokenService ts, IAp
 			captureStream.Seek(0, SeekOrigin.Begin);
 			await captureStream.CopyToAsync(originalResponseStream);
 
-			(Guid? UserId, string? UserName, string? Email, string? Roles) userData = TryExtractUserData(context, requestBody);
+			(Guid? UserId, string? UserName, string? Email, string? Roles, string? FirstName, string? LastName, string? PhoneNumber) userData = TryExtractUserData(context, requestBody);
 			string? requestHeaders = null;
 			string? responseHeaders = null;
 			if (Core.App.Middleware.LogHeaders) {
@@ -66,6 +66,9 @@ public sealed class ApiLogMiddleware(RequestDelegate next, ITokenService ts, IAp
 				UserName = userData.UserName,
 				UserEmail = userData.Email,
 				UserRoles = userData.Roles,
+				UserFirstName = userData.FirstName,
+				UserLastName = userData.LastName,
+				UserPhoneNumber = userData.PhoneNumber,
 				IpAddress = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim() ?? context.Connection.RemoteIpAddress?.ToString(),
 				QueryString = context.Request.QueryString.HasValue ? context.Request.QueryString.Value : null,
 				RequestBody = requestBody,
@@ -100,7 +103,7 @@ public sealed class ApiLogMiddleware(RequestDelegate next, ITokenService ts, IAp
 		}
 	}
 
-	private (Guid? UserId, string? UserName, string? Email, string? Roles) TryExtractUserData(HttpContext ctx, string requestBody) {
+	private (Guid? UserId, string? UserName, string? Email, string? Roles, string? FirstName, string? LastName, string? PhoneNumber) TryExtractUserData(HttpContext ctx, string requestBody) {
 		string? token = null;
 
 		try {
@@ -117,17 +120,16 @@ public sealed class ApiLogMiddleware(RequestDelegate next, ITokenService ts, IAp
 				token = authHeader["Bearer ".Length..].Trim();
 		}
 
-		if (string.IsNullOrWhiteSpace(token)) token = ctx.Request.Query["token"].FirstOrDefault();
-		if (string.IsNullOrWhiteSpace(token)) return (null, null, null, null);
+		if (token.IsNullOrEmpty()) return (null, null, null, null, null, null, null);
 
 		try {
 			JwtClaimData? claims = ts.ExtractClaims(token);
-			if (claims == null) return (null, null, null, null);
+			if (claims == null) return (null, null, null, null, null, null, null);
 			string? roles = claims.Tags.Any() ? string.Join(",", claims.Tags) : null;
-			return (claims.Id, claims.UserName ?? claims.FullName, claims.Email, roles);
+			return (claims.Id, claims.UserName ?? claims.FullName, claims.Email, roles, claims.FirstName, claims.LastName, claims.PhoneNumber);
 		}
 		catch {
-			return (null, null, null, null);
+			return (null, null, null, null, null, null, null);
 		}
 	}
 }

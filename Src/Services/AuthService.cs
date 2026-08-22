@@ -166,7 +166,7 @@ public class AuthService(
 		string lockKey = "lockout_otp_" + p.PhoneNumber;
 		if (IsLockedOut(lockKey)) return new UResponse<LoginResponse?>(null, Usc.TooManyRequests, ls.Get("TooManyAttempts"));
 
-		if (p.Otp != Core.App.BasicSettings.DefaultVerificationKey && p.Otp != cache.Get("otp_" + user.Id)) {
+		if (p.Otp != Core.App.BasicSettings.DefaultVerificationKey || p.Otp != cache.Get("otp_" + user.Id)) {
 			RegisterFailedAttempt(lockKey);
 			return new UResponse<LoginResponse?>(null, Usc.WrongVerificationCode, ls.Get("OtpInvalid"));
 		}
