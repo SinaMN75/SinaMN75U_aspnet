@@ -109,11 +109,10 @@ public class AuthService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<LoginResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 
-		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(u => u.RefreshToken == p.RefreshToken && u.Id == userData.Id, ct);
+		UserEntity? user = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(u => u.RefreshToken == p.RefreshToken && u.Id == userData.Id, ct);
 		if (user == null) return new UResponse<LoginResponse?>(null, Usc.UnAuthorized, ls.Get("UserNotFound"));
 		
 		user.RefreshToken = ts.GenerateRefreshToken();
-		db.Set<UserEntity>().Update(user);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse<LoginResponse?>(new LoginResponse {
@@ -174,7 +173,7 @@ public class AuthService(
 		ResetFailedAttempts(lockKey);
 		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = ts.GenerateJwt(user),
-			RefreshToken = user.RefreshToken,
+			RefreshToken = ts.GenerateRefreshToken(),
 			User = user.MapToResponse()
 		});
 	}
