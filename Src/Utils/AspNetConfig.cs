@@ -119,6 +119,7 @@ public static partial class AspNetConfig {
 	}
 
 	public static void UseUServices(this WebApplication app) {
+		app.MigrateDatabase();
 		app.UseCors();
 		app.UseStaticFiles();
 		app.UseUSwagger();
@@ -168,6 +169,25 @@ public static partial class AspNetConfig {
 		app.MapHealthRoutes(RouteTags.Health);
 		app.MapLogRoutes(RouteTags.Log);
 		ULog.Info("App Started in " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+	}
+	
+	private static void MigrateDatabase(this WebApplication app) {
+		using IServiceScope scope = app.Services.CreateScope();
+		DbContext db = scope.ServiceProvider.GetRequiredService<DbContext>();
+		try {
+			List<string> pending = db.Database.GetPendingMigrations().ToList();
+			if (pending.Count == 0) {
+				ULog.Info("Database migration: no update required.");
+				return;
+			}
+
+			ULog.Info($"Database migration: {pending.Count} pending migration(s) found: {string.Join(", ", pending)}");
+			db.Database.Migrate();
+			ULog.Success($"Database migration: completed successfully. Applied: {string.Join(", ", pending)}");
+		}
+		catch (Exception ex) {
+			ULog.Error(ex, "Database migration failed");
+		}
 	}
 
 	private static string CleanAndFormatSql(string sql) {
