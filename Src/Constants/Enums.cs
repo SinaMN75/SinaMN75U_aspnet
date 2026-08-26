@@ -245,6 +245,8 @@ public enum TagTxn {
 }
 
 public enum TagParking {
+	Disabled = 101,
+	Active = 102,
 	Test = 999
 }
 
@@ -291,7 +293,14 @@ public enum TagWalletTxn {
 public enum TagTerminal {
 	Atm = 101,
 	WallCashless = 102,
-	DeskCashless = 103
+	DeskCashless = 103,
+	
+	Ava101 = 201,
+	Ava102 = 202,
+	Ava103 = 203,
+	Ava104 = 204,
+	AvaMax = 205,
+	SmartPeak = 206,
 }
 
 public enum TagBankAccount {

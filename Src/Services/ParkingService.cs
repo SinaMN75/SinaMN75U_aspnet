@@ -32,6 +32,9 @@ public class ParkingService(
 			JsonData = new BaseJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
 			Tags = p.Tags,
 			Title = p.Title,
+			Address = p.Address,
+			PhoneNumber = p.PhoneNumber,
+			Capacity = p.Capacity,
 			CreatorId = p.CreatorId ?? userData.Id,
 			EntrancePrice = p.EntrancePrice,
 			HourlyPrice = p.HourlyPrice,
@@ -65,6 +68,10 @@ public class ParkingService(
 		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
 
 		
+		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
+		if (p.Address.IsNotNull()) e.Address = p.Address;
+		if (p.PhoneNumber.IsNotNull()) e.PhoneNumber = p.PhoneNumber;
+		if (p.Capacity.IsNotNull()) e.Capacity = p.Capacity.Value;
 		if (p.EntrancePrice.IsNotNull()) e.EntrancePrice = p.EntrancePrice.Value;
 		if (p.HourlyPrice.IsNotNull()) e.HourlyPrice = p.HourlyPrice.Value;
 		if (p.DailyPrice.IsNotNull()) e.DailyPrice = p.DailyPrice.Value;

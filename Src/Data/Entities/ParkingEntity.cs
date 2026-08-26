@@ -8,6 +8,14 @@ public sealed class ParkingEntity : BaseEntity<TagParking, BaseJson> {
 
 	public ICollection<Guid> Users { get; set; } = [];
 
+	[MaxLength(500)]
+	public string? Address { get; set; }
+
+	[MaxLength(20)]
+	public string? PhoneNumber { get; set; }
+
+	public int Capacity { get; set; }
+
 	public decimal EntrancePrice { get; set; }
 	public decimal HourlyPrice { get; set; }
 	public decimal DailyPrice { get; set; }

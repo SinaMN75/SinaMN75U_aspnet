@@ -4,6 +4,10 @@ public sealed class ParkingCreateParams : BaseCreateParams<TagParking> {
 	[UValidationRequired("TitleRequired")]
 	public string Title { get; set; } = null!;
 
+	public string? Address { get; set; }
+	public string? PhoneNumber { get; set; }
+	public int Capacity { get; set; }
+
 	[UValidationRequired("EntrancePriceRequired")]
 	public decimal EntrancePrice { get; set; }
 
@@ -15,6 +19,10 @@ public sealed class ParkingCreateParams : BaseCreateParams<TagParking> {
 }
 
 public sealed class ParkingUpdateParams : BaseUpdateParams<TagParking> {
+	public string? Title { get; set; }
+	public string? Address { get; set; }
+	public string? PhoneNumber { get; set; }
+	public int? Capacity { get; set; }
 	public decimal? EntrancePrice { get; set; }
 	public decimal? HourlyPrice { get; set; }
 	public decimal? DailyPrice { get; set; }

@@ -36,5 +36,4 @@ public sealed class InternetReserveParams : BaseParams {
 	public required string PackageId { get; set; }   // Id from InternetList
 	public required decimal Amount { get; set; }      // Amount from InternetList
 	public required string Device { get; set; }      // e.g., "05"
-	public string? Bank { get; set; }
 }

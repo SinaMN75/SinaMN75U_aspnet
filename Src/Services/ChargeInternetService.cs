@@ -164,7 +164,7 @@ public class ChargeInternetService(
 				apiKey = Core.App.Mobtakeran.ApiKey,
 				reserve = Random.Shared.Next(999999).ToString(),
 				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
-				attachments = new { subscriber = p.Subscriber, operator_id = p.OperatorId, package_id = p.PackageId, amount = p.Amount.ToIntString(), device = p.Device, bank = p.Bank }
+				attachments = new { subscriber = p.Subscriber, operator_id = p.OperatorId, package_id = p.PackageId, amount = p.Amount.ToIntString(), device = p.Device}
 			},
 			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
 		);
