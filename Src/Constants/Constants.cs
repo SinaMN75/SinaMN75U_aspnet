@@ -106,3 +106,32 @@ public static class RandomTexts {
 		"کُندویِ عسل، با لباسِ رقصِ باله، وارد شد."
 	];
 }
+
+public class UChargeAmounts {
+	public static readonly List<ChargeInternetPreDefinedAmounts> Amounts = [
+		new() {
+			Title = "۲۰ هزار تومانی",
+			Amount = 200_000
+		},
+		new() {
+			Title = "۳۰ هزار تومانی",
+			Amount = 300_000
+		},
+		new() {
+			Title = "۴۰ هزار تومانی",
+			Amount = 400_000
+		},
+		new() {
+			Title = "۵۰ هزار تومانی",
+			Amount = 500_000
+		},
+		new() {
+			Title = "۱۰۰ هزار تومانی",
+			Amount = 1_000_000
+		},
+		new() {
+			Title = "۲۰۰ هزار تومانی",
+			Amount = 2_000_000
+		}
+	];
+}

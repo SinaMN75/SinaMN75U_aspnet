@@ -401,8 +401,8 @@ public enum TagVas {
 }
 
 public enum TagSimOperator {
-	IranCell = 1,
-	HamrahAvval = 2,
+	HamrahAvval = 1,
+	IranCell = 2,
 	Rigthel = 3,
 	Shatel = 5
 }
