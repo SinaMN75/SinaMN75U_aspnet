@@ -142,6 +142,20 @@ public sealed class MediaSelectorArgs : BaseSelectorArgs;
 
 public sealed class ParkingSelectorArgs : BaseSelectorArgs;
 
+public sealed class ParkingTariffSelectorArgs : BaseSelectorArgs;
+
+public sealed class ParkingPlateFlagSelectorArgs : BaseSelectorArgs;
+
+public sealed class ParkingShiftSelectorArgs : BaseSelectorArgs;
+
+public sealed class ParkingSubscriptionSelectorArgs : BaseSelectorArgs {
+	public VehicleSelectorArgs? Vehicle { get; set; }
+}
+
+public sealed class ParkingStaffSelectorArgs : BaseSelectorArgs {
+	public UserSelectorArgs? User { get; set; }
+}
+
 public sealed class VehicleSelectorArgs : BaseSelectorArgs;
 
 public sealed class BankAccountSelectorArgs : BaseSelectorArgs;
@@ -392,6 +406,121 @@ public static class Projections {
 		return selector.Expand();
 	}
 
+	public static Expression<Func<ParkingTariffEntity, ParkingTariffResponse>> ParkingTariffSelector(ParkingTariffSelectorArgs args) {
+		Expression<Func<ParkingTariffEntity, ParkingTariffResponse>> selector = x => new ParkingTariffResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			AdminUserIds = x.AdminUserIds,
+			ParkingId = x.ParkingId,
+			VehicleType = x.VehicleType,
+			EntrancePrice = x.EntrancePrice,
+			DayHourlyPrice = x.DayHourlyPrice,
+			NightHourlyPrice = x.NightHourlyPrice,
+			DailyCap = x.DailyCap,
+			WeeklyPrice = x.WeeklyPrice,
+			MonthlyPrice = x.MonthlyPrice,
+			QuarterlyPrice = x.QuarterlyPrice,
+			FreeMinutes = x.FreeMinutes,
+			NightStartHour = x.NightStartHour,
+			NightEndHour = x.NightEndHour,
+			HolidayExtraPercent = x.HolidayExtraPercent,
+			RoundToFullHour = x.RoundToFullHour,
+			PerMinuteAfterFirstHour = x.PerMinuteAfterFirstHour,
+			SubscriptionDailyEntryLimit = x.SubscriptionDailyEntryLimit,
+			SubscriptionOfficeHoursOnly = x.SubscriptionOfficeHoursOnly,
+			SubscriptionExpiryReminderDays = x.SubscriptionExpiryReminderDays,
+			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<ParkingSubscriptionEntity, ParkingSubscriptionResponse>> ParkingSubscriptionSelector(ParkingSubscriptionSelectorArgs args, DateTime now) {
+		Expression<Func<ParkingSubscriptionEntity, ParkingSubscriptionResponse>> selector = x => new ParkingSubscriptionResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			AdminUserIds = x.AdminUserIds,
+			ParkingId = x.ParkingId,
+			VehicleId = x.VehicleId,
+			CustomerName = x.CustomerName,
+			CustomerPhoneNumber = x.CustomerPhoneNumber,
+			Price = x.Price,
+			StartDate = x.StartDate,
+			ExpiryDate = x.ExpiryDate,
+			DailyEntryLimit = x.DailyEntryLimit,
+			OfficeHoursOnly = x.OfficeHoursOnly,
+			RemainingDays = (int)(x.ExpiryDate - now).TotalDays,
+			Vehicle = x.Vehicle == null ? null : (args.Vehicle != null ? VehicleSelector(args.Vehicle) : v => null!).Invoke(x.Vehicle),
+			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<ParkingPlateFlagEntity, ParkingPlateFlagResponse>> ParkingPlateFlagSelector(ParkingPlateFlagSelectorArgs args) {
+		Expression<Func<ParkingPlateFlagEntity, ParkingPlateFlagResponse>> selector = x => new ParkingPlateFlagResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			AdminUserIds = x.AdminUserIds,
+			ParkingId = x.ParkingId,
+			LicencePlate = x.LicencePlate,
+			Reason = x.Reason,
+			Amount = x.Amount,
+			FromDate = x.FromDate,
+			ToDate = x.ToDate,
+			SpotNumber = x.SpotNumber,
+			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<ParkingStaffEntity, ParkingStaffResponse>> ParkingStaffSelector(ParkingStaffSelectorArgs args) {
+		Expression<Func<ParkingStaffEntity, ParkingStaffResponse>> selector = x => new ParkingStaffResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			AdminUserIds = x.AdminUserIds,
+			ParkingId = x.ParkingId,
+			UserId = x.UserId,
+			ShiftTitle = x.ShiftTitle,
+			MaxDiscountPercent = x.MaxDiscountPercent,
+			User = x.User == null ? null : (args.User != null ? UserSelector(args.User) : u => null!).Invoke(x.User),
+			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<ParkingShiftEntity, ParkingShiftResponse>> ParkingShiftSelector(ParkingShiftSelectorArgs args) {
+		Expression<Func<ParkingShiftEntity, ParkingShiftResponse>> selector = x => new ParkingShiftResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			AdminUserIds = x.AdminUserIds,
+			ParkingId = x.ParkingId,
+			StartDate = x.StartDate,
+			EndDate = x.EndDate,
+			CashTotal = x.CashTotal,
+			CardTotal = x.CardTotal,
+			IpgTotal = x.IpgTotal,
+			CountedCash = x.CountedCash,
+			EntryCount = x.EntryCount,
+			ExitCount = x.ExitCount,
+			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
+
 	public static Expression<Func<ParkingReportEntity, ParkingReportResponse>> ParkingReportSelector(ParkingReportSelectorArgs args) {
 		Expression<Func<ParkingReportEntity, ParkingReportResponse>> selector = x => new ParkingReportResponse {
 			Id = x.Id,
@@ -401,6 +530,15 @@ public static class Projections {
 			CreatorId = x.CreatorId,
 			StartDate = x.StartDate,
 			VehicleId = x.VehicleId,
+			ReceiptNumber = x.ReceiptNumber,
+			SpotNumber = x.SpotNumber,
+			CustomerPhoneNumber = x.CustomerPhoneNumber,
+			Discount = x.Discount,
+			PaidAmount = x.PaidAmount,
+			PaymentMethod = x.PaymentMethod,
+			TrackingCode = x.TrackingCode,
+			SubscriptionId = x.SubscriptionId,
+			ShiftId = x.ShiftId,
 			ParkingId = x.ParkingId,
 			Amount = x.Amount,
 			EndDate = x.EndDate,

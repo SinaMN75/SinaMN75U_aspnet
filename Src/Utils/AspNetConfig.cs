@@ -96,6 +96,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<ISimCardService, SimCardService>();
 		builder.Services.AddScoped<INotificationService, NotificationService>();
 		builder.Services.AddScoped<IDataSeedService, DataSeedService>();
+		builder.Services.AddScoped<IParkingSeedService, ParkingSeedService>();
 		builder.Services.AddScoped<IVasService, VasService>();
 		builder.Services.AddScoped<IMerchantService, MerchantService>();
 		builder.Services.AddScoped<IMoadiService, MoadiService>();

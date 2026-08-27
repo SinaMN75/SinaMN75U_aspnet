@@ -255,11 +255,57 @@ public enum TagVehicle {
 	Car = 102,
 	Van = 103,
 	Truck = 104,
-	Bus = 105
+	Bus = 105,
+	Pickup = 106,
+	Electric = 107
 }
 
 public enum TagParkingReport {
+	Open = 101,
+	Closed = 102,
+	Offline = 103,
 	Test = 999
+}
+
+public enum TagParkingTariff {
+	Hourly = 101,
+	Subscription = 102
+}
+
+public enum TagParkingSubscription {
+	Weekly = 101,
+	Monthly = 102,
+	Quarterly = 103,
+	Cancelled = 104
+}
+
+public enum TagParkingPlateFlag {
+	Debt = 101,
+	Banned = 102,
+	Warning = 103,
+	Reservation = 104
+}
+
+public enum TagParkingStaff {
+	RegisterEntryExit = 101,
+	ApplyManualDiscount = 102,
+	ManageSubscriptions = 103,
+	ChangeTariff = 104,
+	ViewFinancialReports = 105,
+	Disabled = 106
+}
+
+public enum TagParkingShift {
+	Open = 101,
+	Closed = 102
+}
+
+public enum TagParkingPayment {
+	Card = 101,
+	Ipg = 102,
+	Cash = 103,
+	Subscription = 104,
+	Free = 105
 }
 
 public enum TagAddress {
