@@ -24,6 +24,7 @@ public sealed class AppSettings {
 	public required ApiCallCosts ApiCallCosts { get; set; }
 	public required InquiryCacheDurations InquiryCacheDurations { get; set; }
 	public required IEnumerable<ChargeInternet> ChargeInternet { get; set; }
+	public required decimal ChargeInternetTaxPercent { get; set; }
 }
 
 public sealed class ConnectionStrings {
@@ -131,7 +132,8 @@ public sealed class ChargeInternet {
 	public required TagSimOperator Operator { get; set; }
 	public required string Title { get; set; }
 	public required string Logo { get; set; }
-	public required List<ChargeInternetPreDefinedAmounts> PreDefinedAmountsList { get; set; }
+	public required List<ChargeInternetPreDefinedAmounts> PinAmountsList { get; set; }
+	public required List<ChargeInternetPreDefinedAmounts> TopupAmountsList { get; set; }
 }
 
 public sealed class ChargeInternetPreDefinedAmounts {

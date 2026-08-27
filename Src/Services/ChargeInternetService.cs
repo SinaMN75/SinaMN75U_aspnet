@@ -18,12 +18,21 @@ public class ChargeInternetService(
 	IVasService vs
 ) : IChargeInternetService {
 	private const int MobtakeranOk = 1;
+
+	public static decimal? PayableAmount(string operatorId, decimal nominalAmount, bool isPin) {
+		ChargeInternet? op = Core.App.ChargeInternet.FirstOrDefault(x => ((int)x.Operator).ToString() == operatorId);
+		List<ChargeInternetPreDefinedAmounts>? amounts = isPin ? op?.PinAmountsList : op?.TopupAmountsList;
+		if (amounts == null || amounts.All(x => x.Amount != nominalAmount)) return null;
+		return Math.Round(nominalAmount * (100 + Core.App.ChargeInternetTaxPercent) / 100, 0, MidpointRounding.AwayFromZero);
+	}
 	
 	public async Task<UResponse<ChargeInternetReserveResponse?>> Pin(ReserveChargeParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+		decimal? payableAmount = PayableAmount(p.SimType, p.Amount, true);
+		if (payableAmount == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BadRequest, ls.Get("InvalidChargeAmount"));
+		if (!await walletService.HasEnoughBalance(userData.Id, payableAmount.Value, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
@@ -35,20 +44,18 @@ public class ChargeInternetService(
 				reserve = Random.Shared.Next(999999).ToString(),
 				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
 				attachments = new {
-					amount = p.Amount.ToIntString(),
+					amount = payableAmount.Value.ToIntString(),
 					operator_id = p.SimType,
 					device = "05"
 				}
 			},
 			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
 		);
-		// BUG FIX: upstream failure used to return 200+null (looked like success); now it is a real error.
 		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
 		JsonElement attachment = data.GetProperty("attachments");
 
-		// BUG FIX: only continue if the reserve itself succeeded (code 1); otherwise do NOT approve/charge.
 		if (data.GetIntOrNull("code") != MobtakeranOk) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, data.GetStringOrNull("message") ?? ls.Get("ThirdPartyError"));
 
 		ApproveResponse? approveResponse = await Approve(new ApproveParams {
@@ -58,20 +65,18 @@ public class ChargeInternetService(
 			CardNumber = null,
 			NationalCode = userData.NationalCode
 		}, ct);
-
-		// BUG FIX: the wallet was charged whenever Approve was simply non-null. Now we charge ONLY when the operator
-		// actually delivered the charge (Approve code == 1). On any other outcome the user is not debited.
+		
 		if (approveResponse is null || approveResponse.Code != MobtakeranOk)
 			return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, approveResponse?.Message ?? ls.Get("ThirdPartyError"));
 
-		await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.ChargeSimPin, Amount = p.Amount }, ct);
+		await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.ChargeSimPin, Amount = payableAmount.Value }, ct);
 		await vs.Create(new VasCreateParams {
 			Id = Guid.CreateVersion7(),
 			ApiKey = p.ApiKey,
 			Token = p.Token,
 			Tags = [TagVas.ChargePin],
 			CreatorId = userData.Id,
-			Amount = p.Amount,
+			Amount = payableAmount.Value,
 			AuthorizeCode = approveResponse.Reference?.ToString() ?? "",
 			BillId = null,
 			PaymentId = null,
@@ -99,7 +104,9 @@ public class ChargeInternetService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+		decimal? payableAmount = PayableAmount(p.OperatorId, p.Amount, false);
+		if (payableAmount == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BadRequest, ls.Get("InvalidChargeAmount"));
+		if (!await walletService.HasEnoughBalance(userData.Id, payableAmount.Value, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
@@ -110,7 +117,7 @@ public class ChargeInternetService(
 				apiKey = Core.App.Mobtakeran.ApiKey,
 				reserve = Random.Shared.Next(999999).ToString(),
 				localDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"),
-				attachments = new { subscriber = p.PhoneNumber, amount = p.Amount.ToIntString(), operator_id = p.OperatorId, device = "05", type = "0" }
+				attachments = new { subscriber = p.PhoneNumber, amount = payableAmount.Value.ToIntString(), operator_id = p.OperatorId, device = "05", type = "0" }
 			},
 			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
 		);
@@ -133,7 +140,7 @@ public class ChargeInternetService(
 		if (approveResponse is null || approveResponse.Code != MobtakeranOk)
 			return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, approveResponse?.Message ?? ls.Get("ThirdPartyError"));
 
-		await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.ChargeSimTopup, Amount = p.Amount }, ct);
+		await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.ChargeSimTopup, Amount = payableAmount.Value }, ct);
 
 		return new UResponse<ChargeInternetReserveResponse?>(new ChargeInternetReserveResponse {
 			Reserve = data.GetIntOrNull("reserve"),
@@ -455,34 +462,38 @@ public class ChargeInternetServiceFake(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null || SimulateUnauthorized) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (SimulateLowBalance || !await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+		decimal? payableAmount = ChargeInternetService.PayableAmount(p.SimType, p.Amount, true);
+		if (payableAmount == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BadRequest, ls.Get("InvalidChargeAmount"));
+		if (SimulateLowBalance || !await walletService.HasEnoughBalance(userData.Id, payableAmount.Value, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 		if (SimulateUpstreamFailure) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
 
 		// No operator call; simulate success then run the SAME wallet + VAS logic as prod.
 		string reference = Math.Abs(Guid.NewGuid().GetHashCode()).ToString();
-		await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.ChargeSimPin, Amount = p.Amount }, ct);
+		await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.ChargeSimPin, Amount = payableAmount.Value }, ct);
 		await vs.Create(new VasCreateParams {
 			Id = Guid.CreateVersion7(),
 			ApiKey = p.ApiKey,
 			Token = p.Token,
 			Tags = [TagVas.ChargePin],
 			CreatorId = userData.Id,
-			Amount = p.Amount,
+			Amount = payableAmount.Value,
 			AuthorizeCode = reference,
 			ChargePin = FakePin
 		}, ct);
-		return new UResponse<ChargeInternetReserveResponse?>(BuildReserve(p.Amount, FakePin, reference));
+		return new UResponse<ChargeInternetReserveResponse?>(BuildReserve(payableAmount.Value, FakePin, reference));
 	}
 
 	public async Task<UResponse<ChargeInternetReserveResponse?>> Topup(TopupChargeParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null || SimulateUnauthorized) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
 		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (SimulateLowBalance || !await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+		decimal? payableAmount = ChargeInternetService.PayableAmount(p.OperatorId, p.Amount, false);
+		if (payableAmount == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BadRequest, ls.Get("InvalidChargeAmount"));
+		if (SimulateLowBalance || !await walletService.HasEnoughBalance(userData.Id, payableAmount.Value, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
 		if (SimulateUpstreamFailure) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
 
-		await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.ChargeSimTopup, Amount = p.Amount }, ct);
-		return new UResponse<ChargeInternetReserveResponse?>(BuildReserve(p.Amount, null, Math.Abs(Guid.NewGuid().GetHashCode()).ToString()));
+		await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.ChargeSimTopup, Amount = payableAmount.Value }, ct);
+		return new UResponse<ChargeInternetReserveResponse?>(BuildReserve(payableAmount.Value, null, Math.Abs(Guid.NewGuid().GetHashCode()).ToString()));
 	}
 
 	public async Task<UResponse<ChargeInternetReserveResponse?>> InternetReserve(InternetReserveParams p, CancellationToken ct) {
