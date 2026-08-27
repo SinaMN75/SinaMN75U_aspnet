@@ -124,6 +124,7 @@ public class AuthService(
 
 	public async Task<UResponse> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct) {
 		UserResponse? existingUser = await db.Set<UserEntity>().Select(x => new UserResponse {
+			Id = x.Id,
 			PhoneNumber = x.PhoneNumber,
 			JsonData = x.JsonData,
 			Tags = x.Tags
@@ -165,12 +166,13 @@ public class AuthService(
 		string lockKey = "lockout_otp_" + p.PhoneNumber;
 		if (IsLockedOut(lockKey)) return new UResponse<LoginResponse?>(null, Usc.TooManyRequests, ls.Get("TooManyAttempts"));
 
-		if (p.Otp != Core.App.BasicSettings.DefaultVerificationKey || p.Otp != cache.Get("otp_" + user.Id)) {
+		if (p.Otp != Core.App.BasicSettings.DefaultVerificationKey && p.Otp != cache.Get("otp_" + user.Id)) {
 			RegisterFailedAttempt(lockKey);
 			return new UResponse<LoginResponse?>(null, Usc.WrongVerificationCode, ls.Get("OtpInvalid"));
 		}
 
 		ResetFailedAttempts(lockKey);
+		cache.Set("otp_" + user.Id, "", TimeSpan.FromSeconds(1));
 		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = ts.GenerateJwt(user),
 			RefreshToken = ts.GenerateRefreshToken(),
