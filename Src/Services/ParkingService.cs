@@ -785,8 +785,7 @@ public class ParkingService(
 		DateTime finish = end ?? DateTime.UtcNow;
 		if (finish < start) finish = start;
 
-		VehicleEntity? vehicle = report.Vehicle ?? await db.Set<VehicleEntity>().FirstOrDefaultAsync(x => x.Id == report.VehicleId, ct);
-		TagVehicle vehicleType = vehicle?.Tags.FirstOrDefault() ?? TagVehicle.Car;
+		TagVehicle vehicleType = report.Vehicle.Tags.FirstOrDefault();
 
 		ParkingTariffEntity? tariff = await db.Set<ParkingTariffEntity>().FirstOrDefaultAsync(x => x.ParkingId == report.ParkingId && x.VehicleType == vehicleType, ct);
 		ParkingEntity? parking = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == report.ParkingId, ct);
@@ -794,7 +793,7 @@ public class ParkingService(
 		int totalMinutes = (int)(finish - start).TotalMinutes;
 		ParkingBillResponse bill = new() {
 			ReportId = report.Id,
-			LicencePlate = vehicle?.LicencePlate ?? "",
+			LicencePlate = report.Vehicle.LicencePlate,
 			VehicleType = vehicleType,
 			SpotNumber = report.SpotNumber,
 			ReceiptNumber = report.ReceiptNumber,
@@ -849,7 +848,7 @@ public class ParkingService(
 			decimal restAmount;
 			if (roundToFullHour || !perMinute) {
 				int hours = (int)Math.Ceiling(restMinutes / 60m);
-				decimal blended = restMinutes == 0 ? dayRate : (restDay * dayRate + restNight * nightRate) / restMinutes;
+				decimal blended = (restDay * dayRate + restNight * nightRate) / restMinutes;
 				restAmount = hours * blended;
 			}
 			else {
@@ -987,7 +986,7 @@ public class ParkingService(
 			Title = parking.Title,
 			Capacity = parking.Capacity,
 			InsideCount = insideCount,
-			ShiftRevenue = shift == null ? 0 : shift.Total,
+			ShiftRevenue = shift?.Total ?? 0,
 			OpenShift = shift,
 			RecentReports = recent
 		});
