@@ -18,6 +18,11 @@ public sealed class HotelCreateParams : BaseCreateParams<TagHotel> {
 	public string? CheckInTime { get; set; }
 	public string? CheckOutTime { get; set; }
 	public List<string>? Amenities { get; set; }
+	public List<string>? Rules { get; set; }
+	public double? Latitude { get; set; }
+	public double? Longitude { get; set; }
+	public int? CancellationFreeHours { get; set; }
+	public int? CancellationPenaltyNights { get; set; }
 }
 
 public sealed class HotelUpdateParams : BaseUpdateParams<TagHotel> {
@@ -32,6 +37,11 @@ public sealed class HotelUpdateParams : BaseUpdateParams<TagHotel> {
 	public string? CheckInTime { get; set; }
 	public string? CheckOutTime { get; set; }
 	public List<string>? Amenities { get; set; }
+	public List<string>? Rules { get; set; }
+	public double? Latitude { get; set; }
+	public double? Longitude { get; set; }
+	public int? CancellationFreeHours { get; set; }
+	public int? CancellationPenaltyNights { get; set; }
 }
 
 public sealed class HotelReadParams : BaseReadParams<TagHotel> {
@@ -65,6 +75,8 @@ public sealed class HotelRoomCreateParams : BaseCreateParams<TagRoom> {
 	public double? SizeSquareMeters { get; set; }
 	public int? Floor { get; set; }
 	public List<string>? Amenities { get; set; }
+	public int? ExtraGuestCapacity { get; set; }
+	public decimal? ExtraGuestPrice { get; set; }
 }
 
 public sealed class HotelRoomUpdateParams : BaseUpdateParams<TagRoom> {
@@ -80,6 +92,23 @@ public sealed class HotelRoomUpdateParams : BaseUpdateParams<TagRoom> {
 	public double? SizeSquareMeters { get; set; }
 	public int? Floor { get; set; }
 	public List<string>? Amenities { get; set; }
+	public int? ExtraGuestCapacity { get; set; }
+	public decimal? ExtraGuestPrice { get; set; }
+}
+
+public sealed class HotelRoomAvailabilityParams : BaseParams {
+	public Guid? HotelId { get; set; }
+	public Guid? RoomId { get; set; }
+
+	[UValidationRequired("CheckInDateRequired")]
+	public DateTime CheckInDate { get; set; }
+
+	[UValidationRequired("CheckOutDateRequired")]
+	public DateTime CheckOutDate { get; set; }
+
+	public int GuestCount { get; set; } = 1;
+
+	public HotelRoomSelectorArgs SelectorArgs { get; set; } = new();
 }
 
 public sealed class HotelRoomReadParams : BaseReadParams<TagRoom> {
@@ -118,9 +147,53 @@ public sealed class HotelReservationCreateParams : BaseCreateParams<TagHotelRese
 	public string? GuestName { get; set; }
 	public string? GuestPhone { get; set; }
 	public string? Notes { get; set; }
+	public List<ReservationGuestParams>? Guests { get; set; }
 
 	/// <summary>Daily late-fee percent applied to the generated invoice.</summary>
 	public int PenaltyPrecentEveryDate { get; set; }
+}
+
+public sealed class ReservationGuestParams {
+	[UValidationRequired("NameRequired")]
+	public string FullName { get; set; } = null!;
+
+	public string? NationalCode { get; set; }
+	public string? PhoneNumber { get; set; }
+}
+
+/// <summary>Self-service booking: the reservation belongs to the caller, no admin permission needed.</summary>
+public sealed class HotelReservationBookParams : BaseParams {
+	[UValidationRequired("RoomIdRequired")]
+	public Guid RoomId { get; set; }
+
+	[UValidationRequired("CheckInDateRequired")]
+	public DateTime CheckInDate { get; set; }
+
+	[UValidationRequired("CheckOutDateRequired")]
+	public DateTime CheckOutDate { get; set; }
+
+	[UValidationRequired("GuestCountRequired")]
+	public int GuestCount { get; set; }
+
+	public List<ReservationGuestParams>? Guests { get; set; }
+	public string? GuestName { get; set; }
+	public string? GuestPhone { get; set; }
+	public string? Notes { get; set; }
+
+	/// <summary>Settle the generated invoice straight from the caller's wallet. Otherwise the invoice stays open for the gateway.</summary>
+	public bool PayFromWallet { get; set; }
+}
+
+public sealed class HotelReservationCancelParams : BaseParams {
+	[UValidationRequired("ReservationIdRequired")]
+	public Guid Id { get; set; }
+
+	public string? Reason { get; set; }
+}
+
+public sealed class HotelInvoicePayParams {
+	public required Guid InvoiceId { get; set; }
+	public required Guid UserId { get; set; }
 }
 
 public sealed class HotelReservationUpdateParams : BaseUpdateParams<TagHotelReservation> {
@@ -131,6 +204,7 @@ public sealed class HotelReservationUpdateParams : BaseUpdateParams<TagHotelRese
 	public string? GuestName { get; set; }
 	public string? GuestPhone { get; set; }
 	public string? Notes { get; set; }
+	public List<ReservationGuestParams>? Guests { get; set; }
 }
 
 public sealed class HotelReservationReadParams : BaseReadParams<TagHotelReservation> {
@@ -208,11 +282,32 @@ public sealed class DormCreateParams : BaseCreateParams<TagDorm> {
 
 	[UValidationRequired("CityRequired"), UValidationStringLength(2, 100, "CityMinLength")]
 	public string CityCode { get; set; } = null!;
+
+	public string? Address { get; set; }
+	public string? PhoneNumber { get; set; }
+	public string? Description { get; set; }
+	public string? NearbyUniversity { get; set; }
+	public string? VisitingHours { get; set; }
+	public List<string>? Amenities { get; set; }
+	public List<string>? Rules { get; set; }
+	public List<string>? RequiredDocuments { get; set; }
+	public double? Latitude { get; set; }
+	public double? Longitude { get; set; }
 }
 
 public sealed class DormUpdateParams : BaseUpdateParams<TagDorm> {
 	public string? Title { get; set; }
 	public string? CityCode { get; set; }
+	public string? Address { get; set; }
+	public string? PhoneNumber { get; set; }
+	public string? Description { get; set; }
+	public string? NearbyUniversity { get; set; }
+	public string? VisitingHours { get; set; }
+	public List<string>? Amenities { get; set; }
+	public List<string>? Rules { get; set; }
+	public List<string>? RequiredDocuments { get; set; }
+	public double? Latitude { get; set; }
+	public double? Longitude { get; set; }
 }
 
 public sealed class DormReadParams : BaseReadParams<TagDorm> {
@@ -230,11 +325,22 @@ public sealed class DormRoomCreateParams : BaseCreateParams<TagDormRoom> {
 
 	[UValidationRequired("DormIdRequired")]
 	public Guid DormId { get; set; }
+
+	public int Capacity { get; set; }
+	public string? Description { get; set; }
+	public int? Floor { get; set; }
+	public double? SizeSquareMeters { get; set; }
+	public List<string>? Amenities { get; set; }
 }
 
 public sealed class DormRoomUpdateParams : BaseUpdateParams<TagDormRoom> {
 	public string? Title { get; set; }
 	public Guid? DormId { get; set; }
+	public int? Capacity { get; set; }
+	public string? Description { get; set; }
+	public int? Floor { get; set; }
+	public double? SizeSquareMeters { get; set; }
+	public List<string>? Amenities { get; set; }
 }
 
 public sealed class DormRoomReadParams : BaseReadParams<TagDormRoom> {

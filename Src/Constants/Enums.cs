@@ -241,7 +241,8 @@ public enum TagTxn {
 	Refunded = 204,
 	ChargeWallet = 301,
 	MerchantCreationFee = 302,
-	DormInvoice = 303
+	DormInvoice = 303,
+	HotelInvoice = 304
 }
 
 public enum TagParking {
@@ -330,6 +331,8 @@ public enum TagWalletTxn {
 	FreewayTolls = 208,
 	MerchantCreationFee = 209,
 	DormBedInvoice = 210,
+	HotelReservation = 211,
+	HotelReservationRefund = 212,
 
 	ChargeSimPin = 301,
 	ChargeSimTopup = 302,
@@ -381,6 +384,16 @@ public enum TagInquiryHistory {
 }
 
 public enum TagNotification {
+	General = 101,
+	ReservationCreated = 102,
+	ReservationConfirmed = 103,
+	ReservationCancelled = 104,
+	InvoiceIssued = 105,
+	InvoiceDue = 106,
+	InvoiceOverdue = 107,
+	InvoicePaid = 108,
+	Unread = 201,
+	Read = 202,
 	Test = 999
 }
 
@@ -492,7 +505,8 @@ public enum TagHotelInvoice {
 	Paid = 201,
 	PaidOnline = 202,
 	PaidManual = 203,
-	NotPaid = 204
+	NotPaid = 204,
+	Refunded = 205
 }
 
 public enum TagDorm {

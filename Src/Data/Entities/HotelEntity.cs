@@ -23,6 +23,7 @@ public class HotelEntity : BaseEntity<TagHotel, HotelJson> {
 
 	public ICollection<HotelRoomEntity> Rooms { get; set; } = [];
 	public ICollection<HotelReservationEntity> Reservations { get; set; } = [];
+	public ICollection<CommentEntity> Comments { get; set; } = [];
 	public ICollection<MediaEntity> Media { get; set; } = [];
 }
 
@@ -32,6 +33,14 @@ public sealed class HotelJson : BaseJson {
 	public string? CheckInTime { get; set; }
 	public string? CheckOutTime { get; set; }
 	public List<string> Amenities { get; set; } = [];
+	public List<string> Rules { get; set; } = [];
+	public double? Latitude { get; set; }
+	public double? Longitude { get; set; }
+
+	// Cancellation window: free until this many hours before check-in, after that
+	// CancellationPenaltyNights nights are charged and the rest is refunded.
+	public int CancellationFreeHours { get; set; } = 24;
+	public int CancellationPenaltyNights { get; set; } = 1;
 }
 
 // ---------------- HotelRoom ----------------
@@ -66,6 +75,8 @@ public sealed class HotelRoomJson : BaseJson {
 	public double? SizeSquareMeters { get; set; }
 	public int? Floor { get; set; }
 	public List<string> Amenities { get; set; } = [];
+	public int? ExtraGuestCapacity { get; set; }
+	public decimal? ExtraGuestPrice { get; set; }
 }
 
 // ---------------- HotelReservation ----------------
@@ -97,6 +108,18 @@ public sealed class HotelReservationJson : BaseJson {
 	public string? GuestPhone { get; set; }
 	public string? Notes { get; set; }
 	public int NightCount { get; set; }
+	public string? ReservationCode { get; set; }
+	public List<ReservationGuestJson> Guests { get; set; } = [];
+	public DateTime? CancelledAt { get; set; }
+	public string? CancelReason { get; set; }
+	public decimal? CancellationPenalty { get; set; }
+	public decimal? RefundAmount { get; set; }
+}
+
+public sealed class ReservationGuestJson {
+	public required string FullName { get; set; }
+	public string? NationalCode { get; set; }
+	public string? PhoneNumber { get; set; }
 }
 
 // ---------------- HotelInvoice ----------------
@@ -121,21 +144,41 @@ public sealed class HotelInvoiceJson : BaseJson {
 // ---------------- Dorm ----------------
 
 [Table("Dorms")]
-public class DormEntity : BaseEntity<TagDorm, BaseJson> {
+public class DormEntity : BaseEntity<TagDorm, DormJson> {
 	[Required, MaxLength(100)]
 	public required string Title { get; set; }
 
 	[Required, MaxLength(20)]
 	public required string CityCode { get; set; }
 
+	[MaxLength(500)]
+	public string? Address { get; set; }
+
+	[MaxLength(20)]
+	public string? PhoneNumber { get; set; }
+
 	public ICollection<DormRoomEntity> Rooms { get; set; } = [];
+	public ICollection<CommentEntity> Comments { get; set; } = [];
 	public ICollection<MediaEntity> Media { get; set; } = [];
 }
 
+public sealed class DormJson : BaseJson {
+	public string? Description { get; set; }
+	public string? NearbyUniversity { get; set; }
+	public string? VisitingHours { get; set; }
+	public List<string> Amenities { get; set; } = [];
+	public List<string> Rules { get; set; } = [];
+	public List<string> RequiredDocuments { get; set; } = [];
+	public double? Latitude { get; set; }
+	public double? Longitude { get; set; }
+}
+
 [Table("DormRooms")]
-public class DormRoomEntity : BaseEntity<TagDormRoom, BaseJson> {
+public class DormRoomEntity : BaseEntity<TagDormRoom, DormRoomJson> {
 	[Required, MaxLength(100)]
 	public required string Title { get; set; }
+
+	public int Capacity { get; set; }
 
 	public required Guid DormId { get; set; }
 	public DormEntity Dorm { get; set; } = null!;
@@ -144,11 +187,18 @@ public class DormRoomEntity : BaseEntity<TagDormRoom, BaseJson> {
 	public ICollection<MediaEntity> Media { get; set; } = [];
 }
 
+public sealed class DormRoomJson : BaseJson {
+	public string? Description { get; set; }
+	public int? Floor { get; set; }
+	public double? SizeSquareMeters { get; set; }
+	public List<string> Amenities { get; set; } = [];
+}
+
 [Table("DormBeds")]
 public class DormBedEntity : BaseEntity<TagDormBed, BaseJson> {
 	[Required, MaxLength(4)]
 	public required string Title { get; set; }
-	
+
 	[Required, Column(TypeName = "decimal(24,2)")]
 	public required decimal Deposit { get; set; }
 

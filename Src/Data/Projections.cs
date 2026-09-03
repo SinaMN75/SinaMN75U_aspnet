@@ -7,6 +7,7 @@ public class BaseSelectorArgs {
 public sealed class HotelSelectorArgs : BaseSelectorArgs {
 	public HotelRoomSelectorArgs? Rooms { get; set; }
 	public HotelReservationSelectorArgs? Reservations { get; set; }
+	public CommentSelectorArgs? Comments { get; set; }
 	public MediaSelectorArgs? Media { get; set; }
 }
 
@@ -30,6 +31,7 @@ public sealed class HotelInvoiceSelectorArgs : BaseSelectorArgs {
 public sealed class DormSelectorArgs : BaseSelectorArgs {
 	public DormRoomSelectorArgs? Rooms { get; set; }
 	public DormBedSelectorArgs? Beds { get; set; }
+	public CommentSelectorArgs? Comments { get; set; }
 	public MediaSelectorArgs? Media { get; set; }
 }
 
@@ -709,6 +711,8 @@ public static class Projections {
 			UserId = x.UserId,
 			ProductId = x.ProductId,
 			BlogId = x.BlogId,
+			HotelId = x.HotelId,
+			DormId = x.DormId,
 			ParentId = x.ParentId,
 			Score = x.Score,
 			Description = x.Description,
@@ -795,8 +799,12 @@ public static class Projections {
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,
 			AdminUserIds = x.AdminUserIds,
+			AverageScore = x.Comments.Count == 0 ? 0 : (double)x.Comments.Average(c => c.Score),
+			CommentCount = x.Comments.Count,
+			MinPricePerNight = x.Rooms.Count == 0 ? null : x.Rooms.Min(r => r.PricePerNight),
 			Rooms = args.Rooms == null ? null : x.Rooms.AsQueryable().Select(HotelRoomSelector(args.Rooms)).ToList(),
 			Reservations = args.Reservations == null ? null : x.Reservations.AsQueryable().Select(HotelReservationSelector(args.Reservations)).ToList(),
+			Comments = args.Comments == null ? null : x.Comments.AsQueryable().Select(CommentSelector(args.Comments)).ToList(),
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
 		};
@@ -877,11 +885,17 @@ public static class Projections {
 			JsonData = x.JsonData,
 			Title = x.Title,
 			CityCode = x.CityCode,
+			Address = x.Address,
+			PhoneNumber = x.PhoneNumber,
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,
 			AdminUserIds = x.AdminUserIds,
+			AverageScore = x.Comments.Count == 0 ? 0 : (double)x.Comments.Average(c => c.Score),
+			CommentCount = x.Comments.Count,
+			MinMonthlyRent = x.Rooms.SelectMany(r => r.Beds).Any() ? x.Rooms.SelectMany(r => r.Beds).Min(b => b.MonthlyRent) : null,
 			Rooms = args.Rooms == null ? null : x.Rooms.AsQueryable().Select(DormRoomSelector(args.Rooms)).ToList(),
 			Beds = args.Beds == null ? null : x.Rooms.SelectMany(r => r.Beds).AsQueryable().Select(DormBedSelector(args.Beds)).ToList(),
+			Comments = args.Comments == null ? null : x.Comments.AsQueryable().Select(CommentSelector(args.Comments)).ToList(),
 			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
 		};
@@ -894,6 +908,7 @@ public static class Projections {
 			Tags = x.Tags,
 			JsonData = x.JsonData,
 			Title = x.Title,
+			Capacity = x.Capacity,
 			DormId = x.DormId,
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,

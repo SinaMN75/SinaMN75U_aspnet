@@ -18,6 +18,12 @@ public sealed class CommentEntity : BaseEntity<TagComment, CommentJson> {
 	public Guid? BlogId { get; set; }
 	public BlogEntity? Blog { get; set; }
 
+	public Guid? HotelId { get; set; }
+	public HotelEntity? Hotel { get; set; }
+
+	public Guid? DormId { get; set; }
+	public DormEntity? Dorm { get; set; }
+
 	public Guid? ParentId { get; set; }
 	public CommentEntity? Parent { get; set; }
 

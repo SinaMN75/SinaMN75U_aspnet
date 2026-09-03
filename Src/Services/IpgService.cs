@@ -151,10 +151,16 @@ public class IpgService(
 			await db.SaveChangesAsync(ct);
 
 			if (data is { InvoiceId: not null }) {
-				await hs.PayDormBedInvoice(new DormBedInvoicePayParams {
-					InvoiceId = data.InvoiceId.ToGuid(),
-					UserId = txn.UserId
-				}, ct);
+				if (data.Tag == TagTxn.HotelInvoice)
+					await hs.PayHotelInvoiceInternal(new HotelInvoicePayParams {
+						InvoiceId = data.InvoiceId.ToGuid(),
+						UserId = txn.UserId
+					}, ct);
+				else
+					await hs.PayDormBedInvoice(new DormBedInvoicePayParams {
+						InvoiceId = data.InvoiceId.ToGuid(),
+						UserId = txn.UserId
+					}, ct);
 			}
 		}
 		catch (Exception ex) {

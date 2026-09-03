@@ -8,9 +8,22 @@ public sealed class HotelResponse : BaseResponse<TagHotel, HotelJson> {
 	public string? PhoneNumber { get; set; }
 	public string? Email { get; set; }
 
+	public double AverageScore { get; set; }
+	public int CommentCount { get; set; }
+	public decimal? MinPricePerNight { get; set; }
+
 	public IEnumerable<HotelRoomResponse>? Rooms { get; set; }
 	public IEnumerable<HotelReservationResponse>? Reservations { get; set; }
+	public IEnumerable<CommentResponse>? Comments { get; set; }
 	public IEnumerable<MediaResponse>? Media { get; set; }
+}
+
+public sealed class HotelRoomAvailabilityResponse {
+	public required HotelRoomResponse Room { get; set; }
+	public required int AvailableQuantity { get; set; }
+	public required int NightCount { get; set; }
+	public required decimal TotalPrice { get; set; }
+	public required bool FitsGuestCount { get; set; }
 }
 
 public sealed class HotelRoomResponse : BaseResponse<TagRoom, HotelRoomJson> {
@@ -59,17 +72,25 @@ public sealed class HotelInvoiceResponse : BaseResponse<TagHotelInvoice, HotelIn
 	public HotelReservationResponse? Reservation { get; set; }
 }
 
-public sealed class DormResponse : BaseResponse<TagDorm, BaseJson> {
+public sealed class DormResponse : BaseResponse<TagDorm, DormJson> {
 	public required string Title { get; set; }
 	public required string CityCode { get; set; }
+	public string? Address { get; set; }
+	public string? PhoneNumber { get; set; }
+
+	public double AverageScore { get; set; }
+	public int CommentCount { get; set; }
+	public decimal? MinMonthlyRent { get; set; }
 
 	public IEnumerable<DormRoomResponse>? Rooms { get; set; }
 	public IEnumerable<DormBedResponse>? Beds { get; set; }
+	public IEnumerable<CommentResponse>? Comments { get; set; }
 	public IEnumerable<MediaResponse>? Media { get; set; }
 }
 
-public sealed class DormRoomResponse : BaseResponse<TagDormRoom, BaseJson> {
+public sealed class DormRoomResponse : BaseResponse<TagDormRoom, DormRoomJson> {
 	public required string Title { get; set; }
+	public int Capacity { get; set; }
 	
 	public Guid DormId { get; set; }
 	public DormResponse? Dorm { get; set; }
