@@ -179,6 +179,10 @@ public sealed class BlogSelectorArgs : BaseSelectorArgs {
 	public int ChildrenDebt { get; set; }
 }
 
+public sealed class GoldTxnSelectorArgs : BaseSelectorArgs {
+	public UserSelectorArgs? User { get; set; }
+}
+
 public static class Projections {
 	public static Expression<Func<ApiLogEntity, ApiLogResponse>> ApiLogSelector(ApiLogSelectorArgs args) {
 		Expression<Func<ApiLogEntity, ApiLogResponse>> selector = x => new ApiLogResponse {
@@ -978,6 +982,26 @@ public static class Projections {
 			CommentCount = args.CommentsCount ? x.Comments.Count : null,
 			ChildrenCount = args.ChildrenCount ? x.Children.Count : null,
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<GoldTxnEntity, GoldTxnResponse>> GoldTxnSelector(GoldTxnSelectorArgs args) {
+		Expression<Func<GoldTxnEntity, GoldTxnResponse>> selector = x => new GoldTxnResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatedAt = x.CreatedAt,
+			CreatorId = x.CreatorId,
+			AdminUserIds = x.AdminUserIds,
+			UserId = x.UserId,
+			GoldAmount = x.GoldAmount,
+			Amount = x.Amount,
+			UnitPrice = x.UnitPrice,
+			OrderId = x.OrderId,
+			IdempotencyKey = x.IdempotencyKey,
+			User = x.User == null ? null : (args.User != null ? UserSelector(args.User) : u => null!).Invoke(x.User),
+			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator)
 		};
 		return selector.Expand();
 	}

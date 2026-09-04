@@ -333,6 +333,9 @@ public enum TagWalletTxn {
 	DormBedInvoice = 210,
 	HotelReservation = 211,
 	HotelReservationRefund = 212,
+	GoldPurchase = 213,
+	GoldSale = 214,
+	GoldPurchaseRefund = 215,
 
 	ChargeSimPin = 301,
 	ChargeSimTopup = 302,
@@ -535,4 +538,30 @@ public enum TagDormRoom {
 public enum TagDormBed {
 	Single = 101,
 	Double = 102
+}
+
+public enum TagGoldAsset {
+	Gold18 = 101,
+	Irr = 102
+}
+
+public enum TagGoldOrderSide {
+	Buy = 101,
+	Sell = 102
+}
+
+public enum TagGoldOrderStatus {
+	Filled = 101,
+	Pending = 102,
+	Failed = 103,
+	Cancelled = 104
+}
+
+public enum TagGoldTxn {
+	Buy = 101,
+	Sell = 102,
+	Pending = 201,
+	Filled = 202,
+	Failed = 203,
+	Cancelled = 204
 }

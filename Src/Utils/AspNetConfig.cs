@@ -106,6 +106,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IBlogService, BlogService>();
 		builder.Services.AddScoped<IFileManagerService, FileManagerService>();
 		builder.Services.AddScoped<IDbAdminService, DbAdminService>();
+		builder.Services.AddScoped<IGoldService, GoldService>();
 
 		if (Core.App.Test) {
 			builder.Services.AddScoped<IInquiryService, InquiryServiceFake>();
@@ -169,6 +170,7 @@ public static partial class AspNetConfig {
 		app.MapDbAdminRoutes(RouteTags.DbAdmin);
 		app.MapHealthRoutes(RouteTags.Health);
 		app.MapLogRoutes(RouteTags.Log);
+		app.MapGoldRoutes(RouteTags.Gold);
 		ULog.Info("App Started in " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
 	}
 	

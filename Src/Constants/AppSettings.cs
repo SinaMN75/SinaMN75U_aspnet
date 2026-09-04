@@ -20,6 +20,7 @@ public sealed class AppSettings {
 	public required Avreen Avreen { get; set; }
 	public required Pn Pn { get; set; }
 	public required Namat Namat { get; set; }
+	public required Gold Gold { get; set; }
 	public required DefaultUsers Users { get; init; }
 	public required ApiCallCosts ApiCallCosts { get; set; }
 	public required InquiryCacheDurations InquiryCacheDurations { get; set; }
@@ -88,6 +89,16 @@ public sealed class Pn {
 public sealed class Namat {
 	public required string BaseUrl { get; set; }
 	public required string BranchToken { get; set; }
+}
+
+public sealed class Gold {
+	public required string BaseUrl { get; set; }
+	public required string ClientKey { get; set; }
+	public required string ClientSecret { get; set; }
+	public required IEnumerable<string> Scopes { get; set; }
+
+	// When empty the provider mints an API token from the client credentials on first use and caches it.
+	public string? ApiToken { get; set; }
 }
 
 public sealed class Ipg {
