@@ -589,8 +589,8 @@ public class DashboardService(
 		if (!Core.App.Middleware.Log) return null;
 
 		if (p.StatusCode is >= 200 and <= 299 && !Core.App.Middleware.LogSuccess) return null;
-		if (p.Path.Contains("log", StringComparison.CurrentCultureIgnoreCase)) return null;
-		if (p.Path.Contains("dashboard", StringComparison.CurrentCultureIgnoreCase)) return null;
+		if (p.Path.StartsWith("/" + RouteTags.Log, StringComparison.OrdinalIgnoreCase)) return null;
+		if (p.Path.StartsWith("/" + RouteTags.Dashboard, StringComparison.OrdinalIgnoreCase)) return null;
 
 		List<TagApiLog> tags = [
 			p.Method.ToUpperInvariant() switch {

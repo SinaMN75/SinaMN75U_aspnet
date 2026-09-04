@@ -130,9 +130,9 @@ public static partial class AspNetConfig {
 		app.UseRateLimiter();
 		app.UseMiddleware<TimezoneMiddleware>();
 		app.UseMiddleware<ApiKeyMiddleware>();
-		app.UseMiddleware<DbExceptionMiddleware>();
 		app.UseMiddleware<ApiLogMiddleware>();
 		app.UseMiddleware<ExceptionMiddleware>();
+		app.UseMiddleware<DbExceptionMiddleware>();
 		if (app.Environment.IsDevelopment()) app.UseDeveloperExceptionPage();
 
 		app.MapAuthRoutes(RouteTags.Auth);
