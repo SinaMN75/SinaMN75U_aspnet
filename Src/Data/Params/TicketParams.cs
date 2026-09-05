@@ -1,13 +1,13 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class TicketCreateParams : BaseParams {
-	[UValidationRequired("TitleRequired")]
+	[UValidationRequired("titleIsRequired")]
 	public string Title { get; set; } = null!;
 
-	[UValidationRequired("DescriptionRequired")]
+	[UValidationRequired("descriptionIsRequired")]
 	public string Description { get; set; } = null!;
 	
-	[UValidationMinCollectionLength(1, "TagsRequired")]
+	[UValidationMinCollectionLength(1, "tagsIsRequired")]
 	public ICollection<TagTicket> Tags { get; set; } = null!;
 
 	public string? Instagram { get; set; }

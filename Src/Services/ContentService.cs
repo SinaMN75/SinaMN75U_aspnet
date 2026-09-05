@@ -23,8 +23,8 @@ public class ContentService(
 
 	public async Task<UResponse<Guid?>> Create(ContentCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		ContentEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -76,16 +76,16 @@ public class ContentService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		ContentResponse? e = await db.Set<ContentEntity>().ApplyAdminScope<ContentEntity, TagContent>(userData)
 			.Select(Projections.ContentSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		return e == null ? new UResponse<ContentResponse?>(null, Usc.NotFound, ls.Get("ContentNotFound")) : new UResponse<ContentResponse?>(e);
+		return e == null ? new UResponse<ContentResponse?>(null, Usc.NotFound, ls.Get("contentNotFound")) : new UResponse<ContentResponse?>(e);
 	}
 
 	public async Task<UResponse> Update(ContentUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		ContentEntity? e = await db.Set<ContentEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ContentNotFound"));
-		if (!userData.CanManage(e.CreatorId, e.AdminUserIds)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("contentNotFound"));
+		if (!userData.CanManage(e.CreatorId, e.AdminUserIds)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Title.IsNotNull()) e.JsonData.Title = p.Title;
 		if (p.SubTitle.IsNotNull()) e.JsonData.SubTitle = p.SubTitle;
@@ -107,29 +107,29 @@ public class ContentService(
 		db.Set<ContentEntity>().Update(e.ApplyUpdateParam<ContentEntity, TagContent, ContentJson>(p));
 		await db.SaveChangesAsync(ct);
 		await AddMedia(p.Id, p.Media ?? [], ct);
-		return new UResponse(Usc.Success, ls.Get("ContentUpdated"));
+		return new UResponse(Usc.Success, ls.Get("contentUpdatedSuccessfully"));
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		ContentEntity? e = await db.Set<ContentEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ContentNotFound"));
-		if (!userData.CanManage(e.CreatorId, e.AdminUserIds)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("contentNotFound"));
+		if (!userData.CanManage(e.CreatorId, e.AdminUserIds)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<ContentEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
-		return new UResponse(Usc.Deleted, ls.Get("ContentDeleted"));
+		return new UResponse(Usc.Deleted, ls.Get("contentRemovedSuccessfully"));
 	}
 
 	public async Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		int count = await db.Set<ContentEntity>().WhereIn(u => u.Id, p.Ids).ExecuteDeleteAsync(ct);
-		return count > 0 ? new UResponse(Usc.Deleted, ls.Get("ContentDeleted")) : new UResponse(Usc.NotFound, ls.Get("ContentNotFound"));
+		return count > 0 ? new UResponse(Usc.Deleted, ls.Get("contentRemovedSuccessfully")) : new UResponse(Usc.NotFound, ls.Get("contentNotFound"));
 	}
 
 	private async Task AddMedia(Guid contentId, ICollection<Guid> ids, CancellationToken ct) {

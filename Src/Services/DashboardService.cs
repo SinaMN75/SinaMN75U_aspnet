@@ -156,9 +156,9 @@ public class DashboardService(
 
 	public async Task<UResponse<FinancialOpsDashboardResponse?>> ReadFinancialOpsDashboard(DashboardRangeParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<FinancialOpsDashboardResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<FinancialOpsDashboardResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (!userData.IsAdmin) return new UResponse<FinancialOpsDashboardResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (userData == null) return new UResponse<FinancialOpsDashboardResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<FinancialOpsDashboardResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.IsAdmin) return new UResponse<FinancialOpsDashboardResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		DateTime to = p.ToDate ?? DateTime.UtcNow;
 		DateTime from = p.FromDate ?? to.AddDays(-30);
@@ -277,9 +277,9 @@ public class DashboardService(
 
 	public async Task<UResponse<PropertyDashboardResponse?>> ReadPropertyDashboard(DashboardRangeParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<PropertyDashboardResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<PropertyDashboardResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (!userData.IsAdmin) return new UResponse<PropertyDashboardResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (userData == null) return new UResponse<PropertyDashboardResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<PropertyDashboardResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.IsAdmin) return new UResponse<PropertyDashboardResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		DateTime now = DateTime.UtcNow;
 		DateTime to = p.ToDate ?? now;
@@ -414,9 +414,9 @@ public class DashboardService(
 
 	public async Task<UResponse<OsMetricsResponse?>> ReadOsMetrics(BaseParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<OsMetricsResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<OsMetricsResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (!userData.IsAdmin) return new UResponse<OsMetricsResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (userData == null) return new UResponse<OsMetricsResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<OsMetricsResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.IsAdmin) return new UResponse<OsMetricsResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		const double bytesToGb = 1024.0 * 1024 * 1024;
 

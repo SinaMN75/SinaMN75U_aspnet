@@ -12,12 +12,12 @@ public sealed class ApiKeyMiddleware(RequestDelegate next, ILocalizationService 
 
 		try {
 			if (!JsonSerializer.Deserialize<JsonElement>(jsonSource).TryGetProperty("apiKey", out JsonElement apiKey) || apiKey.GetString() != Core.App.ApiKey) {
-				await WriteErrorAsync(context, Usc.UnAuthorized, ls.Get("InvalidAPIKey"));
+				await WriteErrorAsync(context, Usc.UnAuthorized, ls.Get("invalidAPIKey"));
 				return;
 			}
 		}
 		catch {
-			await WriteErrorAsync(context, Usc.BadRequest, ls.Get("InvalidJsonBody"));
+			await WriteErrorAsync(context, Usc.BadRequest, ls.Get("invalidJSONBody"));
 			return;
 		}
 

@@ -12,13 +12,13 @@ public sealed class WalletChargeParams : BaseParams {
 }
 
 public sealed class WalletTransferParams : BaseParams {
-	[UValidationRequired("UserIdRequired")]
+	[UValidationRequired("userIsRequired")]
 	public required Guid SenderId { get; set; }
 
-	[UValidationRequired("UserIdRequired")]
+	[UValidationRequired("userIsRequired")]
 	public Guid ReceiverId { get; set; }
 
-	[UValidationRequired("AmountRequired")]
+	[UValidationRequired("amountRequired")]
 	public decimal Amount { get; set; }
 
 	public string? Detail1 { get; set; }
@@ -27,7 +27,7 @@ public sealed class WalletTransferParams : BaseParams {
 }
 
 public sealed class WalletTxnReadParams : BaseReadParams<TagWalletTxn> {
-	[UValidationRequired("UserIdRequired")]
+	[UValidationRequired("userIsRequired")]
 	public Guid UserId { get; set; }
 
 	public WalletTxnSelectorArgs SelectorArgs { get; set; } = new();

@@ -20,7 +20,7 @@ public class AuthService(
 ) : IAuthService {
 	public async Task<UResponse<LoginResponse?>> Register(RegisterParams p, CancellationToken ct) {
 		bool isUserExists = await db.Set<UserEntity>().AnyAsync(x => x.UserName == p.UserName, ct);
-		if (isUserExists) return new UResponse<LoginResponse?>(null, Usc.Conflict, ls.Get("UserAlreadyExist"));
+		if (isUserExists) return new UResponse<LoginResponse?>(null, Usc.Conflict, ls.Get("accountAlreadyExistsWouldYouLikeToLogIn"));
 
 		Guid userId = Guid.CreateVersion7();
 		DateTime now = DateTime.UtcNow;
@@ -53,13 +53,13 @@ public class AuthService(
 
 	public async Task<UResponse> CompleteProfile(AuthCompleteProfileParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<bool?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<bool?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("UserNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("accountNotFound"));
 		
-		if (!userData.IsAdmin && userData.Id != e.Id) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (!userData.IsAdmin && userData.Id != e.Id) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		
 		UResponse<bool?> shahkarResponse = await inquiryService.MobileAndNationalCodeVerification(new VerifyNationalCodeAndPhoneNumber {
 			ApiKey = p.ApiKey,
@@ -68,8 +68,8 @@ public class AuthService(
 			PhoneNumber = e.PhoneNumber!
 		}, ct);
 
-		if (shahkarResponse.Result == null) return new UResponse(Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
-		if (shahkarResponse.Result == false) return new UResponse(Usc.ShahkarError, ls.Get("NationalCodeNotMatchWithPhoneNumberOwner"));
+		if (shahkarResponse.Result == null) return new UResponse(Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
+		if (shahkarResponse.Result == false) return new UResponse(Usc.ShahkarError, ls.Get("nationalCodeIsNotMatchWithPhoneNumberOwner"));
 
 		e.NationalCode = p.NationalCode;
 		if (p.FirstName.IsNotNullOrEmpty()) e.FirstName = p.FirstName;
@@ -78,19 +78,19 @@ public class AuthService(
 		db.Set<UserEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
 		
-		return new UResponse<UserResponse?>(e.MapToResponse(), message: ls.Get("YourDetailSubmittedSuccessfully"));
+		return new UResponse<UserResponse?>(e.MapToResponse(), message: ls.Get("yourDetailSubmittedSuccessfully"));
 	}
 
 	public async Task<UResponse<LoginResponse?>> Login(LoginParams p, CancellationToken ct) {
-		if (p.Email.IsNullOrEmpty() && p.UserName.IsNullOrEmpty()) return new UResponse<LoginResponse?>(null, Usc.NotFound, ls.Get("InvalidCredentials"));
+		if (p.Email.IsNullOrEmpty() && p.UserName.IsNullOrEmpty()) return new UResponse<LoginResponse?>(null, Usc.NotFound, ls.Get("loginInformationIsWrong"));
 
 		string lockKey = "lockout_login_" + (p.UserName.IsNotNullOrEmpty() ? p.UserName : p.Email);
-		if (IsLockedOut(lockKey)) return new UResponse<LoginResponse?>(null, Usc.TooManyRequests, ls.Get("TooManyAttempts"));
+		if (IsLockedOut(lockKey)) return new UResponse<LoginResponse?>(null, Usc.TooManyRequests, ls.Get("tooManyFailedAttemptsPleaseTryAgainLater"));
 
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => (p.UserName != null && x.UserName == p.UserName) || (p.Email != null && x.Email == p.Email), ct);
 		if (user == null || !UPasswordHasher.Verify(p.Password, user.Password)) {
 			RegisterFailedAttempt(lockKey);
-			return new UResponse<LoginResponse?>(null, Usc.NotFound, ls.Get("InvalidCredentials"));
+			return new UResponse<LoginResponse?>(null, Usc.NotFound, ls.Get("loginInformationIsWrong"));
 		}
 
 		ResetFailedAttempts(lockKey);
@@ -107,10 +107,10 @@ public class AuthService(
 
 	public async Task<UResponse<LoginResponse?>> RefreshToken(RefreshTokenParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<LoginResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<LoginResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		UserEntity? user = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(u => u.RefreshToken == p.RefreshToken && u.Id == userData.Id, ct);
-		if (user == null) return new UResponse<LoginResponse?>(null, Usc.UnAuthorized, ls.Get("UserNotFound"));
+		if (user == null) return new UResponse<LoginResponse?>(null, Usc.UnAuthorized, ls.Get("accountNotFound"));
 		
 		user.RefreshToken = ts.GenerateRefreshToken();
 		await db.SaveChangesAsync(ct);
@@ -131,8 +131,8 @@ public class AuthService(
 		}).FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
 
 		if (existingUser != null) {
-			if (!await smsNotificationService.SendOtpSms(existingUser)) return new UResponse(Usc.MaximumLimitReached, ls.Get("MaxOtpReached"));
-			return new UResponse(message: ls.Get("OtpSent"));
+			if (!await smsNotificationService.SendOtpSms(existingUser)) return new UResponse(Usc.MaximumLimitReached, ls.Get("tooManyOTPRequestsPleaseWaitAndTryAgain"));
+			return new UResponse(message: ls.Get("verificationCodeSent"));
 		}
 
 		Guid userId = Guid.CreateVersion7();
@@ -154,21 +154,21 @@ public class AuthService(
 
 		await db.Set<UserEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
-		if (!await smsNotificationService.SendOtpSms(e.MapToResponse())) return new UResponse(Usc.MaximumLimitReached, ls.Get("MaxOtpReached"));
+		if (!await smsNotificationService.SendOtpSms(e.MapToResponse())) return new UResponse(Usc.MaximumLimitReached, ls.Get("tooManyOTPRequestsPleaseWaitAndTryAgain"));
 
 		return new UResponse();
 	}
 
 	public async Task<UResponse<LoginResponse?>> VerifyCodeForLogin(VerifyMobileForLoginParams p, CancellationToken ct) {
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
-		if (user == null) return new UResponse<LoginResponse?>(null, Usc.UserNotFound, ls.Get("UserNotFound"));
+		if (user == null) return new UResponse<LoginResponse?>(null, Usc.UserNotFound, ls.Get("accountNotFound"));
 
 		string lockKey = "lockout_otp_" + p.PhoneNumber;
-		if (IsLockedOut(lockKey)) return new UResponse<LoginResponse?>(null, Usc.TooManyRequests, ls.Get("TooManyAttempts"));
+		if (IsLockedOut(lockKey)) return new UResponse<LoginResponse?>(null, Usc.TooManyRequests, ls.Get("tooManyFailedAttemptsPleaseTryAgainLater"));
 
 		if (p.Otp != Core.App.BasicSettings.DefaultVerificationKey && p.Otp != cache.Get("otp_" + user.Id)) {
 			RegisterFailedAttempt(lockKey);
-			return new UResponse<LoginResponse?>(null, Usc.WrongVerificationCode, ls.Get("OtpInvalid"));
+			return new UResponse<LoginResponse?>(null, Usc.WrongVerificationCode, ls.Get("enteredOtpIsNotValidOrExpiredPleaseTryAgain"));
 		}
 
 		ResetFailedAttempts(lockKey);

@@ -1,36 +1,36 @@
 namespace SinaMN75U.Data.Params;
 
 public class MerchantCreateParams : BaseCreateParams<TagMerchant> {
-	[UValidationRequired("ZipCodeRequired"), UValidationStringLength(10, 10, "ZipCodeNotValid")]
+	[UValidationRequired("zipCodeIsRequired"), UValidationStringLength(10, 10, "zipCodeIsNotValid")]
 	public string ZipCode { get; set; } = null!;
 
 	public Guid? UserId { get; set; }
 
-	[UValidationRequired("CityCodeRequired"), UValidationStringLength(1, 100, "CityCodeNotValid")]
+	[UValidationRequired("cityCodeIsRequired"), UValidationStringLength(1, 100, "cityCodeIsNotValid")]
 	public string CityCode { get; set; } = null!;
 
-	[UValidationRequired("AddressRequired"), UValidationStringLength(1, 500, "AddressNotValid")]
+	[UValidationRequired("addressIsRequired"), UValidationStringLength(1, 500, "addressIsNotValid")]
 	public string Address { get; set; } = null!;
 
-	[UValidationRequired("PhoneNumberRequired"), UValidationStringLength(10, 15, "PhoneNumberNotValid")]
+	[UValidationRequired("phoneNumberIsRequired"), UValidationStringLength(10, 15, "phoneNumberIsNotValid")]
 	public string PhoneNumber { get; set; } = null!;
 
-	[UValidationRequired("MerchantTitleRequired"), UValidationStringLength(5, 100, "MerchantTitleNotValid")]
+	[UValidationRequired("merchantNameIsRequired"), UValidationStringLength(5, 100, "merchantNameIsNotValid")]
 	public string Title { get; set; } = null!;
 
-	[UValidationRequired("LandlineRequired"), UValidationStringLength(6, 12, "LandlineNotValid")]
+	[UValidationRequired("landlineIsRequired"), UValidationStringLength(6, 12, "landlineIsNotValid")]
 	public string Landline { get; set; } = null!;
 
-	[UValidationRequired("NationalCodeRequired"), UValidationStringLength(10, 10, "NationalCodeNotValid")]
+	[UValidationRequired("nationalCodeIsRequired"), UValidationStringLength(10, 10, "NationalCodeNotValid")]
 	public string NationalCode { get; set; } = null!;
 
-	[UValidationRequired("OwnerPhoneNumberRequired"), UValidationStringLength(10, 15, "OwnerPhoneNumberNotValid")]
+	[UValidationRequired("ownerPhoneNumberIsRequired"), UValidationStringLength(10, 15, "ownerPhoneNumberIsNotValid")]
 	public string OwnerPhoneNumber { get; set; } = null!;
 
-	[UValidationRequired("OwnerNameRequired"), UValidationStringLength(5, 100, "OwnerNameNotValid")]
+	[UValidationRequired("ownerNameIsRequired"), UValidationStringLength(5, 100, "ownerNameIsNotValid")]
 	public string OwnerName { get; set; } = null!;
 
-	[UValidationRequired("MccRequired"), UValidationStringLength(1, 100, "MccNotValid")]
+	[UValidationRequired("mccIsRequired"), UValidationStringLength(1, 100, "mccIsNotValid")]
 	public string Mcc { get; set; } = null!;
 
 	public string? BusinessTitle { get; set; }

@@ -14,8 +14,8 @@ public class AddressService(
 ) : IAddressService {
 	public async Task<UResponse<Guid?>> Create(AddressCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		AddressEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -57,11 +57,11 @@ public class AddressService(
 
 	public async Task<UResponse> Update(AddressUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		AddressEntity? e = await db.Set<AddressEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("AddressNotFound"));
-		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("addressNotFound"));
+		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.ZipCode != null) e.ZipCode = p.ZipCode;
 		if (p.Title != null) e.JsonData.Title = p.Title;
@@ -86,15 +86,15 @@ public class AddressService(
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		
 		AddressEntity? e = await db.Set<AddressEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("AddressNotFound"));
-		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("addressNotFound"));
+		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<AddressEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
 		
-		return new UResponse(Usc.Deleted, ls.Get("AddressDeletedSuccessfully"));
+		return new UResponse(Usc.Deleted, ls.Get("addressDeletedSuccessfully"));
 	}
 }

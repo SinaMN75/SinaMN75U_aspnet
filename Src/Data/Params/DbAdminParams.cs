@@ -6,14 +6,14 @@ public sealed class DbAdminTablesParams : BaseParams {
 }
 
 public sealed class DbAdminTableSchemaParams : BaseParams {
-	[UValidationRequired("TableRequired")]
+	[UValidationRequired("tableIsRequired")]
 	public required string Table { get; set; }
 
 	public string Schema { get; set; } = "public";
 }
 
 public sealed class DbAdminRowsParams : BaseParams {
-	[UValidationRequired("TableRequired")]
+	[UValidationRequired("tableIsRequired")]
 	public required string Table { get; set; }
 
 	public string Schema { get; set; } = "public";
@@ -30,7 +30,7 @@ public sealed class DbAdminRowsParams : BaseParams {
 }
 
 public sealed class DbAdminQueryParams : BaseParams {
-	[UValidationRequired("SqlRequired")]
+	[UValidationRequired("sqlIsRequired")]
 	public required string Sql { get; set; }
 
 	// Cap on the number of rows returned for SELECT-like statements.
@@ -38,22 +38,22 @@ public sealed class DbAdminQueryParams : BaseParams {
 }
 
 public sealed class DbAdminUpdateRowParams : BaseParams {
-	[UValidationRequired("TableRequired")]
+	[UValidationRequired("tableIsRequired")]
 	public required string Table { get; set; }
 
 	public string Schema { get; set; } = "public";
 
-	[UValidationRequired("PrimaryKeyRequired")]
+	[UValidationRequired("primaryKeyIsRequired")]
 	public required string PrimaryKeyColumn { get; set; }
 
-	[UValidationRequired("PrimaryKeyRequired")]
+	[UValidationRequired("primaryKeyIsRequired")]
 	public required string PrimaryKeyValue { get; set; }
 
 	public Dictionary<string, JsonElement> Values { get; set; } = new();
 }
 
 public sealed class DbAdminInsertRowParams : BaseParams {
-	[UValidationRequired("TableRequired")]
+	[UValidationRequired("tableIsRequired")]
 	public required string Table { get; set; }
 
 	public string Schema { get; set; } = "public";
@@ -62,14 +62,14 @@ public sealed class DbAdminInsertRowParams : BaseParams {
 }
 
 public sealed class DbAdminDeleteRowParams : BaseParams {
-	[UValidationRequired("TableRequired")]
+	[UValidationRequired("tableIsRequired")]
 	public required string Table { get; set; }
 
 	public string Schema { get; set; } = "public";
 
-	[UValidationRequired("PrimaryKeyRequired")]
+	[UValidationRequired("primaryKeyIsRequired")]
 	public required string PrimaryKeyColumn { get; set; }
 
-	[UValidationRequired("PrimaryKeyRequired")]
+	[UValidationRequired("primaryKeyIsRequired")]
 	public required string PrimaryKeyValue { get; set; }
 }

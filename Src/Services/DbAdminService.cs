@@ -225,7 +225,7 @@ public class DbAdminService(DbContext db, ITokenService ts, ILocalizationService
 			cmd.Parameters.AddWithValue(param, text ?? (object)DBNull.Value);
 		}
 
-		if (assignments.Count == 0) return new UResponse<DbAdminQueryResultResponse?>(null, Usc.BadRequest, ls.Get("NoValuesToUpdate"));
+		if (assignments.Count == 0) return new UResponse<DbAdminQueryResultResponse?>(null, Usc.BadRequest, ls.Get("noValuesProvidedToWrite"));
 
 		cmd.Parameters.AddWithValue("pk", p.PrimaryKeyValue);
 		cmd.CommandText = $"UPDATE {Quote(p.Schema)}.{Quote(p.Table)} SET {string.Join(", ", assignments)} WHERE {Quote(p.PrimaryKeyColumn)}::text = @pk RETURNING *;";
@@ -237,7 +237,7 @@ public class DbAdminService(DbContext db, ITokenService ts, ILocalizationService
 			sw.Stop();
 			result.ExecutionMs = sw.ElapsedMilliseconds;
 			result.AffectedRows = result.RowCount;
-			return new UResponse<DbAdminQueryResultResponse?>(result, Usc.Success, ls.Get("Updated"));
+			return new UResponse<DbAdminQueryResultResponse?>(result, Usc.Success, ls.Get("updatedSuccessfully"));
 		}
 		catch (PostgresException e) {
 			return new UResponse<DbAdminQueryResultResponse?>(null, Usc.BadRequest, e.MessageText);
@@ -268,14 +268,14 @@ public class DbAdminService(DbContext db, ITokenService ts, ILocalizationService
 			cmd.Parameters.AddWithValue(param, text ?? (object)DBNull.Value);
 		}
 
-		if (columns.Count == 0) return new UResponse<DbAdminQueryResultResponse?>(null, Usc.BadRequest, ls.Get("NoValuesToUpdate"));
+		if (columns.Count == 0) return new UResponse<DbAdminQueryResultResponse?>(null, Usc.BadRequest, ls.Get("noValuesProvidedToWrite"));
 
 		cmd.CommandText = $"INSERT INTO {Quote(p.Schema)}.{Quote(p.Table)} ({string.Join(", ", columns)}) VALUES ({string.Join(", ", valuesSql)}) RETURNING *;";
 		try {
 			await using NpgsqlDataReader reader = await cmd.ExecuteReaderAsync(ct);
 			DbAdminQueryResultResponse result = await ReadReader(reader, 1, ct);
 			result.AffectedRows = result.RowCount;
-			return new UResponse<DbAdminQueryResultResponse?>(result, Usc.Created, ls.Get("Created"));
+			return new UResponse<DbAdminQueryResultResponse?>(result, Usc.Created, ls.Get("createdSuccessfully"));
 		}
 		catch (PostgresException e) {
 			return new UResponse<DbAdminQueryResultResponse?>(null, Usc.BadRequest, e.MessageText);
@@ -291,7 +291,7 @@ public class DbAdminService(DbContext db, ITokenService ts, ILocalizationService
 		cmd.Parameters.AddWithValue("pk", p.PrimaryKeyValue);
 		try {
 			int affected = await cmd.ExecuteNonQueryAsync(ct);
-			return new UResponse(affected > 0 ? Usc.Success : Usc.NotFound, ls.Get(affected > 0 ? "Deleted" : "NotFound"));
+			return new UResponse(affected > 0 ? Usc.Success : Usc.NotFound, ls.Get(affected > 0 ? "deletedSuccessfully" : "notFound"));
 		}
 		catch (PostgresException e) {
 			return new UResponse(Usc.BadRequest, e.MessageText);
@@ -395,16 +395,16 @@ public class DbAdminService(DbContext db, ITokenService ts, ILocalizationService
 
 	private UResponse? GuardAdmin(string? token) {
 		JwtClaimData? userData = ts.ExtractClaims(token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (!userData.Tags.Contains(TagUser.SystemAdmin)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (!userData.Tags.Contains(TagUser.SystemAdmin)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		return null;
 	}
 
 	private UResponse<T>? GuardAdmin<T>(string? token) {
 		JwtClaimData? userData = ts.ExtractClaims(token);
-		if (userData == null) return new UResponse<T>(default!, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<T>(default!, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (!userData.Tags.Contains(TagUser.SystemAdmin)) return new UResponse<T>(default!, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (userData == null) return new UResponse<T>(default!, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<T>(default!, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.Tags.Contains(TagUser.SystemAdmin)) return new UResponse<T>(default!, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		return null;
 	}
 }

@@ -1,10 +1,10 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class TxnCreateParams : BaseCreateParams<TagTxn> {
-	[UValidationRequired("AmountRequired")]
+	[UValidationRequired("amountRequired")]
 	public decimal Amount { get; set; }
 
-	[UValidationRequired("TrackingNumberRequired")]
+	[UValidationRequired("trackingNumberRequired")]
 	public string TrackingNumber { get; set; } = null!;
 }
 

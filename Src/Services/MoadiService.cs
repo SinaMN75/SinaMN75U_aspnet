@@ -18,11 +18,11 @@ public class MoadiService(
 ) : IMoadiService {
 	public async Task<UResponse<Guid?>> Create(MoadiCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		if (await db.Set<MoadiEntity>().AnyAsync(x => x.EconomicCode == p.EconomicCode, ct))
-			return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("MoadiEconomicCodeExists"));
+			return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("aTaxpayerWithThisEconomicCodeAlreadyExists"));
 
 		MoadiEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -72,16 +72,16 @@ public class MoadiService(
 
 	public async Task<UResponse<MoadiResponse?>> ReadById(IdParams<MoadiSelectorArgs> p, CancellationToken ct) {
 		MoadiResponse? e = await db.Set<MoadiEntity>().Select(Projections.MoadiSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		return e == null ? new UResponse<MoadiResponse?>(null, Usc.NotFound, ls.Get("MoadiNotFound")) : new UResponse<MoadiResponse?>(e);
+		return e == null ? new UResponse<MoadiResponse?>(null, Usc.NotFound, ls.Get("taxpayerRequestNotFound")) : new UResponse<MoadiResponse?>(e);
 	}
 
 	public async Task<UResponse> Update(MoadiUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		MoadiEntity? e = await db.Set<MoadiEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("MoadiNotFound"));
-		if (!userData.CanManage(e.CreatorId, e.AdminUserIds)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("taxpayerRequestNotFound"));
+		if (!userData.CanManage(e.CreatorId, e.AdminUserIds)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Name.IsNotNullOrEmpty()) e.Name = p.Name;
 		if (p.EconomicCode.IsNotNullOrEmpty()) e.EconomicCode = p.EconomicCode;
@@ -110,13 +110,13 @@ public class MoadiService(
 
 	public async Task<UResponse<MoadiResponse?>> Approve(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<MoadiResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<MoadiResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (!userData.IsAdmin) return new UResponse<MoadiResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (userData == null) return new UResponse<MoadiResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<MoadiResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.IsAdmin) return new UResponse<MoadiResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		MoadiEntity? e = await db.Set<MoadiEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse<MoadiResponse?>(null, Usc.NotFound, ls.Get("MoadiNotFound"));
-		if (e.Tags.Contains(TagMoadi.Approved)) return new UResponse<MoadiResponse?>(null, Usc.Conflict, ls.Get("MoadiAlreadyApproved"));
+		if (e == null) return new UResponse<MoadiResponse?>(null, Usc.NotFound, ls.Get("taxpayerRequestNotFound"));
+		if (e.Tags.Contains(TagMoadi.Approved)) return new UResponse<MoadiResponse?>(null, Usc.Conflict, ls.Get("thisTaxpayerRequestIsAlreadyApproved"));
 
 		HttpResponseMessage? response = await httpClient.Post(BuildNamatUri(e), new Dictionary<string, string> {
 			{ "Authorization", $"Bearer {Core.App.Namat.BranchToken}" },
@@ -125,7 +125,7 @@ public class MoadiService(
 
 		string body = response == null ? "" : await response.Content.ReadAsStringAsync(ct);
 		if (response is null or { IsSuccessStatusCode: false }) {
-			string message = ls.Get("MoadiRegistrationFailed");
+			string message = ls.Get("taxpayerRegistrationInNamatSystemFailed");
 			if (body.IsNotNullOrEmpty()) {
 				JsonElement err = JsonSerializer.Deserialize<JsonElement>(body);
 				message = err.GetStringOrNull("message") ?? message;
@@ -154,11 +154,11 @@ public class MoadiService(
 
 	public async Task<UResponse> Reject(MoadiRejectParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		MoadiEntity? e = await db.Set<MoadiEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("MoadiNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("taxpayerRequestNotFound"));
 
 		e.Tags = [TagMoadi.Rejected];
 		e.JsonData.RejectReason = p.Reason;
@@ -168,7 +168,7 @@ public class MoadiService(
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		await db.Set<MoadiEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 		return new UResponse();

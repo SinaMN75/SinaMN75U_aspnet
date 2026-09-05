@@ -6,24 +6,24 @@ public class BaseParams {
 }
 
 public sealed class IdParams : BaseParams {
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public Guid Id { get; set; }
 }
 
 public sealed class IdStringParams : BaseParams {
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public required string Id { get; set; }
 }
 
 public sealed class IdParams<T> : BaseParams where T : new() {
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public Guid Id { get; set; }
 
 	public T SelectorArgs { get; set; } = new();
 }
 
 public sealed class IdListParams : BaseParams {
-	[UValidationMinCollectionLength(1, "IdRequired")]
+	[UValidationMinCollectionLength(1, "idIsRequired")]
 	public ICollection<Guid> Ids { get; set; } = null!;
 }
 
@@ -45,7 +45,7 @@ public class BaseReadParams<T> : BaseParams {
 }
 
 public class BaseUpdateParams<T> : BaseParams {
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public Guid Id { get; set; }
 
 	public string? Detail1 { get; set; }
@@ -64,7 +64,7 @@ public class BaseCreateParams<T> : BaseParams {
 	public string Detail1 { get; set; } = "";
 	public string Detail2 { get; set; } = "";
 
-	[UValidationRequired("TagsRequired"), UValidationMinCollectionLength(1, "TagsRequired")]
+	[UValidationRequired("tagsIsRequired"), UValidationMinCollectionLength(1, "tagsIsRequired")]
 	public ICollection<T> Tags { get; set; } = [];
 
 	public Guid? Id { get; set; }

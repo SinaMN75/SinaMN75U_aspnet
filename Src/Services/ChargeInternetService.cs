@@ -28,14 +28,14 @@ public class ChargeInternetService(
 	
 	public async Task<UResponse<ChargeInternetReserveResponse?>> Pin(ReserveChargeParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		decimal? payableAmount = PayableAmount(p.SimType, p.Amount, true);
-		if (payableAmount == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BadRequest, ls.Get("InvalidChargeAmount"));
-		if (!await walletService.HasEnoughBalance(userData.Id, payableAmount.Value, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+		if (payableAmount == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BadRequest, ls.Get("theSelectedChargeAmountIsNotOfferedByThisOperator"));
+		if (!await walletService.HasEnoughBalance(userData.Id, payableAmount.Value, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.AccessToken == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		if (tokenResponse?.AccessToken == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
 		HttpResponseMessage? response = await httpClient.Post(
 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/Pin/Reserve",
@@ -51,12 +51,12 @@ public class ChargeInternetService(
 			},
 			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
 		);
-		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
 		JsonElement attachment = data.GetProperty("attachments");
 
-		if (data.GetIntOrNull("code") != MobtakeranOk) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, data.GetStringOrNull("message") ?? ls.Get("ThirdPartyError"));
+		if (data.GetIntOrNull("code") != MobtakeranOk) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, data.GetStringOrNull("message") ?? ls.Get("thirdPartyServiceError"));
 
 		ApproveResponse? approveResponse = await Approve(new ApproveParams {
 			ApiKey = p.ApiKey,
@@ -67,7 +67,7 @@ public class ChargeInternetService(
 		}, ct);
 		
 		if (approveResponse is null || approveResponse.Code != MobtakeranOk)
-			return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, approveResponse?.Message ?? ls.Get("ThirdPartyError"));
+			return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, approveResponse?.Message ?? ls.Get("thirdPartyServiceError"));
 
 		await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.ChargeSimPin, Amount = payableAmount.Value }, ct);
 		await vs.Create(new VasCreateParams {
@@ -102,14 +102,14 @@ public class ChargeInternetService(
 
 	public async Task<UResponse<ChargeInternetReserveResponse?>> Topup(TopupChargeParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		decimal? payableAmount = PayableAmount(p.OperatorId, p.Amount, false);
-		if (payableAmount == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BadRequest, ls.Get("InvalidChargeAmount"));
-		if (!await walletService.HasEnoughBalance(userData.Id, payableAmount.Value, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+		if (payableAmount == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BadRequest, ls.Get("theSelectedChargeAmountIsNotOfferedByThisOperator"));
+		if (!await walletService.HasEnoughBalance(userData.Id, payableAmount.Value, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.AccessToken == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		if (tokenResponse?.AccessToken == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
 		HttpResponseMessage? response = await httpClient.Post(
 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/Topup/Reserve",
@@ -121,13 +121,13 @@ public class ChargeInternetService(
 			},
 			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
 		);
-		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
 		JsonElement attachment = data.GetProperty("attachments");
 
 		// BUG FIX: only approve when the reserve succeeded.
-		if (data.GetIntOrNull("code") != MobtakeranOk) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, data.GetStringOrNull("message") ?? ls.Get("ThirdPartyError"));
+		if (data.GetIntOrNull("code") != MobtakeranOk) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, data.GetStringOrNull("message") ?? ls.Get("thirdPartyServiceError"));
 
 		// BUG FIX: Approve's result was ignored and the wallet was always charged. Now we charge ONLY on operator success.
 		ApproveResponse? approveResponse = await Approve(new ApproveParams {
@@ -138,7 +138,7 @@ public class ChargeInternetService(
 			NationalCode = userData.NationalCode
 		}, ct);
 		if (approveResponse is null || approveResponse.Code != MobtakeranOk)
-			return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, approveResponse?.Message ?? ls.Get("ThirdPartyError"));
+			return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, approveResponse?.Message ?? ls.Get("thirdPartyServiceError"));
 
 		await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.ChargeSimTopup, Amount = payableAmount.Value }, ct);
 
@@ -158,12 +158,12 @@ public class ChargeInternetService(
 
 	public async Task<UResponse<ChargeInternetReserveResponse?>> InternetReserve(InternetReserveParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.AccessToken == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		if (tokenResponse?.AccessToken == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
 		HttpResponseMessage? response = await httpClient.Post(
 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/Internet/Reserve",
@@ -175,13 +175,13 @@ public class ChargeInternetService(
 			},
 			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
 		);
-		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
 		JsonElement attachment = data.GetProperty("attachments");
 
 		// BUG FIX: only approve when the reserve succeeded.
-		if (data.GetIntOrNull("code") != MobtakeranOk) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, data.GetStringOrNull("message") ?? ls.Get("ThirdPartyError"));
+		if (data.GetIntOrNull("code") != MobtakeranOk) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, data.GetStringOrNull("message") ?? ls.Get("thirdPartyServiceError"));
 
 		// BUG FIX: Approve's result was ignored and the wallet was always charged. Now we charge ONLY on operator success.
 		ApproveResponse? approveResponse = await Approve(new ApproveParams {
@@ -192,7 +192,7 @@ public class ChargeInternetService(
 			NationalCode = userData.NationalCode
 		}, ct);
 		if (approveResponse is null || approveResponse.Code != MobtakeranOk)
-			return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, approveResponse?.Message ?? ls.Get("ThirdPartyError"));
+			return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, approveResponse?.Message ?? ls.Get("thirdPartyServiceError"));
 
 		await walletService.Purchase(new WalletPurchaseParams {
 			ApiKey = p.ApiKey,
@@ -218,7 +218,7 @@ public class ChargeInternetService(
 	public async Task<UResponse<InternetPackageResponse?>> InternetList(InternetListParams p, CancellationToken ct) {
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null)
-			return new UResponse<InternetPackageResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+			return new UResponse<InternetPackageResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
 		HttpResponseMessage? response = await httpClient.Post(
 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/Internet/getlist",
@@ -235,7 +235,7 @@ public class ChargeInternetService(
 		);
 
 		if (response is null or { IsSuccessStatusCode: false })
-			return new UResponse<InternetPackageResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+			return new UResponse<InternetPackageResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
 		JsonElement attachment = data.GetProperty("attachments");
@@ -267,7 +267,7 @@ public class ChargeInternetService(
 
 	public async Task<UResponse<GetBalanceResponse?>> GetBalance(CancellationToken ct) {
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.AccessToken == null) return new UResponse<GetBalanceResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		if (tokenResponse?.AccessToken == null) return new UResponse<GetBalanceResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
 		HttpResponseMessage? response = await httpClient.Post(
 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/GetBalance",
@@ -280,7 +280,7 @@ public class ChargeInternetService(
 			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
 		);
 
-		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<GetBalanceResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<GetBalanceResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
 		JsonElement attachment = data.TryGetProperty("attachments", out JsonElement a) ? a : default;
@@ -303,7 +303,7 @@ public class ChargeInternetService(
 
 	public async Task<UResponse<EchoResponse?>> Echo(CancellationToken ct) {
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.AccessToken == null) return new UResponse<EchoResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		if (tokenResponse?.AccessToken == null) return new UResponse<EchoResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
 		HttpResponseMessage? response = await httpClient.Post(
 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/Echo",
@@ -315,7 +315,7 @@ public class ChargeInternetService(
 			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
 		);
 
-		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<EchoResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<EchoResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
 		JsonElement attachment = data.TryGetProperty("attachments", out JsonElement a) ? a : default;
@@ -372,7 +372,7 @@ public class ChargeInternetService(
 
 	public async Task<UResponse<GetStatusResponse?>> GetStatus(GetStatusParams p, CancellationToken ct) {
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.AccessToken == null) return new UResponse<GetStatusResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		if (tokenResponse?.AccessToken == null) return new UResponse<GetStatusResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
 		HttpResponseMessage? response = await httpClient.Post(
 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/GetStatus",
@@ -385,7 +385,7 @@ public class ChargeInternetService(
 			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
 		);
 
-		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<GetStatusResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<GetStatusResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
 		JsonElement attachment = data.TryGetProperty("attachments", out JsonElement a) ? a : default;
@@ -460,12 +460,12 @@ public class ChargeInternetServiceFake(
 
 	public async Task<UResponse<ChargeInternetReserveResponse?>> Pin(ReserveChargeParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null || SimulateUnauthorized) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null || SimulateUnauthorized) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		decimal? payableAmount = ChargeInternetService.PayableAmount(p.SimType, p.Amount, true);
-		if (payableAmount == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BadRequest, ls.Get("InvalidChargeAmount"));
-		if (SimulateLowBalance || !await walletService.HasEnoughBalance(userData.Id, payableAmount.Value, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
-		if (SimulateUpstreamFailure) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+		if (payableAmount == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BadRequest, ls.Get("theSelectedChargeAmountIsNotOfferedByThisOperator"));
+		if (SimulateLowBalance || !await walletService.HasEnoughBalance(userData.Id, payableAmount.Value, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
+		if (SimulateUpstreamFailure) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 
 		// No operator call; simulate success then run the SAME wallet + VAS logic as prod.
 		string reference = Math.Abs(Guid.NewGuid().GetHashCode()).ToString();
@@ -485,12 +485,12 @@ public class ChargeInternetServiceFake(
 
 	public async Task<UResponse<ChargeInternetReserveResponse?>> Topup(TopupChargeParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null || SimulateUnauthorized) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null || SimulateUnauthorized) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		decimal? payableAmount = ChargeInternetService.PayableAmount(p.OperatorId, p.Amount, false);
-		if (payableAmount == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BadRequest, ls.Get("InvalidChargeAmount"));
-		if (SimulateLowBalance || !await walletService.HasEnoughBalance(userData.Id, payableAmount.Value, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
-		if (SimulateUpstreamFailure) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+		if (payableAmount == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BadRequest, ls.Get("theSelectedChargeAmountIsNotOfferedByThisOperator"));
+		if (SimulateLowBalance || !await walletService.HasEnoughBalance(userData.Id, payableAmount.Value, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
+		if (SimulateUpstreamFailure) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 
 		await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.ChargeSimTopup, Amount = payableAmount.Value }, ct);
 		return new UResponse<ChargeInternetReserveResponse?>(BuildReserve(payableAmount.Value, null, Math.Abs(Guid.NewGuid().GetHashCode()).ToString()));
@@ -498,17 +498,17 @@ public class ChargeInternetServiceFake(
 
 	public async Task<UResponse<ChargeInternetReserveResponse?>> InternetReserve(InternetReserveParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null || SimulateUnauthorized) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (SimulateLowBalance || !await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
-		if (SimulateUpstreamFailure) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+		if (userData == null || SimulateUnauthorized) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (SimulateLowBalance || !await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
+		if (SimulateUpstreamFailure) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 
 		await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.InternetSim, Amount = p.Amount }, ct);
 		return new UResponse<ChargeInternetReserveResponse?>(BuildReserve(p.Amount, null, Math.Abs(Guid.NewGuid().GetHashCode()).ToString()));
 	}
 
 	public Task<UResponse<InternetPackageResponse?>> InternetList(InternetListParams p, CancellationToken ct) {
-		if (SimulateUpstreamFailure) return Task.FromResult(new UResponse<InternetPackageResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError")));
+		if (SimulateUpstreamFailure) return Task.FromResult(new UResponse<InternetPackageResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError")));
 		return Task.FromResult(new UResponse<InternetPackageResponse?>(new InternetPackageResponse {
 			Status = true,
 			Message = "OK",
@@ -522,7 +522,7 @@ public class ChargeInternetServiceFake(
 	}
 
 	public Task<UResponse<GetStatusResponse?>> GetStatus(GetStatusParams p, CancellationToken ct) {
-		if (SimulateUpstreamFailure) return Task.FromResult(new UResponse<GetStatusResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError")));
+		if (SimulateUpstreamFailure) return Task.FromResult(new UResponse<GetStatusResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError")));
 		return Task.FromResult(new UResponse<GetStatusResponse?>(new GetStatusResponse {
 			Reserve = Math.Abs(Guid.NewGuid().GetHashCode()),
 			ServerDateTime = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
@@ -607,12 +607,12 @@ public class ChargeInternetServiceFake(
 // ) : IChargeInternetService {
 // 	public async Task<UResponse<ChargeInternetReserveResponse?>> Pin(ReserveChargeParams p, CancellationToken ct) {
 // 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-// 		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-//		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-// 		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+// 		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+//		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+// 		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 //
 // 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-// 		if (tokenResponse?.AccessToken == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+// 		if (tokenResponse?.AccessToken == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 //
 // 		HttpResponseMessage? response = await httpClient.Post(
 // 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/Pin/Reserve",
@@ -676,12 +676,12 @@ public class ChargeInternetServiceFake(
 //
 // 	public async Task<UResponse<ChargeInternetReserveResponse?>> Topup(TopupChargeParams p, CancellationToken ct) {
 // 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-// 		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-//		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-// 		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+// 		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+//		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+// 		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 //
 // 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-// 		if (tokenResponse?.AccessToken == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+// 		if (tokenResponse?.AccessToken == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 //
 // 		HttpResponseMessage? response = await httpClient.Post(
 // 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/Topup/Reserve",
@@ -724,12 +724,12 @@ public class ChargeInternetServiceFake(
 //
 // 	public async Task<UResponse<ChargeInternetReserveResponse?>> InternetReserve(InternetReserveParams p, CancellationToken ct) {
 // 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-// 		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-//		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-// 		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+// 		if (userData == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+//		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+// 		if (!await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 //
 // 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-// 		if (tokenResponse?.AccessToken == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+// 		if (tokenResponse?.AccessToken == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 //
 // 		HttpResponseMessage? response = await httpClient.Post(
 // 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/Internet/Reserve",
@@ -779,7 +779,7 @@ public class ChargeInternetServiceFake(
 // 	public async Task<UResponse<InternetPackageResponse?>> InternetList(InternetListParams p, CancellationToken ct) {
 // 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 // 		if (tokenResponse?.AccessToken == null)
-// 			return new UResponse<InternetPackageResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+// 			return new UResponse<InternetPackageResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 //
 // 		HttpResponseMessage? response = await httpClient.Post(
 // 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/Internet/getlist",
@@ -828,7 +828,7 @@ public class ChargeInternetServiceFake(
 //
 // 	public async Task<UResponse<GetBalanceResponse?>> GetBalance(CancellationToken ct) {
 // 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-// 		if (tokenResponse?.AccessToken == null) return new UResponse<GetBalanceResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+// 		if (tokenResponse?.AccessToken == null) return new UResponse<GetBalanceResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 //
 // 		HttpResponseMessage? response = await httpClient.Post(
 // 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/GetBalance",
@@ -864,7 +864,7 @@ public class ChargeInternetServiceFake(
 //
 // 	public async Task<UResponse<EchoResponse?>> Echo(CancellationToken ct) {
 // 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-// 		if (tokenResponse?.AccessToken == null) return new UResponse<EchoResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+// 		if (tokenResponse?.AccessToken == null) return new UResponse<EchoResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 //
 // 		HttpResponseMessage? response = await httpClient.Post(
 // 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/Echo",
@@ -933,7 +933,7 @@ public class ChargeInternetServiceFake(
 //
 // 	public async Task<UResponse<GetStatusResponse?>> GetStatus(GetStatusParams p, CancellationToken ct) {
 // 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-// 		if (tokenResponse?.AccessToken == null) return new UResponse<GetStatusResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+// 		if (tokenResponse?.AccessToken == null) return new UResponse<GetStatusResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 //
 // 		HttpResponseMessage? response = await httpClient.Post(
 // 			$"{Core.App.Mobtakeran.BaseUrl}api/v2/GetStatus",
@@ -1023,28 +1023,28 @@ public class ChargeInternetServiceFake(
 //
 // 	public Task<UResponse<ChargeInternetReserveResponse?>> Pin(ReserveChargeParams p, CancellationToken ct) {
 // 		PinCalls.Add(p);
-// 		if (SimulateUnauthorized) return Fail<ChargeInternetReserveResponse>(Usc.UnAuthorized, "AuthorizationRequired");
-// 		if (SimulateLowBalance) return Fail<ChargeInternetReserveResponse>(Usc.BalanceIsLow, "BalanceIsLow");
-// 		return SimulateTokenFailure ? Fail<ChargeInternetReserveResponse>(Usc.ShahkarException, "ShahkarIsNotAvailableAtThisTime") : Task.FromResult(SimulateUpstreamFailure ? new UResponse<ChargeInternetReserveResponse?>(null) : new UResponse<ChargeInternetReserveResponse?>(BuildReserve(p.Amount, FakePin)));
+// 		if (SimulateUnauthorized) return Fail<ChargeInternetReserveResponse>(Usc.UnAuthorized, "pleaseSignInToContinue");
+// 		if (SimulateLowBalance) return Fail<ChargeInternetReserveResponse>(Usc.BalanceIsLow, "yourBalanceIsNotEnough");
+// 		return SimulateTokenFailure ? Fail<ChargeInternetReserveResponse>(Usc.ShahkarException, "shahkarIsNotAvailableAtThisTimePleaseTryAgainLater") : Task.FromResult(SimulateUpstreamFailure ? new UResponse<ChargeInternetReserveResponse?>(null) : new UResponse<ChargeInternetReserveResponse?>(BuildReserve(p.Amount, FakePin)));
 // 	}
 //
 // 	public Task<UResponse<ChargeInternetReserveResponse?>> Topup(TopupChargeParams p, CancellationToken ct) {
 // 		TopupCalls.Add(p);
-// 		if (SimulateUnauthorized) return Fail<ChargeInternetReserveResponse>(Usc.UnAuthorized, "AuthorizationRequired");
-// 		if (SimulateLowBalance) return Fail<ChargeInternetReserveResponse>(Usc.BalanceIsLow, "BalanceIsLow");
-// 		return SimulateTokenFailure ? Fail<ChargeInternetReserveResponse>(Usc.ShahkarException, "ShahkarIsNotAvailableAtThisTime") : Task.FromResult(SimulateUpstreamFailure ? new UResponse<ChargeInternetReserveResponse?>(null) : new UResponse<ChargeInternetReserveResponse?>(BuildReserve(p.Amount, null)));
+// 		if (SimulateUnauthorized) return Fail<ChargeInternetReserveResponse>(Usc.UnAuthorized, "pleaseSignInToContinue");
+// 		if (SimulateLowBalance) return Fail<ChargeInternetReserveResponse>(Usc.BalanceIsLow, "yourBalanceIsNotEnough");
+// 		return SimulateTokenFailure ? Fail<ChargeInternetReserveResponse>(Usc.ShahkarException, "shahkarIsNotAvailableAtThisTimePleaseTryAgainLater") : Task.FromResult(SimulateUpstreamFailure ? new UResponse<ChargeInternetReserveResponse?>(null) : new UResponse<ChargeInternetReserveResponse?>(BuildReserve(p.Amount, null)));
 // 	}
 //
 // 	public Task<UResponse<ChargeInternetReserveResponse?>> InternetReserve(InternetReserveParams p, CancellationToken ct) {
 // 		InternetReserveCalls.Add(p);
-// 		if (SimulateUnauthorized) return Fail<ChargeInternetReserveResponse>(Usc.UnAuthorized, "AuthorizationRequired");
-// 		if (SimulateLowBalance) return Fail<ChargeInternetReserveResponse>(Usc.BalanceIsLow, "BalanceIsLow");
-// 		return SimulateTokenFailure ? Fail<ChargeInternetReserveResponse>(Usc.ShahkarException, "ShahkarIsNotAvailableAtThisTime") : Task.FromResult(SimulateUpstreamFailure ? new UResponse<ChargeInternetReserveResponse?>(null) : new UResponse<ChargeInternetReserveResponse?>(BuildReserve(p.Amount, null)));
+// 		if (SimulateUnauthorized) return Fail<ChargeInternetReserveResponse>(Usc.UnAuthorized, "pleaseSignInToContinue");
+// 		if (SimulateLowBalance) return Fail<ChargeInternetReserveResponse>(Usc.BalanceIsLow, "yourBalanceIsNotEnough");
+// 		return SimulateTokenFailure ? Fail<ChargeInternetReserveResponse>(Usc.ShahkarException, "shahkarIsNotAvailableAtThisTimePleaseTryAgainLater") : Task.FromResult(SimulateUpstreamFailure ? new UResponse<ChargeInternetReserveResponse?>(null) : new UResponse<ChargeInternetReserveResponse?>(BuildReserve(p.Amount, null)));
 // 	}
 //
 // 	public Task<UResponse<InternetPackageResponse?>> InternetList(InternetListParams p, CancellationToken ct) {
 // 		InternetListCalls.Add(p);
-// 		if (SimulateTokenFailure) return Fail<InternetPackageResponse>(Usc.ShahkarException, "ShahkarIsNotAvailableAtThisTime");
+// 		if (SimulateTokenFailure) return Fail<InternetPackageResponse>(Usc.ShahkarException, "shahkarIsNotAvailableAtThisTimePleaseTryAgainLater");
 // 		if (SimulateUpstreamFailure) return Task.FromResult(new UResponse<InternetPackageResponse?>(null));
 //
 //
@@ -1069,7 +1069,7 @@ public class ChargeInternetServiceFake(
 //
 // 	public Task<UResponse<GetStatusResponse?>> GetStatus(GetStatusParams p, CancellationToken ct) {
 // 		GetStatusCalls.Add(p);
-// 		if (SimulateTokenFailure) return Fail<GetStatusResponse>(Usc.ShahkarException, "ShahkarIsNotAvailableAtThisTime");
+// 		if (SimulateTokenFailure) return Fail<GetStatusResponse>(Usc.ShahkarException, "shahkarIsNotAvailableAtThisTimePleaseTryAgainLater");
 // 		if (SimulateUpstreamFailure) return Task.FromResult(new UResponse<GetStatusResponse?>(null));
 //
 // 		return Task.FromResult(new UResponse<GetStatusResponse?>(new GetStatusResponse {
@@ -1091,7 +1091,7 @@ public class ChargeInternetServiceFake(
 //
 // 	public Task<UResponse<GetBalanceResponse?>> GetBalance(CancellationToken ct) {
 // 		GetBalanceCalls++;
-// 		if (SimulateTokenFailure) return Fail<GetBalanceResponse>(Usc.ShahkarException, "ShahkarIsNotAvailableAtThisTime");
+// 		if (SimulateTokenFailure) return Fail<GetBalanceResponse>(Usc.ShahkarException, "shahkarIsNotAvailableAtThisTimePleaseTryAgainLater");
 // 		if (SimulateUpstreamFailure) return Task.FromResult(new UResponse<GetBalanceResponse?>(null));
 //
 // 		return Task.FromResult(new UResponse<GetBalanceResponse?>(new GetBalanceResponse {
@@ -1112,7 +1112,7 @@ public class ChargeInternetServiceFake(
 //
 // 	public Task<UResponse<EchoResponse?>> Echo(CancellationToken ct) {
 // 		EchoCalls++;
-// 		if (SimulateTokenFailure) return Fail<EchoResponse>(Usc.ShahkarException, "ShahkarIsNotAvailableAtThisTime");
+// 		if (SimulateTokenFailure) return Fail<EchoResponse>(Usc.ShahkarException, "shahkarIsNotAvailableAtThisTimePleaseTryAgainLater");
 // 		if (SimulateUpstreamFailure) return Task.FromResult(new UResponse<EchoResponse?>(null));
 // 		return Task.FromResult(new UResponse<EchoResponse?>(new EchoResponse {
 // 			Reserve = 333333,

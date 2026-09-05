@@ -44,8 +44,8 @@ public class GoldService(
 
 	public async Task<UResponse<GoldAccountResponse?>> ReadAccount(BaseParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<GoldAccountResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<GoldAccountResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<GoldAccountResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<GoldAccountResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		GoldResult r = await CallWithToken(HttpMethod.Get, $"{ClientPath}account", null, ct);
 		if (!r.Ok) return new UResponse<GoldAccountResponse?>(null, r.Status, r.Message);
@@ -60,9 +60,9 @@ public class GoldService(
 
 	public async Task<UResponse<GoldQuoteResponse?>> ReadQuote(GoldQuoteParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<GoldQuoteResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<GoldQuoteResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (p.BaseAsset == p.QuoteAsset) return new UResponse<GoldQuoteResponse?>(null, Usc.BadRequest, ls.Get("GoldUnsupportedTradePair"));
+		if (userData == null) return new UResponse<GoldQuoteResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<GoldQuoteResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (p.BaseAsset == p.QuoteAsset) return new UResponse<GoldQuoteResponse?>(null, Usc.BadRequest, ls.Get("thisTradePairIsNotSupported"));
 
 		GoldResult r = await CallWithToken(HttpMethod.Get, $"{ClientPath}assets/{AssetCode(p.BaseAsset)}/price?quoteAsset={AssetCode(p.QuoteAsset)}", null, ct);
 		if (!r.Ok) return new UResponse<GoldQuoteResponse?>(null, r.Status, r.Message);
@@ -81,10 +81,10 @@ public class GoldService(
 
 	public async Task<UResponse<GoldOrderResponse?>> CreateOrder(GoldCreateOrderParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<GoldOrderResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<GoldOrderResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (p.BaseAsset == p.QuoteAsset) return new UResponse<GoldOrderResponse?>(null, Usc.BadRequest, ls.Get("GoldUnsupportedTradePair"));
-		if (p.BaseAmount is > 0 == p.QuoteAmount is > 0) return new UResponse<GoldOrderResponse?>(null, Usc.BadRequest, ls.Get("GoldAmountRequired"));
+		if (userData == null) return new UResponse<GoldOrderResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<GoldOrderResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (p.BaseAsset == p.QuoteAsset) return new UResponse<GoldOrderResponse?>(null, Usc.BadRequest, ls.Get("thisTradePairIsNotSupported"));
+		if (p.BaseAmount is > 0 == p.QuoteAmount is > 0) return new UResponse<GoldOrderResponse?>(null, Usc.BadRequest, ls.Get("sendExactlyOneOfBaseAmountOrQuoteAmountGreaterThanZero"));
 
 		Dictionary<string, object> body = new() {
 			{ "idempotencyKey", p.IdempotencyKey },
@@ -102,8 +102,8 @@ public class GoldService(
 
 	public async Task<UResponse<GoldOrderListResponse?>> ReadOrders(GoldReadOrdersParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<GoldOrderListResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<GoldOrderListResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<GoldOrderListResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<GoldOrderListResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		GoldResult r = await CallWithToken(HttpMethod.Get, $"{ClientPath}orders{PagingQuery(p.Cursor, p.Limit)}", null, ct);
 		if (!r.Ok) return new UResponse<GoldOrderListResponse?>(null, r.Status, r.Message);
@@ -116,8 +116,8 @@ public class GoldService(
 
 	public async Task<UResponse<GoldOrderResponse?>> ReadOrderById(GoldReadOrderParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<GoldOrderResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<GoldOrderResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<GoldOrderResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<GoldOrderResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		GoldResult r = await CallWithToken(HttpMethod.Get, $"{ClientPath}orders/{Uri.EscapeDataString(p.Id)}", null, ct);
 		if (!r.Ok) return new UResponse<GoldOrderResponse?>(null, r.Status, r.Message);
@@ -126,8 +126,8 @@ public class GoldService(
 
 	public async Task<UResponse<IEnumerable<GoldBalanceResponse>?>> ReadBalances(BaseParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<IEnumerable<GoldBalanceResponse>?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<IEnumerable<GoldBalanceResponse>?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<IEnumerable<GoldBalanceResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<GoldBalanceResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		GoldResult r = await CallWithToken(HttpMethod.Get, $"{ClientPath}wallets/main/balances", null, ct);
 		if (!r.Ok) return new UResponse<IEnumerable<GoldBalanceResponse>?>(null, r.Status, r.Message);
@@ -136,8 +136,8 @@ public class GoldService(
 
 	public async Task<UResponse<GoldBalanceResponse?>> ReadBalance(GoldReadBalanceParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<GoldBalanceResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<GoldBalanceResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<GoldBalanceResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<GoldBalanceResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		GoldResult r = await CallWithToken(HttpMethod.Get, $"{ClientPath}wallets/main/balances/{AssetCode(p.Asset)}", null, ct);
 		if (!r.Ok) return new UResponse<GoldBalanceResponse?>(null, r.Status, r.Message);
@@ -146,8 +146,8 @@ public class GoldService(
 
 	public async Task<UResponse<GoldTransactionListResponse?>> ReadTransactions(GoldReadTransactionsParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<GoldTransactionListResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<GoldTransactionListResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<GoldTransactionListResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<GoldTransactionListResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		GoldResult r = await CallWithToken(HttpMethod.Get, $"{ClientPath}wallets/main/transactions{PagingQuery(p.Cursor, p.Limit)}", null, ct);
 		if (!r.Ok) return new UResponse<GoldTransactionListResponse?>(null, r.Status, r.Message);
@@ -166,8 +166,8 @@ public class GoldService(
 
 	public async Task<UResponse<GoldTradeLimitsResponse?>> ReadTradeLimits(BaseParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<GoldTradeLimitsResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<GoldTradeLimitsResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<GoldTradeLimitsResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<GoldTradeLimitsResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		GoldResult r = await CallWithToken(HttpMethod.Get, $"{ClientPath}trade-limits", null, ct);
 		if (!r.Ok) return new UResponse<GoldTradeLimitsResponse?>(null, r.Status, r.Message);
@@ -183,8 +183,8 @@ public class GoldService(
 
 	public async Task<UResponse<GoldCreditFacilitiesResponse?>> ReadCreditFacilities(BaseParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<GoldCreditFacilitiesResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<GoldCreditFacilitiesResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<GoldCreditFacilitiesResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<GoldCreditFacilitiesResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		GoldResult r = await CallWithToken(HttpMethod.Get, $"{ClientPath}credit-facilities", null, ct);
 		if (!r.Ok) return new UResponse<GoldCreditFacilitiesResponse?>(null, r.Status, r.Message);
@@ -217,18 +217,18 @@ public class GoldService(
 
 	public async Task<UResponse<GoldApiTokenResponse?>> CreateApiToken(GoldCreateApiTokenParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<GoldApiTokenResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<GoldApiTokenResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (!userData.IsAdmin) return new UResponse<GoldApiTokenResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (userData == null) return new UResponse<GoldApiTokenResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<GoldApiTokenResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.IsAdmin) return new UResponse<GoldApiTokenResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		return await CreateApiToken(p.Label, p.Scopes, p.IpWhitelist, ct);
 	}
 
 	public async Task<UResponse<IEnumerable<GoldApiTokenResponse>?>> ReadApiTokens(BaseParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<IEnumerable<GoldApiTokenResponse>?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<IEnumerable<GoldApiTokenResponse>?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (!userData.IsAdmin) return new UResponse<IEnumerable<GoldApiTokenResponse>?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (userData == null) return new UResponse<IEnumerable<GoldApiTokenResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<GoldApiTokenResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.IsAdmin) return new UResponse<IEnumerable<GoldApiTokenResponse>?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		GoldResult r = await CallWithBasic(HttpMethod.Get, $"{ClientPath}auth/api-tokens", null, ct);
 		if (!r.Ok) return new UResponse<IEnumerable<GoldApiTokenResponse>?>(null, r.Status, r.Message);
@@ -237,9 +237,9 @@ public class GoldService(
 
 	public async Task<UResponse> DeleteApiToken(GoldDeleteApiTokenParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		GoldResult r = await CallWithBasic(HttpMethod.Delete, $"{ClientPath}auth/api-tokens/{Uri.EscapeDataString(p.TokenId)}", null, ct);
 		return r.Ok ? new UResponse(Usc.Deleted) : new UResponse(r.Status, r.Message);
@@ -247,8 +247,8 @@ public class GoldService(
 
 	public async Task<UResponse<GoldUserBalanceResponse?>> ReadUserBalance(GoldReadUserBalanceParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<GoldUserBalanceResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<GoldUserBalanceResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<GoldUserBalanceResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<GoldUserBalanceResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		Guid userId = p.UserId != null && userData.IsAdmin ? p.UserId.Value : userData.Id;
 		GoldWalletEntity e = await ReadOrCreateWallet(userId, ct);
@@ -266,16 +266,16 @@ public class GoldService(
 
 	public async Task<UResponse<GoldTxnResponse?>> Buy(GoldBuyParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<GoldTxnResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<GoldTxnResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (p.Amount is > 0 == p.GoldAmount is > 0) return new UResponse<GoldTxnResponse?>(null, Usc.BadRequest, ls.Get("GoldAmountRequired"));
+		if (userData == null) return new UResponse<GoldTxnResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<GoldTxnResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (p.Amount is > 0 == p.GoldAmount is > 0) return new UResponse<GoldTxnResponse?>(null, Usc.BadRequest, ls.Get("sendExactlyOneOfBaseAmountOrQuoteAmountGreaterThanZero"));
 
 		UResponse<GoldQuoteResponse?> quote = await ReadQuote(new GoldQuoteParams { ApiKey = p.ApiKey, Token = p.Token }, ct);
 		decimal unitPrice = quote.Result?.BuyUnitPrice ?? quote.Result?.BaseUnitPrice ?? 0;
-		if (unitPrice <= 0) return new UResponse<GoldTxnResponse?>(null, quote.Status == Usc.Success ? Usc.ThirdPartyError : quote.Status, ls.Get("GoldQuoteUnavailable"));
+		if (unitPrice <= 0) return new UResponse<GoldTxnResponse?>(null, quote.Status == Usc.Success ? Usc.ThirdPartyError : quote.Status, ls.Get("theGoldPriceIsNotAvailableRightNowPleaseTryAgainShortly"));
 
 		decimal reserve = p.Amount is > 0 ? p.Amount!.Value : Math.Ceiling(p.GoldAmount!.Value * unitPrice * BuyReserveBuffer);
-		if (!await wallet.HasEnoughBalance(userData.Id, reserve, ct)) return new UResponse<GoldTxnResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+		if (!await wallet.HasEnoughBalance(userData.Id, reserve, ct)) return new UResponse<GoldTxnResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 
 		GoldTxnEntity e = new() {
 			Id = Guid.CreateVersion7(),
@@ -328,19 +328,19 @@ public class GoldService(
 
 	public async Task<UResponse<GoldTxnResponse?>> Sell(GoldSellParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<GoldTxnResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<GoldTxnResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (p.Amount is > 0 == p.GoldAmount is > 0) return new UResponse<GoldTxnResponse?>(null, Usc.BadRequest, ls.Get("GoldAmountRequired"));
+		if (userData == null) return new UResponse<GoldTxnResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<GoldTxnResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (p.Amount is > 0 == p.GoldAmount is > 0) return new UResponse<GoldTxnResponse?>(null, Usc.BadRequest, ls.Get("sendExactlyOneOfBaseAmountOrQuoteAmountGreaterThanZero"));
 
 		UResponse<GoldQuoteResponse?> quote = await ReadQuote(new GoldQuoteParams { ApiKey = p.ApiKey, Token = p.Token }, ct);
 		decimal unitPrice = quote.Result?.SellUnitPrice ?? quote.Result?.BaseUnitPrice ?? 0;
-		if (unitPrice <= 0) return new UResponse<GoldTxnResponse?>(null, quote.Status == Usc.Success ? Usc.ThirdPartyError : quote.Status, ls.Get("GoldQuoteUnavailable"));
+		if (unitPrice <= 0) return new UResponse<GoldTxnResponse?>(null, quote.Status == Usc.Success ? Usc.ThirdPartyError : quote.Status, ls.Get("theGoldPriceIsNotAvailableRightNowPleaseTryAgainShortly"));
 
 		GoldWalletEntity goldWallet = await ReadOrCreateWallet(userData.Id, ct);
-		if (goldWallet.JsonData.Locked) return new UResponse<GoldTxnResponse?>(null, Usc.Forbidden, ls.Get("GoldWalletLocked"));
+		if (goldWallet.JsonData.Locked) return new UResponse<GoldTxnResponse?>(null, Usc.Forbidden, ls.Get("yourGoldWalletIsLocked"));
 
 		decimal reserve = p.GoldAmount is > 0 ? p.GoldAmount!.Value : p.Amount!.Value / unitPrice;
-		if (goldWallet.Balance < reserve) return new UResponse<GoldTxnResponse?>(null, Usc.BalanceIsLow, ls.Get("GoldBalanceIsLow"));
+		if (goldWallet.Balance < reserve) return new UResponse<GoldTxnResponse?>(null, Usc.BalanceIsLow, ls.Get("yourGoldBalanceIsNotEnoughForThisOrder"));
 
 		GoldTxnEntity e = new() {
 			Id = Guid.CreateVersion7(),
@@ -383,12 +383,12 @@ public class GoldService(
 	// A provider order that came back PENDING is settled the next time the client asks about it, so no background poller is needed.
 	public async Task<UResponse<GoldTxnResponse?>> SyncTxn(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<GoldTxnResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<GoldTxnResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<GoldTxnResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<GoldTxnResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		GoldTxnEntity? e = await db.Set<GoldTxnEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse<GoldTxnResponse?>(null, Usc.NotFound, ls.Get("GoldTxnNotFound"));
-		if (e.UserId != userData.Id && !userData.IsAdmin) return new UResponse<GoldTxnResponse?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (e == null) return new UResponse<GoldTxnResponse?>(null, Usc.NotFound, ls.Get("theGoldTransactionWasNotFound"));
+		if (e.UserId != userData.Id && !userData.IsAdmin) return new UResponse<GoldTxnResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		if (!e.Tags.Contains(TagGoldTxn.Pending)) return new UResponse<GoldTxnResponse?>(MapTxn(e));
 		if (!e.OrderId.IsNotNullOrEmpty()) return new UResponse<GoldTxnResponse?>(MapTxn(e));
 
@@ -402,8 +402,8 @@ public class GoldService(
 
 	public async Task<UResponse<IEnumerable<GoldTxnResponse>?>> ReadUserTxns(GoldReadUserTxnsParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<IEnumerable<GoldTxnResponse>?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<IEnumerable<GoldTxnResponse>?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<IEnumerable<GoldTxnResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<GoldTxnResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		Guid userId = p.UserId != null && userData.IsAdmin ? p.UserId.Value : userData.Id;
 		IQueryable<GoldTxnResponse> q = db.Set<GoldTxnEntity>().ApplyReadParams(p)
@@ -416,7 +416,7 @@ public class GoldService(
 	private async Task<UResponse<GoldTxnResponse?>> SettleBuy(GoldTxnEntity e, GoldOrderResponse order, string apiKey, string? token, CancellationToken ct) {
 		if (order.Status is TagGoldOrderStatus.Failed or TagGoldOrderStatus.Cancelled) {
 			await RefundReservedAmount(e, null, ct);
-			return await FailTxn(e, Usc.ThirdPartyError, ls.Get("GoldOrderFailed"), ct, order.Status == TagGoldOrderStatus.Cancelled);
+			return await FailTxn(e, Usc.ThirdPartyError, ls.Get("theGoldOrderWasNotCompletedAnyReservedAmountHasBeenReturned"), ct, order.Status == TagGoldOrderStatus.Cancelled);
 		}
 
 		decimal dealtGold = order.DealtBaseAmount ?? 0;
@@ -425,7 +425,7 @@ public class GoldService(
 			e.JsonData.ProviderStatus = order.Status?.ToString();
 			db.Set<GoldTxnEntity>().Update(e);
 			await db.SaveChangesAsync(ct);
-			return new UResponse<GoldTxnResponse?>(MapTxn(e), Usc.Success, ls.Get("GoldOrderPending"));
+			return new UResponse<GoldTxnResponse?>(MapTxn(e), Usc.Success, ls.Get("theGoldOrderIsBeingProcessedAndWillBeSettledShortly"));
 		}
 
 		decimal reserved = e.JsonData.ReservedAmount ?? dealtAmount;
@@ -453,7 +453,7 @@ public class GoldService(
 
 		if (order.Status is TagGoldOrderStatus.Failed or TagGoldOrderStatus.Cancelled) {
 			await ChangeGoldBalance(goldWallet, reserved, ct);
-			return await FailTxn(e, Usc.ThirdPartyError, ls.Get("GoldOrderFailed"), ct, order.Status == TagGoldOrderStatus.Cancelled);
+			return await FailTxn(e, Usc.ThirdPartyError, ls.Get("theGoldOrderWasNotCompletedAnyReservedAmountHasBeenReturned"), ct, order.Status == TagGoldOrderStatus.Cancelled);
 		}
 
 		decimal dealtGold = order.DealtBaseAmount ?? 0;
@@ -462,7 +462,7 @@ public class GoldService(
 			e.JsonData.ProviderStatus = order.Status?.ToString();
 			db.Set<GoldTxnEntity>().Update(e);
 			await db.SaveChangesAsync(ct);
-			return new UResponse<GoldTxnResponse?>(MapTxn(e), Usc.Success, ls.Get("GoldOrderPending"));
+			return new UResponse<GoldTxnResponse?>(MapTxn(e), Usc.Success, ls.Get("theGoldOrderIsBeingProcessedAndWillBeSettledShortly"));
 		}
 
 		if (reserved > dealtGold) await ChangeGoldBalance(goldWallet, reserved - dealtGold, ct);
@@ -567,7 +567,7 @@ public class GoldService(
 
 	private async Task<GoldResult> CallWithBasic(HttpMethod method, string path, object? body, CancellationToken ct) {
 		if (!Core.App.Gold.ClientKey.IsNotNullOrEmpty() || !Core.App.Gold.ClientSecret.IsNotNullOrEmpty())
-			return GoldResult.Fail(Usc.InternalServerError, ls.Get("GoldProviderNotConfigured"));
+			return GoldResult.Fail(Usc.InternalServerError, ls.Get("theGoldProviderIsNotConfigured"));
 
 		string basic = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{Core.App.Gold.ClientKey}:{Core.App.Gold.ClientSecret}"));
 		return await Send(method, path, body, $"Basic {basic}", ct);
@@ -575,7 +575,7 @@ public class GoldService(
 
 	private async Task<GoldResult> CallWithToken(HttpMethod method, string path, object? body, CancellationToken ct) {
 		string? token = await ResolveApiToken(false, ct);
-		if (!token.IsNotNullOrEmpty()) return GoldResult.Fail(Usc.InternalServerError, ls.Get("GoldProviderNotConfigured"));
+		if (!token.IsNotNullOrEmpty()) return GoldResult.Fail(Usc.InternalServerError, ls.Get("theGoldProviderIsNotConfigured"));
 
 		GoldResult result = await Send(method, path, body, $"Bearer {token}", ct);
 		if (result.Ok || result.HttpCode != 401 || Core.App.Gold.ApiToken.IsNotNullOrEmpty()) return result;
@@ -618,7 +618,7 @@ public class GoldService(
 			_ => await httpClient.Post(uri, body, headers)
 		};
 
-		if (response == null) return GoldResult.Fail(Usc.ThirdPartyError, ls.Get("GoldProviderUnavailable"));
+		if (response == null) return GoldResult.Fail(Usc.ThirdPartyError, ls.Get("theGoldProviderIsNotReachableRightNow"));
 
 		string raw = await response.Content.ReadAsStringAsync(ct);
 		JsonElement root = default;
@@ -627,14 +627,14 @@ public class GoldService(
 				root = JsonSerializer.Deserialize<JsonElement>(raw);
 			}
 			catch (JsonException) {
-				return GoldResult.Fail(Usc.ThirdPartyError, ls.Get("GoldProviderError"), (int)response.StatusCode);
+				return GoldResult.Fail(Usc.ThirdPartyError, ls.Get("theGoldProviderReturnedAnUnexpectedError"), (int)response.StatusCode);
 			}
 
 		if (response.IsSuccessStatusCode) return new GoldResult { Ok = true, Root = root, HttpCode = (int)response.StatusCode };
 
 		string? errorCode = root.ValueKind == JsonValueKind.Object ? root.GetStringOrNull("error") : null;
 		string localized = errorCode != null && ErrorKeys.TryGetValue(errorCode, out string? key) ? ls.Get(key) : "";
-		if (!localized.IsNotNullOrEmpty()) localized = (root.ValueKind == JsonValueKind.Object ? root.GetStringOrNull("message") : null) ?? ls.Get("GoldProviderError");
+		if (!localized.IsNotNullOrEmpty()) localized = (root.ValueKind == JsonValueKind.Object ? root.GetStringOrNull("message") : null) ?? ls.Get("theGoldProviderReturnedAnUnexpectedError");
 
 		return GoldResult.Fail(MapStatus((int)response.StatusCode, errorCode), localized, (int)response.StatusCode);
 	}
@@ -688,37 +688,37 @@ public class GoldService(
 	};
 
 	private static readonly Dictionary<string, string> ErrorKeys = new() {
-		{ "VALIDATION_ERROR", "GoldValidationError" },
-		{ "INVALID_PARAMETER", "GoldValidationError" },
-		{ "INVALID_FIELD", "GoldValidationError" },
-		{ "INVALID_BODY", "GoldValidationError" },
-		{ "INVALID_CURSOR", "GoldInvalidCursor" },
-		{ "NOT_FOUND", "GoldNotFound" },
-		{ "INTERNAL_ERROR", "GoldProviderError" },
-		{ "UNAUTHENTICATED", "GoldUnauthenticated" },
-		{ "INVALID_AUTH_HEADER", "GoldUnauthenticated" },
-		{ "INVALID_CREDENTIALS", "GoldInvalidCredentials" },
-		{ "INVALID_TOKEN", "GoldInvalidToken" },
-		{ "FORBIDDEN", "GoldForbidden" },
-		{ "IP_NOT_ALLOWED", "GoldIpNotAllowed" },
-		{ "CLIENT_INACTIVE", "GoldClientInactive" },
-		{ "TOKEN_NOT_FOUND", "GoldTokenNotFound" },
-		{ "MAX_ACTIVE_TOKENS_REACHED", "GoldMaxActiveTokensReached" },
-		{ "IP_NOT_SUBSET_OF_CLIENT", "GoldIpNotSubsetOfClient" },
-		{ "RATE_LIMIT_EXCEEDED", "GoldRateLimitExceeded" },
-		{ "AUTH_RATE_LIMITED", "GoldAuthRateLimited" },
-		{ "BUSINESS_SUSPENDED", "GoldBusinessSuspended" },
-		{ "UNSUPPORTED_TRADE_PAIR", "GoldUnsupportedTradePair" },
-		{ "ASSET_PAIR_MISMATCH", "GoldAssetPairMismatch" },
-		{ "ASSET_NOT_FOUND", "GoldAssetNotFound" },
-		{ "INVALID_TRADE_REQUEST", "GoldInvalidTradeRequest" },
-		{ "INVALID_TRADE_AMOUNT", "GoldInvalidTradeAmount" },
-		{ "AMOUNT_PRECISION_EXCEEDED", "GoldAmountPrecisionExceeded" },
-		{ "INSUFFICIENT_QUOTE_AMOUNT", "GoldInsufficientQuoteAmount" },
-		{ "DUPLICATE_IDEMPOTENCY_KEY", "GoldDuplicateIdempotencyKey" },
-		{ "ORDER_TRADE_WINDOW_LIMIT_EXCEEDED", "GoldTradeWindowLimitExceeded" },
-		{ "ORDER_NOT_FOUND", "GoldOrderNotFound" },
-		{ "INSUFFICIENT_BALANCE", "GoldInsufficientBalance" }
+		{ "VALIDATION_ERROR", "theGoldProviderRejectedTheRequestData" },
+		{ "INVALID_PARAMETER", "theGoldProviderRejectedTheRequestData" },
+		{ "INVALID_FIELD", "theGoldProviderRejectedTheRequestData" },
+		{ "INVALID_BODY", "theGoldProviderRejectedTheRequestData" },
+		{ "INVALID_CURSOR", "thePaginationCursorIsInvalidOrExpiredStartFromTheFirstPage" },
+		{ "NOT_FOUND", "theRequestedGoldResourceWasNotFound" },
+		{ "INTERNAL_ERROR", "theGoldProviderReturnedAnUnexpectedError" },
+		{ "UNAUTHENTICATED", "authenticationWithTheGoldProviderIsRequired" },
+		{ "INVALID_AUTH_HEADER", "authenticationWithTheGoldProviderIsRequired" },
+		{ "INVALID_CREDENTIALS", "theGoldProviderCredentialsAreInvalid" },
+		{ "INVALID_TOKEN", "theGoldProviderTokenIsInvalidOrExpired" },
+		{ "FORBIDDEN", "accessToThisGoldResourceIsDenied" },
+		{ "IP_NOT_ALLOWED", "thisIPAddressIsNotAllowedByTheGoldProvider" },
+		{ "CLIENT_INACTIVE", "theGoldProviderClientAccountIsInactive" },
+		{ "TOKEN_NOT_FOUND", "theGoldProviderTokenWasNotFound" },
+		{ "MAX_ACTIVE_TOKENS_REACHED", "theMaximumNumberOfActiveGoldTokensHasBeenReachedRevokeOneFirst" },
+		{ "IP_NOT_SUBSET_OF_CLIENT", "theTokenIPWhitelistMustBeASubsetOfTheClientIPWhitelist" },
+		{ "RATE_LIMIT_EXCEEDED", "tooManyRequestsToTheGoldProviderPleaseTryAgainShortly" },
+		{ "AUTH_RATE_LIMITED", "tooManyFailedAuthenticationAttemptsPleaseTryAgainShortly" },
+		{ "BUSINESS_SUSPENDED", "yourGoldBusinessAccountIsSuspended" },
+		{ "UNSUPPORTED_TRADE_PAIR", "thisTradePairIsNotSupported" },
+		{ "ASSET_PAIR_MISMATCH", "theAssetPairDoesNotMatchTheRequest" },
+		{ "ASSET_NOT_FOUND", "theAssetWasNotFoundOrIsInactive" },
+		{ "INVALID_TRADE_REQUEST", "theTradeRequestIsNotValid" },
+		{ "INVALID_TRADE_AMOUNT", "theTradeAmountIsNotValid" },
+		{ "AMOUNT_PRECISION_EXCEEDED", "theAmountHasMoreDecimalPlacesThanTheAssetAllows" },
+		{ "INSUFFICIENT_QUOTE_AMOUNT", "theAmountIsBelowTheMinimumTradeSize" },
+		{ "DUPLICATE_IDEMPOTENCY_KEY", "thisIdempotencyKeyHasAlreadyBeenUsedGenerateANewOneForEachOrder" },
+		{ "ORDER_TRADE_WINDOW_LIMIT_EXCEEDED", "yourOrderVolumeHasReachedTheLimitForTheCurrentTimeWindow" },
+		{ "ORDER_NOT_FOUND", "theOrderWasNotFound" },
+		{ "INSUFFICIENT_BALANCE", "yourGoldWalletBalanceIsNotEnough" }
 	};
 
 	private static GoldOrderResponse MapOrder(JsonElement x) => new() {

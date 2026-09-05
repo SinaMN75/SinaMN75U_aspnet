@@ -54,8 +54,8 @@ public class ParkingService(
 ) : IParkingService {
 	public async Task<UResponse<Guid?>> CreateParking(ParkingCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		ParkingEntity e = new() {
 			Id = Guid.CreateVersion7(),
@@ -91,12 +91,12 @@ public class ParkingService(
 
 	public async Task<UResponse> UpdateParking(ParkingUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		ParkingEntity? e = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ParkingNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("parkingNotFound"));
 		
-		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
@@ -113,7 +113,7 @@ public class ParkingService(
 
 	public async Task<UResponse> DeleteParking(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		await db.Set<ParkingEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
@@ -122,15 +122,15 @@ public class ParkingService(
 
 	public async Task<UResponse<Guid?>> CreateParkingUser(ParkingUserCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		ParkingEntity? parking = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == p.ParkingId, ct);
-		if (parking == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("ParkingNotFound"));
-		if (!userData.CanManage(parking.CreatorId, parking.AdminUserIds)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (parking == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("parkingNotFound"));
+		if (!userData.CanManage(parking.CreatorId, parking.AdminUserIds)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		bool exists = await db.Set<UserEntity>().AnyAsync(x => x.UserName == p.UserName, ct);
-		if (exists) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("UserNameAlreadyExists"));
+		if (exists) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("thisUsernameIsAlreadyTaken"));
 
 		Guid userId = Guid.CreateVersion7();
 		DateTime now = DateTime.UtcNow;
@@ -159,12 +159,12 @@ public class ParkingService(
 
 	public async Task<UResponse<IEnumerable<UserResponse>?>> ReadParkingUsers(ParkingUserReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<IEnumerable<UserResponse>?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<IEnumerable<UserResponse>?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<IEnumerable<UserResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<UserResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		ParkingEntity? parking = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == p.ParkingId, ct);
-		if (parking == null) return new UResponse<IEnumerable<UserResponse>?>(null, Usc.NotFound, ls.Get("ParkingNotFound"));
-		if (!userData.CanAccess(parking.CreatorId, parking.AdminUserIds)) return new UResponse<IEnumerable<UserResponse>?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (parking == null) return new UResponse<IEnumerable<UserResponse>?>(null, Usc.NotFound, ls.Get("parkingNotFound"));
+		if (!userData.CanAccess(parking.CreatorId, parking.AdminUserIds)) return new UResponse<IEnumerable<UserResponse>?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		List<UserResponse> users = await db.Set<UserEntity>()
 			.Where(x => parking.AdminUserIds.Contains(x.Id))
@@ -175,11 +175,11 @@ public class ParkingService(
 
 	public async Task<UResponse> RemoveParkingUser(ParkingUserDeleteParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		ParkingEntity? parking = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == p.ParkingId, ct);
-		if (parking == null) return new UResponse(Usc.NotFound, ls.Get("ParkingNotFound"));
-		if (!userData.CanManage(parking.CreatorId, parking.AdminUserIds)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (parking == null) return new UResponse(Usc.NotFound, ls.Get("parkingNotFound"));
+		if (!userData.CanManage(parking.CreatorId, parking.AdminUserIds)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		parking.AdminUserIds.Remove(p.UserId);
 		db.Set<ParkingEntity>().Update(parking);
@@ -189,8 +189,8 @@ public class ParkingService(
 
 	public async Task<UResponse<Guid?>> CreateParkingReport(ParkingReportCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		VehicleEntity? vehicle = await db.Set<VehicleEntity>().FirstOrDefaultAsync(x => x.LicencePlate == p.NumberPlate, ct);
 		if (vehicle == null) {
@@ -235,10 +235,10 @@ public class ParkingService(
 
 	public async Task<UResponse> UpdateParkingReport(ParkingReportUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		ParkingReportEntity? e = await db.Set<ParkingReportEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ParkingReportNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("parkingReportNotFound"));
 		
 		if (p.CreatorId.IsNotNull()) e.CreatorId = p.CreatorId.Value;
 		if (p.VehicleId.IsNotNull()) e.VehicleId = p.VehicleId.Value;
@@ -253,7 +253,7 @@ public class ParkingService(
 
 	public async Task<UResponse> DeleteParkingReport(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		await db.Set<ParkingReportEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
@@ -262,11 +262,11 @@ public class ParkingService(
 
 	public async Task<UResponse<Guid?>> CreateParkingTariff(ParkingTariffCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		ParkingEntity? parking = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == p.ParkingId, ct);
-		if (parking == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("ParkingNotFound"));
-		if (!userData.CanManage(parking.CreatorId, parking.AdminUserIds)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (parking == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("parkingNotFound"));
+		if (!userData.CanManage(parking.CreatorId, parking.AdminUserIds)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		// One tariff row per parking + vehicle type: creating an existing pair updates it instead of duplicating.
 		ParkingTariffEntity? existing = await db.Set<ParkingTariffEntity>().FirstOrDefaultAsync(x => x.ParkingId == p.ParkingId && x.VehicleType == p.VehicleType, ct);
@@ -320,10 +320,10 @@ public class ParkingService(
 
 	public async Task<UResponse> UpdateParkingTariff(ParkingTariffUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		ParkingTariffEntity? e = await db.Set<ParkingTariffEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ParkingTariffNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("parkingTariffNotFound"));
 
 		if (p.VehicleType.IsNotNull()) e.VehicleType = p.VehicleType.Value;
 		if (p.EntrancePrice.IsNotNull()) e.EntrancePrice = p.EntrancePrice.Value;
@@ -350,17 +350,17 @@ public class ParkingService(
 
 	public async Task<UResponse> DeleteParkingTariff(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		await db.Set<ParkingTariffEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 		return new UResponse();
 	}
 
 	public async Task<UResponse<Guid?>> CreateParkingSubscription(ParkingSubscriptionCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		ParkingEntity? parking = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == p.ParkingId, ct);
-		if (parking == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("ParkingNotFound"));
+		if (parking == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("parkingNotFound"));
 
 		VehicleEntity vehicle = await GetOrCreateVehicle(p.LicencePlate, p.VehicleType, p.CreatorId ?? userData.Id, ct);
 
@@ -430,10 +430,10 @@ public class ParkingService(
 
 	public async Task<UResponse> UpdateParkingSubscription(ParkingSubscriptionUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		ParkingSubscriptionEntity? e = await db.Set<ParkingSubscriptionEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ParkingSubscriptionNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("parkingSubscriptionNotFound"));
 
 		if (p.CustomerName.IsNotNull()) e.CustomerName = p.CustomerName;
 		if (p.CustomerPhoneNumber.IsNotNull()) e.CustomerPhoneNumber = p.CustomerPhoneNumber;
@@ -450,17 +450,17 @@ public class ParkingService(
 
 	public async Task<UResponse> DeleteParkingSubscription(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		await db.Set<ParkingSubscriptionEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 		return new UResponse();
 	}
 
 	public async Task<UResponse<Guid?>> CreateParkingPlateFlag(ParkingPlateFlagCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		ParkingEntity? parking = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == p.ParkingId, ct);
-		if (parking == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("ParkingNotFound"));
+		if (parking == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("parkingNotFound"));
 
 		ParkingPlateFlagEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -490,10 +490,10 @@ public class ParkingService(
 
 	public async Task<UResponse> UpdateParkingPlateFlag(ParkingPlateFlagUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		ParkingPlateFlagEntity? e = await db.Set<ParkingPlateFlagEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ParkingPlateFlagNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("plateRecordNotFound"));
 
 		if (p.Reason.IsNotNull()) e.Reason = p.Reason;
 		if (p.Amount.IsNotNull()) e.Amount = p.Amount;
@@ -508,20 +508,20 @@ public class ParkingService(
 
 	public async Task<UResponse> DeleteParkingPlateFlag(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		await db.Set<ParkingPlateFlagEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 		return new UResponse();
 	}
 
 	public async Task<UResponse<Guid?>> CreateParkingStaff(ParkingStaffCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		ParkingEntity? parking = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == p.ParkingId, ct);
-		if (parking == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("ParkingNotFound"));
-		if (!userData.CanManage(parking.CreatorId, parking.AdminUserIds)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (parking == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("parkingNotFound"));
+		if (!userData.CanManage(parking.CreatorId, parking.AdminUserIds)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
-		if (await db.Set<UserEntity>().AnyAsync(x => x.UserName == p.UserName, ct)) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("UserNameAlreadyExists"));
+		if (await db.Set<UserEntity>().AnyAsync(x => x.UserName == p.UserName, ct)) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("thisUsernameIsAlreadyTaken"));
 
 		Guid userId = Guid.CreateVersion7();
 		DateTime now = DateTime.UtcNow;
@@ -570,10 +570,10 @@ public class ParkingService(
 
 	public async Task<UResponse> UpdateParkingStaff(ParkingStaffUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		ParkingStaffEntity? e = await db.Set<ParkingStaffEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ParkingStaffNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("parkingStaffMemberNotFound"));
 
 		if (p.ShiftTitle.IsNotNull()) e.ShiftTitle = p.ShiftTitle;
 		if (p.MaxDiscountPercent.IsNotNull()) e.MaxDiscountPercent = p.MaxDiscountPercent.Value;
@@ -593,10 +593,10 @@ public class ParkingService(
 
 	public async Task<UResponse> DeleteParkingStaff(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		ParkingStaffEntity? e = await db.Set<ParkingStaffEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ParkingStaffNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("parkingStaffMemberNotFound"));
 
 		ParkingEntity? parking = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == e.ParkingId, ct);
 		if (parking != null) {
@@ -611,7 +611,7 @@ public class ParkingService(
 
 	public async Task<UResponse<ParkingShiftResponse?>> OpenParkingShift(ParkingShiftOpenParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ParkingShiftResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<ParkingShiftResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		ParkingShiftEntity? open = await db.Set<ParkingShiftEntity>().FirstOrDefaultAsync(x => x.ParkingId == p.ParkingId && x.CreatorId == userData.Id && x.EndDate == null, ct);
 		if (open == null) {
@@ -642,10 +642,10 @@ public class ParkingService(
 
 	public async Task<UResponse<ParkingShiftResponse?>> CloseParkingShift(ParkingShiftCloseParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ParkingShiftResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<ParkingShiftResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		ParkingShiftEntity? e = await db.Set<ParkingShiftEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse<ParkingShiftResponse?>(null, Usc.NotFound, ls.Get("ParkingShiftNotFound"));
+		if (e == null) return new UResponse<ParkingShiftResponse?>(null, Usc.NotFound, ls.Get("parkingShiftNotFound"));
 
 		e.EndDate = DateTime.UtcNow;
 		e.CountedCash = p.CountedCash;
@@ -659,7 +659,7 @@ public class ParkingService(
 
 	public async Task<UResponse<ParkingPlateStatusResponse?>> ReadParkingPlateStatus(ParkingPlateStatusParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ParkingPlateStatusResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<ParkingPlateStatusResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		DateTime now = DateTime.UtcNow;
 		VehicleResponse? vehicle = await db.Set<VehicleEntity>().Where(x => x.LicencePlate == p.LicencePlate).Select(Projections.VehicleSelector(new VehicleSelectorArgs())).FirstOrDefaultAsync(ct);
@@ -703,10 +703,10 @@ public class ParkingService(
 
 	public async Task<UResponse<ParkingReportResponse?>> RegisterParkingEntry(ParkingEntryParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ParkingReportResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<ParkingReportResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		ParkingEntity? parking = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == p.ParkingId, ct);
-		if (parking == null) return new UResponse<ParkingReportResponse?>(null, Usc.NotFound, ls.Get("ParkingNotFound"));
+		if (parking == null) return new UResponse<ParkingReportResponse?>(null, Usc.NotFound, ls.Get("parkingNotFound"));
 
 		DateTime now = DateTime.UtcNow;
 		DateTime start = p.StartDate ?? now;
@@ -714,7 +714,7 @@ public class ParkingService(
 		VehicleEntity vehicle = await GetOrCreateVehicle(p.LicencePlate, p.VehicleType, userData.Id, ct);
 
 		bool alreadyInside = await db.Set<ParkingReportEntity>().AnyAsync(x => x.ParkingId == p.ParkingId && x.VehicleId == vehicle.Id && x.EndDate == null, ct);
-		if (alreadyInside) return new UResponse<ParkingReportResponse?>(null, Usc.Conflict, ls.Get("VehicleIsAlreadyInsideTheParking"));
+		if (alreadyInside) return new UResponse<ParkingReportResponse?>(null, Usc.Conflict, ls.Get("thisVehicleIsAlreadyInsideTheParking"));
 
 		ParkingSubscriptionEntity? subscription = await db.Set<ParkingSubscriptionEntity>()
 			.FirstOrDefaultAsync(x => x.ParkingId == p.ParkingId && x.VehicleId == vehicle.Id && x.ExpiryDate > now && !x.Tags.Contains(TagParkingSubscription.Cancelled), ct);
@@ -763,10 +763,10 @@ public class ParkingService(
 
 	public async Task<UResponse<ParkingBillResponse?>> CalculateParkingExit(ParkingExitCalculateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ParkingBillResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<ParkingBillResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		ParkingReportEntity? report = await FindOpenReport(p.ReportId, p.ParkingId, p.LicencePlate, ct);
-		if (report == null) return new UResponse<ParkingBillResponse?>(null, Usc.NotFound, ls.Get("ParkingReportNotFound"));
+		if (report == null) return new UResponse<ParkingBillResponse?>(null, Usc.NotFound, ls.Get("parkingReportNotFound"));
 
 		ParkingBillResponse bill = await BuildBill(report, p.CorrectedStartDate, p.EndDate, p.Discount, ct);
 		return new UResponse<ParkingBillResponse?>(bill);
@@ -912,11 +912,11 @@ public class ParkingService(
 
 	public async Task<UResponse<ParkingReportResponse?>> RegisterParkingExit(ParkingExitParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ParkingReportResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<ParkingReportResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		ParkingReportEntity? report = await db.Set<ParkingReportEntity>().Include(x => x.Vehicle).FirstOrDefaultAsync(x => x.Id == p.ReportId, ct);
-		if (report == null) return new UResponse<ParkingReportResponse?>(null, Usc.NotFound, ls.Get("ParkingReportNotFound"));
-		if (report.EndDate.IsNotNull()) return new UResponse<ParkingReportResponse?>(null, Usc.Conflict, ls.Get("ParkingReportIsAlreadyClosed"));
+		if (report == null) return new UResponse<ParkingReportResponse?>(null, Usc.NotFound, ls.Get("parkingReportNotFound"));
+		if (report.EndDate.IsNotNull()) return new UResponse<ParkingReportResponse?>(null, Usc.Conflict, ls.Get("thisEntryHasAlreadyBeenClosed"));
 
 		ParkingBillResponse bill = await BuildBill(report, p.CorrectedStartDate, p.EndDate, p.Discount, ct);
 		TagParkingPayment method = bill.IsSubscription ? TagParkingPayment.Subscription : bill.Payable <= 0 ? TagParkingPayment.Free : p.PaymentMethod;
@@ -962,10 +962,10 @@ public class ParkingService(
 
 	public async Task<UResponse<ParkingDashboardResponse?>> ReadParkingDashboard(ParkingDashboardParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ParkingDashboardResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<ParkingDashboardResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		ParkingEntity? parking = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == p.ParkingId, ct);
-		if (parking == null) return new UResponse<ParkingDashboardResponse?>(null, Usc.NotFound, ls.Get("ParkingNotFound"));
+		if (parking == null) return new UResponse<ParkingDashboardResponse?>(null, Usc.NotFound, ls.Get("parkingNotFound"));
 
 		int insideCount = await db.Set<ParkingReportEntity>().CountAsync(x => x.ParkingId == p.ParkingId && x.EndDate == null, ct);
 
@@ -994,7 +994,7 @@ public class ParkingService(
 
 	public async Task<UResponse<IEnumerable<ParkingInsideVehicleResponse>?>> ReadParkingInsideVehicles(ParkingInsideVehiclesParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<IEnumerable<ParkingInsideVehicleResponse>?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse<IEnumerable<ParkingInsideVehicleResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		DateTime now = DateTime.UtcNow;
 		IQueryable<ParkingReportEntity> q = db.Set<ParkingReportEntity>().Include(x => x.Vehicle).Where(x => x.ParkingId == p.ParkingId && x.EndDate == null);

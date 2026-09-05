@@ -14,8 +14,8 @@ public class SimCardService(
 ) : ISimCardService {
 	public async Task<UResponse<Guid?>> Create(SimCardCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		SimCardEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -41,10 +41,10 @@ public class SimCardService(
 
 	public async Task<UResponse> Update(SimCardUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		SimCardEntity? e = await db.Set<SimCardEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("SimCardNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("simCardNotFound"));
 
 		if (p.Number != null) e.Number = p.Number;
 		if (p.Serial != null) e.Serial = p.Serial;
@@ -56,7 +56,7 @@ public class SimCardService(
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		await db.Set<SimCardEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 		return new UResponse();

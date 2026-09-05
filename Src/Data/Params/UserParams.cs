@@ -1,10 +1,10 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class UserCreateParams : BaseCreateParams<TagUser> {
-	[UValidationRequired("UserNameRequired"), UValidationStringLength(2, 100, "UserNameMinLength")]
+	[UValidationRequired("userNameIsRequired"), UValidationStringLength(2, 100, "userNameIsNotValid")]
 	public string UserName { get; set; } = null!;
 
-	[UValidationRequired("PasswordRequired"), UValidationStringLength(4, 100, "PasswordMinLength")]
+	[UValidationRequired("pleaseEnterAPassword"), UValidationStringLength(4, 100, "passwordMustBeAtLeast6Characters")]
 	public string Password { get; set; } = null!;
 
 	public string? PhoneNumber { get; set; }
@@ -86,6 +86,6 @@ public sealed class UserReadParams : BaseReadParams<TagUser> {
 }
 
 public sealed class UserBulkCreateParams : BaseParams {
-	[UValidationRequired("UsersRequired"), UValidationMinCollectionLength(1, "AtLeastOneUserRequired")]
+	[UValidationRequired("UsersRequired"), UValidationMinCollectionLength(1, "atLeastOneUserRequired")]
 	public List<UserCreateParams> Users { get; set; } = null!;
 }

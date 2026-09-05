@@ -11,7 +11,7 @@ public class UValidationFilter : IEndpointFilter {
 			bool isValid = Validator.TryValidateObject(argument, validationContext, validationResults, true);
 
 			if (isValid) continue;
-			string errorMessage = validationResults.FirstOrDefault()?.ErrorMessage ?? l.Get("ValidationError");
+			string errorMessage = validationResults.FirstOrDefault()?.ErrorMessage ?? l.Get("validationFailedPleaseCheckYourInput");
 
 			return new UResponse(Usc.BadRequest, errorMessage).ToResult();
 		}

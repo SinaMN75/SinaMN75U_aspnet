@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Params;
 
 public class TerminalCreateParams : BaseCreateParams<TagTerminal> {
-	[UValidationRequired("SerialRequired")]
+	[UValidationRequired("serialRequired")]
 	public string Serial { get; set; } = null!;
 
 	public string? SimCardNumber { get; set; }

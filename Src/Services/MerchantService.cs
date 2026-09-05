@@ -14,8 +14,8 @@ public class MerchantService(
 ) : IMerchantService {
 	public async Task<UResponse<Guid?>> Create(MerchantCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		
 		MerchantEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -67,12 +67,12 @@ public class MerchantService(
 
 	public async Task<UResponse<MerchantResponse?>> ReadById(IdParams<MerchantSelectorArgs> p, CancellationToken ct) {
 		MerchantResponse? e = await db.Set<MerchantEntity>().Select(Projections.MerchantSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		return e == null ? new UResponse<MerchantResponse?>(null, Usc.NotFound, ls.Get("MerchantNotFound")) : new UResponse<MerchantResponse?>(e);
+		return e == null ? new UResponse<MerchantResponse?>(null, Usc.NotFound, ls.Get("merchantNotFound")) : new UResponse<MerchantResponse?>(e);
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		await db.Set<MerchantEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 

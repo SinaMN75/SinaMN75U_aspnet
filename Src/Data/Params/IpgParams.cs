@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class IpgSaleParams : BaseParams {
-	[UValidationRequired("AmountRequired")]
+	[UValidationRequired("amountRequired")]
 	public decimal Amount { get; set; }
 
 	public TagTxn Tag { get; set; } = TagTxn.ChargeWallet;

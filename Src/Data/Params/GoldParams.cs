@@ -6,10 +6,10 @@ public sealed class GoldQuoteParams : BaseParams {
 }
 
 public sealed class GoldCreateOrderParams : BaseParams {
-	[UValidationRequired("IdempotencyKeyRequired"), UValidationStringLength(1, 255, "IdempotencyKeyNotValid")]
+	[UValidationRequired("idempotencyKeyIsRequired"), UValidationStringLength(1, 255, "idempotencyKeyIsNotValid")]
 	public string IdempotencyKey { get; set; } = null!;
 
-	[UValidationRequired("OrderSideRequired")]
+	[UValidationRequired("orderSideIsRequired")]
 	public TagGoldOrderSide? Side { get; set; }
 
 	public TagGoldAsset BaseAsset { get; set; } = TagGoldAsset.Gold18;
@@ -25,7 +25,7 @@ public sealed class GoldReadOrdersParams : BaseParams {
 }
 
 public sealed class GoldReadOrderParams : BaseParams {
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public required string Id { get; set; }
 }
 
@@ -41,14 +41,14 @@ public sealed class GoldReadTransactionsParams : BaseParams {
 public sealed class GoldCreateApiTokenParams : BaseParams {
 	public string? Label { get; set; }
 
-	[UValidationMinCollectionLength(1, "ScopesRequired")]
+	[UValidationMinCollectionLength(1, "atLeastOneScopeIsRequired")]
 	public ICollection<string> Scopes { get; set; } = [];
 
 	public ICollection<string>? IpWhitelist { get; set; }
 }
 
 public sealed class GoldDeleteApiTokenParams : BaseParams {
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public required string TokenId { get; set; }
 }
 

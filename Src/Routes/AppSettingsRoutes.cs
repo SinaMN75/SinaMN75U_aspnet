@@ -8,7 +8,7 @@ public static class AppSettingsRoutes {
 		r.MapPost("Update", (AppSettingsUpdateParams p, ITokenService ts, ILocalizationService ls) => {
 			if (!IsSystemAdmin(p.Token, ts)) return Forbidden(ls);
 			Core.App = p.Settings;
-			return new UResponse(Usc.Success, ls.Get("Updated")).ToResult();
+			return new UResponse(Usc.Success, ls.Get("updatedSuccessfully")).ToResult();
 		}).Produces<UResponse>();
 	}
 
@@ -17,5 +17,5 @@ public static class AppSettingsRoutes {
 		return u != null && u.Tags.Contains(TagUser.SystemAdmin);
 	}
 
-	private static IResult Forbidden(ILocalizationService ls) => new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction")).ToResult();
+	private static IResult Forbidden(ILocalizationService ls) => new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction")).ToResult();
 }

@@ -8,27 +8,27 @@ public sealed class FileManagerBrowseParams : BaseParams {
 public sealed class FileManagerCreateFolderParams : BaseParams {
 	public string Path { get; set; } = "";
 
-	[UValidationRequired("NameRequired")]
+	[UValidationRequired("nameIsRequired")]
 	public required string Name { get; set; }
 }
 
 public sealed class FileManagerRenameParams : BaseParams {
-	[UValidationRequired("PathRequired")]
+	[UValidationRequired("pathIsRequired")]
 	public required string Path { get; set; }
 
-	[UValidationRequired("NameRequired")]
+	[UValidationRequired("nameIsRequired")]
 	public required string NewName { get; set; }
 }
 
 public sealed class FileManagerMoveParams : BaseParams {
-	[UValidationRequired("PathRequired")]
+	[UValidationRequired("pathIsRequired")]
 	public required string Path { get; set; }
 
 	public string Destination { get; set; } = "";
 }
 
 public sealed class FileManagerDeleteParams : BaseParams {
-	[UValidationRequired("PathRequired")]
+	[UValidationRequired("pathIsRequired")]
 	public required string Path { get; set; }
 }
 

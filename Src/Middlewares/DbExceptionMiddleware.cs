@@ -7,7 +7,7 @@ public class DbExceptionMiddleware(RequestDelegate next, ILocalizationService ls
 		}
 		catch (DbUpdateConcurrencyException ex) {
 			context.Items[UConstants.ApiLogExceptionKey] = ex;
-			await WriteAsync(context, Usc.Conflict, ls.Get("ConcurrencyConflict"));
+			await WriteAsync(context, Usc.Conflict, ls.Get("thisRecordWasModifiedByAnotherOperationPleaseRetry"));
 		}
 		catch (DbUpdateException ex) {
 			context.Items[UConstants.ApiLogExceptionKey] = ex;
@@ -29,13 +29,13 @@ public class DbExceptionMiddleware(RequestDelegate next, ILocalizationService ls
 				await WriteAsync(context, Usc.BadRequest, ResolveForeignKeyMessage(ex.ConstraintName));
 				return true;
 			case "23502":
-				await WriteAsync(context, Usc.BadRequest, ls.Get("RequiredFieldMissing"));
+				await WriteAsync(context, Usc.BadRequest, ls.Get("aRequiredFieldIsMissing"));
 				return true;
 			case "23514":
-				await WriteAsync(context, Usc.BadRequest, ls.Get("InvalidValue"));
+				await WriteAsync(context, Usc.BadRequest, ls.Get("oneOfTheSubmittedValuesIsInvalid"));
 				return true;
 			case "22001":
-				await WriteAsync(context, Usc.BadRequest, ls.Get("ValueTooLong"));
+				await WriteAsync(context, Usc.BadRequest, ls.Get("oneOfTheSubmittedValuesIsTooLong"));
 				return true;
 			default:
 				return false;
@@ -43,34 +43,34 @@ public class DbExceptionMiddleware(RequestDelegate next, ILocalizationService ls
 	}
 
 	private string ResolveUniqueMessage(string? constraint) => constraint switch {
-		"IX_Users_Email" => ls.Get("EmailIsDuplicated"),
-		"IX_Users_UserName" => ls.Get("UserNameIsDuplicated"),
-		"IX_Users_PhoneNumber" => ls.Get("PhoneNumberIsDuplicated"),
-		"IX_Users_NationalCode" => ls.Get("NationalCodeIsDuplicated"),
-		"IX_Products_Slug" => ls.Get("SlugIsDuplicated"),
-		"IX_Products_Code" => ls.Get("CodeIsDuplicated"),
-		"IX_Terminal_TerminalId" => ls.Get("TerminalIdIsDuplicated"),
-		"IX_Terminal_SimCardSerial" => ls.Get("SimCardSerialIsDuplicated"),
-		"IX_Terminal_Imei" => ls.Get("ImeiIsDuplicated"),
-		"IX_Txn_TrackingNumber" => ls.Get("TrackingNumberIsDuplicated"),
-		"IX_Vehicles_NumberPlate" => ls.Get("NumberPlateIsDuplicated"),
-		_ when constraint?.StartsWith("PK_", StringComparison.Ordinal) == true => ls.Get("IdIsDuplicated"),
-		_ => ls.Get("DuplicateEntry")
+		"IX_Users_Email" => ls.Get("thisEmailAlreadyExists"),
+		"IX_Users_UserName" => ls.Get("thisUserNameAlreadyExists"),
+		"IX_Users_PhoneNumber" => ls.Get("thisPhoneNumberAlreadyExists"),
+		"IX_Users_NationalCode" => ls.Get("thisNationalCodeAlreadyExists"),
+		"IX_Products_Slug" => ls.Get("thisSlugAlreadyExists"),
+		"IX_Products_Code" => ls.Get("thisCodeAlreadyExists"),
+		"IX_Terminal_TerminalId" => ls.Get("thisTerminalIdAlreadyExists"),
+		"IX_Terminal_SimCardSerial" => ls.Get("thisSimCardSerialAlreadyExists"),
+		"IX_Terminal_Imei" => ls.Get("thisIMEIAlreadyExists"),
+		"IX_Txn_TrackingNumber" => ls.Get("thisTrackingNumberAlreadyExists"),
+		"IX_Vehicles_NumberPlate" => ls.Get("thisNumberPlateAlreadyExists"),
+		_ when constraint?.StartsWith("PK_", StringComparison.Ordinal) == true => ls.Get("thisIdAlreadyExists"),
+		_ => ls.Get("thisRecordAlreadyExists")
 	};
 	
 	private string ResolveForeignKeyMessage(string? constraint) {
-		if (string.IsNullOrEmpty(constraint)) return ls.Get("RelatedRecordNotFound");
-		if (constraint.Contains("ProductId") || constraint.Contains("_Products_")) return ls.Get("ProductNotFound");
-		if (constraint.Contains("CategoryId") || constraint.Contains("_Categories_")) return ls.Get("CategoryNotFound");
-		if (constraint.Contains("CommentId")) return ls.Get("CommentNotFound");
-		if (constraint.Contains("ContentId")) return ls.Get("ContentNotFound");
-		if (constraint.Contains("MerchantId")) return ls.Get("MerchantNotFound");
-		if (constraint.Contains("TerminalId")) return ls.Get("TerminalNotFound");
-		if (constraint.Contains("BankAccountId")) return ls.Get("BankAccountNotFound");
-		if (constraint.Contains("AddressId")) return ls.Get("AddressNotFound");
-		if (constraint.Contains("WalletId") || constraint.Contains("WalletTxnId")) return ls.Get("WalletNotFound");
-		if (constraint.Contains("UserId") || constraint.Contains("CreatorId") || constraint.Contains("SenderId") || constraint.Contains("ReceiverId") || constraint.Contains("_Users_")) return ls.Get("UserNotFound");
-		return ls.Get("RelatedRecordNotFound");
+		if (string.IsNullOrEmpty(constraint)) return ls.Get("aRelatedRecordWasNotFound");
+		if (constraint.Contains("ProductId") || constraint.Contains("_Products_")) return ls.Get("productNotFoundPleaseCheckDetails");
+		if (constraint.Contains("CategoryId") || constraint.Contains("_Categories_")) return ls.Get("categoryNotFoundPleaseTryAnother");
+		if (constraint.Contains("CommentId")) return ls.Get("commentNotFound");
+		if (constraint.Contains("ContentId")) return ls.Get("contentNotFound");
+		if (constraint.Contains("MerchantId")) return ls.Get("merchantNotFound");
+		if (constraint.Contains("TerminalId")) return ls.Get("terminalNotFound");
+		if (constraint.Contains("BankAccountId")) return ls.Get("bankAccountNotFound");
+		if (constraint.Contains("AddressId")) return ls.Get("addressNotFound");
+		if (constraint.Contains("WalletId") || constraint.Contains("WalletTxnId")) return ls.Get("walletNotFound");
+		if (constraint.Contains("UserId") || constraint.Contains("CreatorId") || constraint.Contains("SenderId") || constraint.Contains("ReceiverId") || constraint.Contains("_Users_")) return ls.Get("accountNotFound");
+		return ls.Get("aRelatedRecordWasNotFound");
 	}
 
 	private static Task WriteAsync(HttpContext context, Usc status, string message) => context.Response.HasStarted ? Task.CompletedTask : new UResponse(status, message).ToResult().ExecuteAsync(context);

@@ -19,11 +19,11 @@ public class MediaService(
 	public async Task<UResponse<Guid?>> Create(MediaCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		
 		IEnumerable<string> allowedExtensions = [".png", ".gif", ".jpg", ".jpeg", ".svg", ".webp", ".mp4", ".mov", ".mp3", ".pdf", ".aac", ".apk", ".zip", ".rar", ".mkv"];
-		if (!allowedExtensions.Contains(Path.GetExtension(p.File.FileName.ToLower()))) return new UResponse<Guid?>(null, Usc.MediaTypeNotSupported, ls.Get("MediaTypeNotSupported"));
+		if (!allowedExtensions.Contains(Path.GetExtension(p.File.FileName.ToLower()))) return new UResponse<Guid?>(null, Usc.MediaTypeNotSupported, ls.Get("thisFileTypeIsNotSupported"));
 
 		string folderName;
 		if (p.UserId != null) folderName = "users";
@@ -82,7 +82,7 @@ public class MediaService(
 
 	public async Task<UResponse> Update(MediaUpdateParams p, CancellationToken ct) {
 		MediaEntity? e = await db.Set<MediaEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("MediaNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("mediaNotFound"));
 		if (p.Title != null) e.JsonData.Detail1 = p.Title;
 		if (p.Description != null) e.JsonData.Detail2 = p.Description;
 		if (p.CategoryId != null) e.CategoryId = p.CategoryId;
@@ -106,7 +106,7 @@ public class MediaService(
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		MediaEntity? media = await db.Set<MediaEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (media == null) return new UResponse(Usc.NotFound, ls.Get("MediaNotFound"));
+		if (media == null) return new UResponse(Usc.NotFound, ls.Get("mediaNotFound"));
 
 		try {
 			File.Delete(Path.Combine(env.WebRootPath, "Media", media.Path));

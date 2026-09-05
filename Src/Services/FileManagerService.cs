@@ -20,8 +20,8 @@ public class FileManagerService(
 	public async Task<UResponse<FileManagerListResponse?>> Browse(FileManagerBrowseParams p, CancellationToken ct) {
 		UResponse<FileManagerListResponse?>? guard = GuardAdmin<FileManagerListResponse?>(p.Token);
 		if (guard != null) return guard;
-		if (!TryResolve(p.Path, out string full)) return new UResponse<FileManagerListResponse?>(null, Usc.SecurityError, ls.Get("InvalidPath"));
-		if (!Directory.Exists(full)) return new UResponse<FileManagerListResponse?>(null, Usc.NotFound, ls.Get("PathNotFound"));
+		if (!TryResolve(p.Path, out string full)) return new UResponse<FileManagerListResponse?>(null, Usc.SecurityError, ls.Get("theRequestedPathIsInvalid"));
+		if (!Directory.Exists(full)) return new UResponse<FileManagerListResponse?>(null, Usc.NotFound, ls.Get("theRequestedPathWasNotFound"));
 
 		DirectoryInfo dir = new(full);
 		List<FileManagerEntryResponse> directories = dir.GetDirectories()
@@ -45,8 +45,8 @@ public class FileManagerService(
 	public async Task<UResponse<FileManagerEntryResponse?>> CreateFolder(FileManagerCreateFolderParams p, CancellationToken ct) {
 		UResponse<FileManagerEntryResponse?>? guard = GuardAdmin<FileManagerEntryResponse?>(p.Token);
 		if (guard != null) return guard;
-		if (!TryResolve(Path.Combine(p.Path, SanitizeName(p.Name)), out string full)) return new UResponse<FileManagerEntryResponse?>(null, Usc.SecurityError, ls.Get("InvalidPath"));
-		if (Directory.Exists(full) || File.Exists(full)) return new UResponse<FileManagerEntryResponse?>(null, Usc.Conflict, ls.Get("PathAlreadyExists"));
+		if (!TryResolve(Path.Combine(p.Path, SanitizeName(p.Name)), out string full)) return new UResponse<FileManagerEntryResponse?>(null, Usc.SecurityError, ls.Get("theRequestedPathIsInvalid"));
+		if (Directory.Exists(full) || File.Exists(full)) return new UResponse<FileManagerEntryResponse?>(null, Usc.Conflict, ls.Get("anItemWithThisNameAlreadyExists"));
 
 		Directory.CreateDirectory(full);
 		return await Task.FromResult(new UResponse<FileManagerEntryResponse?>(ToEntry(new DirectoryInfo(full)), Usc.Created));
@@ -55,13 +55,13 @@ public class FileManagerService(
 	public async Task<UResponse<FileManagerEntryResponse?>> Rename(FileManagerRenameParams p, CancellationToken ct) {
 		UResponse<FileManagerEntryResponse?>? guard = GuardAdmin<FileManagerEntryResponse?>(p.Token);
 		if (guard != null) return guard;
-		if (!TryResolve(p.Path, out string source) || !Exists(source)) return new UResponse<FileManagerEntryResponse?>(null, Usc.NotFound, ls.Get("PathNotFound"));
+		if (!TryResolve(p.Path, out string source) || !Exists(source)) return new UResponse<FileManagerEntryResponse?>(null, Usc.NotFound, ls.Get("theRequestedPathWasNotFound"));
 
 		string? parent = Path.GetDirectoryName(source);
-		if (parent == null) return new UResponse<FileManagerEntryResponse?>(null, Usc.SecurityError, ls.Get("InvalidPath"));
+		if (parent == null) return new UResponse<FileManagerEntryResponse?>(null, Usc.SecurityError, ls.Get("theRequestedPathIsInvalid"));
 		string target = Path.Combine(parent, SanitizeName(p.NewName));
-		if (!IsInsideRoot(target)) return new UResponse<FileManagerEntryResponse?>(null, Usc.SecurityError, ls.Get("InvalidPath"));
-		if (Exists(target)) return new UResponse<FileManagerEntryResponse?>(null, Usc.Conflict, ls.Get("PathAlreadyExists"));
+		if (!IsInsideRoot(target)) return new UResponse<FileManagerEntryResponse?>(null, Usc.SecurityError, ls.Get("theRequestedPathIsInvalid"));
+		if (Exists(target)) return new UResponse<FileManagerEntryResponse?>(null, Usc.Conflict, ls.Get("anItemWithThisNameAlreadyExists"));
 
 		if (Directory.Exists(source)) Directory.Move(source, target);
 		else File.Move(source, target);
@@ -71,12 +71,12 @@ public class FileManagerService(
 	public async Task<UResponse<FileManagerEntryResponse?>> Move(FileManagerMoveParams p, CancellationToken ct) {
 		UResponse<FileManagerEntryResponse?>? guard = GuardAdmin<FileManagerEntryResponse?>(p.Token);
 		if (guard != null) return guard;
-		if (!TryResolve(p.Path, out string source) || !Exists(source)) return new UResponse<FileManagerEntryResponse?>(null, Usc.NotFound, ls.Get("PathNotFound"));
-		if (!TryResolve(p.Destination, out string destDir) || !Directory.Exists(destDir)) return new UResponse<FileManagerEntryResponse?>(null, Usc.NotFound, ls.Get("PathNotFound"));
+		if (!TryResolve(p.Path, out string source) || !Exists(source)) return new UResponse<FileManagerEntryResponse?>(null, Usc.NotFound, ls.Get("theRequestedPathWasNotFound"));
+		if (!TryResolve(p.Destination, out string destDir) || !Directory.Exists(destDir)) return new UResponse<FileManagerEntryResponse?>(null, Usc.NotFound, ls.Get("theRequestedPathWasNotFound"));
 
 		string target = Path.Combine(destDir, Path.GetFileName(source));
-		if (!IsInsideRoot(target)) return new UResponse<FileManagerEntryResponse?>(null, Usc.SecurityError, ls.Get("InvalidPath"));
-		if (Exists(target)) return new UResponse<FileManagerEntryResponse?>(null, Usc.Conflict, ls.Get("PathAlreadyExists"));
+		if (!IsInsideRoot(target)) return new UResponse<FileManagerEntryResponse?>(null, Usc.SecurityError, ls.Get("theRequestedPathIsInvalid"));
+		if (Exists(target)) return new UResponse<FileManagerEntryResponse?>(null, Usc.Conflict, ls.Get("anItemWithThisNameAlreadyExists"));
 
 		if (Directory.Exists(source)) Directory.Move(source, target);
 		else File.Move(source, target);
@@ -86,23 +86,23 @@ public class FileManagerService(
 	public async Task<UResponse> Delete(FileManagerDeleteParams p, CancellationToken ct) {
 		UResponse? guard = GuardAdmin(p.Token);
 		if (guard != null) return guard;
-		if (!TryResolve(p.Path, out string full)) return new UResponse(Usc.SecurityError, ls.Get("InvalidPath"));
-		if (full == Root) return new UResponse(Usc.Forbidden, ls.Get("InvalidPath"));
+		if (!TryResolve(p.Path, out string full)) return new UResponse(Usc.SecurityError, ls.Get("theRequestedPathIsInvalid"));
+		if (full == Root) return new UResponse(Usc.Forbidden, ls.Get("theRequestedPathIsInvalid"));
 
 		if (Directory.Exists(full)) Directory.Delete(full, true);
 		else if (File.Exists(full)) File.Delete(full);
-		else return new UResponse(Usc.NotFound, ls.Get("PathNotFound"));
+		else return new UResponse(Usc.NotFound, ls.Get("theRequestedPathWasNotFound"));
 		return await Task.FromResult(new UResponse(Usc.Deleted));
 	}
 
 	public async Task<UResponse<FileManagerEntryResponse?>> Upload(FileManagerUploadParams p, CancellationToken ct) {
 		UResponse<FileManagerEntryResponse?>? guard = GuardAdmin<FileManagerEntryResponse?>(p.Token);
 		if (guard != null) return guard;
-		if (!TryResolve(p.Path, out string destDir)) return new UResponse<FileManagerEntryResponse?>(null, Usc.SecurityError, ls.Get("InvalidPath"));
+		if (!TryResolve(p.Path, out string destDir)) return new UResponse<FileManagerEntryResponse?>(null, Usc.SecurityError, ls.Get("theRequestedPathIsInvalid"));
 		Directory.CreateDirectory(destDir);
 
 		string target = Path.Combine(destDir, SanitizeName(Path.GetFileName(p.File.FileName)));
-		if (!IsInsideRoot(target)) return new UResponse<FileManagerEntryResponse?>(null, Usc.SecurityError, ls.Get("InvalidPath"));
+		if (!IsInsideRoot(target)) return new UResponse<FileManagerEntryResponse?>(null, Usc.SecurityError, ls.Get("theRequestedPathIsInvalid"));
 
 		await using FileStream stream = new(target, FileMode.Create);
 		await p.File.CopyToAsync(stream, ct);
@@ -112,7 +112,7 @@ public class FileManagerService(
 	public UResponse<(string fullPath, string contentType)?> ResolveDownload(FileManagerDeleteParams p) {
 		UResponse<(string, string)?>? guard = GuardAdmin<(string, string)?>(p.Token);
 		if (guard != null) return guard;
-		if (!TryResolve(p.Path, out string full) || !File.Exists(full)) return new UResponse<(string, string)?>(null, Usc.NotFound, ls.Get("PathNotFound"));
+		if (!TryResolve(p.Path, out string full) || !File.Exists(full)) return new UResponse<(string, string)?>(null, Usc.NotFound, ls.Get("theRequestedPathWasNotFound"));
 
 		FileExtensionContentTypeProvider provider = new();
 		if (!provider.TryGetContentType(full, out string? contentType)) contentType = "application/octet-stream";
@@ -155,16 +155,16 @@ public class FileManagerService(
 
 	private UResponse? GuardAdmin(string? token) {
 		JwtClaimData? userData = ts.ExtractClaims(token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (!userData.Tags.Contains(TagUser.SystemAdmin)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (!userData.Tags.Contains(TagUser.SystemAdmin)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		return null;
 	}
 
 	private UResponse<T>? GuardAdmin<T>(string? token) {
 		JwtClaimData? userData = ts.ExtractClaims(token);
-		if (userData == null) return new UResponse<T>(default!, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<T>(default!, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (!userData.Tags.Contains(TagUser.SystemAdmin)) return new UResponse<T>(default!, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (userData == null) return new UResponse<T>(default!, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<T>(default!, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.Tags.Contains(TagUser.SystemAdmin)) return new UResponse<T>(default!, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		return null;
 	}
 }

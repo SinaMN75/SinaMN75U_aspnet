@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class VehicleCreateParams : BaseCreateParams<TagVehicle> {
-	[UValidationStringLength(5, 10, "LicencePlateMinMaxLength")]
+	[UValidationStringLength(5, 10, "licencePlateCantBeMoreThan10Characters")]
 	public string LicencePlate { get; set; } = null!;
 
 	public string? Title { get; set; }
@@ -10,7 +10,7 @@ public sealed class VehicleCreateParams : BaseCreateParams<TagVehicle> {
 }
 
 public sealed class VehicleUpdateParams : BaseUpdateParams<TagVehicle> {
-	[UValidationStringLength(5, 10, "LicencePlateMinMaxLength")]
+	[UValidationStringLength(5, 10, "licencePlateCantBeMoreThan10Characters")]
 	public string? LicencePlate { get; set; }
 
 	public string? Brand { get; set; }

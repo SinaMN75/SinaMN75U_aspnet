@@ -14,8 +14,8 @@ public class VehicleService(
 ) : IVehicleService {
 	public async Task<UResponse<Guid?>> Create(VehicleCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		VehicleEntity e = new() {
 			Id = Guid.CreateVersion7(),
@@ -31,7 +31,7 @@ public class VehicleService(
 		
 		await db.Set<VehicleEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
-		return new UResponse<Guid?>(e.Id, message: ls.Get("VehicleCreated"));
+		return new UResponse<Guid?>(e.Id, message: ls.Get("vehicleCreatedSuccessfully"));
 	}
 
 	public async Task<UResponse<IEnumerable<VehicleResponse>?>> Read(VehicleReadParams p, CancellationToken ct) {
@@ -46,10 +46,10 @@ public class VehicleService(
 
 	public async Task<UResponse> Update(VehicleUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		VehicleEntity? e = await db.Set<VehicleEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("VehicleNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("vehicleNotFound"));
 		
 		if (p.LicencePlate.IsNotNull()) e.LicencePlate = p.LicencePlate;
 		if (p.Brand.IsNotNull()) e.Brand = p.Brand;
@@ -62,7 +62,7 @@ public class VehicleService(
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		await db.Set<VehicleEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 

@@ -1,25 +1,25 @@
 namespace SinaMN75U.Data.Params;
 
 public class MoadiCreateParams : BaseCreateParams<TagMoadi> {
-	[UValidationRequired("NameRequired"), UValidationStringLength(1, 255, "NameNotValid")]
+	[UValidationRequired("nameIsRequired"), UValidationStringLength(1, 255, "nameIsNotValid")]
 	public string Name { get; set; } = null!;
 
-	[UValidationRequired("EconomicCodeRequired"), UValidationStringLength(1, 30, "EconomicCodeNotValid")]
+	[UValidationRequired("economicCodeIsRequired"), UValidationStringLength(1, 30, "economicCodeIsNotValid")]
 	public string EconomicCode { get; set; } = null!;
 
-	[UValidationRequired("LegalEntityRequired"), UValidationStringLength(1, 20, "LegalEntityNotValid")]
+	[UValidationRequired("legalEntityIsRequired"), UValidationStringLength(1, 20, "legalEntityIsNotValid")]
 	public string LegalEntity { get; set; } = null!;
 
-	[UValidationRequired("UniqueTaxCodeRequired"), UValidationStringLength(1, 30, "UniqueTaxCodeNotValid")]
+	[UValidationRequired("uniqueTaxCodeIsRequired"), UValidationStringLength(1, 30, "uniqueTaxCodeIsNotValid")]
 	public string UniqueTaxCode { get; set; } = null!;
 
-	[UValidationRequired("OwnerNameRequired"), UValidationStringLength(1, 255, "OwnerNameNotValid")]
+	[UValidationRequired("ownerNameIsRequired"), UValidationStringLength(1, 255, "ownerNameIsNotValid")]
 	public string OwnerName { get; set; } = null!;
 
-	[UValidationRequired("OwnerMobileRequired"), UValidationStringLength(10, 15, "OwnerMobileNotValid")]
+	[UValidationRequired("ownerMobileIsRequired"), UValidationStringLength(10, 15, "ownerMobileIsNotValid")]
 	public string OwnerMobile { get; set; } = null!;
 
-	[UValidationRequired("OwnerNationalCodeRequired"), UValidationStringLength(10, 15, "OwnerNationalCodeNotValid")]
+	[UValidationRequired("ownerNationalCodeIsRequired"), UValidationStringLength(10, 15, "ownerNationalCodeIsNotValid")]
 	public string OwnerNationalCode { get; set; } = null!;
 
 	public Guid? UserId { get; set; }
@@ -50,7 +50,7 @@ public class MoadiUpdateParams : BaseUpdateParams<TagMoadi> {
 }
 
 public class MoadiRejectParams : BaseParams {
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public Guid Id { get; set; }
 
 	public string? Reason { get; set; }

@@ -22,8 +22,8 @@ public class CategoryService(
 
 	public async Task<UResponse<Guid?>> Create(CategoryCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		CategoryEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -77,15 +77,15 @@ public class CategoryService(
 			Tags = x.Tags,
 			JsonData = x.JsonData
 		}).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		return e == null ? new UResponse<CategoryResponse?>(null, Usc.NotFound, ls.Get("CategoryNotFound")) : new UResponse<CategoryResponse?>(e);
+		return e == null ? new UResponse<CategoryResponse?>(null, Usc.NotFound, ls.Get("categoryNotFoundPleaseTryAnother")) : new UResponse<CategoryResponse?>(e);
 	}
 
 	public async Task<UResponse> Update(CategoryUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		CategoryEntity? e = await db.Set<CategoryEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("CategoryNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("categoryNotFoundPleaseTryAnother"));
 
 		if (p.Title != null) e.Title = p.Title;
 		if (p.Subtitle != null) e.JsonData.Subtitle = p.Subtitle;
@@ -109,11 +109,11 @@ public class CategoryService(
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		
 		CategoryEntity? e = await db.Set<CategoryEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("CategoryNotFound"));
-		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("categoryNotFoundPleaseTryAnother"));
+		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		
 		db.Set<CategoryEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);

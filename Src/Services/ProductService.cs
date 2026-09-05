@@ -23,8 +23,8 @@ public class ProductService(
 
 	public async Task<UResponse<Guid?>> Create(ProductCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		List<CategoryEntity> categories = p.Categories.IsNotNullOrEmpty()
 			? await db.Set<CategoryEntity>().AsTracking().Where(x => p.Categories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct)
@@ -61,15 +61,15 @@ public class ProductService(
 
 	public async Task<UResponse<ProductResponse?>> ReadById(IdParams<ProductSelectorArgs> p, CancellationToken ct) {
 		ProductResponse? e = await db.Set<ProductEntity>().Select(Projections.ProductSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		return e == null ? new UResponse<ProductResponse?>(null, Usc.NotFound, ls.Get("ProductNotFound")) : new UResponse<ProductResponse?>(e);
+		return e == null ? new UResponse<ProductResponse?>(null, Usc.NotFound, ls.Get("productNotFoundPleaseCheckDetails")) : new UResponse<ProductResponse?>(e);
 	}
 
 	public async Task<UResponse> Update(ProductUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		ProductEntity? e = await db.Set<ProductEntity>().AsTracking().Include(x => x.Categories).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ProductNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("productNotFoundPleaseCheckDetails"));
 
 		if (p.Title.IsNotNull()) e.Title = p.Title;
 		if (p.Code.IsNotNull()) e.Code = p.Code;
@@ -112,22 +112,22 @@ public class ProductService(
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		int count = await db.Set<ProductEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 
-		return count > 0 ? new UResponse(Usc.Deleted, ls.Get("ProductDeleted")) : new UResponse(Usc.NotFound, ls.Get("ProductNotFound"));
+		return count > 0 ? new UResponse(Usc.Deleted, ls.Get("productRemovedSuccessfully")) : new UResponse(Usc.NotFound, ls.Get("productNotFoundPleaseCheckDetails"));
 	}
 
 	public async Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		int count = await db.Set<ProductEntity>().WhereIn(u => u.Id, p.Ids).ExecuteDeleteAsync(ct);
 
-		return count > 0 ? new UResponse(Usc.Deleted, ls.Get("ProductDeleted")) : new UResponse(Usc.NotFound, ls.Get("ProductNotFound"));
+		return count > 0 ? new UResponse(Usc.Deleted, ls.Get("productRemovedSuccessfully")) : new UResponse(Usc.NotFound, ls.Get("productNotFoundPleaseCheckDetails"));
 	}
 
 	private async Task AddChildrenRecursively(

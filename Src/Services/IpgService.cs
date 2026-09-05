@@ -15,9 +15,9 @@ public class IpgService(
 ) : IIpgService {
 	public async Task<UResponse<IpgPayResponse?>> GetSaleIpgLink(IpgSaleParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<IpgPayResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<IpgPayResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (p.Amount <= 0) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("AmountRequired"));
+		if (userData == null) return new UResponse<IpgPayResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IpgPayResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (p.Amount <= 0) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("amountRequired"));
 		string trackingNumber = Guid.CreateVersion7().ToString("N");
 		string additionalData = JsonSerializer.SerializeToUtf8Bytes(new IpgAdditionalData {
 			TrackingNumber = trackingNumber,
@@ -81,12 +81,12 @@ public class IpgService(
 			}
 
 			await MarkFailed(txn, ct);
-			return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("IpgError"));
+			return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("paymentGatewayErrorPleaseTryAgain"));
 		}
 		catch (Exception ex) {
 			httpContext.CaptureForApiLog(ex);
 			await MarkFailed(txn, ct);
-			return new UResponse<IpgPayResponse?>(null, Usc.InternalServerError, ls.Get("InternalServerError"));
+			return new UResponse<IpgPayResponse?>(null, Usc.InternalServerError, ls.Get("internalServerError"));
 		}
 	}
 

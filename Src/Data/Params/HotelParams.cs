@@ -3,7 +3,7 @@ namespace SinaMN75U.Data.Params;
 // ---------------- Hotel ----------------
 
 public sealed class HotelCreateParams : BaseCreateParams<TagHotel> {
-	[UValidationRequired("TitleRequired"), UValidationStringLength(2, 100, "TitleMinLength")]
+	[UValidationRequired("titleIsRequired"), UValidationStringLength(2, 100, "TitleMinLength")]
 	public string Title { get; set; } = null!;
 
 	[UValidationRequired("CityRequired"), UValidationStringLength(2, 100, "CityMinLength")]
@@ -55,7 +55,7 @@ public sealed class HotelReadParams : BaseReadParams<TagHotel> {
 // ---------------- HotelRoom ----------------
 
 public sealed class HotelRoomCreateParams : BaseCreateParams<TagRoom> {
-	[UValidationRequired("TitleRequired"), UValidationStringLength(2, 100, "TitleMinLength")]
+	[UValidationRequired("titleIsRequired"), UValidationStringLength(2, 100, "TitleMinLength")]
 	public string Title { get; set; } = null!;
 
 	[UValidationRequired("CapacityRequired")]
@@ -100,10 +100,10 @@ public sealed class HotelRoomAvailabilityParams : BaseParams {
 	public Guid? HotelId { get; set; }
 	public Guid? RoomId { get; set; }
 
-	[UValidationRequired("CheckInDateRequired")]
+	[UValidationRequired("checkInDateIsRequired")]
 	public DateTime CheckInDate { get; set; }
 
-	[UValidationRequired("CheckOutDateRequired")]
+	[UValidationRequired("checkOutDateIsRequired")]
 	public DateTime CheckOutDate { get; set; }
 
 	public int GuestCount { get; set; } = 1;
@@ -126,19 +126,19 @@ public sealed class HotelRoomReadParams : BaseReadParams<TagRoom> {
 // ---------------- HotelReservation ----------------
 
 public sealed class HotelReservationCreateParams : BaseCreateParams<TagHotelReservation> {
-	[UValidationRequired("CheckInDateRequired")]
+	[UValidationRequired("checkInDateIsRequired")]
 	public DateTime CheckInDate { get; set; }
 
-	[UValidationRequired("CheckOutDateRequired")]
+	[UValidationRequired("checkOutDateIsRequired")]
 	public DateTime CheckOutDate { get; set; }
 
-	[UValidationRequired("GuestCountRequired")]
+	[UValidationRequired("guestCountIsRequired")]
 	public int GuestCount { get; set; }
 
-	[UValidationRequired("UserIdRequired")]
+	[UValidationRequired("userIsRequired")]
 	public Guid UserId { get; set; }
 
-	[UValidationRequired("RoomIdRequired")]
+	[UValidationRequired("roomIsRequired")]
 	public Guid RoomId { get; set; }
 
 	/// <summary>Optional override; when null the total is computed from nights * room price.</summary>
@@ -154,7 +154,7 @@ public sealed class HotelReservationCreateParams : BaseCreateParams<TagHotelRese
 }
 
 public sealed class ReservationGuestParams {
-	[UValidationRequired("NameRequired")]
+	[UValidationRequired("nameIsRequired")]
 	public string FullName { get; set; } = null!;
 
 	public string? NationalCode { get; set; }
@@ -163,16 +163,16 @@ public sealed class ReservationGuestParams {
 
 /// <summary>Self-service booking: the reservation belongs to the caller, no admin permission needed.</summary>
 public sealed class HotelReservationBookParams : BaseParams {
-	[UValidationRequired("RoomIdRequired")]
+	[UValidationRequired("roomIsRequired")]
 	public Guid RoomId { get; set; }
 
-	[UValidationRequired("CheckInDateRequired")]
+	[UValidationRequired("checkInDateIsRequired")]
 	public DateTime CheckInDate { get; set; }
 
-	[UValidationRequired("CheckOutDateRequired")]
+	[UValidationRequired("checkOutDateIsRequired")]
 	public DateTime CheckOutDate { get; set; }
 
-	[UValidationRequired("GuestCountRequired")]
+	[UValidationRequired("guestCountIsRequired")]
 	public int GuestCount { get; set; }
 
 	public List<ReservationGuestParams>? Guests { get; set; }
@@ -185,7 +185,7 @@ public sealed class HotelReservationBookParams : BaseParams {
 }
 
 public sealed class HotelReservationCancelParams : BaseParams {
-	[UValidationRequired("ReservationIdRequired")]
+	[UValidationRequired("reservationIsRequired")]
 	public Guid Id { get; set; }
 
 	public string? Reason { get; set; }
@@ -230,7 +230,7 @@ public sealed class HotelReservationReadParams : BaseReadParams<TagHotelReservat
 // ---------------- HotelInvoice ----------------
 
 public sealed class HotelInvoiceCreateParams : BaseCreateParams<TagHotelInvoice> {
-	[UValidationRequired("PriceRequired")]
+	[UValidationRequired("priceIsRequired")]
 	public decimal DebtAmount { get; set; }
 
 	public decimal CreditorAmount { get; set; }
@@ -238,10 +238,10 @@ public sealed class HotelInvoiceCreateParams : BaseCreateParams<TagHotelInvoice>
 	public decimal PenaltyAmount { get; set; }
 	public int PenaltyPrecentEveryDate { get; set; }
 
-	[UValidationRequired("ReservationIdRequired")]
+	[UValidationRequired("reservationIsRequired")]
 	public Guid ReservationId { get; set; }
 
-	[UValidationRequired("DateRequired")]
+	[UValidationRequired("dateIsRequired")]
 	public DateTime DueDate { get; set; }
 }
 
@@ -277,7 +277,7 @@ public sealed class HotelInvoiceReadParams : BaseReadParams<TagHotelInvoice> {
 // ---------------- Dorm ----------------
 
 public sealed class DormCreateParams : BaseCreateParams<TagDorm> {
-	[UValidationRequired("TitleRequired"), UValidationStringLength(2, 100, "TitleMinLength")]
+	[UValidationRequired("titleIsRequired"), UValidationStringLength(2, 100, "TitleMinLength")]
 	public string Title { get; set; } = null!;
 
 	[UValidationRequired("CityRequired"), UValidationStringLength(2, 100, "CityMinLength")]
@@ -320,7 +320,7 @@ public sealed class DormReadParams : BaseReadParams<TagDorm> {
 // ---------------- DormRoom ----------------
 
 public sealed class DormRoomCreateParams : BaseCreateParams<TagDormRoom> {
-	[UValidationRequired("TitleRequired"), UValidationStringLength(2, 100, "TitleMinLength")]
+	[UValidationRequired("titleIsRequired"), UValidationStringLength(2, 100, "TitleMinLength")]
 	public string Title { get; set; } = null!;
 
 	[UValidationRequired("DormIdRequired")]
@@ -353,7 +353,7 @@ public sealed class DormRoomReadParams : BaseReadParams<TagDormRoom> {
 // ---------------- DormBed ----------------
 
 public sealed class DormBedCreateParams : BaseCreateParams<TagDormBed> {
-	[UValidationRequired("TitleRequired"), UValidationStringLength(1, 4, "TitleMaxLength")]
+	[UValidationRequired("titleIsRequired"), UValidationStringLength(1, 4, "TitleMaxLength")]
 	public string Title { get; set; } = null!;
 	
 	[UValidationRequired("DepositRequired")]
@@ -362,7 +362,7 @@ public sealed class DormBedCreateParams : BaseCreateParams<TagDormBed> {
 	[UValidationRequired("MonthlyRentRequired")]
 	public decimal MonthlyRent { get; set; }
 
-	[UValidationRequired("RoomIdRequired")]
+	[UValidationRequired("roomIsRequired")]
 	public Guid RoomId { get; set; }
 }
 
@@ -387,16 +387,16 @@ public sealed class DormBedReadParams : BaseReadParams<TagDormBed> {
 // ---------------- DormBedContract ----------------
 
 public sealed class DormBedContractCreateParams : BaseCreateParams<TagDormBedContract> {
-	[UValidationRequired("StartDateRequired")]
+	[UValidationRequired("startDateIsRequired")]
 	public DateTime StartDate { get; set; }
 
-	[UValidationRequired("EndDateRequired")]
+	[UValidationRequired("endDateIsRequired")]
 	public DateTime EndDate { get; set; }
 
 	public decimal? Deposit { get; set; }
 	public decimal? Rent { get; set; }
 
-	[UValidationRequired("UserIdRequired")]
+	[UValidationRequired("userIsRequired")]
 	public Guid UserId { get; set; }
 
 	[UValidationRequired("BedIdRequired")]
@@ -438,16 +438,16 @@ public sealed class DormBedContractReadParams : BaseReadParams<TagDormBedContrac
 // ---------------- DormBedInvoice ----------------
 
 public sealed class DormBedInvoiceCreateParams : BaseCreateParams<TagDormBedInvoice> {
-	[UValidationRequired("PriceRequired")]
+	[UValidationRequired("priceIsRequired")]
 	public decimal DebtAmount { get; set; }
 
-	[UValidationRequired("PriceRequired")]
+	[UValidationRequired("priceIsRequired")]
 	public decimal CreditorAmount { get; set; }
 
-	[UValidationRequired("PriceRequired")]
+	[UValidationRequired("priceIsRequired")]
 	public decimal PaidAmount { get; set; }
 
-	[UValidationRequired("PriceRequired")]
+	[UValidationRequired("priceIsRequired")]
 	public decimal PenaltyAmount { get; set; }
 
 	public int PenaltyPrecentEveryDate { get; set; }
@@ -455,7 +455,7 @@ public sealed class DormBedInvoiceCreateParams : BaseCreateParams<TagDormBedInvo
 	[UValidationRequired("ContractIdRequired")]
 	public Guid ContractId { get; set; }
 
-	[UValidationRequired("DateRequired")]
+	[UValidationRequired("dateIsRequired")]
 	public DateTime DueDate { get; set; }
 }
 

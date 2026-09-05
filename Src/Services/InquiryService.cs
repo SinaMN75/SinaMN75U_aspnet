@@ -23,7 +23,7 @@ public class InquiryService(
 	private readonly ItHub _itHub = Core.App.ItHub;
 	
 	public UResponse<BillInfoResponse?> BillInfo(BillInfoParams p, CancellationToken ct) {
-		BillParser parser = new();
+		BillParser parser = new(ls);
 		try {
 			return new UResponse<BillInfoResponse?>(parser.Parse(p.BillId, p.PaymentId));
 		}
@@ -34,11 +34,11 @@ public class InquiryService(
 
 	public async Task<UResponse<bool?>> MobileAndNationalCodeVerification(VerifyNationalCodeAndPhoneNumber p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<bool?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<bool?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<bool?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<bool?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-		if (tokenResponse?.AccessToken == null) return new UResponse<bool?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+		if (tokenResponse?.AccessToken == null) return new UResponse<bool?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 		
 		HttpResponseMessage? response = await SendMobileAndNationalCodeVerification(p, tokenResponse.AccessToken, ct);
 		if (response == null) return new UResponse<bool?>(null);
@@ -52,17 +52,17 @@ public class InquiryService(
 
 	public async Task<UResponse<ZipCodeToAddressDetailResponse?>> ZipCodeToAddressDetail(ZipCodeToAddressDetailParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadZipCodeToAddressHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
 
 		if (inquiryHistory == null || responseBody == null) {
-			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.ZipCodeToAddressDetail, ct)) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.ZipCodeToAddressDetail, ct)) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-			if (tokenResponse?.AccessToken == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+			if (tokenResponse?.AccessToken == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
 			// Charge the wallet before the billable third-party call so any external hit is always paid for
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.ZipCodeToAddressDetail, Token = p.Token }, ct);
@@ -73,12 +73,12 @@ public class InquiryService(
 			responseBody = await response.Content.ReadAsStringAsync(ct);
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
-				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
+				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("thirdPartyServiceError");
 				await CreateZipCodeToAddressHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.ZipCodeToAddressDetail, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
-			if (!response.IsSuccessStatusCode) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+			if (!response.IsSuccessStatusCode) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 			await CreateZipCodeToAddressHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.ZipCodeToAddressDetail], "", p, ct);
 		}
 
@@ -110,18 +110,18 @@ public class InquiryService(
 
 	public async Task<UResponse<VehicleViolationDetailResponse?>> VehicleViolationsDetail(VehicleViolationDetailParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadVehicleViolationsDetailHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
 
 		if (inquiryHistory == null || responseBody == null) {
-			if (!p.Refresh) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.InquiryNotCached, ls.Get("InquiryNotCached"));
-			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.VehicleViolationsDetail, ct)) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+			if (!p.Refresh) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.InquiryNotCached, ls.Get("noCachedResultYetPleaseConfirmPaymentToFetchFreshData"));
+			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.VehicleViolationsDetail, ct)) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-			if (tokenResponse?.AccessToken == null) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+			if (tokenResponse?.AccessToken == null) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
 			// Charge the wallet before the billable third-party call so any external hit is always paid for
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.VehicleViolationsDetail, Token = p.Token }, ct);
@@ -133,12 +133,12 @@ public class InquiryService(
 			JsonElement httpResponse = JsonSerializer.Deserialize<JsonElement>(responseBody);
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
-				string errorMessage = httpResponse.GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
+				string errorMessage = httpResponse.GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("thirdPartyServiceError");
 				await CreateVehicleViolationsDetailHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.VehicleViolationsDetail, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
-			if (!response.IsSuccessStatusCode) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+			if (!response.IsSuccessStatusCode) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 			await CreateVehicleViolationsDetailHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.VehicleViolationsDetail], "", p, ct);
 		}
 
@@ -188,18 +188,18 @@ public class InquiryService(
 
 	public async Task<UResponse<DrivingLicenceDetailResponse?>> DrivingLicenceDetail(DrivingLicenceDetailParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadDrivingLicenceDetailHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
 
 		if (inquiryHistory == null || responseBody == null) {
-			if (!p.Refresh) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.InquiryNotCached, ls.Get("InquiryNotCached"));
-			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.DrivingLicenceStatus, ct)) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+			if (!p.Refresh) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.InquiryNotCached, ls.Get("noCachedResultYetPleaseConfirmPaymentToFetchFreshData"));
+			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.DrivingLicenceStatus, ct)) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-			if (tokenResponse?.AccessToken == null) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+			if (tokenResponse?.AccessToken == null) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
 			// Charge the wallet before the billable third-party call so any external hit is always paid for
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceStatus, Token = p.Token }, ct);
@@ -210,12 +210,12 @@ public class InquiryService(
 			responseBody = await response.Content.ReadAsStringAsync(ct);
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
-				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
+				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("thirdPartyServiceError");
 				await CreateDrivingLicenceStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceDetail, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
-			if (!response.IsSuccessStatusCode) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+			if (!response.IsSuccessStatusCode) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 			await CreateDrivingLicenceStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceDetail], "", p, ct);
 		}
 
@@ -244,18 +244,18 @@ public class InquiryService(
 
 	public async Task<UResponse<LicencePlateDetailResponse?>> LicencePlateDetail(LicencePlateDetailParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<LicencePlateDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<LicencePlateDetailResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<LicencePlateDetailResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<LicencePlateDetailResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadLicencePlateStatusHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
 
 		if (inquiryHistory == null || responseBody == null) {
-			if (!p.Refresh) return new UResponse<LicencePlateDetailResponse?>(null, Usc.InquiryNotCached, ls.Get("InquiryNotCached"));
-			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.LicencePlateDetail, ct)) return new UResponse<LicencePlateDetailResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+			if (!p.Refresh) return new UResponse<LicencePlateDetailResponse?>(null, Usc.InquiryNotCached, ls.Get("noCachedResultYetPleaseConfirmPaymentToFetchFreshData"));
+			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.LicencePlateDetail, ct)) return new UResponse<LicencePlateDetailResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-			if (tokenResponse?.AccessToken == null) return new UResponse<LicencePlateDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+			if (tokenResponse?.AccessToken == null) return new UResponse<LicencePlateDetailResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
 			// Charge the wallet before the billable third-party call so any external hit is always paid for
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.LicencePlateDetail, Token = p.Token }, ct);
@@ -266,12 +266,12 @@ public class InquiryService(
 			responseBody = await response.Content.ReadAsStringAsync(ct);
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
-				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
+				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("thirdPartyServiceError");
 				await CreateLicencePlateStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.LicencePlateDetail, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<LicencePlateDetailResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
-			if (!response.IsSuccessStatusCode) return new UResponse<LicencePlateDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+			if (!response.IsSuccessStatusCode) return new UResponse<LicencePlateDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 			await CreateLicencePlateStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.LicencePlateDetail], "", p, ct);
 		}
 
@@ -298,19 +298,19 @@ public class InquiryService(
 
 	public async Task<UResponse<DrivingLicenceNegativePointResponse?>> DrivingLicenceNegativePoint(DrivingLicenceNegativePointParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadDrivingLicenceNegativePointHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
 
 		if (inquiryHistory == null || responseBody == null) {
 			// Group A gate: without an explicit paid refresh, never auto-charge - signal the app to show the payment screen first
-			if (!p.Refresh) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.InquiryNotCached, ls.Get("InquiryNotCached"));
-			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.DrivingLicenceNegativePoint, ct)) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+			if (!p.Refresh) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.InquiryNotCached, ls.Get("noCachedResultYetPleaseConfirmPaymentToFetchFreshData"));
+			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.DrivingLicenceNegativePoint, ct)) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-			if (tokenResponse?.AccessToken == null) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+			if (tokenResponse?.AccessToken == null) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
 			// Charge the wallet before the billable third-party call so any external hit is always paid for
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceNegativePoint, Token = p.Token }, ct);
@@ -321,12 +321,12 @@ public class InquiryService(
 			responseBody = await response.Content.ReadAsStringAsync(ct);
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
-				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
+				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("thirdPartyServiceError");
 				await CreateDrivingLicenceNegativePointHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceNegativePoint, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
-			if (!response.IsSuccessStatusCode) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+			if (!response.IsSuccessStatusCode) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 			await CreateDrivingLicenceNegativePointHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceNegativePoint], "", p, ct);
 		}
 
@@ -346,19 +346,19 @@ public class InquiryService(
 
 	public async Task<UResponse<FreewayTollsResponse?>> FreewayTolls(FreewayTollsParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<FreewayTollsResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<FreewayTollsResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<FreewayTollsResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<FreewayTollsResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadFreewayTollsHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
 
 		if (inquiryHistory == null || responseBody == null) {
 			// Group A gate: without an explicit paid refresh, never auto-charge - signal the app to show the payment screen first
-			if (!p.Refresh) return new UResponse<FreewayTollsResponse?>(null, Usc.InquiryNotCached, ls.Get("InquiryNotCached"));
-			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.FreewayToll, ct)) return new UResponse<FreewayTollsResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+			if (!p.Refresh) return new UResponse<FreewayTollsResponse?>(null, Usc.InquiryNotCached, ls.Get("noCachedResultYetPleaseConfirmPaymentToFetchFreshData"));
+			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.FreewayToll, ct)) return new UResponse<FreewayTollsResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-			if (tokenResponse?.AccessToken == null) return new UResponse<FreewayTollsResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+			if (tokenResponse?.AccessToken == null) return new UResponse<FreewayTollsResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
 			// Charge the wallet before the billable third-party call so any external hit is always paid for
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.FreewayTolls, Token = p.Token }, ct);
@@ -369,12 +369,12 @@ public class InquiryService(
 			responseBody = await response.Content.ReadAsStringAsync(ct);
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
-				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
+				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("thirdPartyServiceError");
 				await CreateFreewayTollsHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.FreewayTolls, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<FreewayTollsResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
-			if (!response.IsSuccessStatusCode) return new UResponse<FreewayTollsResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+			if (!response.IsSuccessStatusCode) return new UResponse<FreewayTollsResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 			await CreateFreewayTollsHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.FreewayTolls], "", p, ct);
 		}
 
@@ -399,17 +399,17 @@ public class InquiryService(
 
 	public async Task<UResponse<IBanToBankAccountDetailResponse?>> IBanToBankAccountDetail(IBanToBankAccountDetailParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		InquiryHistoryEntity? inquiryHistory = p.Refresh ? null : await ReadIBanToBankAccountDetailHistory(p, ct);
 		string? responseBody = inquiryHistory?.Response;
 
 		if (inquiryHistory == null || responseBody == null) {
-			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.IBanToBankAccountDetail, ct)) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.IBanToBankAccountDetail, ct)) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
-			if (tokenResponse?.AccessToken == null) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+			if (tokenResponse?.AccessToken == null) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
 			// Charge the wallet before the billable third-party call so any external hit is always paid for
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.IBanToBankAccountDetail, Token = p.Token }, ct);
@@ -420,12 +420,12 @@ public class InquiryService(
 			responseBody = await response.Content.ReadAsStringAsync(ct);
 
 			if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest) {
-				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
+				string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("thirdPartyServiceError");
 				await CreateIBanToBankAccountDetailHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.IBanToBankAccountDetail, TagInquiryHistory.Error], errorMessage, p, ct);
 				return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.ThirdPartyError, errorMessage);
 			}
 
-			if (!response.IsSuccessStatusCode) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+			if (!response.IsSuccessStatusCode) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 			await CreateIBanToBankAccountDetailHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.IBanToBankAccountDetail], "", p, ct);
 		}
 
@@ -448,8 +448,8 @@ public class InquiryService(
 	// Read-only: reports which vehicle inquiries are already cached (and their expiry) without touching the wallet or any third-party API.
 	public async Task<UResponse<InquiryCacheStatusResponse?>> InquiryCacheStatus(InquiryCacheStatusParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<InquiryCacheStatusResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<InquiryCacheStatusResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<InquiryCacheStatusResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<InquiryCacheStatusResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		InquiryHistoryEntity? violation = await ReadVehicleViolationsDetailHistory(new VehicleViolationDetailParams { NationalCode = p.NationalCode, PhoneNumber = p.PhoneNumber, LicencePlate = p.LicencePlate }, ct);
 		InquiryHistoryEntity? licence = await ReadDrivingLicenceDetailHistory(new DrivingLicenceDetailParams { NationalCode = p.NationalCode, PhoneNumber = p.PhoneNumber }, ct);

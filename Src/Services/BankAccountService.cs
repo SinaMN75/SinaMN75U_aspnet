@@ -14,8 +14,8 @@ public class BankAccountService(
 ) : IBankAccountService {
 	public async Task<UResponse<Guid?>> Create(BankAccountCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		BankAccountEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -37,9 +37,9 @@ public class BankAccountService(
 
 	public async Task<UResponse<IEnumerable<BankAccountResponse>?>> Read(BankAccountReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<IEnumerable<BankAccountResponse>?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<IEnumerable<BankAccountResponse>?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (!userData.IsAdmin) return new UResponse<IEnumerable<BankAccountResponse>?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (userData == null) return new UResponse<IEnumerable<BankAccountResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<BankAccountResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.IsAdmin) return new UResponse<IEnumerable<BankAccountResponse>?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		IQueryable<BankAccountEntity> q = db.Set<BankAccountEntity>().ApplyReadParams(p);
 
@@ -55,11 +55,11 @@ public class BankAccountService(
 
 	public async Task<UResponse> Update(BankAccountUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		BankAccountEntity? e = await db.Set<BankAccountEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("BankAccountNotFound"));
-		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("bankAccountNotFound"));
+		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.IBanNumber.IsNotNullOrEmpty()) e.IBanNumber = p.IBanNumber;
 		if (p.AccountNumber.IsNotNullOrEmpty()) e.AccountNumber = p.AccountNumber;
@@ -74,14 +74,14 @@ public class BankAccountService(
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		BankAccountEntity? e = await db.Set<BankAccountEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("BankAccountNotFound"));
-		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("bankAccountNotFound"));
+		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<BankAccountEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
-		return new UResponse(Usc.Deleted, ls.Get("BankAccountDeletedSuccessfully"));
+		return new UResponse(Usc.Deleted, ls.Get("bankAccountDeletedSuccessfully"));
 	}
 }

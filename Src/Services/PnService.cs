@@ -12,7 +12,7 @@ public class PnUserStatusResponse {
 }
 
 public class PnPhoneNumberParams : BaseParams {
-	[UValidationRequired("PhoneNumberRequired")]
+	[UValidationRequired("phoneNumberIsRequired")]
 	public string PhoneNumber { get; set; } = null!;
 }
 
@@ -23,7 +23,7 @@ public class PnUserStatusItem {
 }
 
 public class PnAuthParams : BaseParams {
-	[UValidationRequired("PhoneNumberRequired")]
+	[UValidationRequired("phoneNumberIsRequired")]
 	public string PhoneNumber { get; set; } = null!;
 
 	public string? FirstName { get; set; }
@@ -43,38 +43,38 @@ public class PnAuthParams : BaseParams {
 }
 
 public class PnMerchantCreateParams : BaseParams {
-	[UValidationRequired("PhoneNumberRequired")]
+	[UValidationRequired("phoneNumberIsRequired")]
 	public string UserPhoneNumber { get; set; } = null!;
 
-	[UValidationRequired("ZipCodeRequired")]
+	[UValidationRequired("zipCodeIsRequired")]
 	public string ZipCode { get; set; } = null!;
 
-	[UValidationRequired("CityCodeRequired")]
+	[UValidationRequired("cityCodeIsRequired")]
 	public string CityCode { get; set; } = null!;
 
-	[UValidationRequired("PhoneNumberRequired")]
+	[UValidationRequired("phoneNumberIsRequired")]
 	public string PhoneNumber { get; set; } = null!;
 
-	[UValidationRequired("TitleRequired")]
+	[UValidationRequired("titleIsRequired")]
 	public string Title { get; set; } = null!;
 
-	[UValidationRequired("LandlineRequired")]
+	[UValidationRequired("landlineIsRequired")]
 	[UValidationStringLength(6, 12, "InvalidLandline")]
 	public string Landline { get; set; } = null!;
 
-	[UValidationRequired("NationalCodeRequired")]
+	[UValidationRequired("nationalCodeIsRequired")]
 	public string NationalCode { get; set; } = null!;
 
-	[UValidationRequired("PhoneNumberRequired")]
+	[UValidationRequired("phoneNumberIsRequired")]
 	public string OwnerPhoneNumber { get; set; } = null!;
 
-	[UValidationRequired("OwnerNameRequired")]
+	[UValidationRequired("ownerNameIsRequired")]
 	public string OwnerName { get; set; } = null!;
 
-	[UValidationRequired("MccRequired")]
+	[UValidationRequired("mccIsRequired")]
 	public string Mcc { get; set; } = null!;
 
-	[UValidationRequired("AddressRequired")]
+	[UValidationRequired("addressIsRequired")]
 	public string Address { get; set; } = null!;
 
 	public string? BusinessTitle { get; set; }
@@ -82,7 +82,7 @@ public class PnMerchantCreateParams : BaseParams {
 }
 
 public class PnTerminalCreateParams : BaseParams {
-	[UValidationRequired("SerialRequired")]
+	[UValidationRequired("serialRequired")]
 	public string Serial { get; set; } = null!;
 
 	[UValidationRequired("SimCardSerialRequired")]
@@ -96,13 +96,13 @@ public class PnTerminalCreateParams : BaseParams {
 }
 
 public class PnTerminalSupportPasswordParams : BaseParams {
-	[UValidationRequired("TerminalIdRequired")]
+	[UValidationRequired("terminalIdIsRequired")]
 	public Guid TerminalId { get; set; }
 }
 
 public class PnZipCodeParams : BaseParams {
-	[UValidationRequired("ZipCodeRequired")]
-	[UValidationStringLength(10, 10, "ZipCodeInvalid")]
+	[UValidationRequired("zipCodeIsRequired")]
+	[UValidationStringLength(10, 10, "zipCodeIsInvalid")]
 	public string ZipCode { get; set; } = null!;
 }
 
@@ -129,7 +129,7 @@ public class PnService(
 		// API Key validation
 		if (p.ApiKey != Core.App.Pn.ApiKey) {
 			ULog.Warning($"Auth failed: Invalid API key provided for phone {p.PhoneNumber}");
-			return new UResponse(Usc.UnAuthorized, ls.Get("InvalidAPIKey"));
+			return new UResponse(Usc.UnAuthorized, ls.Get("invalidAPIKey"));
 		}
 
 		ULog.Debug("API key validation passed");
@@ -296,7 +296,7 @@ public class PnService(
 		// API Key validation
 		if (p.ApiKey != Core.App.Pn.ApiKey) {
 			ULog.Warning($"CreateMerchant failed: Invalid API key for user {p.UserPhoneNumber}");
-			return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("InvalidAPIKey"));
+			return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("invalidAPIKey"));
 		}
 
 		ULog.Debug("API key validation passed");
@@ -306,7 +306,7 @@ public class PnService(
 		UserResponse? user = await db.Set<UserEntity>().Select(Projections.UserSelector(new UserSelectorArgs())).FirstOrDefaultAsync(x => x.PhoneNumber == p.UserPhoneNumber, ct);
 		if (user == null) {
 			ULog.Warning($"CreateMerchant failed: User not found for phone {p.UserPhoneNumber}");
-			return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("UserNotFound"));
+			return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("accountNotFound"));
 		}
 
 		ULog.Debug($"User found with ID: {user.Id}, Tags: {string.Join(", ", user.Tags)}");
@@ -322,7 +322,7 @@ public class PnService(
 		ULog.Debug($"User fully verified status: {fullyVerified}");
 		if (!fullyVerified) {
 			ULog.Warning($"CreateMerchant failed: User {user.Id} is not fully verified");
-			return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("UserNotFullyVerified"));
+			return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("userIdentityVerificationIsNotCompleted"));
 		}
 
 		// Check for duplicate merchant
@@ -330,7 +330,7 @@ public class PnService(
 		bool duplicate = await db.Set<MerchantEntity>().AnyAsync(x => x.UserId == user.Id && x.NationalCode == p.NationalCode && x.ZipCode == p.ZipCode, ct);
 		if (duplicate) {
 			ULog.Warning($"CreateMerchant failed: Merchant already exists for user {user.Id} with NationalCode {p.NationalCode}");
-			return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("MerchantAlreadyExists"));
+			return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("thisMerchantAlreadyExists"));
 		}
 
 		// Create new merchant
@@ -372,7 +372,7 @@ public class PnService(
 		// API Key validation
 		if (p.ApiKey != Core.App.Pn.ApiKey) {
 			ULog.Warning($"CreateTerminal failed: Invalid API key for merchant {p.MerchantId}");
-			return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("InvalidAPIKey"));
+			return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("invalidAPIKey"));
 		}
 
 		ULog.Debug("API key validation passed");
@@ -382,14 +382,14 @@ public class PnService(
 		TerminalEntity? terminal = await db.Set<TerminalEntity>().AsTracking().FirstOrDefaultAsync(x => x.Serial == p.Serial && x.SimCardSerial == p.SimCardSerial, ct);
 		if (terminal == null) {
 			ULog.Warning($"CreateTerminal failed: Terminal not found with Serial {p.Serial}, SimCardSerial {p.SimCardSerial}");
-			return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("TerminalNotFoundCheckDetails"));
+			return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("terminalNotFoundCheckYourDetails"));
 		}
 
 		ULog.Debug($"Terminal found with ID: {terminal.Id}, Current MerchantId: {terminal.MerchantId}");
 
 		if (terminal.MerchantId != null) {
 			ULog.Warning($"CreateTerminal failed: Terminal {terminal.Id} is already bound to Merchant {terminal.MerchantId}");
-			return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("TerminalAlreadyBound"));
+			return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("terminalIsAlreadyAssignedToAMerchant"));
 		}
 
 		// Find merchant
@@ -397,19 +397,19 @@ public class PnService(
 		MerchantEntity? merchant = await db.Set<MerchantEntity>().AsTracking().Include(x => x.User).FirstOrDefaultAsync(x => x.Id == p.MerchantId, ct);
 		if (merchant == null) {
 			ULog.Warning($"CreateTerminal failed: Merchant not found with ID {p.MerchantId}");
-			return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("MerchantNotFound"));
+			return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("merchantNotFound"));
 		}
 
 		ULog.Debug($"Merchant found: ID {merchant.Id}, NationalCode {merchant.NationalCode}, MerchantId: {merchant.MerchantId}");
 
 		if (merchant.MerchantId.IsNotNullOrEmpty()) {
 			ULog.Warning($"CreateTerminal failed: Merchant {merchant.Id} already registered with Avreen, MerchantId: {merchant.MerchantId}");
-			return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("MerchantAlreadyRegisteredWithAvreen"));
+			return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("merchantIsAlreadyRegisteredWithAvreen"));
 		}
 
 		if (merchant.User.ESignature == null) {
 			ULog.Warning($"CreateTerminal failed: User {merchant.User.Id} has no ESignature");
-			return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("UserESignatureMissing"));
+			return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("userElectronicSignatureIsMissing"));
 		}
 
 		ULog.Debug("User has ESignature present");
@@ -423,7 +423,7 @@ public class PnService(
 		catch (Exception ex) {
 			httpContext.CaptureForApiLog(ex);
 			ULog.Error(ex, $"Agreement generation failed for merchant {merchant.Id}");
-			return new UResponse<Guid?>(null, Usc.InternalServerError, ls.Get("AgreementGenerationFailed"));
+			return new UResponse<Guid?>(null, Usc.InternalServerError, ls.Get("failedToGenerateTheAgreementPleaseTryAgainLater"));
 		}
 
 		ULog.Debug($"Agreement generated for terminal {terminal.Id}");
@@ -461,7 +461,7 @@ public class PnService(
 				ULog.Error($"Avreen addMerchant API call failed. Response null or unsuccessful");
 				await transaction.RollbackAsync(ct);
 				ULog.Warning($"Transaction rolled back for terminal {terminal.Id}");
-				return new UResponse<Guid?>(null, Usc.InternalServerError, ls.Get("AvreenAddMerchantFailed"));
+				return new UResponse<Guid?>(null, Usc.InternalServerError, ls.Get("failedToRegisterMerchantInAvreen"));
 			}
 
 			ULog.Success("Avreen addMerchant API call successful");
@@ -476,7 +476,7 @@ public class PnService(
 				ULog.Error($"Avreen addMerchant response missing merchantId. Response: {responseContent}");
 				await transaction.RollbackAsync(ct);
 				ULog.Warning($"Transaction rolled back for terminal {terminal.Id}");
-				return new UResponse<Guid?>(null, Usc.InternalServerError, ls.Get("AvreenMerchantIdMissing"));
+				return new UResponse<Guid?>(null, Usc.InternalServerError, ls.Get("merchantRegistrationSucceededButMerchantIdentifierWasNotReturnedByAvreen"));
 			}
 
 			// Bind terminal with Avreen
@@ -497,7 +497,7 @@ public class PnService(
 				ULog.Error($"Avreen defineAndBindTerminal API call failed");
 				await transaction.RollbackAsync(ct);
 				ULog.Warning($"Transaction rolled back for terminal {terminal.Id}");
-				return new UResponse<Guid?>(null, Usc.InternalServerError, ls.Get("AvreenBindTerminalFailed"));
+				return new UResponse<Guid?>(null, Usc.InternalServerError, ls.Get("failedToBindTerminalToMerchantInAvreen"));
 			}
 
 			ULog.Success("Avreen defineAndBindTerminal API call successful");
@@ -521,7 +521,7 @@ public class PnService(
 			ULog.Error(ex, $"Exception during Avreen integration for terminal {terminal.Id}");
 			await transaction.RollbackAsync(ct);
 			ULog.Warning($"Transaction rolled back for terminal {terminal.Id} due to exception");
-			return new UResponse<Guid?>(null, Usc.InternalServerError, ls.Get("UnexpectedError"));
+			return new UResponse<Guid?>(null, Usc.InternalServerError, ls.Get("anUnexpectedErrorOccurredPleaseTryAgainLater"));
 		}
 	}
 
@@ -531,7 +531,7 @@ public class PnService(
 		// API Key validation
 		if (p.ApiKey != Core.App.Pn.ApiKey) {
 			ULog.Warning($"UserStatus failed: Invalid API key for phone {p.PhoneNumber}");
-			return new UResponse<PnUserStatusResponse?>(null, Usc.UnAuthorized, ls.Get("InvalidAPIKey"));
+			return new UResponse<PnUserStatusResponse?>(null, Usc.UnAuthorized, ls.Get("invalidAPIKey"));
 		}
 
 		ULog.Debug("API key validation passed");
@@ -548,7 +548,7 @@ public class PnService(
 
 		if (e == null) {
 			ULog.Warning($"UserStatus failed: User not found for phone {p.PhoneNumber}");
-			return new UResponse<PnUserStatusResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
+			return new UResponse<PnUserStatusResponse?>(null, Usc.NotFound, ls.Get("accountNotFound"));
 		}
 
 		ULog.Debug($"User found with ID: {e.Id}");
@@ -598,18 +598,18 @@ public class PnService(
 
 		if (p.ApiKey != Core.App.Pn.ApiKey) {
 			ULog.Warning($"ReadTerminalSupportPassword failed: Invalid API key for terminal {p.TerminalId}");
-			return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.UnAuthorized, ls.Get("InvalidAPIKey"));
+			return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.UnAuthorized, ls.Get("invalidAPIKey"));
 		}
 
 		TerminalEntity? e = await db.Set<TerminalEntity>().Include(x => x.Merchant).FirstOrDefaultAsync(x => x.Id == p.TerminalId, ct);
 		if (e == null) {
 			ULog.Warning($"ReadTerminalSupportPassword failed: Terminal not found with Id {p.TerminalId}");
-			return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.NotFound, ls.Get("TerminalNotFound"));
+			return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.NotFound, ls.Get("terminalNotFound"));
 		}
 
 		if (e.Merchant == null) {
 			ULog.Warning($"ReadTerminalSupportPassword failed: Terminal {e.Id} has no bound merchant");
-			return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.NotFound, ls.Get("MerchantNotFound"));
+			return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.NotFound, ls.Get("merchantNotFound"));
 		}
 
 		HttpResponseMessage? response = await http.Post(
@@ -626,7 +626,7 @@ public class PnService(
 
 		if (response is null or { IsSuccessStatusCode: false }) {
 			ULog.Error($"Avreen generateSupportPassword failed for terminal {e.Id}");
-			return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+			return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 		}
 
 		JsonElement data = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
@@ -639,13 +639,13 @@ public class PnService(
 
 		if (p.ApiKey != Core.App.Pn.ApiKey) {
 			ULog.Warning($"ZipCodeToAddress failed: Invalid API key for zipCode {p.ZipCode}");
-			return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.UnAuthorized, ls.Get("InvalidAPIKey"));
+			return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.UnAuthorized, ls.Get("invalidAPIKey"));
 		}
 
 		GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 		if (tokenResponse?.AccessToken == null) {
 			ULog.Error("ZipCodeToAddress failed: could not obtain ItHub access token");
-			return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ShahkarException, ls.Get("ShahkarIsNotAvailableAtThisTime"));
+			return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 		}
 
 		if (Core.App.Test) {
@@ -674,11 +674,11 @@ public class PnService(
 			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
 		);
 
-		if (response == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("ThirdPartyError"));
+		if (response == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 
 		string responseBody = await response.Content.ReadAsStringAsync(ct);
 		if (!response.IsSuccessStatusCode) {
-			string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("ThirdPartyError");
+			string errorMessage = JsonSerializer.Deserialize<JsonElement>(responseBody).GetProperty("error").GetStringOrNull("customMessage") ?? ls.Get("thirdPartyServiceError");
 			ULog.Warning($"ZipCodeToAddress third-party error for zipCode {p.ZipCode}: {errorMessage}");
 			return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ThirdPartyError, errorMessage);
 		}

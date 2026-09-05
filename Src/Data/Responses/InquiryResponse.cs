@@ -21,6 +21,9 @@ public class BillInfoResponse {
 	public int? PeriodCode { get; set; }
 	public int? ControlDigit1 { get; set; }
 	public int? ControlDigit2 { get; set; }
+	public int? ExpectedCheckDigit { get; set; }
+	public int? ExpectedControlDigit1 { get; set; }
+	public int? ExpectedControlDigit2 { get; set; }
 	public ICollection<string> Warnings { get; set; } = [];
 }
 

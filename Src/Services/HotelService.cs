@@ -91,9 +91,9 @@ public class HotelService(
 
 	public async Task<UResponse<Guid?>> CreateHotel(HotelCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (!userData.HasPermission(TagUser.PermissionManageHotels)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.HasPermission(TagUser.PermissionManageHotels)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		HotelEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -144,17 +144,17 @@ public class HotelService(
 		IQueryable<HotelEntity> hotels = db.Set<HotelEntity>();
 		hotels = IsHotelManager(userData) ? hotels.ApplyOwnerScope<HotelEntity, TagHotel>(userData) : hotels.Where(x => x.Tags.Contains(TagHotel.Active));
 		HotelResponse? e = await hotels.Select(Projections.HotelSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		return e == null ? new UResponse<HotelResponse?>(null, Usc.NotFound, ls.Get("HotelNotFound")) : new UResponse<HotelResponse?>(e);
+		return e == null ? new UResponse<HotelResponse?>(null, Usc.NotFound, ls.Get("hotelNotFound")) : new UResponse<HotelResponse?>(e);
 	}
 
 	public async Task<UResponse> UpdateHotel(HotelUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		HotelEntity? e = await db.Set<HotelEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("HotelNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("hotelNotFound"));
 
-		if (!userData.CanManage(e.CreatorId, e.AdminUserIds) || !userData.HasPermission(TagUser.PermissionManageHotels)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (!userData.CanManage(e.CreatorId, e.AdminUserIds) || !userData.HasPermission(TagUser.PermissionManageHotels)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
 		if (p.CityCode.IsNotNullOrEmpty()) e.CityCode = p.CityCode;
@@ -181,12 +181,12 @@ public class HotelService(
 
 	public async Task<UResponse> DeleteHotel(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		HotelEntity? e = await db.Set<HotelEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("HotelNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("hotelNotFound"));
 
-		if (!userData.CanManage(e.CreatorId, e.AdminUserIds) || !userData.HasPermission(TagUser.PermissionDeleteHotels)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (!userData.CanManage(e.CreatorId, e.AdminUserIds) || !userData.HasPermission(TagUser.PermissionDeleteHotels)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<HotelEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
@@ -197,12 +197,12 @@ public class HotelService(
 
 	public async Task<UResponse<Guid?>> CreateHotelRoom(HotelRoomCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		HotelEntity? hotel = await db.Set<HotelEntity>().FirstOrDefaultAsync(x => x.Id == p.HotelId, ct);
-		if (hotel == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("HotelNotFound"));
-		if (!userData.CanManage(hotel.CreatorId, hotel.AdminUserIds) || !userData.HasPermission(TagUser.PermissionManageHotels)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (hotel == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("hotelNotFound"));
+		if (!userData.CanManage(hotel.CreatorId, hotel.AdminUserIds) || !userData.HasPermission(TagUser.PermissionManageHotels)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		HotelRoomEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -269,17 +269,17 @@ public class HotelService(
 			q = q.Where(x => x.Hotel.Tags.Contains(TagHotel.Active));
 
 		HotelRoomResponse? e = await q.Select(Projections.HotelRoomSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		return e == null ? new UResponse<HotelRoomResponse?>(null, Usc.NotFound, ls.Get("HotelRoomNotFound")) : new UResponse<HotelRoomResponse?>(e);
+		return e == null ? new UResponse<HotelRoomResponse?>(null, Usc.NotFound, ls.Get("hotelRoomNotFound")) : new UResponse<HotelRoomResponse?>(e);
 	}
 
 	public async Task<UResponse> UpdateHotelRoom(HotelRoomUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		HotelRoomEntity? e = await db.Set<HotelRoomEntity>().AsTracking().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("HotelRoomNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("hotelRoomNotFound"));
 
-		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Hotel.CreatorId, e.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageHotels)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Hotel.CreatorId, e.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageHotels)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
 		if (p.Capacity.HasValue) e.Capacity = p.Capacity.Value;
@@ -304,12 +304,12 @@ public class HotelService(
 
 	public async Task<UResponse> DeleteHotelRoom(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		HotelRoomEntity? e = await db.Set<HotelRoomEntity>().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("HotelRoomNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("hotelRoomNotFound"));
 
-		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Hotel.CreatorId, e.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionDeleteHotels)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Hotel.CreatorId, e.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionDeleteHotels)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<HotelRoomEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
@@ -320,21 +320,21 @@ public class HotelService(
 
 	public async Task<UResponse<Guid?>> CreateHotelReservation(HotelReservationCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		HotelRoomEntity? room = await db.Set<HotelRoomEntity>().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.RoomId, ct);
-		if (room == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("HotelRoomNotFound"));
+		if (room == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("hotelRoomNotFound"));
 		if ((!userData.CanManage(room.CreatorId, []) && !userData.CanManage(room.Hotel.CreatorId, room.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageReservations))
-			return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+			return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
-		if (!room.IsAvailable) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("RoomNotAvailable"));
+		if (!room.IsAvailable) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("thisRoomIsNotAvailableForBooking"));
 
 		int nights = (p.CheckOutDate.Date - p.CheckInDate.Date).Days;
-		if (nights < 1) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("InvalidReservationDates"));
+		if (nights < 1) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("checkOutDateMustBeAfterTheCheckInDate"));
 
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
-		if (user == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("UserNotFound"));
+		if (user == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("accountNotFound"));
 
 		// Count overlapping, still-blocking reservations for this room type.
 		int overlapping = await db.Set<HotelReservationEntity>().CountAsync(r =>
@@ -344,7 +344,7 @@ public class HotelService(
 			!r.Tags.Contains(TagHotelReservation.Cancelled) &&
 			!r.Tags.Contains(TagHotelReservation.NoShow) &&
 			!r.Tags.Contains(TagHotelReservation.CheckedOut), ct);
-		if (overlapping >= room.Quantity) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("RoomAlreadyBookedForDates"));
+		if (overlapping >= room.Quantity) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("thisRoomIsAlreadyBookedForTheSelectedDates"));
 
 		decimal total = p.TotalPrice ?? nights * room.PricePerNight;
 
@@ -432,17 +432,17 @@ public class HotelService(
 		}
 
 		HotelReservationResponse? e = await q.Select(Projections.HotelReservationSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		return e == null ? new UResponse<HotelReservationResponse?>(null, Usc.NotFound, ls.Get("ReservationNotFound")) : new UResponse<HotelReservationResponse?>(e);
+		return e == null ? new UResponse<HotelReservationResponse?>(null, Usc.NotFound, ls.Get("reservationNotFound")) : new UResponse<HotelReservationResponse?>(e);
 	}
 
 	public async Task<UResponse> UpdateHotelReservation(HotelReservationUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		HotelReservationEntity? e = await db.Set<HotelReservationEntity>().AsTracking().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ReservationNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("reservationNotFound"));
 		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Hotel.CreatorId, e.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageReservations))
-			return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.CheckInDate.HasValue) e.CheckInDate = p.CheckInDate.Value;
 		if (p.CheckOutDate.HasValue) e.CheckOutDate = p.CheckOutDate.Value;
@@ -466,12 +466,12 @@ public class HotelService(
 
 	public async Task<UResponse> DeleteHotelReservation(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		HotelReservationEntity? e = await db.Set<HotelReservationEntity>().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ReservationNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("reservationNotFound"));
 		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Hotel.CreatorId, e.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionDeleteReservations))
-			return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		await db.Set<HotelReservationEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 		return new UResponse();
@@ -479,12 +479,12 @@ public class HotelService(
 
 	private async Task<UResponse> TransitionReservation(IdParams p, TagHotelReservation status, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		HotelReservationEntity? e = await db.Set<HotelReservationEntity>().AsTracking().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ReservationNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("reservationNotFound"));
 		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Hotel.CreatorId, e.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageReservations))
-			return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		e.Tags = [status];
 		db.Update(e);
@@ -529,7 +529,7 @@ public class HotelService(
 
 	public async Task<UResponse<IEnumerable<HotelRoomAvailabilityResponse>?>> ReadHotelRoomAvailability(HotelRoomAvailabilityParams p, CancellationToken ct) {
 		int nights = (p.CheckOutDate.Date - p.CheckInDate.Date).Days;
-		if (nights < 1) return new UResponse<IEnumerable<HotelRoomAvailabilityResponse>?>(null, Usc.BadRequest, ls.Get("InvalidReservationDates"));
+		if (nights < 1) return new UResponse<IEnumerable<HotelRoomAvailabilityResponse>?>(null, Usc.BadRequest, ls.Get("checkOutDateMustBeAfterTheCheckInDate"));
 
 		IQueryable<HotelRoomEntity> q = db.Set<HotelRoomEntity>()
 			.Where(x => x.IsAvailable && x.Hotel.Tags.Contains(TagHotel.Active));
@@ -561,23 +561,23 @@ public class HotelService(
 
 	public async Task<UResponse<HotelReservationResponse?>> BookHotelReservation(HotelReservationBookParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<HotelReservationResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<HotelReservationResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<HotelReservationResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<HotelReservationResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		HotelRoomEntity? room = await db.Set<HotelRoomEntity>().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.RoomId, ct);
-		if (room == null) return new UResponse<HotelReservationResponse?>(null, Usc.NotFound, ls.Get("HotelRoomNotFound"));
-		if (!room.Hotel.Tags.Contains(TagHotel.Active)) return new UResponse<HotelReservationResponse?>(null, Usc.Conflict, ls.Get("HotelIsNotActive"));
-		if (!room.IsAvailable) return new UResponse<HotelReservationResponse?>(null, Usc.Conflict, ls.Get("RoomNotAvailable"));
+		if (room == null) return new UResponse<HotelReservationResponse?>(null, Usc.NotFound, ls.Get("hotelRoomNotFound"));
+		if (!room.Hotel.Tags.Contains(TagHotel.Active)) return new UResponse<HotelReservationResponse?>(null, Usc.Conflict, ls.Get("thisHotelIsCurrentlyNotAcceptingReservations"));
+		if (!room.IsAvailable) return new UResponse<HotelReservationResponse?>(null, Usc.Conflict, ls.Get("thisRoomIsNotAvailableForBooking"));
 
 		int nights = (p.CheckOutDate.Date - p.CheckInDate.Date).Days;
-		if (nights < 1) return new UResponse<HotelReservationResponse?>(null, Usc.BadRequest, ls.Get("InvalidReservationDates"));
-		if (p.CheckInDate.Date < DateTime.UtcNow.Date) return new UResponse<HotelReservationResponse?>(null, Usc.BadRequest, ls.Get("CheckInDateIsInThePast"));
+		if (nights < 1) return new UResponse<HotelReservationResponse?>(null, Usc.BadRequest, ls.Get("checkOutDateMustBeAfterTheCheckInDate"));
+		if (p.CheckInDate.Date < DateTime.UtcNow.Date) return new UResponse<HotelReservationResponse?>(null, Usc.BadRequest, ls.Get("theCheckInDateCannotBeInThePast"));
 
 		int guestCount = Math.Max(1, p.GuestCount);
-		if (guestCount > room.Capacity + (room.JsonData.ExtraGuestCapacity ?? 0)) return new UResponse<HotelReservationResponse?>(null, Usc.BadRequest, ls.Get("GuestCountExceedsRoomCapacity"));
+		if (guestCount > room.Capacity + (room.JsonData.ExtraGuestCapacity ?? 0)) return new UResponse<HotelReservationResponse?>(null, Usc.BadRequest, ls.Get("theNumberOfGuestsIsMoreThanThisRoomCanTake"));
 
 		Dictionary<Guid, int> booked = await ReadBookedCounts([room.Id], p.CheckInDate, p.CheckOutDate, ct);
-		if (booked.GetValueOrDefault(room.Id, 0) >= room.Quantity) return new UResponse<HotelReservationResponse?>(null, Usc.Conflict, ls.Get("RoomAlreadyBookedForDates"));
+		if (booked.GetValueOrDefault(room.Id, 0) >= room.Quantity) return new UResponse<HotelReservationResponse?>(null, Usc.Conflict, ls.Get("thisRoomIsAlreadyBookedForTheSelectedDates"));
 
 		decimal total = ComputeStayPrice(room, nights, guestCount);
 		Guid reservationId = Guid.CreateVersion7();
@@ -625,7 +625,7 @@ public class HotelService(
 			JsonData = new HotelInvoiceJson { PenaltyPrecentEveryDate = 0 }
 		}, ct);
 
-		await AddNotification(userData.Id, TagNotification.ReservationCreated, ls.Get("ReservationCreatedTitle"), room.Hotel.Title, ct);
+		await AddNotification(userData.Id, TagNotification.ReservationCreated, ls.Get("reservationRegistered"), room.Hotel.Title, ct);
 		await db.SaveChangesAsync(ct);
 
 		if (p.PayFromWallet) {
@@ -646,18 +646,18 @@ public class HotelService(
 
 	public async Task<UResponse> CancelHotelReservationByUser(HotelReservationCancelParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		HotelReservationEntity? e = await db.Set<HotelReservationEntity>().AsTracking()
 			.Include(x => x.Hotel).Include(x => x.Room).Include(x => x.Invoices)
 			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ReservationNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("reservationNotFound"));
 
 		bool isOwner = e.UserId == userData.Id;
-		if (!isOwner && !userData.CanManage(e.Hotel.CreatorId, e.Hotel.AdminUserIds)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
-		if (e.Tags.Contains(TagHotelReservation.Cancelled)) return new UResponse(Usc.Conflict, ls.Get("ReservationAlreadyCancelled"));
-		if (e.Tags.Contains(TagHotelReservation.CheckedIn) || e.Tags.Contains(TagHotelReservation.CheckedOut)) return new UResponse(Usc.Conflict, ls.Get("ReservationCannotBeCancelled"));
+		if (!isOwner && !userData.CanManage(e.Hotel.CreatorId, e.Hotel.AdminUserIds)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (e.Tags.Contains(TagHotelReservation.Cancelled)) return new UResponse(Usc.Conflict, ls.Get("thisReservationHasAlreadyBeenCancelled"));
+		if (e.Tags.Contains(TagHotelReservation.CheckedIn) || e.Tags.Contains(TagHotelReservation.CheckedOut)) return new UResponse(Usc.Conflict, ls.Get("aReservationThatHasAlreadyBeenCheckedInCannotBeCancelled"));
 
 		double hoursToCheckIn = (e.CheckInDate - DateTime.UtcNow).TotalHours;
 		decimal penalty = hoursToCheckIn >= e.Hotel.JsonData.CancellationFreeHours
@@ -672,7 +672,7 @@ public class HotelService(
 				SenderId = Core.App.Users.SystemAdmin.Id,
 				ReceiverId = e.UserId,
 				Amount = refund,
-				Detail1 = ls.Get("ReservationRefundTitle"),
+				Detail1 = ls.Get("hotelReservationRefund"),
 				TagWalletTxn = [TagWalletTxn.HotelReservationRefund]
 			}, ct);
 			if (transfer.Result == null) return new UResponse(transfer.Status, transfer.Message);
@@ -690,17 +690,17 @@ public class HotelService(
 		e.JsonData.CancellationPenalty = penalty;
 		e.JsonData.RefundAmount = refund;
 
-		await AddNotification(e.UserId, TagNotification.ReservationCancelled, ls.Get("ReservationCancelledTitle"), e.Hotel.Title, ct);
+		await AddNotification(e.UserId, TagNotification.ReservationCancelled, ls.Get("reservationCancelled"), e.Hotel.Title, ct);
 		await db.SaveChangesAsync(ct);
-		return new UResponse(Usc.Success, ls.Get("ReservationCancelledSuccessfully"));
+		return new UResponse(Usc.Success, ls.Get("theReservationWasCancelled"));
 	}
 
 	public async Task<UResponse> PayHotelInvoiceInternal(HotelInvoicePayParams p, CancellationToken ct) {
 		HotelInvoiceEntity? e = await db.Set<HotelInvoiceEntity>().AsTracking()
 			.Include(x => x.Reservation).ThenInclude(x => x!.Hotel)
 			.FirstOrDefaultAsync(x => x.Id == p.InvoiceId, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("InvoiceNotFound"));
-		if (!e.Tags.Contains(TagHotelInvoice.NotPaid)) return new UResponse(Usc.Conflict, ls.Get("InvoiceAlreadyPaid"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
+		if (!e.Tags.Contains(TagHotelInvoice.NotPaid)) return new UResponse(Usc.Conflict, ls.Get("thisInvoiceHasAlreadyBeenPaid"));
 
 		decimal amount = e.DebtAmount + e.PenaltyAmount - e.CreditorAmount;
 		if (amount > 0) {
@@ -708,7 +708,7 @@ public class HotelService(
 				SenderId = p.UserId,
 				ReceiverId = Core.App.Users.SystemAdmin.Id,
 				Amount = amount,
-				Detail1 = ls.Get("ReservationPaymentTitle"),
+				Detail1 = ls.Get("hotelReservationPayment"),
 				TagWalletTxn = [TagWalletTxn.HotelReservation]
 			}, ct);
 			if (transfer.Result == null) return new UResponse(transfer.Status, transfer.Message);
@@ -721,25 +721,25 @@ public class HotelService(
 			HotelReservationEntity? reservation = await db.Set<HotelReservationEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == e.ReservationId, ct);
 			if (reservation != null && !reservation.Tags.Contains(TagHotelReservation.Cancelled)) {
 				reservation.Tags = [TagHotelReservation.Confirmed];
-				await AddNotification(reservation.UserId, TagNotification.ReservationConfirmed, ls.Get("ReservationConfirmedTitle"), e.Reservation.Hotel.Title, ct);
+				await AddNotification(reservation.UserId, TagNotification.ReservationConfirmed, ls.Get("reservationConfirmed"), e.Reservation.Hotel.Title, ct);
 			}
 		}
 
 		await db.SaveChangesAsync(ct);
-		return new UResponse(Usc.Success, ls.Get("PaymentSuccessful"));
+		return new UResponse(Usc.Success, ls.Get("paymentCompleted"));
 	}
 
 	// ===================== HotelInvoice =====================
 
 	public async Task<UResponse<Guid?>> CreateHotelInvoice(HotelInvoiceCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		HotelReservationEntity? reservation = await db.Set<HotelReservationEntity>().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.ReservationId, ct);
-		if (reservation == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("ReservationNotFound"));
+		if (reservation == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("reservationNotFound"));
 		if ((!userData.CanManage(reservation.CreatorId, []) && !userData.CanManage(reservation.Hotel.CreatorId, reservation.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageInvoices))
-			return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+			return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		EntityEntry<HotelInvoiceEntity> e = await db.AddAsync(new HotelInvoiceEntity {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -817,13 +817,13 @@ public class HotelService(
 
 	public async Task<UResponse> UpdateHotelInvoice(HotelInvoiceUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		HotelInvoiceEntity? e = await db.Set<HotelInvoiceEntity>().AsTracking().Include(x => x.Reservation).ThenInclude(x => x!.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("InvoiceNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
 		if (e.Reservation != null && (!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Reservation.Hotel.CreatorId, e.Reservation.Hotel.AdminUserIds)))
-			return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
-		if (!userData.HasPermission(TagUser.PermissionManageInvoices)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!userData.HasPermission(TagUser.PermissionManageInvoices)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.DebtAmount.IsNotNull()) e.DebtAmount = p.DebtAmount.Value;
 		if (p.CreditorAmount.IsNotNull()) e.CreditorAmount = p.CreditorAmount.Value;
@@ -840,13 +840,13 @@ public class HotelService(
 
 	public async Task<UResponse> DeleteHotelInvoice(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		HotelInvoiceEntity? e = await db.Set<HotelInvoiceEntity>().Include(x => x.Reservation).ThenInclude(x => x!.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("InvoiceNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
 		if (e.Reservation != null && (!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Reservation.Hotel.CreatorId, e.Reservation.Hotel.AdminUserIds)))
-			return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
-		if (!userData.HasPermission(TagUser.PermissionDeleteInvoices)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!userData.HasPermission(TagUser.PermissionDeleteInvoices)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		await db.Set<HotelInvoiceEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 		return new UResponse();
@@ -854,15 +854,15 @@ public class HotelService(
 
 	public async Task<UResponse> PayHotelInvoice(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		HotelInvoiceEntity? e = await db.Set<HotelInvoiceEntity>().Include(x => x.Reservation).ThenInclude(x => x!.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("InvoiceNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
 
 		bool isOwner = e.Reservation != null && e.Reservation.UserId == userData.Id;
 		bool isManager = e.Reservation != null && userData.CanManage(e.Reservation.Hotel.CreatorId, e.Reservation.Hotel.AdminUserIds) && userData.HasPermission(TagUser.PermissionPayInvoices);
-		if (!isOwner && !isManager) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (!isOwner && !isManager) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		return await PayHotelInvoiceInternal(new HotelInvoicePayParams { InvoiceId = e.Id, UserId = e.Reservation!.UserId }, ct);
 	}
@@ -871,9 +871,9 @@ public class HotelService(
 
 	public async Task<UResponse<Guid?>> CreateDorm(DormCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
-		if (!userData.HasPermission(TagUser.PermissionManageDorms)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.HasPermission(TagUser.PermissionManageDorms)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		DormEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -919,17 +919,17 @@ public class HotelService(
 		IQueryable<DormEntity> dorms = db.Set<DormEntity>();
 		if (IsDormManager(userData)) dorms = dorms.ApplyOwnerScope<DormEntity, TagDorm>(userData);
 		DormResponse? e = await dorms.Select(Projections.DormSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		return e == null ? new UResponse<DormResponse?>(null, Usc.NotFound, ls.Get("DormNotFound")) : new UResponse<DormResponse?>(e);
+		return e == null ? new UResponse<DormResponse?>(null, Usc.NotFound, ls.Get("dormNotFound")) : new UResponse<DormResponse?>(e);
 	}
 
 	public async Task<UResponse> UpdateDorm(DormUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		DormEntity? e = await db.Set<DormEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("DormNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("dormNotFound"));
 
-		if (!userData.CanManage(e.CreatorId, e.AdminUserIds) || !userData.HasPermission(TagUser.PermissionManageDorms)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (!userData.CanManage(e.CreatorId, e.AdminUserIds) || !userData.HasPermission(TagUser.PermissionManageDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
 		if (p.CityCode.IsNotNullOrEmpty()) e.CityCode = p.CityCode;
@@ -952,12 +952,12 @@ public class HotelService(
 
 	public async Task<UResponse> DeleteDorm(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		DormEntity? e = await db.Set<DormEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("DormNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("dormNotFound"));
 
-		if (!userData.CanManage(e.CreatorId, e.AdminUserIds) || !userData.HasPermission(TagUser.PermissionDeleteDorms)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (!userData.CanManage(e.CreatorId, e.AdminUserIds) || !userData.HasPermission(TagUser.PermissionDeleteDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<DormEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
@@ -968,12 +968,12 @@ public class HotelService(
 
 	public async Task<UResponse<Guid?>> CreateDormRoom(DormRoomCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		DormEntity? dorm = await db.Set<DormEntity>().FirstOrDefaultAsync(x => x.Id == p.DormId, ct);
-		if (dorm == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("DormNotFound"));
-		if (!userData.CanManage(dorm.CreatorId, dorm.AdminUserIds) || !userData.HasPermission(TagUser.PermissionManageDorms)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (dorm == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("dormNotFound"));
+		if (!userData.CanManage(dorm.CreatorId, dorm.AdminUserIds) || !userData.HasPermission(TagUser.PermissionManageDorms)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		DormRoomEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -1020,17 +1020,17 @@ public class HotelService(
 		}
 
 		DormRoomResponse? e = await q.Select(Projections.DormRoomSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		return e == null ? new UResponse<DormRoomResponse?>(null, Usc.NotFound, ls.Get("DormRoomNotFound")) : new UResponse<DormRoomResponse?>(e);
+		return e == null ? new UResponse<DormRoomResponse?>(null, Usc.NotFound, ls.Get("dormRoomNotFound")) : new UResponse<DormRoomResponse?>(e);
 	}
 
 	public async Task<UResponse> UpdateDormRoom(DormRoomUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		DormRoomEntity? e = await db.Set<DormRoomEntity>().AsTracking().Include(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("DormRoomNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("dormRoomNotFound"));
 
-		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Dorm.CreatorId, e.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageDorms)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Dorm.CreatorId, e.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
 		if (p.DormId.HasValue) e.DormId = p.DormId.Value;
@@ -1048,12 +1048,12 @@ public class HotelService(
 
 	public async Task<UResponse> DeleteDormRoom(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		DormRoomEntity? e = await db.Set<DormRoomEntity>().Include(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("DormRoomNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("dormRoomNotFound"));
 
-		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Dorm.CreatorId, e.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionDeleteDorms)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Dorm.CreatorId, e.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionDeleteDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<DormRoomEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
@@ -1064,12 +1064,12 @@ public class HotelService(
 
 	public async Task<UResponse<Guid?>> CreateDormBed(DormBedCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		DormRoomEntity? room = await db.Set<DormRoomEntity>().Include(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.RoomId, ct);
-		if (room == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("DormRoomNotFound"));
-		if ((!userData.CanManage(room.CreatorId, []) && !userData.CanManage(room.Dorm.CreatorId, room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageDorms)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (room == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("dormRoomNotFound"));
+		if ((!userData.CanManage(room.CreatorId, []) && !userData.CanManage(room.Dorm.CreatorId, room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageDorms)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		DormBedEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -1117,17 +1117,17 @@ public class HotelService(
 		}
 
 		DormBedResponse? e = await q.Select(Projections.DormBedSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		return e == null ? new UResponse<DormBedResponse?>(null, Usc.NotFound, ls.Get("DormBedNotFound")) : new UResponse<DormBedResponse?>(e);
+		return e == null ? new UResponse<DormBedResponse?>(null, Usc.NotFound, ls.Get("dormBedNotFound")) : new UResponse<DormBedResponse?>(e);
 	}
 
 	public async Task<UResponse> UpdateDormBed(DormBedUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		DormBedEntity? e = await db.Set<DormBedEntity>().AsTracking().Include(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("DormBedNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("dormBedNotFound"));
 
-		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Room.Dorm.CreatorId, e.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageDorms)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Room.Dorm.CreatorId, e.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
 		if (p.Deposit.HasValue) e.Deposit = p.Deposit.Value;
@@ -1142,12 +1142,12 @@ public class HotelService(
 
 	public async Task<UResponse> DeleteDormBed(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		DormBedEntity? e = await db.Set<DormBedEntity>().Include(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("DormBedNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("dormBedNotFound"));
 
-		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Room.Dorm.CreatorId, e.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionDeleteDorms)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Room.Dorm.CreatorId, e.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionDeleteDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<DormBedEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
@@ -1158,16 +1158,16 @@ public class HotelService(
 
 	public async Task<UResponse<Guid?>> CreateDormBedContract(DormBedContractCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		DormBedEntity? bed = await db.Set<DormBedEntity>().Include(x => x.Contracts).Include(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.BedId, ct);
-		if (bed == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("DormBedNotFound"));
-		if ((!userData.CanManage(bed.CreatorId, []) && !userData.CanManage(bed.Room.Dorm.CreatorId, bed.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageContracts)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
-		if (bed.Contracts.Any(y => y.EndDate >= DateTime.UtcNow)) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("BedHasActiveContract"));
+		if (bed == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("dormBedNotFound"));
+		if ((!userData.CanManage(bed.CreatorId, []) && !userData.CanManage(bed.Room.Dorm.CreatorId, bed.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageContracts)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (bed.Contracts.Any(y => y.EndDate >= DateTime.UtcNow)) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("thisBedHasAnActiveContract"));
 
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
-		if (user == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("UserNotFound"));
+		if (user == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("accountNotFound"));
 
 		Guid contractId = Guid.CreateVersion7();
 		DormBedContractEntity e = new() {
@@ -1279,7 +1279,7 @@ public class HotelService(
 			}, ct);
 		}
 
-		await AddNotification(user.Id, TagNotification.InvoiceIssued, ls.Get("InvoiceIssuedTitle"), bed.Room.Dorm.Title, ct);
+		await AddNotification(user.Id, TagNotification.InvoiceIssued, ls.Get("newInvoicesIssued"), bed.Room.Dorm.Title, ct);
 		await db.SaveChangesAsync(ct);
 		return new UResponse<Guid?>(e.Id);
 	}
@@ -1318,12 +1318,12 @@ public class HotelService(
 
 	public async Task<UResponse> UpdateDormBedContract(DormBedContractUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		DormBedContractEntity? e = await db.Set<DormBedContractEntity>().AsTracking().Include(x => x.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ContractNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("contractNotFound"));
 
-		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Bed.Room.Dorm.CreatorId, e.Bed.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageContracts)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Bed.Room.Dorm.CreatorId, e.Bed.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageContracts)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Deposit.HasValue) e.Deposit = p.Deposit.Value;
 		if (p.Rent.HasValue) e.Rent = p.Rent.Value;
@@ -1338,12 +1338,12 @@ public class HotelService(
 
 	public async Task<UResponse> DeleteDormBedContract(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		DormBedContractEntity? e = await db.Set<DormBedContractEntity>().Include(x => x.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ContractNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("contractNotFound"));
 
-		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Bed.Room.Dorm.CreatorId, e.Bed.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionDeleteContracts)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Bed.Room.Dorm.CreatorId, e.Bed.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionDeleteContracts)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		await db.Set<DormBedContractEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
@@ -1354,13 +1354,13 @@ public class HotelService(
 
 	public async Task<UResponse<Guid?>> CreateDormBedInvoice(DormBedInvoiceCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		DormBedContractEntity? contract = await db.Set<DormBedContractEntity>().Include(x => x.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.ContractId, ct);
-		if (contract == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("ContractNotFound"));
+		if (contract == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("contractNotFound"));
 		if ((!userData.CanManage(contract.CreatorId, []) && !userData.CanManage(contract.Bed.Room.Dorm.CreatorId, contract.Bed.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageInvoices))
-			return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+			return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		EntityEntry<DormBedInvoiceEntity> e = await db.AddAsync(new DormBedInvoiceEntity {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -1441,13 +1441,13 @@ public class HotelService(
 
 	public async Task<UResponse> UpdateDormBedInvoice(DormBedInvoiceUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		DormBedInvoiceEntity? e = await db.Set<DormBedInvoiceEntity>().AsTracking().Include(x => x.Contract).ThenInclude(x => x!.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("InvoiceNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
 		if (e.Contract != null && (!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Contract.Bed.Room.Dorm.CreatorId, e.Contract.Bed.Room.Dorm.AdminUserIds)))
-			return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
-		if (!userData.HasPermission(TagUser.PermissionManageInvoices)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!userData.HasPermission(TagUser.PermissionManageInvoices)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		if (p.CreditorAmount.IsNotNull()) e.CreditorAmount = p.CreditorAmount.Value;
 		if (p.DebtAmount.IsNotNull()) e.DebtAmount = p.DebtAmount.Value;
 		if (p.PenaltyAmount.IsNotNull()) e.PenaltyAmount = p.PenaltyAmount.Value;
@@ -1464,13 +1464,13 @@ public class HotelService(
 
 	public async Task<UResponse> DeleteDormBedInvoice(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		DormBedInvoiceEntity? e = await db.Set<DormBedInvoiceEntity>().Include(x => x.Contract).ThenInclude(x => x!.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("InvoiceNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
 		if (e.Contract != null && (!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Contract.Bed.Room.Dorm.CreatorId, e.Contract.Bed.Room.Dorm.AdminUserIds)))
-			return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
-		if (!userData.HasPermission(TagUser.PermissionDeleteInvoices)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!userData.HasPermission(TagUser.PermissionDeleteInvoices)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		await db.Set<DormBedInvoiceEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
@@ -1479,8 +1479,8 @@ public class HotelService(
 
 	public async Task<UResponse> PayDormBedInvoice(DormBedInvoicePayParams p, CancellationToken ct) {
 		DormBedInvoiceEntity? e = await db.Set<DormBedInvoiceEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.InvoiceId, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("InvoiceNotFound"));
-		if (!e.Tags.Contains(TagDormBedInvoice.NotPaid)) return new UResponse(Usc.Conflict, ls.Get("InvoiceAlreadyPaid"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
+		if (!e.Tags.Contains(TagDormBedInvoice.NotPaid)) return new UResponse(Usc.Conflict, ls.Get("thisInvoiceHasAlreadyBeenPaid"));
 
 		decimal amount = e.DebtAmount + e.PenaltyAmount - e.CreditorAmount;
 		if (amount > 0) {
@@ -1488,7 +1488,7 @@ public class HotelService(
 				SenderId = p.UserId,
 				ReceiverId = Core.App.Users.SystemAdmin.Id,
 				Amount = amount,
-				Detail1 = ls.Get("DormInvoicePaymentTitle"),
+				Detail1 = ls.Get("dormInvoicePayment"),
 				TagWalletTxn = [TagWalletTxn.DormBedInvoice]
 			}, ct);
 			if (transfer.Result == null) return new UResponse(transfer.Status, transfer.Message);
@@ -1496,33 +1496,33 @@ public class HotelService(
 
 		e.PaidAmount = amount;
 		e.Tags = [TagDormBedInvoice.PaidOnline];
-		await AddNotification(p.UserId, TagNotification.InvoicePaid, ls.Get("InvoicePaidTitle"), ls.Get("DormInvoicePaymentTitle"), ct);
+		await AddNotification(p.UserId, TagNotification.InvoicePaid, ls.Get("invoicePaid"), ls.Get("dormInvoicePayment"), ct);
 		await db.SaveChangesAsync(ct);
 
-		return new UResponse(Usc.Success, ls.Get("PaymentSuccessful"));
+		return new UResponse(Usc.Success, ls.Get("paymentCompleted"));
 	}
 
 	public async Task<UResponse> PayDormBedInvoiceByUser(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		DormBedInvoiceEntity? e = await db.Set<DormBedInvoiceEntity>()
 			.Include(x => x.Contract).ThenInclude(x => x!.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm)
 			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e?.Contract == null) return new UResponse(Usc.NotFound, ls.Get("InvoiceNotFound"));
+		if (e?.Contract == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
 
 		bool isOwner = e.Contract.UserId == userData.Id;
 		bool isManager = userData.CanManage(e.Contract.Bed.Room.Dorm.CreatorId, e.Contract.Bed.Room.Dorm.AdminUserIds) && userData.HasPermission(TagUser.PermissionPayInvoices);
-		if (!isOwner && !isManager) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (!isOwner && !isManager) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		return await PayDormBedInvoice(new DormBedInvoicePayParams { InvoiceId = e.Id, UserId = e.Contract.UserId }, ct);
 	}
 
 	public async Task<UResponse<IEnumerable<DormBedInvoiceChartResponse>?>> ReadDormBedInvoiceChartData(BaseParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<IEnumerable<DormBedInvoiceChartResponse>?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<IEnumerable<DormBedInvoiceChartResponse>?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<IEnumerable<DormBedInvoiceChartResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<DormBedInvoiceChartResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		IQueryable<DormBedInvoiceEntity> invoiceQuery = db.Set<DormBedInvoiceEntity>();
 		if (!userData.IsSuperAdmin) {

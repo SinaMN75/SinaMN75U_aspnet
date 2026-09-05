@@ -23,8 +23,8 @@ public class BlogService(
 
 	public async Task<UResponse<Guid?>> Create(BlogCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		List<CategoryEntity> categories = p.Categories.IsNotNullOrEmpty()
 			? await db.Set<CategoryEntity>().AsTracking().Where(x => p.Categories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct)
@@ -61,17 +61,17 @@ public class BlogService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		p.SelectorArgs.UserId = userData?.Id;
 		BlogResponse? e = await db.Set<BlogEntity>().ApplyAdminScope<BlogEntity, TagBlog>(userData).Select(Projections.BlogSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		return e == null ? new UResponse<BlogResponse?>(null, Usc.NotFound, ls.Get("BlogNotFound")) : new UResponse<BlogResponse?>(e);
+		return e == null ? new UResponse<BlogResponse?>(null, Usc.NotFound, ls.Get("blogPostNotFound")) : new UResponse<BlogResponse?>(e);
 	}
 
 	public async Task<UResponse> Update(BlogUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		BlogEntity? e = await db.Set<BlogEntity>().AsTracking().Include(x => x.Categories).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("BlogNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("blogPostNotFound"));
 
-		if (!userData.CanManage(e.CreatorId, e.AdminUserIds)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (!userData.CanManage(e.CreatorId, e.AdminUserIds)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
 		if (p.Subtitle.IsNotNull()) e.Subtitle = p.Subtitle;
@@ -111,26 +111,26 @@ public class BlogService(
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		BlogEntity? e = await db.Set<BlogEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("BlogNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("blogPostNotFound"));
 
-		if (!userData.CanManage(e.CreatorId, e.AdminUserIds)) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (!userData.CanManage(e.CreatorId, e.AdminUserIds)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<BlogEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
-		return new UResponse(Usc.Deleted, ls.Get("BlogDeleted"));
+		return new UResponse(Usc.Deleted, ls.Get("blogPostRemovedSuccessfully"));
 	}
 
 	public async Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		int count = await db.Set<BlogEntity>().WhereIn(u => u.Id, p.Ids).ExecuteDeleteAsync(ct);
 
-		return count > 0 ? new UResponse(Usc.Deleted, ls.Get("BlogDeleted")) : new UResponse(Usc.NotFound, ls.Get("BlogNotFound"));
+		return count > 0 ? new UResponse(Usc.Deleted, ls.Get("blogPostRemovedSuccessfully")) : new UResponse(Usc.NotFound, ls.Get("blogPostNotFound"));
 	}
 
 	private async Task AddChildrenRecursively(

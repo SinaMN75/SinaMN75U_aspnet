@@ -18,8 +18,8 @@ public class WalletService(
 ) : IWalletService {
 	public async Task<UResponse> Purchase(WalletPurchaseParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<TagTxnErrorCodes>(TagTxnErrorCodes.Unauthorized, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<TagTxnErrorCodes>(TagTxnErrorCodes.Unauthorized, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		Guid receiverId;
 		decimal amount;
@@ -88,12 +88,12 @@ public class WalletService(
 
 	public async Task<UResponse> Charge(WalletChargeParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
 		WalletEntity? e = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == p.UserId, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("WalletNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("walletNotFound"));
 
-		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("YouDoNotHaveClearanceToDoThisAction"));
+		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		return await Transfer(new WalletTransferParams {
 			ApiKey = p.ApiKey,
@@ -120,9 +120,9 @@ public class WalletService(
 	public async Task<UResponse<WalletTxnResponse?>> Transfer(WalletTransferParams p, CancellationToken ct) {
 		WalletEntity? senderWallet = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == p.SenderId, ct);
 		WalletEntity? receiverWallet = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == p.ReceiverId, ct);
-		if (senderWallet == null) return new UResponse<WalletTxnResponse?>(null, Usc.NotFound, ls.Get("SenderWalletNotFound"));
-		if (receiverWallet == null) return new UResponse<WalletTxnResponse?>(null, Usc.NotFound, ls.Get("ReceiverWalletNotFound"));
-		if (!senderWallet.JsonData.AllowMinusBalance && senderWallet.Balance < p.Amount) return new UResponse<WalletTxnResponse?>(null, Usc.BalanceIsLow, ls.Get("BalanceIsLow"));
+		if (senderWallet == null) return new UResponse<WalletTxnResponse?>(null, Usc.NotFound, ls.Get("senderWalletNotFound"));
+		if (receiverWallet == null) return new UResponse<WalletTxnResponse?>(null, Usc.NotFound, ls.Get("receiverWalletNotFound"));
+		if (!senderWallet.JsonData.AllowMinusBalance && senderWallet.Balance < p.Amount) return new UResponse<WalletTxnResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 
 		decimal senderBalance = senderWallet.Balance - p.Amount;
 		decimal receiverBalance = receiverWallet.Balance + p.Amount;

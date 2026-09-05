@@ -1,20 +1,20 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class ParkingCreateParams : BaseCreateParams<TagParking> {
-	[UValidationRequired("TitleRequired")]
+	[UValidationRequired("titleIsRequired")]
 	public string Title { get; set; } = null!;
 
 	public string? Address { get; set; }
 	public string? PhoneNumber { get; set; }
 	public int Capacity { get; set; }
 
-	[UValidationRequired("EntrancePriceRequired")]
+	[UValidationRequired("entrancePriceRequired")]
 	public decimal EntrancePrice { get; set; }
 
-	[UValidationRequired("HourlyPriceRequired")]
+	[UValidationRequired("hourlyPriceRequired")]
 	public decimal HourlyPrice { get; set; }
 
-	[UValidationRequired("DailyPriceRequired")]
+	[UValidationRequired("dailyPriceRequired")]
 	public decimal DailyPrice { get; set; }
 }
 
@@ -33,13 +33,13 @@ public sealed class ParkingReadParams : BaseReadParams<TagParking> {
 }
 
 public sealed class ParkingUserCreateParams : BaseParams {
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public Guid ParkingId { get; set; }
 
-	[UValidationRequired("UserNameRequired")]
+	[UValidationRequired("userNameIsRequired")]
 	public string UserName { get; set; } = null!;
 
-	[UValidationRequired("PasswordRequired")]
+	[UValidationRequired("pleaseEnterAPassword")]
 	public string Password { get; set; } = null!;
 
 	public string? FirstName { get; set; }
@@ -48,17 +48,17 @@ public sealed class ParkingUserCreateParams : BaseParams {
 }
 
 public sealed class ParkingUserReadParams : BaseParams {
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public Guid ParkingId { get; set; }
 
 	public UserSelectorArgs SelectorArgs { get; set; } = new();
 }
 
 public sealed class ParkingUserDeleteParams : BaseParams {
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public Guid ParkingId { get; set; }
 
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public Guid UserId { get; set; }
 }
 
@@ -88,7 +88,7 @@ public sealed class ParkingReportReadParams : BaseReadParams<TagParkingReport> {
 	public ParkingReportSelectorArgs SelectorArgs { get; set; } = new();
 }
 public sealed class ParkingTariffCreateParams : BaseCreateParams<TagParkingTariff> {
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public Guid ParkingId { get; set; }
 
 	public TagVehicle VehicleType { get; set; }
@@ -145,10 +145,10 @@ public sealed class ParkingTariffReadParams : BaseReadParams<TagParkingTariff> {
 }
 
 public sealed class ParkingSubscriptionCreateParams : BaseCreateParams<TagParkingSubscription> {
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public Guid ParkingId { get; set; }
 
-	[UValidationRequired("LicencePlateRequired")]
+	[UValidationRequired("licencePlateIsRequired")]
 	public string LicencePlate { get; set; } = null!;
 
 	public TagVehicle VehicleType { get; set; } = TagVehicle.Car;
@@ -188,10 +188,10 @@ public sealed class ParkingSubscriptionReadParams : BaseReadParams<TagParkingSub
 }
 
 public sealed class ParkingPlateFlagCreateParams : BaseCreateParams<TagParkingPlateFlag> {
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public Guid ParkingId { get; set; }
 
-	[UValidationRequired("LicencePlateRequired")]
+	[UValidationRequired("licencePlateIsRequired")]
 	public string LicencePlate { get; set; } = null!;
 
 	public string? Reason { get; set; }
@@ -216,13 +216,13 @@ public sealed class ParkingPlateFlagReadParams : BaseReadParams<TagParkingPlateF
 }
 
 public sealed class ParkingStaffCreateParams : BaseCreateParams<TagParkingStaff> {
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public Guid ParkingId { get; set; }
 
-	[UValidationRequired("UserNameRequired")]
+	[UValidationRequired("userNameIsRequired")]
 	public string UserName { get; set; } = null!;
 
-	[UValidationRequired("PasswordRequired")]
+	[UValidationRequired("pleaseEnterAPassword")]
 	public string Password { get; set; } = null!;
 
 	public string? FirstName { get; set; }
@@ -244,12 +244,12 @@ public sealed class ParkingStaffReadParams : BaseReadParams<TagParkingStaff> {
 }
 
 public sealed class ParkingShiftOpenParams : BaseParams {
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public Guid ParkingId { get; set; }
 }
 
 public sealed class ParkingShiftCloseParams : BaseParams {
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public Guid Id { get; set; }
 
 	public decimal CountedCash { get; set; }
@@ -262,20 +262,20 @@ public sealed class ParkingShiftReadParams : BaseReadParams<TagParkingShift> {
 }
 
 public sealed class ParkingPlateStatusParams : BaseParams {
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public Guid ParkingId { get; set; }
 
-	[UValidationRequired("LicencePlateRequired")]
+	[UValidationRequired("licencePlateIsRequired")]
 	public string LicencePlate { get; set; } = null!;
 
 	public TagVehicle VehicleType { get; set; } = TagVehicle.Car;
 }
 
 public sealed class ParkingEntryParams : BaseParams {
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public Guid ParkingId { get; set; }
 
-	[UValidationRequired("LicencePlateRequired")]
+	[UValidationRequired("licencePlateIsRequired")]
 	public string LicencePlate { get; set; } = null!;
 
 	public TagVehicle VehicleType { get; set; } = TagVehicle.Car;
@@ -300,7 +300,7 @@ public sealed class ParkingExitCalculateParams : BaseParams {
 }
 
 public sealed class ParkingExitParams : BaseParams {
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public Guid ReportId { get; set; }
 
 	public DateTime? EndDate { get; set; }
@@ -312,14 +312,14 @@ public sealed class ParkingExitParams : BaseParams {
 }
 
 public sealed class ParkingDashboardParams : BaseParams {
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public Guid ParkingId { get; set; }
 
 	public int RecentCount { get; set; } = 10;
 }
 
 public sealed class ParkingInsideVehiclesParams : BaseParams {
-	[UValidationRequired("IdRequired")]
+	[UValidationRequired("idIsRequired")]
 	public Guid ParkingId { get; set; }
 
 	public string? Query { get; set; }

@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class SimCardCreateParams : BaseCreateParams<TagSimOperator> {
-	[UValidationRequired("NumberRequired")]
+	[UValidationRequired("numberRequired")]
 	public string Number { get; set; } = null!;
 
 	public string? Serial { get; set; }

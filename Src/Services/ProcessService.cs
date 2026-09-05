@@ -8,30 +8,30 @@ public interface IProcessService {
 public class ProcessService(DbContext db, ILocalizationService ls, ITokenService ts, IWebHostEnvironment env) : IProcessService {
 	public async Task<UResponse<UProcessStepGetResponse?>> Get(IdStringParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<UProcessStepGetResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<UProcessStepGetResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<UProcessStepGetResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<UProcessStepGetResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		return p.Id switch {
 			ProcessIds.Kyc => await KycGet(userData.Id, ct),
-			_ => new UResponse<UProcessStepGetResponse?>(null, Usc.NotFound, ls.Get("ProcessNotFound"))
+			_ => new UResponse<UProcessStepGetResponse?>(null, Usc.NotFound, ls.Get("processNotFound"))
 		};
 	}
 
 	public async Task<UResponse<UProcessStepGetResponse?>> Send(UProcessStepSend p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<UProcessStepGetResponse?>(null, Usc.UnAuthorized, ls.Get("AuthorizationRequired"));
-		if (userData.IsExpired) return new UResponse<UProcessStepGetResponse?>(null, Usc.ExpiredToken, ls.Get("TokenExpired"));
+		if (userData == null) return new UResponse<UProcessStepGetResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<UProcessStepGetResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 
 		UserEntity? u = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == userData.Id, ct);
-		if (u == null) return new UResponse<UProcessStepGetResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
+		if (u == null) return new UResponse<UProcessStepGetResponse?>(null, Usc.NotFound, ls.Get("accountNotFound"));
 
 		UResponse<UProcessStepGetResponse?>? error = p.StepId switch {
 			ProcessStepIds.UserData => ApplyUserData(u, p),
 			ProcessStepIds.UserDocument => ApplyUserDocument(u, p),
 			ProcessStepIds.UserSelfieVideo => ApplyUserSelfieVideo(u, p),
 			ProcessStepIds.UserESignature => ApplyUserESignature(u, p),
-			_ => new UResponse<UProcessStepGetResponse?>(null, Usc.BadRequest, ls.Get("InvalidStep"))
+			_ => new UResponse<UProcessStepGetResponse?>(null, Usc.BadRequest, ls.Get("invalidStep"))
 		};
 
 		if (error != null) return error;
@@ -47,7 +47,7 @@ public class ProcessService(DbContext db, ILocalizationService ls, ITokenService
 				Merchant = new MerchantSelectorArgs { Terminal = new TerminalSelectorArgs() },
 			}))
 			.FirstOrDefaultAsync(x => x.Id == userId, ct);
-		if (e == null) return new UResponse<UProcessStepGetResponse?>(null, Usc.NotFound, ls.Get("UserNotFound"));
+		if (e == null) return new UResponse<UProcessStepGetResponse?>(null, Usc.NotFound, ls.Get("accountNotFound"));
 
 		List<UProcessStepGetResponse> steps = [
 			new() {
@@ -138,7 +138,7 @@ public class ProcessService(DbContext db, ILocalizationService ls, ITokenService
 					Steps = stepStatuses,
 					MessageBox = new UMessageBox { Title = "تکمیل شد", Description = "فرایند احراز هویت با موفقیت انجام شد.", SvgIcon = USvgs.ShieldInfo }
 				},
-				Usc.ProcessCompleted, ls.Get("ProcessCompleted")
+				Usc.ProcessCompleted, ls.Get("processCompleted")
 			);
 
 		UProcessStepGetResponse? active = steps.FirstOrDefault(s => !s.IsSubmitted);
@@ -161,12 +161,12 @@ public class ProcessService(DbContext db, ILocalizationService ls, ITokenService
 
 	private UResponse<UProcessStepGetResponse?>? ApplyUserData(UserEntity u, UProcessStepSend p) {
 		UProcessField? fatherName = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.JsonData.FatherName));
-		if (fatherName?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("FatherNameRequired"));
+		if (fatherName?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("fatherNameRequired"));
 
 		UProcessField? birthdate = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.Birthdate));
-		if (birthdate?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("BirthDateRequired"));
+		if (birthdate?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("birthDateRequired"));
 
-		if (!DateTime.TryParse(birthdate.Value!, out DateTime parsedDate)) return Fail(ls.Get("InvalidDateFormat"));
+		if (!DateTime.TryParse(birthdate.Value!, out DateTime parsedDate)) return Fail(ls.Get("invalidDateFormat"));
 
 		u.JsonData.FatherName = fatherName.Value;
 		u.Birthdate = parsedDate;
@@ -182,13 +182,13 @@ public class ProcessService(DbContext db, ILocalizationService ls, ITokenService
 
 	private UResponse<UProcessStepGetResponse?>? ApplyUserDocument(UserEntity u, UProcessStepSend p) {
 		UProcessField? front = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.NationalCardFront));
-		if (front?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("NationalCardFrontRequired"));
+		if (front?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("nationalCardFrontRequired"));
 
 		UProcessField? back = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.NationalCardBack));
-		if (back?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("NationalCardBackRequired"));
+		if (back?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("nationalCardBackRequired"));
 
 		UProcessField? cert = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.BirthCertificateFirst));
-		if (cert?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("BirthCertificateFirstRequired"));
+		if (cert?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("birthCertificateFirstRequired"));
 
 		u.NationalCardFront = UserFileStore.Save(env.WebRootPath, u.Id, "nationalCardFront", front.Value, u.NationalCardFront, 70);
 		u.NationalCardBack = UserFileStore.Save(env.WebRootPath, u.Id, "nationalCardBack", back.Value, u.NationalCardBack, 70);
@@ -202,7 +202,7 @@ public class ProcessService(DbContext db, ILocalizationService ls, ITokenService
 
 	private UResponse<UProcessStepGetResponse?>? ApplyUserSelfieVideo(UserEntity u, UProcessStepSend p) {
 		UProcessField? video = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.VisualAuthentication));
-		if (video?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("VisualAuthenticationRequired"));
+		if (video?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("visualAuthenticationRequired"));
 
 		u.VisualAuthentication = UserFileStore.Save(env.WebRootPath, u.Id, "visualAuthentication", video.Value, u.VisualAuthentication, null);
 		u.Tags.Add(TagUser.VisualAuthenticationAwaitingVerification);
@@ -212,7 +212,7 @@ public class ProcessService(DbContext db, ILocalizationService ls, ITokenService
 
 	private UResponse<UProcessStepGetResponse?>? ApplyUserESignature(UserEntity u, UProcessStepSend p) {
 		UProcessField? signature = p.Fields.FirstOrDefault(x => x.Key == nameof(UserEntity.ESignature));
-		if (signature?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("SignatureRequired"));
+		if (signature?.Value.IsNullOrEmpty() != false) return Fail(ls.Get("signatureRequired"));
 
 		u.ESignature = UserFileStore.Save(env.WebRootPath, u.Id, "eSignature", signature.Value, u.ESignature, 10);
 		u.Tags.Add(TagUser.ESignatureAwaitingVerification);
