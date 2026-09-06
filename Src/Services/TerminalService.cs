@@ -73,11 +73,12 @@ public class TerminalService(
 		if (userData == null) return new UResponse<TerminalResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<TerminalResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
-		TerminalEntity? terminal = await db.Set<TerminalEntity>().AsTracking().FirstOrDefaultAsync(x => x.Serial == p.Serial && x.SimCardSerial == p.SimCardSerial, ct);
-		if (terminal == null) return new UResponse<TerminalResponse?>(null, Usc.NotFound, ls.Get("terminalNotFoundCheckYourDetails"));
+		TerminalEntity? terminal = await db.Set<TerminalEntity>().AsTracking().FirstOrDefaultAsync(x => x.Serial == p.Serial, ct);
+		if (terminal == null || p.Tag != TagTerminal.Ava104 && terminal.SimCardSerial != p.SimCardSerial) return new UResponse<TerminalResponse?>(null, Usc.NotFound, ls.Get("terminalNotFoundCheckYourDetails"));
+
 		MerchantEntity? merchant = await db.Set<MerchantEntity>().AsTracking().Include(x => x.User).FirstOrDefaultAsync(x => x.Id == p.MerchantId, ct);
 		if (merchant == null) return new UResponse<TerminalResponse?>(null, Usc.NotFound, ls.Get("merchantNotFound"));
-		
+
 		string agreement = await GenerateAgreement(merchant.User, terminal);
 
 		terminal.JsonData.Detail1 = p.Title ?? "";
@@ -104,11 +105,11 @@ public class TerminalService(
 			},
 			new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
 		);
-		
+
 		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<TerminalResponse?>(null);
 		JsonElement merchantData = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
 		if (merchantData.GetStringOrNull("insId") == null) return new UResponse<TerminalResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
-		
+
 		merchant.InsId = merchantData.GetStringOrNull("insId")!;
 		merchant.MerchantId = merchantData.GetStringOrNull("merchantId")!;
 
@@ -130,9 +131,9 @@ public class TerminalService(
 
 		terminal.TerminalId = terminalData.GetStringOrNull("terminalId");
 		terminal.InsId = terminalData.GetStringOrNull("insId");
-		
+
 		await db.SaveChangesAsync(ct);
-		
+
 		return new UResponse<TerminalResponse?>(new TerminalResponse {
 			Id = terminal.Id,
 			CreatedAt = terminal.CreatedAt,
@@ -256,8 +257,8 @@ public class TerminalService(
 			new TerminalSupportPasswordResponse { Password = data.GetStringOrNull("supportPassword") }
 		);
 	}
-	
-		// Imports terminals from an uploaded .xlsx file; duplicates are skipped and the rest still import
+
+	// Imports terminals from an uploaded .xlsx file; duplicates are skipped and the rest still import
 	public async Task<UResponse<TerminalImportResponse?>> Import(TerminalImportParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<TerminalImportResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
@@ -270,7 +271,8 @@ public class TerminalService(
 			byte[] bytes = Convert.FromBase64String(StripDataUri(p.File));
 			using MemoryStream ms = new(bytes);
 			rows = ParseSheet(ms);
-		} catch {
+		}
+		catch {
 			return new UResponse<TerminalImportResponse?>(null, Usc.BadRequest, ls.Get("InvalidFileFormat"));
 		}
 
@@ -285,7 +287,10 @@ public class TerminalService(
 
 		foreach (Dictionary<string, string> row in rows) {
 			string serial = Val(row, "Serial");
-			if (serial.IsNullOrEmpty()) { result.SkippedSerials.Add("(empty serial)"); continue; } // no serial -> ignore
+			if (serial.IsNullOrEmpty()) {
+				result.SkippedSerials.Add("(empty serial)");
+				continue;
+			} // no serial -> ignore
 
 			string? imei = Val(row, "Imei").NullIfEmpty();
 			string? simSerial = Val(row, "SimCardSerial").NullIfEmpty();
@@ -305,6 +310,7 @@ public class TerminalService(
 				result.SkippedSerials.Add($"{serial} (missing/invalid Tag1)");
 				continue;
 			}
+
 			List<TagTerminal> tags = [tag1];
 			if (TryParseTag(Val(row, "Tag2"), out TagTerminal tag2) && tag2 != tag1) tags.Add(tag2);
 
@@ -363,8 +369,10 @@ public class TerminalService(
 				string col = ColumnLetter(c.CellReference!.Value!);
 				if (headers.TryGetValue(col, out string? header)) map[header] = CellText(c, sst).Trim();
 			}
+
 			if (map.Values.Any(v => v.Length > 0)) rows.Add(map); // skip fully empty rows
 		}
+
 		return rows;
 	}
 
@@ -398,7 +406,6 @@ public class TerminalService(
 		tag = (TagTerminal)n;
 		return true;
 	}
-	
 
 	private static async Task<string> GenerateAgreement(UserEntity user, TerminalEntity terminal) {
 		HtmlTemplate template = await HtmlTemplate.FromFile(Path.Combine(Directory.GetCurrentDirectory(), "Templates", "atmAgreement.html"));
