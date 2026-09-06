@@ -408,7 +408,7 @@ public class TerminalService(
 	}
 
 	private static async Task<string> GenerateAgreement(UserEntity user, TerminalEntity terminal) {
-		HtmlTemplate template = await HtmlTemplate.FromFile(Path.Combine(Directory.GetCurrentDirectory(), "Templates", "atmAgreement.html"));
+		HtmlTemplate template = await HtmlTemplate.FromFile(Path.Combine(AppContext.BaseDirectory, "Templates", "atmAgreement.html"));
 		template.RemoveUnmatchedTokens = true;
 
 		template.Set(new Dictionary<string, string> {
