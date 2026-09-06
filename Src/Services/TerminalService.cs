@@ -425,7 +425,7 @@ public class TerminalService(
 			{ "fatherName", user.JsonData.FatherName ?? "" }
 		});
 
-		await template.SetImageFile("customerSignature", $"{Core.App.BaseUrl}/{user.ESignature}");
+		await template.SetImageFile("customerSignature", $"{Core.App.BaseUrl}/Media/{user.ESignature}");
 
 		return template.RenderBase64();
 	}
