@@ -253,19 +253,15 @@ public class TerminalService(
 			Text = "12345"
 		});
 
-		return new UResponse<TerminalSupportPasswordResponse?>(
-			new TerminalSupportPasswordResponse { Password = data.GetStringOrNull("supportPassword") }
-		);
+		return new UResponse<TerminalSupportPasswordResponse?>(new TerminalSupportPasswordResponse { Password = data.GetStringOrNull("supportPassword") });
 	}
 
-	// Imports terminals from an uploaded .xlsx file; duplicates are skipped and the rest still import
 	public async Task<UResponse<TerminalImportResponse?>> Import(TerminalImportParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<TerminalImportResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<TerminalImportResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		if (p.File.IsNullOrEmpty()) return new UResponse<TerminalImportResponse?>(null, Usc.BadRequest, ls.Get("FileRequired"));
 
-		// Decode the base64 file into a seekable stream and read every row
 		List<Dictionary<string, string>> rows;
 		try {
 			byte[] bytes = Convert.FromBase64String(StripDataUri(p.File));
@@ -276,7 +272,6 @@ public class TerminalService(
 			return new UResponse<TerminalImportResponse?>(null, Usc.BadRequest, ls.Get("InvalidFileFormat"));
 		}
 
-		// Pull existing unique values so we can detect duplicates without hitting the DB unique indexes
 		HashSet<string> serials = (await db.Set<TerminalEntity>().Select(x => x.Serial).ToListAsync(ct)).ToHashSet(StringComparer.OrdinalIgnoreCase);
 		HashSet<string> imeis = (await db.Set<TerminalEntity>().Where(x => x.Imei != null).Select(x => x.Imei!).ToListAsync(ct)).ToHashSet(StringComparer.OrdinalIgnoreCase);
 		HashSet<string> simSerials = (await db.Set<TerminalEntity>().Where(x => x.SimCardSerial != null).Select(x => x.SimCardSerial!).ToListAsync(ct)).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -290,13 +285,12 @@ public class TerminalService(
 			if (serial.IsNullOrEmpty()) {
 				result.SkippedSerials.Add("(empty serial)");
 				continue;
-			} // no serial -> ignore
+			}
 
 			string? imei = Val(row, "Imei").NullIfEmpty();
 			string? simSerial = Val(row, "SimCardSerial").NullIfEmpty();
 			string? terminalId = Val(row, "TerminalId").NullIfEmpty();
 
-			// Skip any row that collides on a unique field (already in DB or earlier in this file)
 			if (serials.Contains(serial) ||
 			    (imei != null && imeis.Contains(imei)) ||
 			    (simSerial != null && simSerials.Contains(simSerial)) ||
@@ -305,7 +299,6 @@ public class TerminalService(
 				continue;
 			}
 
-			// First tag is required, second is optional; both go into the tags list
 			if (!TryParseTag(Val(row, "Tag1"), out TagTerminal tag1)) {
 				result.SkippedSerials.Add($"{serial} (missing/invalid Tag1)");
 				continue;
@@ -328,7 +321,6 @@ public class TerminalService(
 				InsId = Val(row, "InsId").NullIfEmpty()
 			});
 
-			// Reserve these values so later rows in the same file can't duplicate them
 			serials.Add(serial);
 			if (imei != null) imeis.Add(imei);
 			if (simSerial != null) simSerials.Add(simSerial);
@@ -345,7 +337,6 @@ public class TerminalService(
 		return new UResponse<TerminalImportResponse?>(result, Usc.Success, ls.Get("ImportCompleted"));
 	}
 
-	// Reads an .xlsx sheet into a list of header->value dictionaries (first row is the header)
 	private static List<Dictionary<string, string>> ParseSheet(Stream stream) {
 		List<Dictionary<string, string>> rows = [];
 		using SpreadsheetDocument doc = SpreadsheetDocument.Open(stream, false);
@@ -353,10 +344,9 @@ public class TerminalService(
 		WorksheetPart wsPart = wb.WorksheetParts.First();
 		SharedStringTablePart? sst = wb.SharedStringTablePart;
 
-		Row[] sheetRows = wsPart.Worksheet.GetFirstChild<SheetData>()!.Elements<Row>().ToArray();
+		Row[] sheetRows = wsPart.Worksheet!.GetFirstChild<SheetData>()!.Elements<Row>().ToArray();
 		if (sheetRows.Length == 0) return rows;
 
-		// Map column letter (A, B, ...) -> trimmed header text
 		Dictionary<string, string> headers = new(StringComparer.OrdinalIgnoreCase);
 		foreach (Cell c in sheetRows[0].Elements<Cell>()) {
 			string text = CellText(c, sst).Trim();
@@ -370,36 +360,32 @@ public class TerminalService(
 				if (headers.TryGetValue(col, out string? header)) map[header] = CellText(c, sst).Trim();
 			}
 
-			if (map.Values.Any(v => v.Length > 0)) rows.Add(map); // skip fully empty rows
+			if (map.Values.Any(v => v.Length > 0)) rows.Add(map);
 		}
 
 		return rows;
 	}
 
-	// Resolves a cell's display text, handling shared strings and inline strings
 	private static string CellText(Cell cell, SharedStringTablePart? sst) {
 		string raw = cell.CellValue?.InnerText ?? "";
 		if (cell.DataType?.Value == CellValues.SharedString && sst != null && int.TryParse(raw, out int idx))
-			return sst.SharedStringTable.Elements<SharedStringItem>().ElementAt(idx).InnerText;
+			return sst.SharedStringTable!.Elements<SharedStringItem>().ElementAt(idx).InnerText;
 		return cell.DataType?.Value == CellValues.InlineString ? cell.InnerText : raw;
 	}
 
-	// Extracts the column letters from a cell reference like "B12" -> "B"
 	private static string ColumnLetter(string cellRef) {
 		int i = 0;
 		while (i < cellRef.Length && char.IsLetter(cellRef[i])) i++;
 		return cellRef[..i];
 	}
 
-	// Strips an optional "data:...;base64," prefix so a raw or data-URI base64 string both work
 	private static string StripDataUri(string s) {
 		int i = s.IndexOf("base64,", StringComparison.OrdinalIgnoreCase);
 		return i >= 0 ? s[(i + 7)..].Trim() : s.Trim();
 	}
 
-	private static string Val(Dictionary<string, string> row, string key) => row.TryGetValue(key, out string? v) ? v : "";
+	private static string Val(Dictionary<string, string> row, string key) => row.GetValueOrDefault(key, "");
 
-	// Accepts a tag by its numeric enum value only (e.g. 101 = Atm, 102 = WallCashless, 103 = DeskCashless)
 	private static bool TryParseTag(string raw, out TagTerminal tag) {
 		tag = default;
 		if (!int.TryParse(raw.Trim(), out int n) || !Enum.IsDefined(typeof(TagTerminal), n)) return false;
@@ -415,18 +401,17 @@ public class TerminalService(
 			{ "day", PersianDateTime.Now.Day.ToString() },
 			{ "month", PersianDateTime.Now.Month.ToString() },
 			{ "number", "NUMBER" },
-			{ "fullName", $"{user.FirstName ?? ""} {user.LastName ?? ""}" },
-			{ "nationalCode", user.NationalCode ?? "" },
+			{ "fullName", $"{user.FirstName ?? "---"} {user.LastName ?? "---"}" },
+			{ "nationalCode", user.NationalCode ?? "---" },
 			{ "birthdate", PersianDateTime.FromDateTime(user.Birthdate ?? DateTime.Now).ToString("yyyy-MM-dd") },
-			{ "address", "ADDRESS" },
-			{ "postalCode", terminal.Merchant?.ZipCode ?? "" },
-			{ "phoneNumber", user.PhoneNumber ?? "" },
-			{ "landLine", user.LandLine ?? "" },
-			{ "fatherName", user.JsonData.FatherName ?? "" }
+			{ "address", terminal.Merchant?.JsonData.Address ?? "---" },
+			{ "postalCode", terminal.Merchant?.ZipCode ?? "---" },
+			{ "phoneNumber", user.PhoneNumber ?? "---" },
+			{ "landLine", user.LandLine ?? "---" },
+			{ "fatherName", user.JsonData.FatherName ?? "---" }
 		});
 
 		await template.SetImageFile("customerSignature", Path.Combine(AppContext.BaseDirectory, "wwwroot", "Media", user.ESignature!.TrimStart('/', '\\')));
-
 		return template.RenderBase64();
 	}
 }
