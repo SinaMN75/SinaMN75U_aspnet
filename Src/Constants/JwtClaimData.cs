@@ -10,7 +10,7 @@ public class JwtClaimData {
 	public string? FullName { get; set; }
 	public string? NationalCode { get; set; }
 	public required DateTime? Expiration { get; set; }
-	public bool IsExpired => Expiration.HasValue && Expiration.Value < DateTime.UtcNow;
+	public bool IsExpired => Expiration.HasValue && (Expiration.Value.Kind == DateTimeKind.Local ? Expiration.Value.ToUniversalTime() : Expiration.Value) < DateTime.UtcNow;
 	public bool IsAdmin => Tags.Contains(TagUser.SuperAdmin) || Tags.Contains(TagUser.SystemUser) || Tags.Contains(TagUser.SystemAdmin);
 	public bool IsSuperAdmin => Tags.Contains(TagUser.SuperAdmin);
 

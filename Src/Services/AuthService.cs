@@ -33,6 +33,7 @@ public class AuthService(
 			PhoneNumber = p.PhoneNumber,
 			Password = UPasswordHasher.Hash(p.Password),
 			RefreshToken = ts.GenerateRefreshToken(),
+			RefreshTokenExpiresAt = ts.RefreshTokenExpiry(),
 			Tags = p.Tags,
 			FirstName = p.FirstName,
 			LastName = p.LastName,
@@ -47,6 +48,7 @@ public class AuthService(
 		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = ts.GenerateJwt(e),
 			RefreshToken = e.RefreshToken,
+			RefreshTokenExpiresAt = e.RefreshTokenExpiresAt,
 			User = e.MapToResponse()
 		});
 	}
@@ -95,12 +97,14 @@ public class AuthService(
 
 		ResetFailedAttempts(lockKey);
 		user.RefreshToken = ts.GenerateRefreshToken();
+		user.RefreshTokenExpiresAt = ts.RefreshTokenExpiry();
 		db.Set<UserEntity>().Update(user);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = ts.GenerateJwt(user),
 			RefreshToken = user.RefreshToken,
+			RefreshTokenExpiresAt = user.RefreshTokenExpiresAt,
 			User = user.MapToResponse()
 		});
 	}
@@ -111,13 +115,16 @@ public class AuthService(
 
 		UserEntity? user = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(u => u.RefreshToken == p.RefreshToken && u.Id == userData.Id, ct);
 		if (user == null) return new UResponse<LoginResponse?>(null, Usc.UnAuthorized, ls.Get("accountNotFound"));
-		
-		user.RefreshToken = ts.GenerateRefreshToken();
+		if (user.RefreshTokenExpiresAt.HasValue && user.RefreshTokenExpiresAt.Value.ToUniversalTime() < DateTime.UtcNow)
+			return new UResponse<LoginResponse?>(null, Usc.ExpiredRefreshToken, ls.Get("yourSessionHasExpiredPleaseSignInAgain"));
+
+		user.RefreshTokenExpiresAt = ts.RefreshTokenExpiry();
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = ts.GenerateJwt(user),
 			RefreshToken = user.RefreshToken,
+			RefreshTokenExpiresAt = user.RefreshTokenExpiresAt,
 			User = user.MapToResponse()
 		});
 	}
@@ -144,6 +151,7 @@ public class AuthService(
 			UserName = p.PhoneNumber,
 			Password = UPasswordHasher.Hash(p.PhoneNumber),
 			RefreshToken = ts.GenerateRefreshToken(),
+			RefreshTokenExpiresAt = ts.RefreshTokenExpiry(),
 			PhoneNumber = p.PhoneNumber,
 			Email = p.PhoneNumber,
 			JsonData = new UserJson(),
@@ -173,9 +181,15 @@ public class AuthService(
 
 		ResetFailedAttempts(lockKey);
 		cache.Set("otp_" + user.Id, "", TimeSpan.FromSeconds(1));
+		user.RefreshToken = ts.GenerateRefreshToken();
+		user.RefreshTokenExpiresAt = ts.RefreshTokenExpiry();
+		db.Set<UserEntity>().Update(user);
+		await db.SaveChangesAsync(ct);
+
 		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = ts.GenerateJwt(user),
-			RefreshToken = ts.GenerateRefreshToken(),
+			RefreshToken = user.RefreshToken,
+			RefreshTokenExpiresAt = user.RefreshTokenExpiresAt,
 			User = user.MapToResponse()
 		});
 	}
@@ -184,9 +198,15 @@ public class AuthService(
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber && x.NationalCode == p.NationalCode, ct);
 		if (user == null) return await Register(p, ct);
 
+		user.RefreshToken = ts.GenerateRefreshToken();
+		user.RefreshTokenExpiresAt = ts.RefreshTokenExpiry();
+		db.Set<UserEntity>().Update(user);
+		await db.SaveChangesAsync(ct);
+
 		return new UResponse<LoginResponse?>(new LoginResponse {
 			Token = ts.GenerateJwt(user),
-			RefreshToken = ts.GenerateRefreshToken(),
+			RefreshToken = user.RefreshToken,
+			RefreshTokenExpiresAt = user.RefreshTokenExpiresAt,
 			User = user.MapToResponse()
 		});
 	}

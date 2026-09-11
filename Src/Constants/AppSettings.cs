@@ -37,6 +37,7 @@ public sealed class Jwt {
 	public required string Issuer { get; init; }
 	public required string Audience { get; init; }
 	public required int Expires { get; init; }
+	public int RefreshTokenExpiresInDays { get; init; } = 7;
 }
 
 public sealed class Cors {

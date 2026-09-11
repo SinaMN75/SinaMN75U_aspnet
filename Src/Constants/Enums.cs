@@ -80,6 +80,7 @@ public enum Usc {
 	ExpiredToken = 604,
 	ShahkarException = 605,
 	ShahkarError = 606,
+	ExpiredRefreshToken = 607,
 
 	BalanceIsLow = 701,
 	InquiryNotCached = 702

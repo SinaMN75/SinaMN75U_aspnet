@@ -129,6 +129,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "enteredOtpIsNotValidOrExpiredPleaseTryAgain", "Entered Otp is not Valid or Expired, Please try again." },
 		{ "refreshTokenRequired", "Refresh Token Required." },
 		{ "authTokenIsExpired", "Auth Token is Expired." },
+		{ "yourSessionHasExpiredPleaseSignInAgain", "Your session has expired. Please sign in again." },
 
 		// ===== Success =====
 		{ "addressDeletedSuccessfully", "Address Deleted Successfully" },
@@ -468,6 +469,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "enteredOtpIsNotValidOrExpiredPleaseTryAgain", "کد تایید وارد شده صحیح نیست یا منقضی شده. لطفا دوباره امتحان کنید." },
 		{ "refreshTokenRequired", "توکن الزامیست" },
 		{ "authTokenIsExpired", "توکن احراز هویت منقضی شده است." },
+		{ "yourSessionHasExpiredPleaseSignInAgain", "نشست شما منقضی شده است. لطفاً دوباره وارد شوید." },
 
 		// ===== Success =====
 		{ "addressDeletedSuccessfully", "آدرس با موفقیت حذف شد" },

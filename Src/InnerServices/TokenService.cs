@@ -2,6 +2,7 @@ namespace SinaMN75U.InnerServices;
 
 public interface ITokenService {
 	public string GenerateRefreshToken();
+	public DateTime RefreshTokenExpiry();
 	public string GenerateJwt(UserEntity user);
 	public JwtClaimData? ExtractClaims(string? token);
 }
@@ -13,6 +14,8 @@ public class TokenService : ITokenService {
 		rng.GetBytes(randomNumber);
 		return Convert.ToBase64String(randomNumber);
 	}
+
+	public DateTime RefreshTokenExpiry() => DateTime.UtcNow.AddDays(Core.App.Jwt.RefreshTokenExpiresInDays);
 
 	public string GenerateJwt(UserEntity user) {
 		DateTime expires = DateTime.UtcNow.AddMinutes(Core.App.Jwt.Expires);
@@ -28,7 +31,7 @@ public class TokenService : ITokenService {
 				new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName ?? ""),
 				new Claim(JwtRegisteredClaimNames.NameId, user.NationalCode ?? ""),
 				new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()),
-				new Claim(ClaimTypes.Expiration, expires.ToString(CultureInfo.InvariantCulture)),
+				new Claim(ClaimTypes.Expiration, expires.ToString("O", CultureInfo.InvariantCulture)),
 				new Claim(ClaimTypes.Role, string.Join(",", user.Tags.Select(x => (int)x)))
 			],
 			expires: expires,
@@ -69,12 +72,18 @@ public class TokenService : ITokenService {
 				LastName = claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.FamilyName)?.Value ?? "",
 				NationalCode = claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.NameId)?.Value ?? "",
 				FullName = claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.GivenName)?.Value ?? "",
-				Expiration = DateTime.TryParse(claims.FirstOrDefault(c => c.Type == ClaimTypes.Expiration)?.Value, out DateTime exp) ? exp : null,
+				Expiration = ParseExpiration(claims.FirstOrDefault(c => c.Type == ClaimTypes.Expiration)?.Value),
 				Tags = tags
 			};
 		}
 		catch (Exception) {
 			return null;
 		}
+	}
+
+	private static DateTime? ParseExpiration(string? value) {
+		if (value.IsNullOrEmpty()) return null;
+		if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTime exp)) return exp;
+		return DateTime.TryParse(value, out DateTime legacy) ? legacy : null;
 	}
 }

@@ -15,6 +15,8 @@ public sealed class UserEntity : BaseEntity<TagUser, UserJson> {
 	[Required, MaxLength(200)]
 	public required string RefreshToken { get; set; }
 
+	public DateTime? RefreshTokenExpiresAt { get; set; }
+
 	[MaxLength(15)]
 	public string? PhoneNumber { get; set; }
 
