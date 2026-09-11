@@ -243,7 +243,8 @@ public enum TagTxn {
 	ChargeWallet = 301,
 	MerchantCreationFee = 302,
 	DormInvoice = 303,
-	HotelInvoice = 304
+	HotelInvoice = 304,
+	BillPayment = 305
 }
 
 public enum TagParking {

@@ -4,6 +4,8 @@ public static class IpgRoutes {
 	public static void MapIpgRoutes(this IEndpointRouteBuilder app, string tag) {
 		RouteGroupBuilder r = app.MapGroup(tag).WithTags(tag).AddEndpointFilter<UValidationFilter>();
 		r.MapPost("Pay", async (IpgSaleParams p, IIpgService s, CancellationToken c) => (await s.GetSaleIpgLink(p, c)).ToResult()).Produces<UResponse<IpgPayResponse?>>();
+		r.MapPost("PayBill", async (IpgBillParams p, IIpgService s, CancellationToken c) => (await s.GetBillIpgLink(p, c)).ToResult()).Produces<UResponse<IpgPayResponse?>>();
+		r.MapPost("Status", async (IpgStatusParams p, IIpgService s, CancellationToken c) => (await s.Status(p, c)).ToResult()).Produces<UResponse<IpgVerifyResponse?>>();
 
 		r.MapPost("Verify", async (
 			[FromQuery] string additionalData,
@@ -16,18 +18,16 @@ public static class IpgRoutes {
 			short status = short.TryParse(Field("status"), out short st) ? st : (short)1;
 			long? rrn = long.TryParse(Field("RRN") is { Length: > 0 } rr ? rr : Field("rrn"), out long r) ? r : null;
 			string? cardNumberMasked = (Field("HashCardNumber") is { Length: > 0 } h ? h : Field("cardNumberMasked")) is { Length: > 0 } cm ? cm : null;
-			await s.Verify(token, status, cardNumberMasked, rrn, additionalData, c);
+			string? trackingNumber = await s.Verify(token, status, cardNumberMasked, rrn, additionalData, c);
 			HttpRequest req = ctx.Request;
 			string basePath = req.Path.Value![..(req.Path.Value!.LastIndexOf('/') + 1)];
-			return Results.Redirect($"{req.Scheme}://{req.Host}{basePath}Verify?status={status}");
+			return Results.Redirect($"{req.Scheme}://{req.Host}{basePath}Verify?status={status}&trackingNumber={trackingNumber}");
 		}).DisableAntiforgery();
 
 		r.MapGet("Gateway", ([FromQuery] string additionalData, [FromQuery] long amount, HttpContext ctx) => {
 			HttpRequest req = ctx.Request;
 			string basePath = req.Path.Value![..(req.Path.Value!.LastIndexOf('/') + 1)];
-			string verify = $"{req.Scheme}://{req.Host}{basePath}Verify";
-			string successUrl = $"{verify}?additionalData={additionalData}&token=FAKE&status=0&rrn=123456789&cardNumberMasked=627412******2424";
-			string errorUrl = $"{verify}?additionalData={additionalData}&token=FAKE&status=1";
+			string callBackUrl = $"{req.Scheme}://{req.Host}{basePath}Verify?additionalData={additionalData}";
 			return Results.Content(
 				$$"""
 				  <!DOCTYPE html>
@@ -42,7 +42,7 @@ public static class IpgRoutes {
 				          h2 { color: #333; margin-bottom: 8px; }
 				          .badge { color: #764ba2; font-size: 13px; margin-bottom: 24px; }
 				          .amount { font-size: 28px; font-weight: bold; color: #333; margin: 16px 0 28px; }
-				          a.button { display: block; text-decoration: none; color: white; padding: 14px 30px; border-radius: 25px; font-size: 16px; margin-top: 12px; }
+				          button.button { display: block; width: 100%; border: 0; cursor: pointer; font-family: inherit; color: white; padding: 14px 30px; border-radius: 25px; font-size: 16px; margin-top: 12px; }
 				          .pay { background: #4CAF50; }
 				          .err { background: #f44336; }
 				      </style>
@@ -52,8 +52,18 @@ public static class IpgRoutes {
 				          <h2>درگاه پرداخت آزمایشی</h2>
 				          <div class='badge'>این یک درگاه تستی است و پولی جابجا نمی‌شود</div>
 				          <div class='amount'>{{amount:N0}} ریال</div>
-				          <a class='button pay' href='{{successUrl}}'>پرداخت موفق</a>
-				          <a class='button err' href='{{errorUrl}}'>پرداخت ناموفق / انصراف</a>
+				          <form method='post' action='{{callBackUrl}}'>
+				              <input type='hidden' name='Token' value='FAKE'>
+				              <input type='hidden' name='status' value='0'>
+				              <input type='hidden' name='RRN' value='123456789'>
+				              <input type='hidden' name='HashCardNumber' value='627412******2424'>
+				              <button class='button pay' type='submit'>پرداخت موفق</button>
+				          </form>
+				          <form method='post' action='{{callBackUrl}}'>
+				              <input type='hidden' name='Token' value='FAKE'>
+				              <input type='hidden' name='status' value='-138'>
+				              <button class='button err' type='submit'>پرداخت ناموفق / انصراف</button>
+				          </form>
 				      </div>
 				  </body>
 				  </html>
@@ -61,7 +71,7 @@ public static class IpgRoutes {
 				"text/html");
 		});
 
-		r.MapGet("Verify", ([FromQuery] short status) => Results.Content(
+		r.MapGet("Verify", ([FromQuery] short status, [FromQuery] string? trackingNumber) => Results.Content(
 			$$"""
 			  <!DOCTYPE html>
 			  <html lang='fa' dir='rtl'>
@@ -86,7 +96,7 @@ public static class IpgRoutes {
 			      <script>
 			          (function() {
 			              try {
-			                  window.parent.postMessage({ source: 'avahamrah_ipg', trackingNumber: {{JsonSerializer.Serialize("")}}, status: {{status}} }, '*');
+			                  window.parent.postMessage({ source: 'u_ipg', trackingNumber: {{JsonSerializer.Serialize(trackingNumber ?? "")}}, status: {{status}} }, '*');
 			              } catch (e) {}
 			          })();
 			      </script>

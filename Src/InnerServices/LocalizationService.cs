@@ -342,7 +342,9 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "paymentIdSecondControlDigitIsNotValid", "Payment Id second control digit is not valid." },
 		{ "companyCodeIsUnknown", "Company code is unknown." },
 		{ "serviceTypeCodeIsUnknown", "Service type code is unknown." },
-		{ "billInformationCouldNotBeParsed", "Bill information could not be parsed." }
+		{ "billInformationCouldNotBeParsed", "Bill information could not be parsed." },
+		{ "theBillIsNotValid", "The bill is not valid." },
+		{ "theBillAmountIsNotAvailable", "The bill amount is not available." }
 	};
 
 	private readonly Dictionary<string, string> _fa = new() {
@@ -682,7 +684,9 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "paymentIdSecondControlDigitIsNotValid", "رقم کنترلی دوم شناسه پرداخت معتبر نیست." },
 		{ "companyCodeIsUnknown", "کد شرکت شناسایی نشد." },
 		{ "serviceTypeCodeIsUnknown", "کد نوع خدمات شناسایی نشد." },
-		{ "billInformationCouldNotBeParsed", "اطلاعات قبض قابل پردازش نیست." }
+		{ "billInformationCouldNotBeParsed", "اطلاعات قبض قابل پردازش نیست." },
+		{ "theBillIsNotValid", "قبض معتبر نیست." },
+		{ "theBillAmountIsNotAvailable", "مبلغ قبض در دسترس نیست." }
 	};
 
 	public string Get(string key, string? locale = null) {
