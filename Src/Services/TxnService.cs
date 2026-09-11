@@ -21,7 +21,7 @@ public class TxnService(
 			Id = Guid.CreateVersion7(),
 			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new TxnJson(),
+			JsonData = new BaseJson(),
 			Tags = p.Tags,
 			Amount = p.Amount,
 			TrackingNumber = p.TrackingNumber,
@@ -46,7 +46,7 @@ public class TxnService(
 		TxnEntity? e = await db.Set<TxnEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("transactionNotFound"));
 
-		db.Set<TxnEntity>().Update(e.ApplyUpdateParam<TxnEntity,TagTxn, TxnJson>(p));
+		db.Set<TxnEntity>().Update(e.ApplyUpdateParam<TxnEntity,TagTxn, BaseJson>(p));
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();

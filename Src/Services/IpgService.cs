@@ -35,7 +35,7 @@ public class IpgService(
 			Amount = p.Amount,
 			TrackingNumber = trackingNumber,
 			Tags = [TagTxn.ChargeWallet, p.Tag, TagTxn.Pending],
-			JsonData = new TxnJson { Detail1 = "IPG" }
+			JsonData = new BaseJson { Detail1 = "IPG" }
 		}, new IpgAdditionalData {
 			TrackingNumber = trackingNumber,
 			Tag = p.Tag,
@@ -68,7 +68,7 @@ public class IpgService(
 			Amount = bill.BillAmount.Value,
 			TrackingNumber = trackingNumber,
 			Tags = [TagTxn.BillPayment, TagTxn.Pending],
-			JsonData = new TxnJson { Detail1 = "BILL", BillId = bill.BillId, PaymentId = bill.PaymentId }
+			JsonData = new BaseJson { Detail1 = $"BILL|{bill.BillId}|{bill.PaymentId}" }
 		}, new IpgAdditionalData {
 			TrackingNumber = trackingNumber,
 			Tag = TagTxn.BillPayment,
@@ -120,8 +120,8 @@ public class IpgService(
 		try {
 			if (data.Tag != TagTxn.BillPayment && !await Confirm(token, ct)) return txn.TrackingNumber;
 
-			txn.JsonData.CardNumberMasked = cardNumberMasked;
-			txn.JsonData.Rrn = rrn;
+			txn.JsonData.Detail1 = $"Card:{cardNumberMasked}";
+			txn.JsonData.Detail2 = $"RRN:{rrn}";
 
 			if (data.Tag == TagTxn.BillPayment) {
 				txn.Tags = [TagTxn.BillPayment, TagTxn.Paid];
