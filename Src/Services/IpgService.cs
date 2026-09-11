@@ -176,9 +176,7 @@ public class IpgService(
 		await db.Set<TxnEntity>().AddAsync(txn, ct);
 		await db.SaveChangesAsync(ct);
 
-		HttpRequest request = httpContext.HttpContext!.Request;
-		string basePath = request.Path.Value![..(request.Path.Value!.LastIndexOf('/') + 1)];
-		string verifyUrl = $"{Core.App.BaseUrl}{basePath}Verify";
+		string verifyUrl = $"{Core.App.BaseUrl}/api/ipg/Verify";
 		string callBackUrl = $"{verifyUrl}?additionalData={additionalData}";
 
 		if (Core.App.Test) {
@@ -186,7 +184,7 @@ public class IpgService(
 			db.Set<TxnEntity>().Update(txn);
 			await db.SaveChangesAsync(ct);
 			return new UResponse<IpgPayResponse?>(new IpgPayResponse {
-				Url = $"{Core.App.BaseUrl}{basePath}Gateway?additionalData={additionalData}&amount={(long)txn.Amount}",
+				Url = $"{Core.App.BaseUrl}/api/ipg/Gateway?additionalData={additionalData}&amount={(long)txn.Amount}",
 				TrackingNumber = txn.TrackingNumber
 			});
 		}
@@ -203,7 +201,7 @@ public class IpgService(
 				AdditionalData = additionalData,
 				Originator = originator ?? ""
 			}
-			: (object)new {
+			: new {
 				CorporationPin = Core.App.Ipg.Token,
 				Amount = (long)txn.Amount,
 				OrderId = Math.Abs(Guid.NewGuid().GetHashCode()),
