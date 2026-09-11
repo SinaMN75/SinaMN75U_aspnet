@@ -205,6 +205,7 @@ public class DashboardService(
 
 		List<AccountingBreakdownItem> terminalsByType = terminalTagRows
 			.SelectMany(x => x.Tags)
+			.Where(t => t is not (TagTerminal.PendingApproval or TagTerminal.Approved or TagTerminal.Rejected))
 			.GroupBy(t => t)
 			.Select(g => new AccountingBreakdownItem { Tag = (int)g.Key, TagName = g.Key.ToString(), Amount = 0, Count = g.Count() })
 			.OrderByDescending(x => x.Count).ToList();

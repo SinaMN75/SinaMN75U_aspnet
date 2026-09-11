@@ -12,6 +12,12 @@ public class TerminalResponse : BaseResponse<TagTerminal, BaseJson> {
 	public MerchantResponse? Merchant { get; set; }
 }
 
+public class TerminalAvailabilityResponse {
+	public required Guid Id { get; set; }
+	public required string Serial { get; set; }
+	public string? Agreement { get; set; }
+}
+
 public class TerminalSupportPasswordResponse {
 	public string? Password { get; set; }
 }

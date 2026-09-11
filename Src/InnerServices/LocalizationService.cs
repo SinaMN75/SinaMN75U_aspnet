@@ -265,6 +265,11 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "failedToRegisterMerchantInAvreen", "Failed to register merchant in Avreen." },
 		{ "merchantRegistrationSucceededButMerchantIdentifierWasNotReturnedByAvreen", "Merchant registration succeeded but merchant identifier was not returned by Avreen." },
 		{ "failedToBindTerminalToMerchantInAvreen", "Failed to bind terminal to merchant in Avreen." },
+		{ "youHaveToAcceptTheAgreementToContinue", "You have to accept the agreement to continue." },
+		{ "thisTerminalRequestIsWaitingForApproval", "This terminal request is waiting for approval." },
+		{ "thisTerminalRequestIsAlreadyApproved", "This terminal request is already approved." },
+		{ "thisTerminalRequestIsNotWaitingForApproval", "This terminal request is not waiting for approval." },
+		{ "yourRequestHasBeenSubmittedAndIsAwaitingApproval", "Your request has been submitted and is awaiting approval." },
 		{ "anUnexpectedErrorOccurredPleaseTryAgainLater", "An unexpected error occurred. Please try again later." },
 
 		// ===== Moadi =====
@@ -598,6 +603,11 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "failedToRegisterMerchantInAvreen", "ثبت پذیرنده در سامانه آورین با خطا مواجه شد." },
 		{ "merchantRegistrationSucceededButMerchantIdentifierWasNotReturnedByAvreen", "ثبت پذیرنده انجام شد اما شناسه پذیرنده از سامانه آورین دریافت نشد." },
 		{ "failedToBindTerminalToMerchantInAvreen", "اتصال ترمینال به پذیرنده در سامانه آورین با خطا مواجه شد." },
+		{ "youHaveToAcceptTheAgreementToContinue", "برای ادامه باید قرارداد را تایید کنید." },
+		{ "thisTerminalRequestIsWaitingForApproval", "این درخواست ترمینال در انتظار تایید است." },
+		{ "thisTerminalRequestIsAlreadyApproved", "این درخواست ترمینال قبلاً تایید شده است." },
+		{ "thisTerminalRequestIsNotWaitingForApproval", "این درخواست ترمینال در وضعیت انتظار تایید نیست." },
+		{ "yourRequestHasBeenSubmittedAndIsAwaitingApproval", "درخواست شما ثبت شد و در انتظار تایید است." },
 		{ "anUnexpectedErrorOccurredPleaseTryAgainLater", "خطای غیرمنتظره‌ای رخ داد. لطفاً مجدداً تلاش کنید." },
 
 		// ===== Moadi =====

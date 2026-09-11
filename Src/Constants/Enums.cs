@@ -353,6 +353,10 @@ public enum TagTerminal {
 	Ava104 = 204,
 	AvaMax = 205,
 	SmartPeak = 206,
+
+	PendingApproval = 301,
+	Approved = 302,
+	Rejected = 303,
 }
 
 public enum TagBankAccount {

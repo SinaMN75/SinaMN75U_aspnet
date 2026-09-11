@@ -9,7 +9,10 @@ public static class TerminalRoutes {
 		r.MapPost("Read", async (TerminalReadParams p, ITerminalService s, CancellationToken c) => (await s.Read(p, c)).ToResult()).Produces<UResponse<IEnumerable<TerminalResponse>>>();
 		r.MapPost("Delete", async (IdParams p, ITerminalService s, CancellationToken c) => (await s.Delete(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("ReadSupportPassword", async (IdParams p, ITerminalService s, CancellationToken c) => (await s.ReadSupportPassword(p, c)).ToResult()).Produces<UResponse<TerminalSupportPasswordResponse>>();
-		r.MapPost("Assign", async (TerminalAssignParams p, ITerminalService s, CancellationToken c) => (await s.Assign(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("CheckAvailability", async (TerminalCheckAvailabilityParams p, ITerminalService s, CancellationToken c) => (await s.CheckAvailability(p, c)).ToResult()).Produces<UResponse<TerminalAvailabilityResponse>>();
+		r.MapPost("Assign", async (TerminalAssignParams p, ITerminalService s, CancellationToken c) => (await s.Assign(p, c)).ToResult()).Produces<UResponse<TerminalResponse>>();
+		r.MapPost("Approve", async (IdParams p, ITerminalService s, CancellationToken c) => (await s.Approve(p, c)).ToResult()).Produces<UResponse<TerminalResponse>>();
+		r.MapPost("Reject", async (TerminalRejectParams p, ITerminalService s, CancellationToken c) => (await s.Reject(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("Update", async (TerminalUpdateParams p, ITerminalService s, CancellationToken c) => (await s.Update(p, c)).ToResult()).Produces<UResponse>();
 	}
 }

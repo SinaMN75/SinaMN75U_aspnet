@@ -23,12 +23,29 @@ public class TerminalUpdateParams : BaseUpdateParams<TagTerminal> {
 	public Guid? MerchantId { get; set; }
 }
 
+public class TerminalCheckAvailabilityParams : BaseParams {
+	[UValidationRequired("serialRequired")]
+	public string Serial { get; set; } = null!;
+
+	public string? SimCardSerial { get; set; }
+	public TagTerminal Tag { get; set; }
+	public Guid? MerchantId { get; set; }
+}
+
 public class TerminalAssignParams : BaseParams {
 	public string? Title { get; set; }
 	public string Serial { get; set; } = null!;
 	public string? SimCardSerial { get; set; }
 	public TagTerminal Tag { get; set; }
 	public Guid? MerchantId { get; set; }
+	public bool AcceptedAgreement { get; set; }
+}
+
+public class TerminalRejectParams : BaseParams {
+	[UValidationRequired("idIsRequired")]
+	public Guid Id { get; set; }
+
+	public string? Reason { get; set; }
 }
 
 public class TerminalBulkCreateParams : BaseParams {

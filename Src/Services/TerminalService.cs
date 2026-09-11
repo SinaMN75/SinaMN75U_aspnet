@@ -8,7 +8,10 @@ public interface ITerminalService {
 	Task<UResponse<TerminalImportResponse?>> Import(TerminalImportParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<TerminalResponse>?>> Read(TerminalReadParams p, CancellationToken ct);
 	Task<UResponse> Update(TerminalUpdateParams p, CancellationToken ct);
+	Task<UResponse<TerminalAvailabilityResponse?>> CheckAvailability(TerminalCheckAvailabilityParams p, CancellationToken ct);
 	Task<UResponse<TerminalResponse?>> Assign(TerminalAssignParams p, CancellationToken ct);
+	Task<UResponse<TerminalResponse?>> Approve(IdParams p, CancellationToken ct);
+	Task<UResponse> Reject(TerminalRejectParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	Task<UResponse<TerminalSupportPasswordResponse?>> ReadSupportPassword(IdParams p, CancellationToken ct);
 }
@@ -68,50 +71,100 @@ public class TerminalService(
 		return new UResponse();
 	}
 
+	public async Task<UResponse<TerminalAvailabilityResponse?>> CheckAvailability(TerminalCheckAvailabilityParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<TerminalAvailabilityResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<TerminalAvailabilityResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
+		(TerminalEntity? terminal, MerchantEntity? merchant, Usc status, string message) = await ResolveAssignable(p.Serial, p.SimCardSerial, p.Tag, p.MerchantId, userData, ct);
+		if (terminal == null || merchant == null) return new UResponse<TerminalAvailabilityResponse?>(null, status, message);
+
+		return new UResponse<TerminalAvailabilityResponse?>(new TerminalAvailabilityResponse {
+			Id = terminal.Id,
+			Serial = terminal.Serial,
+			Agreement = await GenerateAgreement(merchant.User, merchant, terminal)
+		});
+	}
+
 	public async Task<UResponse<TerminalResponse?>> Assign(TerminalAssignParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<TerminalResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<TerminalResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!p.AcceptedAgreement) return new UResponse<TerminalResponse?>(null, Usc.BadRequest, ls.Get("youHaveToAcceptTheAgreementToContinue"));
 
-		TerminalEntity? terminal = await db.Set<TerminalEntity>().AsTracking().FirstOrDefaultAsync(x => x.Serial == p.Serial, ct);
-		if (terminal == null || p.Tag != TagTerminal.Ava104 && terminal.SimCardSerial != p.SimCardSerial) return new UResponse<TerminalResponse?>(null, Usc.NotFound, ls.Get("terminalNotFoundCheckYourDetails"));
+		(TerminalEntity? terminal, MerchantEntity? merchant, Usc status, string message) = await ResolveAssignable(p.Serial, p.SimCardSerial, p.Tag, p.MerchantId, userData, ct);
+		if (terminal == null || merchant == null) return new UResponse<TerminalResponse?>(null, status, message);
 
-		MerchantEntity? merchant = await db.Set<MerchantEntity>().AsTracking().Include(x => x.User).FirstOrDefaultAsync(x => x.Id == p.MerchantId, ct);
-		if (merchant == null) return new UResponse<TerminalResponse?>(null, Usc.NotFound, ls.Get("merchantNotFound"));
-
-		string agreement = await GenerateAgreement(merchant.User, terminal);
+		string agreement = await GenerateAgreement(merchant.User, merchant, terminal);
 
 		terminal.JsonData.Detail1 = p.Title ?? "";
-		terminal.MerchantId = p.MerchantId;
+		terminal.JsonData.Detail2 = "";
+		terminal.MerchantId = merchant.Id;
 		terminal.Agreement = agreement.FromBase64();
+		SetStatus(terminal, TagTerminal.PendingApproval);
 
-		HttpResponseMessage? response = await http.Post(
-			$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/addMerchant",
-			new {
-				accountId = merchant.BankAccountId,
-				businessTitle = merchant.JsonData.BusinessTitle,
-				cityCode = merchant.CityCode,
-				mcc = merchant.Mcc,
-				merchantAddress = merchant.JsonData.Address,
-				merchantMobileNo = merchant.PhoneNumber,
-				merchantName = merchant.Title,
-				merchantOwnerName = merchant.JsonData.OwnerName,
-				merchantPhone = merchant.Landline,
-				nationalId = merchant.NationalCode,
-				ownerMobileNo = merchant.JsonData.OwnerPhoneNumber,
-				postalCode = merchant.ZipCode,
-				definitionTemplate = 1,
-				settlementCurrency = 364
-			},
-			new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
-		);
+		await db.SaveChangesAsync(ct);
 
-		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<TerminalResponse?>(null);
-		JsonElement merchantData = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
-		if (merchantData.GetStringOrNull("insId") == null) return new UResponse<TerminalResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
+		return new UResponse<TerminalResponse?>(new TerminalResponse {
+			Id = terminal.Id,
+			CreatedAt = terminal.CreatedAt,
+			JsonData = terminal.JsonData,
+			Tags = terminal.Tags,
+			CreatorId = terminal.CreatorId,
+			Serial = terminal.Serial,
+			SimCardNumber = terminal.SimCardNumber,
+			SimCardSerial = terminal.SimCardSerial,
+			Imei = terminal.Imei,
+			TerminalId = terminal.TerminalId,
+			Agreement = terminal.Agreement.ToBase64(),
+			MerchantId = terminal.MerchantId
+		}, Usc.Success, ls.Get("yourRequestHasBeenSubmittedAndIsAwaitingApproval"));
+	}
 
-		merchant.InsId = merchantData.GetStringOrNull("insId")!;
-		merchant.MerchantId = merchantData.GetStringOrNull("merchantId")!;
+	public async Task<UResponse<TerminalResponse?>> Approve(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<TerminalResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<TerminalResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.IsAdmin) return new UResponse<TerminalResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		TerminalEntity? terminal = await db.Set<TerminalEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (terminal == null) return new UResponse<TerminalResponse?>(null, Usc.NotFound, ls.Get("terminalNotFound"));
+		if (terminal.Tags.Contains(TagTerminal.Approved)) return new UResponse<TerminalResponse?>(null, Usc.Conflict, ls.Get("thisTerminalRequestIsAlreadyApproved"));
+		if (!terminal.Tags.Contains(TagTerminal.PendingApproval)) return new UResponse<TerminalResponse?>(null, Usc.BadRequest, ls.Get("thisTerminalRequestIsNotWaitingForApproval"));
+
+		MerchantEntity? merchant = await db.Set<MerchantEntity>().AsTracking().Include(x => x.User).FirstOrDefaultAsync(x => x.Id == terminal.MerchantId, ct);
+		if (merchant == null) return new UResponse<TerminalResponse?>(null, Usc.NotFound, ls.Get("merchantNotFound"));
+
+		if (merchant.MerchantId.IsNullOrEmpty()) {
+			HttpResponseMessage? response = await http.Post(
+				$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/addMerchant",
+				new {
+					accountId = merchant.BankAccountId,
+					businessTitle = merchant.JsonData.BusinessTitle,
+					cityCode = merchant.CityCode,
+					mcc = merchant.Mcc,
+					merchantAddress = merchant.JsonData.Address,
+					merchantMobileNo = merchant.PhoneNumber,
+					merchantName = merchant.Title,
+					merchantOwnerName = merchant.JsonData.OwnerName,
+					merchantPhone = merchant.Landline,
+					nationalId = merchant.NationalCode,
+					ownerMobileNo = merchant.JsonData.OwnerPhoneNumber,
+					postalCode = merchant.ZipCode,
+					definitionTemplate = 1,
+					settlementCurrency = 364
+				},
+				new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
+			);
+
+			if (response is null or { IsSuccessStatusCode: false }) return new UResponse<TerminalResponse?>(null, Usc.ThirdPartyError, ls.Get("failedToRegisterMerchantInAvreen"));
+			JsonElement merchantData = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync(ct));
+			if (merchantData.GetStringOrNull("insId") == null)
+				return new UResponse<TerminalResponse?>(null, Usc.ThirdPartyError, ls.Get("merchantRegistrationSucceededButMerchantIdentifierWasNotReturnedByAvreen"));
+
+			merchant.InsId = merchantData.GetStringOrNull("insId")!;
+			merchant.MerchantId = merchantData.GetStringOrNull("merchantId")!;
+		}
 
 		HttpResponseMessage? terminalResponse = await http.Post(
 			$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/defineAndBindTerminal",
@@ -125,12 +178,13 @@ public class TerminalService(
 			new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
 		);
 
-		if (terminalResponse is null or { IsSuccessStatusCode: false }) return new UResponse<TerminalResponse?>(null);
+		if (terminalResponse is null or { IsSuccessStatusCode: false }) return new UResponse<TerminalResponse?>(null, Usc.ThirdPartyError, ls.Get("failedToBindTerminalToMerchantInAvreen"));
 		JsonElement terminalData = JsonSerializer.Deserialize<JsonElement>(await terminalResponse.Content.ReadAsStringAsync(ct));
-		if (terminalData.GetStringOrNull("insId") == null) return new UResponse<TerminalResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
+		if (terminalData.GetStringOrNull("insId") == null) return new UResponse<TerminalResponse?>(null, Usc.ThirdPartyError, ls.Get("failedToBindTerminalToMerchantInAvreen"));
 
 		terminal.TerminalId = terminalData.GetStringOrNull("terminalId");
 		terminal.InsId = terminalData.GetStringOrNull("insId");
+		SetStatus(terminal, TagTerminal.Approved);
 
 		await db.SaveChangesAsync(ct);
 
@@ -149,6 +203,50 @@ public class TerminalService(
 			MerchantId = terminal.MerchantId
 		});
 	}
+
+	public async Task<UResponse> Reject(TerminalRejectParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		TerminalEntity? terminal = await db.Set<TerminalEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (terminal == null) return new UResponse(Usc.NotFound, ls.Get("terminalNotFound"));
+		if (terminal.Tags.Contains(TagTerminal.Approved)) return new UResponse(Usc.Conflict, ls.Get("thisTerminalRequestIsAlreadyApproved"));
+
+		terminal.JsonData.Detail2 = p.Reason ?? "";
+		SetStatus(terminal, TagTerminal.Rejected);
+
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	private async Task<(TerminalEntity? Terminal, MerchantEntity? Merchant, Usc Status, string Message)> ResolveAssignable(
+		string serial,
+		string? simCardSerial,
+		TagTerminal tag,
+		Guid? merchantId,
+		JwtClaimData userData,
+		CancellationToken ct
+	) {
+		TerminalEntity? terminal = await db.Set<TerminalEntity>().AsTracking().FirstOrDefaultAsync(x => x.Serial == serial, ct);
+		if (terminal == null || tag != TagTerminal.Ava104 && terminal.SimCardSerial != simCardSerial)
+			return (null, null, Usc.NotFound, ls.Get("terminalNotFoundCheckYourDetails"));
+
+		MerchantEntity? merchant = await db.Set<MerchantEntity>().AsTracking().Include(x => x.User).FirstOrDefaultAsync(x => x.Id == merchantId, ct);
+		if (merchant == null) return (null, null, Usc.NotFound, ls.Get("merchantNotFound"));
+		if (!userData.IsAdmin && merchant.UserId != userData.Id) return (null, null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		if (terminal.Tags.Contains(TagTerminal.Approved)) return (null, null, Usc.Conflict, ls.Get("terminalIsAlreadyAssignedToAMerchant"));
+		if (terminal.Tags.Contains(TagTerminal.PendingApproval)) return (null, null, Usc.Conflict, ls.Get("thisTerminalRequestIsWaitingForApproval"));
+		if (terminal.MerchantId.IsNotNullOrEmpty() && terminal.MerchantId != merchant.Id) return (null, null, Usc.Conflict, ls.Get("terminalIsAlreadyAssignedToAMerchant"));
+		if (merchant.User.ESignature.IsNullOrEmpty()) return (null, null, Usc.BadRequest, ls.Get("userElectronicSignatureIsMissing"));
+
+		return (terminal, merchant, Usc.Success, "");
+	}
+
+	private static void SetStatus(TerminalEntity terminal, TagTerminal status) =>
+		terminal.Tags = terminal.Tags.Where(x => x is not (TagTerminal.PendingApproval or TagTerminal.Approved or TagTerminal.Rejected)).Append(status).ToList();
 
 	public async Task<UResponse> BulkCreate(TerminalBulkCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
@@ -393,19 +491,19 @@ public class TerminalService(
 		return true;
 	}
 
-	private static async Task<string> GenerateAgreement(UserEntity user, TerminalEntity terminal) {
+	private static async Task<string> GenerateAgreement(UserEntity user, MerchantEntity merchant, TerminalEntity terminal) {
 		HtmlTemplate template = await HtmlTemplate.FromFile(Path.Combine(AppContext.BaseDirectory, "Templates", "atmAgreement.html"));
 		template.RemoveUnmatchedTokens = true;
 
 		template.Set(new Dictionary<string, string> {
 			{ "day", PersianDateTime.Now.Day.ToString() },
 			{ "month", PersianDateTime.Now.Month.ToString() },
-			{ "number", "NUMBER" },
+			{ "number", terminal.Serial },
 			{ "fullName", $"{user.FirstName ?? "---"} {user.LastName ?? "---"}" },
 			{ "nationalCode", user.NationalCode ?? "---" },
 			{ "birthdate", PersianDateTime.FromDateTime(user.Birthdate ?? DateTime.Now).ToString("yyyy-MM-dd") },
-			{ "address", terminal.Merchant?.JsonData.Address ?? "---" },
-			{ "postalCode", terminal.Merchant?.ZipCode ?? "---" },
+			{ "address", merchant.JsonData.Address ?? "---" },
+			{ "postalCode", merchant.ZipCode },
 			{ "phoneNumber", user.PhoneNumber ?? "---" },
 			{ "landLine", user.LandLine ?? "---" },
 			{ "fatherName", user.JsonData.FatherName ?? "---" }
