@@ -1,3 +1,6 @@
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Primitives;
+
 namespace SinaMN75U.Routes;
 
 public static class IpgRoutes {
@@ -12,8 +15,8 @@ public static class IpgRoutes {
 			HttpContext ctx,
 			IIpgService s,
 			CancellationToken c) => {
-			IFormCollection? form = ctx.Request.HasFormContentType ? await ctx.Request.ReadFormAsync(c) : null;
-			string Field(string key) => form?[key].ToString() is { Length: > 0 } f ? f : ctx.Request.Query[key].ToString();
+			Dictionary<string, StringValues> form = ctx.Request.HasFormContentType ? QueryHelpers.ParseQuery(await ctx.ReadBodyOnceAsync()) : new Dictionary<string, StringValues>();
+			string Field(string key) => form.TryGetValue(key, out StringValues v) && v.ToString() is { Length: > 0 } f ? f : ctx.Request.Query[key].ToString();
 			string token = Field("Token") is { Length: > 0 } t ? t : Field("token");
 			short status = short.TryParse(Field("status"), out short st) ? st : (short)1;
 			long? rrn = long.TryParse(Field("RRN") is { Length: > 0 } rr ? rr : Field("rrn"), out long r) ? r : null;

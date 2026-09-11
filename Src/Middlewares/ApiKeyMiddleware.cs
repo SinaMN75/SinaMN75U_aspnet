@@ -2,7 +2,7 @@ namespace SinaMN75U.Middlewares;
 
 public sealed class ApiKeyMiddleware(RequestDelegate next, ILocalizationService ls) {
 	public async Task InvokeAsync(HttpContext context) {
-		if (context.Request.Path.StartsWithSegments("/models", StringComparison.OrdinalIgnoreCase) || context.Request.Path.StartsWithSegments("/api/Health", StringComparison.OrdinalIgnoreCase) || !Core.App.Middleware.RequireApiKey) {
+		if (ShouldSkip(context.Request.Path)) {
 			await next(context);
 			return;
 		}
@@ -24,6 +24,13 @@ public sealed class ApiKeyMiddleware(RequestDelegate next, ILocalizationService 
 		await next(context);
 	}
 
+	private static bool ShouldSkip(PathString path) =>
+		!Core.App.Middleware.RequireApiKey ||
+		path.StartsWithSegments("/models", StringComparison.OrdinalIgnoreCase) ||
+		path.StartsWithSegments("/api/Health", StringComparison.OrdinalIgnoreCase) ||
+		path.StartsWithSegments("/api/Ipg/Verify", StringComparison.OrdinalIgnoreCase) ||
+		path.StartsWithSegments("/api/Ipg/Gateway", StringComparison.OrdinalIgnoreCase);
+	
 	private static async Task WriteErrorAsync(HttpContext ctx, Usc status, string msg) {
 		if (ctx.Response.HasStarted) return;
 		await new UResponse(status, msg).ToResult().ExecuteAsync(ctx);
