@@ -21,7 +21,8 @@ public class TerminalService(
 	ILocalizationService ls,
 	ITokenService ts,
 	IHttpClientService http,
-	ISmsNotificationService sms
+	ISmsNotificationService sms,
+	IWebHostEnvironment env
 ) : ITerminalService {
 	public async Task<UResponse<Guid?>> Create(TerminalCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
@@ -32,7 +33,7 @@ public class TerminalService(
 			Id = p.Id ?? Guid.CreateVersion7(),
 			Serial = p.Serial,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJson(),
+			JsonData = new TerminalJson(),
 			Tags = p.Tags,
 			CreatorId = p.CreatorId ?? userData.Id,
 			SimCardNumber = p.SimCardNumber,
@@ -65,7 +66,7 @@ public class TerminalService(
 		if (p.TerminalId.IsNotNullOrEmpty()) e.TerminalId = p.TerminalId;
 		if (p.MerchantId.IsNotNullOrEmpty()) e.MerchantId = p.MerchantId;
 
-		e.ApplyUpdateParam<TerminalEntity, TagTerminal, BaseJson>(p);
+		e.ApplyUpdateParam<TerminalEntity, TagTerminal, TerminalJson>(p);
 
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
@@ -79,10 +80,13 @@ public class TerminalService(
 		(TerminalEntity? terminal, MerchantEntity? merchant, Usc status, string message) = await ResolveAssignable(p.Serial, p.SimCardSerial, p.Tag, p.MerchantId, userData, ct);
 		if (terminal == null || merchant == null) return new UResponse<TerminalAvailabilityResponse?>(null, status, message);
 
+		(byte[]? _, string? path) = GenerateAgreement(merchant.User, merchant, terminal);
+		if (path == null) return new UResponse<TerminalAvailabilityResponse?>(null, Usc.InternalServerError, ls.Get("generatingTheAgreementFailed"));
+
 		return new UResponse<TerminalAvailabilityResponse?>(new TerminalAvailabilityResponse {
 			Id = terminal.Id,
 			Serial = terminal.Serial,
-			Agreement = await GenerateAgreement(merchant.User, merchant, terminal)
+			Agreement = AgreementUrl(path)
 		});
 	}
 
@@ -95,12 +99,14 @@ public class TerminalService(
 		(TerminalEntity? terminal, MerchantEntity? merchant, Usc status, string message) = await ResolveAssignable(p.Serial, p.SimCardSerial, p.Tag, p.MerchantId, userData, ct);
 		if (terminal == null || merchant == null) return new UResponse<TerminalResponse?>(null, status, message);
 
-		string agreement = await GenerateAgreement(merchant.User, merchant, terminal);
+		(byte[]? agreement, string? path) = GenerateAgreement(merchant.User, merchant, terminal);
+		if (agreement == null || path == null) return new UResponse<TerminalResponse?>(null, Usc.InternalServerError, ls.Get("generatingTheAgreementFailed"));
 
 		terminal.JsonData.Detail1 = p.Title ?? "";
 		terminal.JsonData.Detail2 = "";
+		terminal.JsonData.AgreementPath = path;
 		terminal.MerchantId = merchant.Id;
-		terminal.Agreement = agreement.FromBase64();
+		terminal.Agreement = agreement;
 		SetStatus(terminal, TagTerminal.PendingApproval);
 
 		await db.SaveChangesAsync(ct);
@@ -116,7 +122,7 @@ public class TerminalService(
 			SimCardSerial = terminal.SimCardSerial,
 			Imei = terminal.Imei,
 			TerminalId = terminal.TerminalId,
-			Agreement = terminal.Agreement.ToBase64(),
+			Agreement = AgreementUrl(terminal.JsonData.AgreementPath),
 			MerchantId = terminal.MerchantId
 		}, Usc.Success, ls.Get("yourRequestHasBeenSubmittedAndIsAwaitingApproval"));
 	}
@@ -199,7 +205,7 @@ public class TerminalService(
 			SimCardSerial = terminal.SimCardSerial,
 			Imei = terminal.Imei,
 			TerminalId = terminal.TerminalId,
-			Agreement = terminal.Agreement.ToBase64(),
+			Agreement = AgreementUrl(terminal.JsonData.AgreementPath),
 			MerchantId = terminal.MerchantId
 		});
 	}
@@ -258,7 +264,7 @@ public class TerminalService(
 			Serial = x.Serial,
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJson(),
+			JsonData = new TerminalJson(),
 			Tags = x.Tags,
 			CreatorId = userData.Id
 		}));
@@ -409,7 +415,7 @@ public class TerminalService(
 				Id = Guid.CreateVersion7(),
 				Serial = serial,
 				CreatedAt = DateTime.UtcNow,
-				JsonData = new BaseJson(),
+				JsonData = new TerminalJson(),
 				Tags = tags,
 				CreatorId = userData.Id,
 				SimCardNumber = Val(row, "SimCardNumber").NullIfEmpty(),
@@ -491,25 +497,35 @@ public class TerminalService(
 		return true;
 	}
 
-	private static async Task<string> GenerateAgreement(UserEntity user, MerchantEntity merchant, TerminalEntity terminal) {
-		HtmlTemplate template = await HtmlTemplate.FromFile(Path.Combine(AppContext.BaseDirectory, "Templates", "atmAgreement.html"));
-		template.RemoveUnmatchedTokens = true;
+	private static string? AgreementUrl(string? path) => path == null ? null : $"{Core.App.BaseUrl}/Media/{path}";
 
-		template.Set(new Dictionary<string, string> {
-			{ "day", PersianDateTime.Now.Day.ToString() },
-			{ "month", PersianDateTime.Now.Month.ToString() },
-			{ "number", terminal.Serial },
-			{ "fullName", $"{user.FirstName ?? "---"} {user.LastName ?? "---"}" },
-			{ "nationalCode", user.NationalCode ?? "---" },
-			{ "birthdate", PersianDateTime.FromDateTime(user.Birthdate ?? DateTime.Now).ToString("yyyy-MM-dd") },
-			{ "address", merchant.JsonData.Address ?? "---" },
-			{ "postalCode", merchant.ZipCode },
-			{ "phoneNumber", user.PhoneNumber ?? "---" },
-			{ "landLine", user.LandLine ?? "---" },
-			{ "fatherName", user.JsonData.FatherName ?? "---" }
-		});
+	private (byte[]? Pdf, string? Path) GenerateAgreement(UserEntity user, MerchantEntity merchant, TerminalEntity terminal) {
+		try {
+			byte[] bytes = AgreementPdf.Build(new Dictionary<string, string> {
+				{ "day", PersianDateTime.Now.Day.ToString() },
+				{ "month", PersianDateTime.Now.Month.ToString() },
+				{ "number", terminal.Serial },
+				{ "fullName", $"{user.FirstName ?? "---"} {user.LastName ?? "---"}" },
+				{ "nationalCode", user.NationalCode ?? "---" },
+				{ "birthdate", PersianDateTime.FromDateTime(user.Birthdate ?? DateTime.Now).ToString("yyyy-MM-dd") },
+				{ "address", merchant.JsonData.Address ?? "---" },
+				{ "postalCode", merchant.ZipCode },
+				{ "phoneNumber", user.PhoneNumber ?? "---" },
+				{ "landLine", user.LandLine ?? "---" },
+				{ "fatherName", user.JsonData.FatherName ?? "---" }
+			}, ReadSignature(user));
 
-		await template.SetImageFile("customerSignature", Path.Combine(AppContext.BaseDirectory, "wwwroot", "Media", user.ESignature!.TrimStart('/', '\\')));
-		return template.RenderBase64();
+			return (bytes, UserFileStore.SaveBytes(env.WebRootPath, user.Id, $"terminalAgreement_{terminal.Id}.pdf", bytes));
+		}
+		catch (Exception ex) {
+			ULog.Error(ex, $"Generating the agreement failed for terminal {terminal.Id}");
+			return (null, null);
+		}
+	}
+
+	private byte[]? ReadSignature(UserEntity user) {
+		if (user.ESignature.IsNullOrEmpty()) return null;
+		string path = Path.Combine(env.WebRootPath, "Media", user.ESignature.TrimStart('/', '\\'));
+		return File.Exists(path) ? File.ReadAllBytes(path) : null;
 	}
 }

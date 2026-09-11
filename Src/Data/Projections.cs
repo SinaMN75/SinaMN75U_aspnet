@@ -670,7 +670,7 @@ public static class Projections {
 			Imei = x.Imei,
 			TerminalId = x.TerminalId,
 			CreatedAt = x.CreatedAt,
-			Agreement = args.Agreement ? x.Agreement.ToBase64() : null,
+			Agreement = args.Agreement && x.JsonData.AgreementPath != null ? Core.App.BaseUrl + "/Media/" + x.JsonData.AgreementPath : null,
 			Merchant = x.Merchant == null ? null : (args.Merchant != null ? MerchantSelector(args.Merchant) : m => null!).Invoke(x.Merchant),
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
 		};

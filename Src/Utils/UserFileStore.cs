@@ -28,6 +28,17 @@ public static class UserFileStore {
 		return relative;
 	}
 
+	public static string SaveBytes(string webRoot, Guid userId, string fileName, byte[] bytes) {
+		string relative = $"{IdentityFolder}/{userId}/{fileName}";
+
+		string fullPath = Path.Combine(webRoot, MediaRoot, relative);
+		string? dir = Path.GetDirectoryName(fullPath);
+		if (dir != null && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+		File.WriteAllBytes(fullPath, bytes);
+
+		return relative;
+	}
+
 	public static void Delete(string webRoot, string? relativePath) {
 		if (string.IsNullOrWhiteSpace(relativePath)) return;
 		string fullPath = Path.Combine(webRoot, MediaRoot, relativePath);
