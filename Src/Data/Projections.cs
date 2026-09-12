@@ -86,6 +86,10 @@ public sealed class TerminalSelectorArgs : BaseSelectorArgs {
 	public bool Agreement { get; set; }
 }
 
+public sealed class TerminalBrandSelectorArgs : BaseSelectorArgs;
+
+public sealed class TerminalBrokerSelectorArgs : BaseSelectorArgs;
+
 public sealed class MerchantSelectorArgs : BaseSelectorArgs {
 	public UserSelectorArgs? User { get; set; }
 	public TerminalSelectorArgs? Terminal { get; set; }
@@ -672,6 +676,31 @@ public static class Projections {
 			CreatedAt = x.CreatedAt,
 			Agreement = args.Agreement && x.JsonData.AgreementPath != null ? Core.App.BaseUrl + "/Media/" + x.JsonData.AgreementPath : null,
 			Merchant = x.Merchant == null ? null : (args.Merchant != null ? MerchantSelector(args.Merchant) : m => null!).Invoke(x.Merchant),
+			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+		};
+		return selector.Expand();
+	}
+	public static Expression<Func<TerminalBrandEntity, TerminalBrandResponse>> TerminalBrandSelector(TerminalBrandSelectorArgs args) {
+		Expression<Func<TerminalBrandEntity, TerminalBrandResponse>> selector = x => new TerminalBrandResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			Title = x.Title,
+			Model =  x.Model,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
+		};
+		return selector.Expand();
+	}
+	public static Expression<Func<TerminalBrokerEntity, TerminalBrokerResponse>> TerminalBrokerSelector(TerminalBrokerSelectorArgs args) {
+		Expression<Func<TerminalBrokerEntity, TerminalBrokerResponse>> selector = x => new TerminalBrokerResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Title = x.Title,
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
 		};
 		return selector.Expand();

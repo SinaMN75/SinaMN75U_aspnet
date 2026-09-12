@@ -28,3 +28,14 @@ public class TerminalImportResponse {
 	public int Skipped { get; set; }
 	public List<string> SkippedSerials { get; set; } = [];
 }
+
+public sealed class TerminalBrandResponse : BaseResponse<TagTerminalBrand, TerminalBrandJson> {
+	public required string Title { get; set; }
+	public required string Model { get; set; }
+}
+
+public sealed class TerminalBrokerResponse : BaseResponse<TagTerminalBroker, TerminalBrokerJson> {
+	public required string Title { get; set; }
+	
+}
+

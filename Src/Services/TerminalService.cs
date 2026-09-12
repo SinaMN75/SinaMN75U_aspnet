@@ -14,6 +14,16 @@ public interface ITerminalService {
 	Task<UResponse> Reject(TerminalRejectParams p, CancellationToken ct);
 	Task<UResponse> Delete(IdParams p, CancellationToken ct);
 	Task<UResponse<TerminalSupportPasswordResponse?>> ReadSupportPassword(IdParams p, CancellationToken ct);
+
+	Task<UResponse<Guid?>> CreateBrand(TerminalBrandCreateParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<TerminalBrandResponse>?>> ReadBrand(TerminalBrandReadParams p, CancellationToken ct);
+	Task<UResponse> UpdateBrand(TerminalBrandUpdateParams p, CancellationToken ct);
+	Task<UResponse> DeleteBrand(IdParams p, CancellationToken ct);
+
+	Task<UResponse<Guid?>> CreateBroker(TerminalBrokerCreateParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<TerminalBrokerResponse>?>> ReadBroker(TerminalBrokerReadParams p, CancellationToken ct);
+	Task<UResponse> UpdateBroker(TerminalBrokerUpdateParams p, CancellationToken ct);
+	Task<UResponse> DeleteBroker(IdParams p, CancellationToken ct);
 }
 
 public class TerminalService(
@@ -41,19 +51,21 @@ public class TerminalService(
 			Imei = p.Imei,
 			TerminalId = p.TerminalId,
 			MerchantId = p.MerchantId,
-			InsId = p.InsId
+			InsId = p.InsId,
+			TerminalBrandId = p.TerminalBrandId,
+			TerminalBrokerId = p.TerminalBrokerId
 		};
 
-		await db.AddAsync(e, ct);
+		await db.Set<TerminalEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
 		return new UResponse<Guid?>(e.Id);
 	}
 
 	public async Task<UResponse> Update(TerminalUpdateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<TerminalResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
-		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
-		if (!userData.IsAdmin) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		TerminalEntity? e = await db.Set<TerminalEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("terminalNotFound"));
@@ -77,7 +89,7 @@ public class TerminalService(
 		if (userData == null) return new UResponse<TerminalAvailabilityResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<TerminalAvailabilityResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
-		(TerminalEntity? terminal, MerchantEntity? merchant, Usc status, string message) = await ResolveAssignable(p.Serial, p.SimCardSerial, p.Tag, p.MerchantId, userData, ct);
+		(TerminalEntity? terminal, MerchantEntity? merchant, Usc status, string message) = await ResolveAssignable(p.Serial, p.MerchantId, userData, ct);
 		if (terminal == null || merchant == null) return new UResponse<TerminalAvailabilityResponse?>(null, status, message);
 
 		(byte[]? _, string? path) = GenerateAgreement(merchant.User, merchant, terminal);
@@ -96,7 +108,7 @@ public class TerminalService(
 		if (userData.IsExpired) return new UResponse<TerminalResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		if (!p.AcceptedAgreement) return new UResponse<TerminalResponse?>(null, Usc.BadRequest, ls.Get("youHaveToAcceptTheAgreementToContinue"));
 
-		(TerminalEntity? terminal, MerchantEntity? merchant, Usc status, string message) = await ResolveAssignable(p.Serial, p.SimCardSerial, p.Tag, p.MerchantId, userData, ct);
+		(TerminalEntity? terminal, MerchantEntity? merchant, Usc status, string message) = await ResolveAssignable(p.Serial, p.MerchantId, userData, ct);
 		if (terminal == null || merchant == null) return new UResponse<TerminalResponse?>(null, status, message);
 
 		(byte[]? agreement, string? path) = GenerateAgreement(merchant.User, merchant, terminal);
@@ -229,15 +241,12 @@ public class TerminalService(
 
 	private async Task<(TerminalEntity? Terminal, MerchantEntity? Merchant, Usc Status, string Message)> ResolveAssignable(
 		string serial,
-		string? simCardSerial,
-		TagTerminal tag,
 		Guid? merchantId,
 		JwtClaimData userData,
 		CancellationToken ct
 	) {
 		TerminalEntity? terminal = await db.Set<TerminalEntity>().AsTracking().FirstOrDefaultAsync(x => x.Serial == serial, ct);
-		if (terminal == null || tag != TagTerminal.Ava104 && terminal.SimCardSerial != simCardSerial)
-			return (null, null, Usc.NotFound, ls.Get("terminalNotFoundCheckYourDetails"));
+		if (terminal == null) return (null, null, Usc.NotFound, ls.Get("terminalNotFoundCheckYourDetails"));
 
 		MerchantEntity? merchant = await db.Set<MerchantEntity>().AsTracking().Include(x => x.User).FirstOrDefaultAsync(x => x.Id == merchantId, ct);
 		if (merchant == null) return (null, null, Usc.NotFound, ls.Get("merchantNotFound"));
@@ -266,7 +275,9 @@ public class TerminalService(
 			CreatedAt = DateTime.UtcNow,
 			JsonData = new TerminalJson(),
 			Tags = x.Tags,
-			CreatorId = userData.Id
+			CreatorId = userData.Id,
+			TerminalBrandId = x.TerminalBrandId,
+			TerminalBrokerId = x.TerminalBrokerId
 		}));
 
 		await db.Set<TerminalEntity>().AddRangeAsync(entities, ct);
@@ -291,7 +302,9 @@ public class TerminalService(
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData == null) return new UResponse<TerminalResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.IsAdmin) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		await db.Set<TerminalEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
@@ -312,6 +325,8 @@ public class TerminalService(
 			CreatorId = x.CreatorId,
 			InsId = x.InsId,
 			TerminalId = x.TerminalId,
+			TerminalBrandId = x.TerminalBrandId,
+			TerminalBrokerId = x.TerminalBrokerId,
 			Merchant = new MerchantEntity {
 				ZipCode = "",
 				CityCode = "",
@@ -394,6 +409,8 @@ public class TerminalService(
 			string? imei = Val(row, "Imei").NullIfEmpty();
 			string? simSerial = Val(row, "SimCardSerial").NullIfEmpty();
 			string? terminalId = Val(row, "TerminalId").NullIfEmpty();
+			string? brandId = Val(row, "BrandId").NullIfEmpty();
+			string? brokerId = Val(row, "BrokerId").NullIfEmpty();
 
 			if (serials.Contains(serial) ||
 			    (imei != null && imeis.Contains(imei)) ||
@@ -422,7 +439,9 @@ public class TerminalService(
 				SimCardSerial = simSerial,
 				Imei = imei,
 				TerminalId = terminalId,
-				InsId = Val(row, "InsId").NullIfEmpty()
+				InsId = Val(row, "InsId").NullIfEmpty(),
+				TerminalBrandId = brandId!.ToGuid(),
+				TerminalBrokerId = brokerId!.ToGuid()
 			});
 
 			serials.Add(serial);
@@ -439,6 +458,119 @@ public class TerminalService(
 		result.Imported = toAdd.Count;
 		result.Skipped = result.TotalRows - result.Imported;
 		return new UResponse<TerminalImportResponse?>(result, Usc.Success, ls.Get("ImportCompleted"));
+	}
+
+	public async Task<UResponse<Guid?>> CreateBrand(TerminalBrandCreateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
+		TerminalBrandEntity e = new() {
+			Id = p.Id ?? Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			JsonData = new TerminalBrandJson(),
+			Tags = p.Tags,
+			CreatorId = p.CreatorId ?? userData.Id,
+			Title = p.Title,
+			Model = p.Model
+		};
+
+		await db.Set<TerminalBrandEntity>().AddAsync(e, ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse<Guid?>(e.Id);
+	}
+
+	public async Task<UResponse<IEnumerable<TerminalBrandResponse>?>> ReadBrand(TerminalBrandReadParams p, CancellationToken ct) {
+		IQueryable<TerminalBrandEntity> q = db.Set<TerminalBrandEntity>().ApplyReadParams(p);
+
+		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title == p.Title);
+
+		IQueryable<TerminalBrandResponse> projected = q.Select(Projections.TerminalBrandSelector(p.SelectorArgs));
+		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	}
+
+	public async Task<UResponse> UpdateBrand(TerminalBrandUpdateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		TerminalBrandEntity? e = await db.Set<TerminalBrandEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("terminalNotFound"));
+
+		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
+
+		e.ApplyUpdateParam<TerminalBrandEntity, TagTerminalBrand, TerminalBrandJson>(p);
+
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> DeleteBrand(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<TerminalResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.IsAdmin) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		await db.Set<TerminalBrandEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
+
+		return new UResponse();
+	}
+
+	public async Task<UResponse<Guid?>> CreateBroker(TerminalBrokerCreateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
+		TerminalBrokerEntity e = new() {
+			Id = p.Id ?? Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			JsonData = new TerminalBrokerJson(),
+			Tags = p.Tags,
+			CreatorId = p.CreatorId ?? userData.Id,
+			Title = p.Title
+		};
+
+		await db.Set<TerminalBrokerEntity>().AddAsync(e, ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse<Guid?>(e.Id);
+	}
+
+	public async Task<UResponse<IEnumerable<TerminalBrokerResponse>?>> ReadBroker(TerminalBrokerReadParams p, CancellationToken ct) {
+		IQueryable<TerminalBrokerEntity> q = db.Set<TerminalBrokerEntity>().ApplyReadParams(p);
+
+		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title == p.Title);
+	
+		IQueryable<TerminalBrokerResponse> projected = q.Select(Projections.TerminalBrokerSelector(p.SelectorArgs));
+		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	}
+
+	public async Task<UResponse> UpdateBroker(TerminalBrokerUpdateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<TerminalResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.IsAdmin) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		TerminalBrokerEntity? e = await db.Set<TerminalBrokerEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("terminalNotFound"));
+
+		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
+
+		e.ApplyUpdateParam<TerminalBrokerEntity, TagTerminalBroker, TerminalBrokerJson>(p);
+
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> DeleteBroker(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<TerminalResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.IsAdmin) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		await db.Set<TerminalBrokerEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
+
+		return new UResponse();
 	}
 
 	private static List<Dictionary<string, string>> ParseSheet(Stream stream) {

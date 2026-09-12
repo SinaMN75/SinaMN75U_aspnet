@@ -23,6 +23,12 @@ public sealed class TerminalEntity : BaseEntity<TagTerminal, TerminalJson> {
 	[MaxLength(40)]
 	public string? InsId { get; set; }
 
+	public required Guid TerminalBrandId { get; set; }
+	public TerminalBrandEntity TerminalBrand { get; set; } = null!;
+
+	public required Guid TerminalBrokerId { get; set; }
+	public TerminalBrokerEntity TerminalBroker { get; set; } = null!;
+
 	public Guid? MerchantId { get; set; }
 	public MerchantEntity? Merchant { get; set; }
 
@@ -31,4 +37,35 @@ public sealed class TerminalEntity : BaseEntity<TagTerminal, TerminalJson> {
 
 public sealed class TerminalJson : BaseJson {
 	public string? AgreementPath { get; set; }
+}
+
+[Table("TerminalBrands")]
+public sealed class TerminalBrandEntity : BaseEntity<TagTerminalBrand, TerminalBrandJson> {
+
+	[Required, MaxLength(40)]
+	public required string Title { get; set; }
+	
+	[Required, MaxLength(40)]
+	public required string Model { get; set; }
+
+	public ICollection<TerminalEntity> Terminals { get; set; } = [];
+}
+
+public sealed class TerminalBrandJson : BaseJson;
+
+
+[Table("TerminalBroker")]
+public sealed class TerminalBrokerEntity : BaseEntity<TagTerminalBroker, TerminalBrokerJson> {
+
+	[Required, MaxLength(40)]
+	public required string Title { get; set; }
+	
+	public ICollection<TerminalEntity> Terminals { get; set; } = [];
+}
+
+public sealed class TerminalBrokerJson : BaseJson {
+	public string? Sign1Base64 { get; set; }
+	public string? Sign1Owner { get; set; }
+	public string? Sign2Base64 { get; set; }
+	public string? Sign2Owner { get; set; }
 }

@@ -347,20 +347,17 @@ public enum TagWalletTxn {
 }
 
 public enum TagTerminal {
-	Atm = 101,
-	WallCashless = 102,
-	DeskCashless = 103,
-	
-	Ava101 = 201,
-	Ava102 = 202,
-	Ava103 = 203,
-	Ava104 = 204,
-	AvaMax = 205,
-	SmartPeak = 206,
+	PendingApproval = 101,
+	Approved = 102,
+	Rejected = 103,
+}
 
-	PendingApproval = 301,
-	Approved = 302,
-	Rejected = 303,
+public enum TagTerminalBrand {
+	Test = 999
+}
+
+public enum TagTerminalBroker {
+	Test = 999
 }
 
 public enum TagBankAccount {
