@@ -6,7 +6,6 @@ public static class DataSeedRoutes {
 		r.MapPost("Users", async (IDataSeedService s) => (await s.SeedUsers()).ToResult());
 		r.MapPost("Categories", async (IDataSeedService s) => (await s.SeedCategories()).ToResult());
 		r.MapPost("Contents", async (IDataSeedService s) => (await s.SeedContents()).ToResult());
-		r.MapPost("Brokers", async (IDataSeedService s) => (await s.SeedBrokers()).ToResult());
 		r.MapPost("Parking", async (ParkingSeedParams d, IParkingSeedService s, CancellationToken c) => (await s.SeedParking(d, c)).ToResult()).Produces<UResponse<ParkingSeedResponse>>();
 	}
 }

@@ -41,9 +41,7 @@ public class TerminalService(
 			Imei = p.Imei,
 			TerminalId = p.TerminalId,
 			MerchantId = p.MerchantId,
-			InsId = p.InsId,
-			BrandId = p.BrandId,
-			BrokerId = p.BrokerId ?? (p.BrandId == null ? null : await db.Set<TerminalBrandEntity>().Where(x => x.Id == p.BrandId).Select(x => (Guid?)x.BrokerId).FirstOrDefaultAsync(ct))
+			InsId = p.InsId
 		};
 
 		await db.AddAsync(e, ct);
@@ -67,14 +65,6 @@ public class TerminalService(
 		if (p.SimCardSerial.IsNotNullOrEmpty()) e.SimCardSerial = p.SimCardSerial;
 		if (p.TerminalId.IsNotNullOrEmpty()) e.TerminalId = p.TerminalId;
 		if (p.MerchantId.IsNotNullOrEmpty()) e.MerchantId = p.MerchantId;
-		if (p.BrandId.IsNotNullOrEmpty()) {
-			TerminalBrandEntity? brand = await db.Set<TerminalBrandEntity>().FirstOrDefaultAsync(x => x.Id == p.BrandId, ct);
-			if (brand == null) return new UResponse(Usc.NotFound, ls.Get("terminalBrandNotFound"));
-			e.BrandId = brand.Id;
-			e.BrokerId = brand.BrokerId;
-		}
-
-		if (p.BrokerId.IsNotNullOrEmpty()) e.BrokerId = p.BrokerId;
 
 		e.ApplyUpdateParam<TerminalEntity, TagTerminal, TerminalJson>(p);
 
@@ -87,23 +77,16 @@ public class TerminalService(
 		if (userData == null) return new UResponse<TerminalAvailabilityResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<TerminalAvailabilityResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
-		(TerminalEntity? terminal, MerchantEntity? merchant, TerminalBrandEntity? brand, Usc status, string message) =
-			await ResolveAssignable(p.Serial, p.SimCardSerial, p.BrandId, p.Tag, p.MerchantId, userData, ct);
-		if (terminal == null || merchant == null || brand == null) return new UResponse<TerminalAvailabilityResponse?>(null, status, message);
+		(TerminalEntity? terminal, MerchantEntity? merchant, Usc status, string message) = await ResolveAssignable(p.Serial, p.SimCardSerial, p.Tag, p.MerchantId, userData, ct);
+		if (terminal == null || merchant == null) return new UResponse<TerminalAvailabilityResponse?>(null, status, message);
 
-		AgreementTemplateEntity? template = await ResolveTemplate(brand, ct);
-		if (template == null) return new UResponse<TerminalAvailabilityResponse?>(null, Usc.NotFound, ls.Get("agreementTemplateNotFound"));
-
-		(byte[]? _, string? path) = GenerateAgreement(merchant.User, merchant, terminal, brand, template);
+		(byte[]? _, string? path) = GenerateAgreement(merchant.User, merchant, terminal);
 		if (path == null) return new UResponse<TerminalAvailabilityResponse?>(null, Usc.InternalServerError, ls.Get("generatingTheAgreementFailed"));
 
 		return new UResponse<TerminalAvailabilityResponse?>(new TerminalAvailabilityResponse {
 			Id = terminal.Id,
 			Serial = terminal.Serial,
-			Agreement = AgreementUrl(path),
-			BrandId = brand.Id,
-			BrandTitle = brand.Title,
-			Broker = Brief(brand.Broker)
+			Agreement = AgreementUrl(path)
 		});
 	}
 
@@ -113,14 +96,10 @@ public class TerminalService(
 		if (userData.IsExpired) return new UResponse<TerminalResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		if (!p.AcceptedAgreement) return new UResponse<TerminalResponse?>(null, Usc.BadRequest, ls.Get("youHaveToAcceptTheAgreementToContinue"));
 
-		(TerminalEntity? terminal, MerchantEntity? merchant, TerminalBrandEntity? brand, Usc status, string message) =
-			await ResolveAssignable(p.Serial, p.SimCardSerial, p.BrandId, p.Tag, p.MerchantId, userData, ct);
-		if (terminal == null || merchant == null || brand == null) return new UResponse<TerminalResponse?>(null, status, message);
+		(TerminalEntity? terminal, MerchantEntity? merchant, Usc status, string message) = await ResolveAssignable(p.Serial, p.SimCardSerial, p.Tag, p.MerchantId, userData, ct);
+		if (terminal == null || merchant == null) return new UResponse<TerminalResponse?>(null, status, message);
 
-		AgreementTemplateEntity? template = await ResolveTemplate(brand, ct);
-		if (template == null) return new UResponse<TerminalResponse?>(null, Usc.NotFound, ls.Get("agreementTemplateNotFound"));
-
-		(byte[]? agreement, string? path) = GenerateAgreement(merchant.User, merchant, terminal, brand, template);
+		(byte[]? agreement, string? path) = GenerateAgreement(merchant.User, merchant, terminal);
 		if (agreement == null || path == null) return new UResponse<TerminalResponse?>(null, Usc.InternalServerError, ls.Get("generatingTheAgreementFailed"));
 
 		terminal.JsonData.Detail1 = p.Title ?? "";
@@ -128,8 +107,6 @@ public class TerminalService(
 		terminal.JsonData.AgreementPath = path;
 		terminal.MerchantId = merchant.Id;
 		terminal.Agreement = agreement;
-		terminal.BrandId = brand.Id;
-		terminal.BrokerId = brand.BrokerId;
 		SetStatus(terminal, TagTerminal.PendingApproval);
 
 		await db.SaveChangesAsync(ct);
@@ -146,9 +123,7 @@ public class TerminalService(
 			Imei = terminal.Imei,
 			TerminalId = terminal.TerminalId,
 			Agreement = AgreementUrl(terminal.JsonData.AgreementPath),
-			MerchantId = terminal.MerchantId,
-			BrandId = terminal.BrandId,
-			BrokerId = terminal.BrokerId
+			MerchantId = terminal.MerchantId
 		}, Usc.Success, ls.Get("yourRequestHasBeenSubmittedAndIsAwaitingApproval"));
 	}
 
@@ -166,17 +141,9 @@ public class TerminalService(
 		MerchantEntity? merchant = await db.Set<MerchantEntity>().AsTracking().Include(x => x.User).FirstOrDefaultAsync(x => x.Id == terminal.MerchantId, ct);
 		if (merchant == null) return new UResponse<TerminalResponse?>(null, Usc.NotFound, ls.Get("merchantNotFound"));
 
-		BrokerEntity? broker = await ResolveBroker(terminal, ct);
-		if (broker == null) return new UResponse<TerminalResponse?>(null, Usc.NotFound, ls.Get("brokerNotFound"));
-		if (broker.JsonData.Provider != TagBrokerProvider.Avreen) return new UResponse<TerminalResponse?>(null, Usc.BadRequest, ls.Get("brokerProviderIsNotSupported"));
-
-		ProviderConfig provider = ConfigOf(broker);
-		if (provider.BaseUrl.IsNullOrEmpty() || provider.AuthHeader.IsNullOrEmpty())
-			return new UResponse<TerminalResponse?>(null, Usc.BadRequest, ls.Get("brokerProviderIsNotConfigured"));
-
 		if (merchant.MerchantId.IsNullOrEmpty()) {
 			HttpResponseMessage? response = await http.Post(
-				$"{provider.BaseUrl}api/mms/ing/v2/addMerchant",
+				$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/addMerchant",
 				new {
 					accountId = merchant.BankAccountId,
 					businessTitle = merchant.JsonData.BusinessTitle,
@@ -190,10 +157,10 @@ public class TerminalService(
 					nationalId = merchant.NationalCode,
 					ownerMobileNo = merchant.JsonData.OwnerPhoneNumber,
 					postalCode = merchant.ZipCode,
-					definitionTemplate = provider.DefinitionTemplate,
+					definitionTemplate = 1,
 					settlementCurrency = 364
 				},
-				new Dictionary<string, string> { { "Authorization", provider.AuthHeader }, { "Accept", "application/json" } }
+				new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
 			);
 
 			if (response is null or { IsSuccessStatusCode: false }) return new UResponse<TerminalResponse?>(null, Usc.ThirdPartyError, ls.Get("failedToRegisterMerchantInAvreen"));
@@ -206,15 +173,15 @@ public class TerminalService(
 		}
 
 		HttpResponseMessage? terminalResponse = await http.Post(
-			$"{provider.BaseUrl}api/mms/ing/v2/defineAndBindTerminal",
+			$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/defineAndBindTerminal",
 			new {
-				definitionTemplate = provider.DefinitionTemplate,
+				definitionTemplate = 1,
 				merchantId = merchant.MerchantId,
-				project = provider.Project,
+				project = "AvaPlus",
 				terminalSerial = terminal.Serial,
 				terminalSerial2 = terminal.SimCardSerial
 			},
-			new Dictionary<string, string> { { "Authorization", provider.AuthHeader }, { "Accept", "application/json" } }
+			new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
 		);
 
 		if (terminalResponse is null or { IsSuccessStatusCode: false }) return new UResponse<TerminalResponse?>(null, Usc.ThirdPartyError, ls.Get("failedToBindTerminalToMerchantInAvreen"));
@@ -239,9 +206,7 @@ public class TerminalService(
 			Imei = terminal.Imei,
 			TerminalId = terminal.TerminalId,
 			Agreement = AgreementUrl(terminal.JsonData.AgreementPath),
-			MerchantId = terminal.MerchantId,
-			BrandId = terminal.BrandId,
-			BrokerId = terminal.BrokerId
+			MerchantId = terminal.MerchantId
 		});
 	}
 
@@ -262,86 +227,29 @@ public class TerminalService(
 		return new UResponse();
 	}
 
-	private async Task<(TerminalEntity? Terminal, MerchantEntity? Merchant, TerminalBrandEntity? Brand, Usc Status, string Message)> ResolveAssignable(
+	private async Task<(TerminalEntity? Terminal, MerchantEntity? Merchant, Usc Status, string Message)> ResolveAssignable(
 		string serial,
 		string? simCardSerial,
-		Guid? brandId,
 		TagTerminal tag,
 		Guid? merchantId,
 		JwtClaimData userData,
 		CancellationToken ct
 	) {
-		TerminalBrandEntity? brand = await ResolveBrand(brandId, tag, ct);
-		if (brand == null) return (null, null, null, Usc.NotFound, ls.Get("terminalBrandNotFound"));
-
 		TerminalEntity? terminal = await db.Set<TerminalEntity>().AsTracking().FirstOrDefaultAsync(x => x.Serial == serial, ct);
-
-		// One message for every mismatch on purpose: a per field error would let a caller
-		// enumerate the brand and the broker of a device that is not theirs.
-		if (terminal == null ||
-		    !MatchesBrand(terminal, brand) ||
-		    (terminal.BrokerId.IsNotNullOrEmpty() && terminal.BrokerId != brand.BrokerId) ||
-		    (brand.JsonData.RequiresSimCardSerial && terminal.SimCardSerial != simCardSerial))
-			return (null, null, null, Usc.NotFound, ls.Get("terminalNotFoundCheckYourDetails"));
+		if (terminal == null || tag != TagTerminal.Ava104 && terminal.SimCardSerial != simCardSerial)
+			return (null, null, Usc.NotFound, ls.Get("terminalNotFoundCheckYourDetails"));
 
 		MerchantEntity? merchant = await db.Set<MerchantEntity>().AsTracking().Include(x => x.User).FirstOrDefaultAsync(x => x.Id == merchantId, ct);
-		if (merchant == null) return (null, null, null, Usc.NotFound, ls.Get("merchantNotFound"));
-		if (!userData.IsAdmin && merchant.UserId != userData.Id) return (null, null, null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (merchant == null) return (null, null, Usc.NotFound, ls.Get("merchantNotFound"));
+		if (!userData.IsAdmin && merchant.UserId != userData.Id) return (null, null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
-		if (terminal.Tags.Contains(TagTerminal.Approved)) return (null, null, null, Usc.Conflict, ls.Get("terminalIsAlreadyAssignedToAMerchant"));
-		if (terminal.Tags.Contains(TagTerminal.PendingApproval)) return (null, null, null, Usc.Conflict, ls.Get("thisTerminalRequestIsWaitingForApproval"));
-		if (terminal.MerchantId.IsNotNullOrEmpty() && terminal.MerchantId != merchant.Id) return (null, null, null, Usc.Conflict, ls.Get("terminalIsAlreadyAssignedToAMerchant"));
-		if (merchant.User.ESignature.IsNullOrEmpty()) return (null, null, null, Usc.BadRequest, ls.Get("userElectronicSignatureIsMissing"));
+		if (terminal.Tags.Contains(TagTerminal.Approved)) return (null, null, Usc.Conflict, ls.Get("terminalIsAlreadyAssignedToAMerchant"));
+		if (terminal.Tags.Contains(TagTerminal.PendingApproval)) return (null, null, Usc.Conflict, ls.Get("thisTerminalRequestIsWaitingForApproval"));
+		if (terminal.MerchantId.IsNotNullOrEmpty() && terminal.MerchantId != merchant.Id) return (null, null, Usc.Conflict, ls.Get("terminalIsAlreadyAssignedToAMerchant"));
+		if (merchant.User.ESignature.IsNullOrEmpty()) return (null, null, Usc.BadRequest, ls.Get("userElectronicSignatureIsMissing"));
 
-		return (terminal, merchant, brand, Usc.Success, "");
+		return (terminal, merchant, Usc.Success, "");
 	}
-
-	/// <summary>
-	/// Brands are a handful of rows, so they are read in one go and matched in memory:
-	/// LegacyTag lives inside the jsonb column and is only there for rows imported before the brand tables existed.
-	/// </summary>
-	private async Task<TerminalBrandEntity?> ResolveBrand(Guid? brandId, TagTerminal tag, CancellationToken ct) {
-		List<TerminalBrandEntity> brands = await db.Set<TerminalBrandEntity>().AsTracking().Include(x => x.Broker).ToListAsync(ct);
-		return brandId.IsNotNullOrEmpty()
-			? brands.FirstOrDefault(x => x.Id == brandId)
-			: brands.FirstOrDefault(x => x.JsonData.LegacyTag == tag);
-	}
-
-	private static bool MatchesBrand(TerminalEntity terminal, TerminalBrandEntity brand) =>
-		terminal.BrandId.IsNotNullOrEmpty()
-			? terminal.BrandId == brand.Id
-			: brand.JsonData.LegacyTag != null && terminal.Tags.Contains(brand.JsonData.LegacyTag.Value);
-
-	private async Task<BrokerEntity?> ResolveBroker(TerminalEntity terminal, CancellationToken ct) {
-		if (terminal.BrokerId.IsNotNullOrEmpty()) return await db.Set<BrokerEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == terminal.BrokerId, ct);
-		if (terminal.BrandId.IsNotNullOrEmpty())
-			return await db.Set<TerminalBrandEntity>().Where(x => x.Id == terminal.BrandId).Select(x => x.Broker).FirstOrDefaultAsync(ct);
-		return await db.Set<BrokerEntity>().AsTracking().FirstOrDefaultAsync(x => x.Code == UConstants.DefaultBrokerCode, ct);
-	}
-
-	private async Task<AgreementTemplateEntity?> ResolveTemplate(TerminalBrandEntity brand, CancellationToken ct) {
-		Guid? id = brand.JsonData.AgreementTemplateId ?? brand.Broker.AgreementTemplateId;
-		AgreementTemplateEntity? template = id == null ? null : await db.Set<AgreementTemplateEntity>().FirstOrDefaultAsync(x => x.Id == id, ct);
-		return template ?? await db.Set<AgreementTemplateEntity>().FirstOrDefaultAsync(x => x.Code == UConstants.DefaultAgreementTemplateCode, ct);
-	}
-
-	private static BrokerBriefResponse Brief(BrokerEntity broker) => new() {
-		Id = broker.Id,
-		Title = broker.Title,
-		LegalName = broker.JsonData.LegalName,
-		LogoBase64 = broker.JsonData.LogoBase64,
-		PhoneNumber = broker.JsonData.PhoneNumber,
-		SupportPhoneNumber = broker.JsonData.SupportPhoneNumber
-	};
-
-	private sealed record ProviderConfig(string BaseUrl, string AuthHeader, string Project, int DefinitionTemplate);
-
-	private static ProviderConfig ConfigOf(BrokerEntity broker) => new(
-		broker.JsonData.ProviderBaseUrl.IsNullOrEmpty() ? Core.App.Avreen.BaseUrl : broker.JsonData.ProviderBaseUrl!,
-		broker.JsonData.ProviderAuthHeader.IsNullOrEmpty() ? Core.App.Avreen.AuthHeader : broker.JsonData.ProviderAuthHeader!,
-		broker.JsonData.ProviderProject.IsNullOrEmpty() ? "AvaPlus" : broker.JsonData.ProviderProject!,
-		broker.JsonData.ProviderDefinitionTemplate <= 0 ? 1 : broker.JsonData.ProviderDefinitionTemplate
-	);
 
 	private static void SetStatus(TerminalEntity terminal, TagTerminal status) =>
 		terminal.Tags = terminal.Tags.Where(x => x is not (TagTerminal.PendingApproval or TagTerminal.Approved or TagTerminal.Rejected)).Append(status).ToList();
@@ -376,8 +284,6 @@ public class TerminalService(
 		if (p.Imei.IsNotNullOrEmpty()) q = q.Where(x => x.Imei == p.Imei);
 		if (p.SimCardNumber.IsNotNullOrEmpty()) q = q.Where(x => x.SimCardNumber == p.SimCardNumber);
 		if (p.SimCardSerial.IsNotNullOrEmpty()) q = q.Where(x => x.SimCardSerial == p.SimCardSerial);
-		if (p.BrandId.IsNotNullOrEmpty()) q = q.Where(x => x.BrandId == p.BrandId);
-		if (p.BrokerId.IsNotNullOrEmpty()) q = q.Where(x => x.BrokerId == p.BrokerId);
 
 		IQueryable<TerminalResponse> projected = q.Select(Projections.TerminalSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
@@ -406,8 +312,6 @@ public class TerminalService(
 			CreatorId = x.CreatorId,
 			InsId = x.InsId,
 			TerminalId = x.TerminalId,
-			BrandId = x.BrandId,
-			BrokerId = x.BrokerId,
 			Merchant = new MerchantEntity {
 				ZipCode = "",
 				CityCode = "",
@@ -431,13 +335,8 @@ public class TerminalService(
 		if (e.Merchant == null) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.NotFound, ls.Get("merchantNotFound"));
 		if (!userData.IsAdmin && userData.Id != e.CreatorId && userData.Id != e.Merchant?.UserId) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
-		BrokerEntity? broker = await ResolveBroker(e, ct);
-		if (broker == null) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.NotFound, ls.Get("brokerNotFound"));
-
-		ProviderConfig provider = ConfigOf(broker);
-
 		HttpResponseMessage? response = await http.Post(
-			$"{provider.BaseUrl}api/mms/ing/v2/generateSupportPassword",
+			$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/generateSupportPassword",
 			new {
 				insId = e.InsId,
 				merchantId = e.Merchant!.MerchantId,
@@ -445,7 +344,7 @@ public class TerminalService(
 				terminalSerial = e.Serial,
 				terminalSerial2 = e.SimCardSerial
 			},
-			new Dictionary<string, string> { { "Authorization", provider.AuthHeader }, { "Accept", "application/json" } }
+			new Dictionary<string, string> { { "Authorization", $"{Core.App.Avreen.AuthHeader}" }, { "Accept", "application/json" } }
 		);
 
 		if (response is null or { IsSuccessStatusCode: false }) return new UResponse<TerminalSupportPasswordResponse?>(null);
@@ -482,8 +381,6 @@ public class TerminalService(
 		HashSet<string> simSerials = (await db.Set<TerminalEntity>().Where(x => x.SimCardSerial != null).Select(x => x.SimCardSerial!).ToListAsync(ct)).ToHashSet(StringComparer.OrdinalIgnoreCase);
 		HashSet<string> terminalIds = (await db.Set<TerminalEntity>().Where(x => x.TerminalId != null).Select(x => x.TerminalId!).ToListAsync(ct)).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-		List<TerminalBrandEntity> brands = await db.Set<TerminalBrandEntity>().ToListAsync(ct);
-
 		TerminalImportResponse result = new() { TotalRows = rows.Count };
 		List<TerminalEntity> toAdd = [];
 
@@ -506,18 +403,13 @@ public class TerminalService(
 				continue;
 			}
 
-			TerminalBrandEntity? brand = ResolveImportBrand(brands, Val(row, "BrandCode"), Val(row, "Tag1"), Val(row, "Tag2"));
-			if (brand == null) {
-				result.SkippedSerials.Add($"{serial} (missing/invalid BrandCode)");
+			if (!TryParseTag(Val(row, "Tag1"), out TagTerminal tag1)) {
+				result.SkippedSerials.Add($"{serial} (missing/invalid Tag1)");
 				continue;
 			}
 
-			// Tag1/Tag2 still carry the device type tags (101-103); the brand tag is written from the brand itself.
-			List<TagTerminal> tags = [];
-			foreach (string cell in new[] { Val(row, "Tag1"), Val(row, "Tag2") })
-				if (TryParseTag(cell, out TagTerminal tag) && brands.All(x => x.JsonData.LegacyTag != tag) && !tags.Contains(tag))
-					tags.Add(tag);
-			if (brand.JsonData.LegacyTag != null && !tags.Contains(brand.JsonData.LegacyTag.Value)) tags.Add(brand.JsonData.LegacyTag.Value);
+			List<TagTerminal> tags = [tag1];
+			if (TryParseTag(Val(row, "Tag2"), out TagTerminal tag2) && tag2 != tag1) tags.Add(tag2);
 
 			toAdd.Add(new TerminalEntity {
 				Id = Guid.CreateVersion7(),
@@ -530,9 +422,7 @@ public class TerminalService(
 				SimCardSerial = simSerial,
 				Imei = imei,
 				TerminalId = terminalId,
-				InsId = Val(row, "InsId").NullIfEmpty(),
-				BrandId = brand.Id,
-				BrokerId = brand.BrokerId
+				InsId = Val(row, "InsId").NullIfEmpty()
 			});
 
 			serials.Add(serial);
@@ -600,18 +490,6 @@ public class TerminalService(
 
 	private static string Val(Dictionary<string, string> row, string key) => row.GetValueOrDefault(key, "");
 
-	private static TerminalBrandEntity? ResolveImportBrand(List<TerminalBrandEntity> brands, string brandCode, params string[] legacyTagCells) {
-		if (brandCode.IsNotNullOrEmpty()) return brands.FirstOrDefault(x => x.Code.Equals(brandCode, StringComparison.OrdinalIgnoreCase));
-
-		foreach (string cell in legacyTagCells) {
-			if (!TryParseTag(cell, out TagTerminal legacyTag)) continue;
-			TerminalBrandEntity? brand = brands.FirstOrDefault(x => x.JsonData.LegacyTag == legacyTag);
-			if (brand != null) return brand;
-		}
-
-		return null;
-	}
-
 	private static bool TryParseTag(string raw, out TagTerminal tag) {
 		tag = default;
 		if (!int.TryParse(raw.Trim(), out int n) || !Enum.IsDefined(typeof(TagTerminal), n)) return false;
@@ -621,26 +499,12 @@ public class TerminalService(
 
 	private static string? AgreementUrl(string? path) => path == null ? null : $"{Core.App.BaseUrl}/Media/{path}";
 
-	private (byte[]? Pdf, string? Path) GenerateAgreement(UserEntity user, MerchantEntity merchant, TerminalEntity terminal, TerminalBrandEntity brand, AgreementTemplateEntity template) {
+	private (byte[]? Pdf, string? Path) GenerateAgreement(UserEntity user, MerchantEntity merchant, TerminalEntity terminal) {
 		try {
-			BrokerEntity broker = brand.Broker;
-			byte[] bytes = AgreementPdf.Build(template, broker, new Dictionary<string, string> {
+			byte[] bytes = AgreementPdf.Build(new Dictionary<string, string> {
 				{ "day", PersianDateTime.Now.Day.ToString() },
 				{ "month", PersianDateTime.Now.Month.ToString() },
-				{ "year", PersianDateTime.Now.Year.ToString() },
 				{ "number", terminal.Serial },
-				{ "contractNumberSuffix", broker.JsonData.ContractNumberSuffix ?? "" },
-				{ "brandTitle", brand.Title },
-				{ "brokerName", broker.Title },
-				{ "brokerLegalName", broker.JsonData.LegalName ?? broker.Title },
-				{ "brokerRegistrationNumber", broker.JsonData.RegistrationNumber ?? "---" },
-				{ "brokerNationalId", broker.JsonData.NationalId ?? "---" },
-				{ "brokerAddress", broker.JsonData.Address ?? "---" },
-				{ "brokerPostalCode", broker.JsonData.PostalCode ?? "---" },
-				{ "brokerPhoneNumber", broker.JsonData.PhoneNumber ?? "---" },
-				{ "brokerCallCenterPhoneNumber", broker.JsonData.CallCenterPhoneNumber ?? broker.JsonData.SupportPhoneNumber ?? "---" },
-				{ "representativeName", broker.JsonData.RepresentativeName ?? "---" },
-				{ "representativeRole", broker.JsonData.RepresentativeRole ?? "---" },
 				{ "fullName", $"{user.FirstName ?? "---"} {user.LastName ?? "---"}" },
 				{ "nationalCode", user.NationalCode ?? "---" },
 				{ "birthdate", PersianDateTime.FromDateTime(user.Birthdate ?? DateTime.Now).ToString("yyyy-MM-dd") },

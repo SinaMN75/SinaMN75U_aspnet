@@ -83,20 +83,7 @@ public sealed class SimCardSelectorArgs : BaseSelectorArgs {
 
 public sealed class TerminalSelectorArgs : BaseSelectorArgs {
 	public MerchantSelectorArgs? Merchant { get; set; }
-	public TerminalBrandSelectorArgs? Brand { get; set; }
-	public bool Broker { get; set; }
 	public bool Agreement { get; set; }
-}
-
-public sealed class BrokerSelectorArgs : BaseSelectorArgs {
-	public TerminalBrandSelectorArgs? Brands { get; set; }
-}
-
-public sealed class TerminalBrandSelectorArgs : BaseSelectorArgs {
-	public bool Broker { get; set; }
-}
-
-public sealed class AgreementTemplateSelectorArgs : BaseSelectorArgs {
 }
 
 public sealed class MerchantSelectorArgs : BaseSelectorArgs {
@@ -683,72 +670,8 @@ public static class Projections {
 			Imei = x.Imei,
 			TerminalId = x.TerminalId,
 			CreatedAt = x.CreatedAt,
-			BrandId = x.BrandId,
-			BrokerId = x.BrokerId,
 			Agreement = args.Agreement && x.JsonData.AgreementPath != null ? Core.App.BaseUrl + "/Media/" + x.JsonData.AgreementPath : null,
-			Brand = x.Brand == null ? null : (args.Brand != null ? TerminalBrandSelector(args.Brand) : b => null!).Invoke(x.Brand),
-			Broker = !args.Broker || x.Broker == null ? null : new BrokerBriefResponse {
-				Id = x.Broker.Id,
-				Title = x.Broker.Title,
-				LegalName = x.Broker.JsonData.LegalName,
-				LogoBase64 = x.Broker.JsonData.LogoBase64,
-				PhoneNumber = x.Broker.JsonData.PhoneNumber,
-				SupportPhoneNumber = x.Broker.JsonData.SupportPhoneNumber
-			},
 			Merchant = x.Merchant == null ? null : (args.Merchant != null ? MerchantSelector(args.Merchant) : m => null!).Invoke(x.Merchant),
-			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
-		};
-		return selector.Expand();
-	}
-
-	public static Expression<Func<BrokerEntity, BrokerResponse>> BrokerSelector(BrokerSelectorArgs args) {
-		Expression<Func<BrokerEntity, BrokerResponse>> selector = x => new BrokerResponse {
-			Id = x.Id,
-			Tags = x.Tags,
-			JsonData = x.JsonData,
-			Title = x.Title,
-			Code = x.Code,
-			AgreementTemplateId = x.AgreementTemplateId,
-			CreatorId = x.CreatorId,
-			CreatedAt = x.CreatedAt,
-			Brands = args.Brands == null ? null : x.Brands.AsQueryable().Select(TerminalBrandSelector(args.Brands)).ToList(),
-			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
-		};
-		return selector.Expand();
-	}
-
-	public static Expression<Func<TerminalBrandEntity, TerminalBrandResponse>> TerminalBrandSelector(TerminalBrandSelectorArgs args) {
-		Expression<Func<TerminalBrandEntity, TerminalBrandResponse>> selector = x => new TerminalBrandResponse {
-			Id = x.Id,
-			Tags = x.Tags,
-			JsonData = x.JsonData,
-			Title = x.Title,
-			Code = x.Code,
-			BrokerId = x.BrokerId,
-			CreatorId = x.CreatorId,
-			CreatedAt = x.CreatedAt,
-			Broker = !args.Broker || x.Broker == null ? null : new BrokerBriefResponse {
-				Id = x.Broker.Id,
-				Title = x.Broker.Title,
-				LegalName = x.Broker.JsonData.LegalName,
-				LogoBase64 = x.Broker.JsonData.LogoBase64,
-				PhoneNumber = x.Broker.JsonData.PhoneNumber,
-				SupportPhoneNumber = x.Broker.JsonData.SupportPhoneNumber
-			},
-			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
-		};
-		return selector.Expand();
-	}
-
-	public static Expression<Func<AgreementTemplateEntity, AgreementTemplateResponse>> AgreementTemplateSelector(AgreementTemplateSelectorArgs args) {
-		Expression<Func<AgreementTemplateEntity, AgreementTemplateResponse>> selector = x => new AgreementTemplateResponse {
-			Id = x.Id,
-			Tags = x.Tags,
-			JsonData = x.JsonData,
-			Title = x.Title,
-			Code = x.Code,
-			CreatorId = x.CreatorId,
-			CreatedAt = x.CreatedAt,
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
 		};
 		return selector.Expand();

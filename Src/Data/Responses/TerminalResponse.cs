@@ -10,22 +10,12 @@ public class TerminalResponse : BaseResponse<TagTerminal, TerminalJson> {
 
 	public Guid? MerchantId { get; set; }
 	public MerchantResponse? Merchant { get; set; }
-
-	public Guid? BrandId { get; set; }
-	public TerminalBrandResponse? Brand { get; set; }
-
-	public Guid? BrokerId { get; set; }
-	public BrokerBriefResponse? Broker { get; set; }
 }
 
 public class TerminalAvailabilityResponse {
 	public required Guid Id { get; set; }
 	public required string Serial { get; set; }
 	public string? Agreement { get; set; }
-
-	public Guid? BrandId { get; set; }
-	public string? BrandTitle { get; set; }
-	public BrokerBriefResponse? Broker { get; set; }
 }
 
 public class TerminalSupportPasswordResponse {
