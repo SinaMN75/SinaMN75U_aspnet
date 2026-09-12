@@ -92,6 +92,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IWalletService, WalletService>();
 		builder.Services.AddScoped<ITerminalService, TerminalService>();
 		builder.Services.AddScoped<IBankAccountService, BankAccountService>();
+		builder.Services.AddScoped<IIpgProvider, PnIpgProvider>();
 		builder.Services.AddScoped<IIpgService, IpgService>();
 		builder.Services.AddScoped<ISimCardService, SimCardService>();
 		builder.Services.AddScoped<INotificationService, NotificationService>();

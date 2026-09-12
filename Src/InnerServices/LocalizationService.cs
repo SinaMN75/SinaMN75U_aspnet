@@ -344,7 +344,11 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "serviceTypeCodeIsUnknown", "Service type code is unknown." },
 		{ "billInformationCouldNotBeParsed", "Bill information could not be parsed." },
 		{ "theBillIsNotValid", "The bill is not valid." },
-		{ "theBillAmountIsNotAvailable", "The bill amount is not available." }
+		{ "theBillAmountIsNotAvailable", "The bill amount is not available." },
+		{ "topUpTypeIsRequired", "Top Up Type is Required." },
+		{ "thisOperatorIsNotSupportedForDirectTopUp", "This operator is not supported for direct top up." },
+		{ "theSumOfMultiplexedAmountsMustBeEqualToTheTotalAmount", "The sum of multiplexed amounts must be equal to the total amount." },
+		{ "thisPaymentTypeIsNotSupportedByTheGateway", "This payment type is not supported by the gateway." }
 	};
 
 	private readonly Dictionary<string, string> _fa = new() {
@@ -686,7 +690,11 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "serviceTypeCodeIsUnknown", "کد نوع خدمات شناسایی نشد." },
 		{ "billInformationCouldNotBeParsed", "اطلاعات قبض قابل پردازش نیست." },
 		{ "theBillIsNotValid", "قبض معتبر نیست." },
-		{ "theBillAmountIsNotAvailable", "مبلغ قبض در دسترس نیست." }
+		{ "theBillAmountIsNotAvailable", "مبلغ قبض در دسترس نیست." },
+		{ "topUpTypeIsRequired", "نوع شارژ الزامی است." },
+		{ "thisOperatorIsNotSupportedForDirectTopUp", "این اپراتور برای شارژ مستقیم پشتیبانی نمی‌شود." },
+		{ "theSumOfMultiplexedAmountsMustBeEqualToTheTotalAmount", "مجموع مبالغ تسهیم باید با مبلغ کل برابر باشد." },
+		{ "thisPaymentTypeIsNotSupportedByTheGateway", "این نوع پرداخت توسط درگاه پشتیبانی نمی‌شود." }
 	};
 
 	public string Get(string key, string? locale = null) {

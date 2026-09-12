@@ -244,7 +244,9 @@ public enum TagTxn {
 	MerchantCreationFee = 302,
 	DormInvoice = 303,
 	HotelInvoice = 304,
-	BillPayment = 305
+	BillPayment = 305,
+	TopUp = 306,
+	MultiplexedSale = 307
 }
 
 public enum TagParking {
@@ -367,6 +369,13 @@ public enum TagBankAccount {
 
 public enum TagIpg {
 	Pn = 101
+}
+
+public enum TagIpgPayment {
+	NormalSale = 101,
+	Bill = 102,
+	TopUp = 103,
+	MultiplexedSale = 104
 }
 
 public enum TagMpg {

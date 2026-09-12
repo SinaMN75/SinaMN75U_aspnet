@@ -6,8 +6,7 @@ namespace SinaMN75U.Routes;
 public static class IpgRoutes {
 	public static void MapIpgRoutes(this IEndpointRouteBuilder app, string tag) {
 		RouteGroupBuilder r = app.MapGroup(tag).WithTags(tag).AddEndpointFilter<UValidationFilter>();
-		r.MapPost("Pay", async (IpgSaleParams p, IIpgService s, CancellationToken c) => (await s.GetSaleIpgLink(p, c)).ToResult()).Produces<UResponse<IpgPayResponse?>>();
-		r.MapPost("PayBill", async (IpgBillParams p, IIpgService s, CancellationToken c) => (await s.GetBillIpgLink(p, c)).ToResult()).Produces<UResponse<IpgPayResponse?>>();
+		r.MapPost("Pay", async (IpgPayParams p, IIpgService s, CancellationToken c) => (await s.Pay(p, c)).ToResult()).Produces<UResponse<IpgPayResponse?>>();
 		r.MapPost("Status", async (IpgStatusParams p, IIpgService s, CancellationToken c) => (await s.Status(p, c)).ToResult()).Produces<UResponse<IpgVerifyResponse?>>();
 
 		r.MapPost("Verify", async (
@@ -41,6 +40,26 @@ public static class IpgRoutes {
 			string verify = $"{req.Scheme}://{req.Host}{basePath}Verify";
 			string successUrl = $"{verify}?additionalData={additionalData}&token=FAKE&status=0&rrn=123456789&cardNumberMasked=627412******2424";
 			string errorUrl = $"{verify}?additionalData={additionalData}&token=FAKE&status=1";
+
+			IpgAdditionalData? data = null;
+			try {
+				data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase64Url());
+			}
+			catch {
+				data = null;
+			}
+
+			string kindTitle = data?.Kind switch {
+				TagIpgPayment.Bill => "پرداخت قبض",
+				TagIpgPayment.TopUp => "شارژ مستقیم",
+				TagIpgPayment.MultiplexedSale => "پرداخت تسهیمی",
+				_ => "پرداخت"
+			};
+			string kindDetail = data?.Kind switch {
+				TagIpgPayment.Bill => $"<div class='badge'>شناسه قبض: {data?.BillId} - شناسه پرداخت: {data?.PaymentId}</div>",
+				TagIpgPayment.TopUp => $"<div class='badge'>شماره شارژ شونده: {data?.ChargeMobileNumber}</div>",
+				_ => ""
+			};
 			return Results.Content(
 				$$"""
 				  <!DOCTYPE html>
@@ -64,6 +83,8 @@ public static class IpgRoutes {
 				      <div class='container'>
 				          <h2>درگاه پرداخت آزمایشی</h2>
 				          <div class='badge'>این یک درگاه تستی است و پولی جابجا نمی‌شود</div>
+				          <div class='badge'>{{kindTitle}}</div>
+				          {{kindDetail}}
 				          <div class='amount'>{{amount:N0}} ریال</div>
 				          <a class='button pay' href='{{successUrl}}'>پرداخت موفق</a>
 				          <a class='button err' href='{{errorUrl}}'>پرداخت ناموفق / انصراف</a>
