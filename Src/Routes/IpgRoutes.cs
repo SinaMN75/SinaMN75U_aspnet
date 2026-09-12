@@ -109,7 +109,7 @@ public static class IpgRoutes {
 				      <script>
 				          (function() {
 				              try {
-				                  window.parent.postMessage({ source: 'avahamrah_ipg', trackingNumber: {{JsonSerializer.Serialize(trackingNumber ?? "")}}, status: {{status}} }, '*');
+				                  window.parent.postMessage({ source: 'u_ipg', trackingNumber: {{JsonSerializer.Serialize(trackingNumber ?? "")}}, status: {{status}} }, '*');
 				              } catch (e) {}
 				          })();
 				      </script>

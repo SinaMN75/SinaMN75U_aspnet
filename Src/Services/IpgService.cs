@@ -176,8 +176,7 @@ public class IpgService(
 		await db.Set<TxnEntity>().AddAsync(txn, ct);
 		await db.SaveChangesAsync(ct);
 
-		string verifyUrl = $"{Core.App.BaseUrl}/api/ipg/Verify";
-		string callBackUrl = $"{verifyUrl}?additionalData={additionalData}";
+		string callBackUrl = $"{Core.App.BaseUrl}/api/ipg/Verify?additionalData={additionalData}";
 
 		if (Core.App.Test) {
 			txn.JsonData.Detail2 = "FAKE";
