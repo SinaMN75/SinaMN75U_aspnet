@@ -23,11 +23,11 @@ public sealed class TerminalEntity : BaseEntity<TagTerminal, TerminalJson> {
 	[MaxLength(40)]
 	public string? InsId { get; set; }
 
-	public required Guid TerminalBrandId { get; set; }
-	public TerminalBrandEntity TerminalBrand { get; set; } = null!;
+	public Guid? TerminalBrandId { get; set; }
+	public TerminalBrandEntity? TerminalBrand { get; set; }
 
-	public required Guid TerminalBrokerId { get; set; }
-	public TerminalBrokerEntity TerminalBroker { get; set; } = null!;
+	public Guid? TerminalBrokerId { get; set; }
+	public TerminalBrokerEntity? TerminalBroker { get; set; }
 
 	public Guid? MerchantId { get; set; }
 	public MerchantEntity? Merchant { get; set; }

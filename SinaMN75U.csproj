@@ -16,9 +16,4 @@
         <PackageReference Include="LinqKit" Version="1.3.11" />
     </ItemGroup>
 
-    <ItemGroup>
-        <EmbeddedResource Include="Src/Assets/Vazir.ttf" />
-        <EmbeddedResource Include="Src/Assets/logo.jpg" />
-    </ItemGroup>
-
 </Project>
