@@ -91,6 +91,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IAddressService, AddressService>();
 		builder.Services.AddScoped<IWalletService, WalletService>();
 		builder.Services.AddScoped<ITerminalService, TerminalService>();
+		builder.Services.AddScoped<IBrokerService, BrokerService>();
 		builder.Services.AddScoped<IBankAccountService, BankAccountService>();
 		builder.Services.AddScoped<IIpgProvider, PnIpgProvider>();
 		builder.Services.AddScoped<IIpgService, IpgService>();
@@ -172,6 +173,7 @@ public static partial class AspNetConfig {
 		app.MapHealthRoutes(RouteTags.Health);
 		app.MapLogRoutes(RouteTags.Log);
 		app.MapGoldRoutes(RouteTags.Gold);
+		app.MapBrokerRoutes(RouteTags.Broker);
 		ULog.Info("App Started in " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
 	}
 	

@@ -32,6 +32,15 @@ public static class DbModelBuilder {
 		builder.Entity<GoldWalletEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<GoldTxnEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<TerminalEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<TerminalBrandEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<BrokerEntity>().OwnsOne(e => e.JsonData, b => {
+			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
+			b.OwnsMany(i => i.Signatories);
+		});
+		builder.Entity<AgreementTemplateEntity>().OwnsOne(e => e.JsonData, b => {
+			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
+			b.OwnsMany(i => i.Blocks);
+		});
 		builder.Entity<BankAccountEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<SimCardEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<InquiryHistoryEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
@@ -64,6 +73,11 @@ public static class DbModelBuilder {
 		});
 		builder.Entity<ApiLogEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<BlogEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+
+		builder.Entity<TerminalEntity>().HasOne(e => e.Brand).WithMany().HasForeignKey(e => e.BrandId).OnDelete(DeleteBehavior.Restrict);
+		builder.Entity<TerminalEntity>().HasOne(e => e.Broker).WithMany().HasForeignKey(e => e.BrokerId).OnDelete(DeleteBehavior.Restrict);
+		builder.Entity<TerminalBrandEntity>().HasOne(e => e.Broker).WithMany(e => e.Brands).HasForeignKey(e => e.BrokerId).OnDelete(DeleteBehavior.Cascade);
+		builder.Entity<BrokerEntity>().HasOne(e => e.AgreementTemplate).WithMany().HasForeignKey(e => e.AgreementTemplateId).OnDelete(DeleteBehavior.Restrict);
 	}
 
 	private static void AddIndexIfMissing(IMutableEntityType entityType, string propertyName) {

@@ -202,12 +202,13 @@ public class DashboardService(
 			.OrderByDescending(x => x.Amount).ToList();
 
 		List<TerminalEntity> terminalTagRows = await db.Set<TerminalEntity>().ToListAsync(ct);
+		Dictionary<Guid, string> brandTitles = await db.Set<TerminalBrandEntity>().ToDictionaryAsync(x => x.Id, x => x.Title, ct);
 
 		List<AccountingBreakdownItem> terminalsByType = terminalTagRows
-			.SelectMany(x => x.Tags)
-			.Where(t => t is not (TagTerminal.PendingApproval or TagTerminal.Approved or TagTerminal.Rejected))
-			.GroupBy(t => t)
-			.Select(g => new AccountingBreakdownItem { Tag = (int)g.Key, TagName = g.Key.ToString(), Amount = 0, Count = g.Count() })
+			.GroupBy(x => x.BrandId != null && brandTitles.TryGetValue(x.BrandId.Value, out string? title)
+				? title
+				: x.Tags.FirstOrDefault(t => t is not (TagTerminal.PendingApproval or TagTerminal.Approved or TagTerminal.Rejected)).ToString())
+			.Select(g => new AccountingBreakdownItem { Tag = 0, TagName = g.Key, Amount = 0, Count = g.Count() })
 			.OrderByDescending(x => x.Count).ToList();
 
 		List<AccountingTimelineItem> dailyTimeline = walletRows
@@ -499,11 +500,9 @@ public class DashboardService(
 		}
 		else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 			try {
-				Win32FileTime firstIdle, firstKernel, firstUser;
-				GetSystemTimes(out firstIdle, out firstKernel, out firstUser);
+				GetSystemTimes(out Win32FileTime firstIdle, out Win32FileTime firstKernel, out Win32FileTime firstUser);
 				await Task.Delay(700, ct);
-				Win32FileTime secondIdle, secondKernel, secondUser;
-				GetSystemTimes(out secondIdle, out secondKernel, out secondUser);
+				GetSystemTimes(out Win32FileTime secondIdle, out Win32FileTime secondKernel, out Win32FileTime secondUser);
 
 				ulong idleDelta = ToUlong(secondIdle) - ToUlong(firstIdle);
 				ulong kernelDelta = ToUlong(secondKernel) - ToUlong(firstKernel);

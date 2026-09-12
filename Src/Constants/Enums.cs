@@ -363,6 +363,35 @@ public enum TagTerminal {
 	Rejected = 303,
 }
 
+public enum TagBroker {
+	Active = 101,
+	Inactive = 102
+}
+
+public enum TagBrokerProvider {
+	Avreen = 101
+}
+
+public enum TagTerminalBrand {
+	Active = 101,
+	Inactive = 102
+}
+
+public enum TagAgreementTemplate {
+	Terminal = 101
+}
+
+public enum AgreementBlockType {
+	Intro = 101,
+	Article = 102,
+	ArticleCenter = 103,
+	Clause = 104,
+	Sub = 105,
+	Note = 106,
+	NoteCenter = 107,
+	PageBreak = 108
+}
+
 public enum TagBankAccount {
 	Verified = 101
 }

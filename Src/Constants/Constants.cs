@@ -38,6 +38,7 @@ public static class RouteTags {
 	public const string Health = "api/Health/";
 	public const string Log = "api/Log/";
 	public const string Gold = "api/Gold/";
+	public const string Broker = "api/Broker/";
 }
 
 public static class UConstants {
@@ -48,6 +49,9 @@ public static class UConstants {
 	public static readonly Guid AvaPlusUserId = Guid.Parse("019d9545-4e5c-719f-838d-fb27b9321279");
 	public static readonly Guid MobtakeranUserId = Guid.Parse("019d9545-4e5c-719f-838d-fb27b9321267");
 	public static readonly Guid PnUserId = Guid.Parse("019d9545-4e5c-719f-838d-fb27b9321268");
+
+	public const string DefaultBrokerCode = "avaHooshmand";
+	public const string DefaultAgreementTemplateCode = "terminalDefault";
 }
 
 public static class ProcessStepIds {

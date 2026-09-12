@@ -4,6 +4,7 @@ public interface IDataSeedService {
 	Task<UResponse> SeedUsers();
 	Task<UResponse> SeedCategories();
 	Task<UResponse> SeedContents();
+	Task<UResponse> SeedBrokers();
 }
 
 public class DataSeedService(DbContext db) : IDataSeedService {
@@ -382,4 +383,107 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 			Links = links ?? []
 		}
 	};
+
+	public async Task<UResponse> SeedBrokers() {
+		AgreementTemplateEntity? template = await db.Set<AgreementTemplateEntity>().AsTracking().FirstOrDefaultAsync(x => x.Code == UConstants.DefaultAgreementTemplateCode);
+		if (template == null) {
+			template = new AgreementTemplateEntity {
+				Id = Guid.CreateVersion7(),
+				CreatedAt = DateTime.UtcNow,
+				Tags = [TagAgreementTemplate.Terminal],
+				CreatorId = Core.App.Users.SystemAdmin.Id,
+				Title = AgreementContent.Title,
+				Code = UConstants.DefaultAgreementTemplateCode,
+				JsonData = new AgreementTemplateJson {
+					HeaderTitle = AgreementContent.Title,
+					Blocks = AgreementContent.Blocks
+						.Select((x, i) => new AgreementTemplateBlock { Type = x.Type, Text = x.Text, Order = i })
+						.ToList()
+				}
+			};
+			await db.AddAsync(template);
+			await db.SaveChangesAsync();
+		}
+
+		BrokerEntity? broker = await db.Set<BrokerEntity>().AsTracking().FirstOrDefaultAsync(x => x.Code == UConstants.DefaultBrokerCode);
+		if (broker == null) {
+			broker = new BrokerEntity {
+				Id = Guid.CreateVersion7(),
+				CreatedAt = DateTime.UtcNow,
+				Tags = [TagBroker.Active],
+				CreatorId = Core.App.Users.SystemAdmin.Id,
+				Title = "ماندگار اندیشه آوا هوشمند",
+				Code = UConstants.DefaultBrokerCode,
+				AgreementTemplateId = template.Id,
+				JsonData = new BrokerJson {
+					LegalName = "ماندگار اندیشه آوا هوشمند",
+					RegistrationNumber = "646870",
+					NationalId = "14014228599",
+					Address = "تهران، سعادت آباد، بلوار علامه طباطبایی جنوبی، خیابان حق طلب شرقی پلاک 157 مجتمع اداری تجاری طوس طبقه ششم واحد 108",
+					PostalCode = "1997836569",
+					PhoneNumber = "021-91307092",
+					SupportPhoneNumber = "021-48006",
+					CallCenterPhoneNumber = "021-48006",
+					RepresentativeName = "مصطفی نوری",
+					RepresentativeRole = "مدیر عامل",
+					ThemeColor = "#2f2b8f",
+					ContractNumberSuffix = "/ق291",
+					Provider = TagBrokerProvider.Avreen,
+					ProviderProject = "AvaPlus",
+					ProviderDefinitionTemplate = 1,
+					Signatories = [
+						new BrokerSignatory { Name = "مصطفی نوری", Role = "مدیر عامل", Order = 1 },
+						new BrokerSignatory { Name = "حمیدرضا عرب علیدوستی", Role = "رئیس هیئت مدیره", Order = 2 }
+					]
+				}
+			};
+			await db.AddAsync(broker);
+			await db.SaveChangesAsync();
+		}
+
+		(string Code, string Title, TagTerminal LegacyTag, bool RequiresSimCardSerial, int Order)[] defaults = [
+			("ava101", "Ava 101", TagTerminal.Ava101, true, 1),
+			("ava102", "Ava 102", TagTerminal.Ava102, true, 2),
+			("ava103", "Ava 103", TagTerminal.Ava103, true, 3),
+			("ava104", "Ava 104", TagTerminal.Ava104, false, 4),
+			("avaMax", "Ava Max", TagTerminal.AvaMax, true, 5),
+			("smartPeak", "SmartPeak", TagTerminal.SmartPeak, true, 6)
+		];
+
+		HashSet<string> existing = (await db.Set<TerminalBrandEntity>().Select(x => x.Code).ToListAsync()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+		List<TerminalBrandEntity> toAdd = defaults
+			.Where(x => !existing.Contains(x.Code))
+			.Select(x => new TerminalBrandEntity {
+				Id = Guid.CreateVersion7(),
+				CreatedAt = DateTime.UtcNow,
+				Tags = [TagTerminalBrand.Active],
+				CreatorId = Core.App.Users.SystemAdmin.Id,
+				Title = x.Title,
+				Code = x.Code,
+				BrokerId = broker.Id,
+				JsonData = new TerminalBrandJson {
+					RequiresSimCardSerial = x.RequiresSimCardSerial,
+					Order = x.Order,
+					LegacyTag = x.LegacyTag
+				}
+			}).ToList();
+
+		if (toAdd.Count > 0) {
+			await db.Set<TerminalBrandEntity>().AddRangeAsync(toAdd);
+			await db.SaveChangesAsync();
+		}
+
+		List<TerminalBrandEntity> brands = await db.Set<TerminalBrandEntity>().ToListAsync();
+		List<TerminalEntity> terminals = await db.Set<TerminalEntity>().AsTracking().Where(x => x.BrandId == null).ToListAsync();
+
+		foreach (TerminalEntity terminal in terminals) {
+			TerminalBrandEntity? brand = brands.FirstOrDefault(x => x.JsonData.LegacyTag != null && terminal.Tags.Contains(x.JsonData.LegacyTag.Value));
+			if (brand == null) continue;
+			terminal.BrandId = brand.Id;
+			terminal.BrokerId = brand.BrokerId;
+		}
+
+		await db.SaveChangesAsync();
+		return new UResponse();
+	}
 }

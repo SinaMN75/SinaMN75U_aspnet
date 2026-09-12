@@ -11,6 +11,8 @@ public class TerminalCreateParams : BaseCreateParams<TagTerminal> {
 	public string? InsId { get; set; }
 	public string? Agreement { get; set; }
 	public Guid? MerchantId { get; set; }
+	public Guid? BrandId { get; set; }
+	public Guid? BrokerId { get; set; }
 }
 
 public class TerminalUpdateParams : BaseUpdateParams<TagTerminal> {
@@ -21,6 +23,8 @@ public class TerminalUpdateParams : BaseUpdateParams<TagTerminal> {
 	public string? TerminalId { get; set; }
 	public string? InsId { get; set; }
 	public Guid? MerchantId { get; set; }
+	public Guid? BrandId { get; set; }
+	public Guid? BrokerId { get; set; }
 }
 
 public class TerminalCheckAvailabilityParams : BaseParams {
@@ -28,6 +32,7 @@ public class TerminalCheckAvailabilityParams : BaseParams {
 	public string Serial { get; set; } = null!;
 
 	public string? SimCardSerial { get; set; }
+	public Guid? BrandId { get; set; }
 	public TagTerminal Tag { get; set; }
 	public Guid? MerchantId { get; set; }
 }
@@ -36,6 +41,7 @@ public class TerminalAssignParams : BaseParams {
 	public string? Title { get; set; }
 	public string Serial { get; set; } = null!;
 	public string? SimCardSerial { get; set; }
+	public Guid? BrandId { get; set; }
 	public TagTerminal Tag { get; set; }
 	public Guid? MerchantId { get; set; }
 	public bool AcceptedAgreement { get; set; }
@@ -65,6 +71,8 @@ public class TerminalReadParams : BaseReadParams<TagTerminal> {
 	public string? TerminalId { get; set; }
 	public string? InsId { get; set; }
 	public Guid? MerchantId { get; set; }
+	public Guid? BrandId { get; set; }
+	public Guid? BrokerId { get; set; }
 
 	public TerminalSelectorArgs SelectorArgs { get; set; } = new();
 }
