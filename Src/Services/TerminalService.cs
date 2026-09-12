@@ -92,7 +92,7 @@ public class TerminalService(
 		(TerminalEntity? terminal, MerchantEntity? merchant, Usc status, string message) = await ResolveAssignable(p.Serial, p.MerchantId, userData, ct);
 		if (terminal == null || merchant == null) return new UResponse<TerminalAvailabilityResponse?>(null, status, message);
 
-		(byte[]? _, string? path) = GenerateAgreement(merchant.User, merchant, terminal);
+		(byte[]? _, string? path) = await GenerateAgreement(merchant.User, merchant, terminal);
 		if (path == null) return new UResponse<TerminalAvailabilityResponse?>(null, Usc.InternalServerError, ls.Get("generatingTheAgreementFailed"));
 
 		return new UResponse<TerminalAvailabilityResponse?>(new TerminalAvailabilityResponse {
@@ -111,7 +111,7 @@ public class TerminalService(
 		(TerminalEntity? terminal, MerchantEntity? merchant, Usc status, string message) = await ResolveAssignable(p.Serial, p.MerchantId, userData, ct);
 		if (terminal == null || merchant == null) return new UResponse<TerminalResponse?>(null, status, message);
 
-		(byte[]? agreement, string? path) = GenerateAgreement(merchant.User, merchant, terminal);
+		(byte[]? agreement, string? path) = await GenerateAgreement(merchant.User, merchant, terminal);
 		if (agreement == null || path == null) return new UResponse<TerminalResponse?>(null, Usc.InternalServerError, ls.Get("generatingTheAgreementFailed"));
 
 		terminal.JsonData.Detail1 = p.Title ?? "";
@@ -630,26 +630,36 @@ public class TerminalService(
 	}
 
 	private static string? AgreementUrl(string? path) => path == null ? null : $"{Core.App.BaseUrl}/Media/{path}";
-
-	private (byte[]? Pdf, string? Path) GenerateAgreement(UserEntity user, MerchantEntity merchant, TerminalEntity terminal) {
+	
+	private async Task<(byte[]? Pdf, string? Path)> GenerateAgreement(UserEntity user, MerchantEntity merchant, TerminalEntity terminal) {
 		try {
-			byte[] bytes = AgreementPdf.Build(new Dictionary<string, string> {
-				{ "day", PersianDateTime.Now.Day.ToString() },
-				{ "month", PersianDateTime.Now.Month.ToString() },
-				{ "number", terminal.Serial },
-				{ "fullName", $"{user.FirstName ?? "---"} {user.LastName ?? "---"}" },
-				{ "nationalCode", user.NationalCode ?? "---" },
-				{ "birthdate", PersianDateTime.FromDateTime(user.Birthdate ?? DateTime.Now).ToString("yyyy-MM-dd") },
-				{ "address", merchant.JsonData.Address ?? "---" },
-				{ "postalCode", merchant.ZipCode },
-				{ "phoneNumber", user.PhoneNumber ?? "---" },
-				{ "landLine", user.LandLine ?? "---" },
-				{ "fatherName", user.JsonData.FatherName ?? "---" }
-			}, ReadSignature(user));
+			string htmlPath = Path.Combine(AppContext.BaseDirectory, "Templates", "atmAgreement.html");
 
-			return (bytes, UserFileStore.SaveBytes(env.WebRootPath, user.Id, $"terminalAgreement_{terminal.Id}.pdf", bytes));
+			HtmlTemplate template = await HtmlTemplate.FromFile(htmlPath);
+
+			template
+				.Set("day", PersianDateTime.Now.Day.ToString())
+				.Set("month", PersianDateTime.Now.Month.ToString())
+				.Set("number", terminal.Serial)
+				.Set("fullName", $"{user.FirstName ?? "---"} {user.LastName ?? "---"}")
+				.Set("nationalCode", user.NationalCode ?? "---")
+				.Set("birthdate", PersianDateTime.FromDateTime(user.Birthdate ?? DateTime.Now).ToString("yyyy-MM-dd"))
+				.Set("address", merchant.JsonData.Address ?? "---")
+				.Set("postalCode", merchant.ZipCode)
+				.Set("phoneNumber", user.PhoneNumber ?? "---")
+				.Set("landLine", user.LandLine ?? "---")
+				.Set("fatherName", user.JsonData.FatherName ?? "---");
+
+			byte[]? signature = ReadSignature(user);
+
+			if (signature != null) template.SetImageBytes("signature", signature);
+			else template.Clear("signature");
+
+			byte[] pdf = await template.RenderPdfAsync();
+			string path = UserFileStore.SaveBytes(env.WebRootPath, user.Id, $"terminalAgreement_{terminal.Id}.pdf", pdf);
+			return (pdf, path);
 		}
-		catch (Exception ex) {
+		catch (Exception ex) { 
 			ULog.Error(ex, $"Generating the agreement failed for terminal {terminal.Id}");
 			return (null, null);
 		}

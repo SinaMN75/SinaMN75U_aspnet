@@ -83,6 +83,8 @@ public sealed class SimCardSelectorArgs : BaseSelectorArgs {
 
 public sealed class TerminalSelectorArgs : BaseSelectorArgs {
 	public MerchantSelectorArgs? Merchant { get; set; }
+	public TerminalBrokerSelectorArgs? TerminalBroker { get; set; }
+	public TerminalBrandSelectorArgs? TerminalBrand { get; set; }
 	public bool Agreement { get; set; }
 }
 
@@ -674,8 +676,12 @@ public static class Projections {
 			Imei = x.Imei,
 			TerminalId = x.TerminalId,
 			CreatedAt = x.CreatedAt,
+			TerminalBrandId = x.TerminalBrokerId,
+			TerminalBrokerId = x.TerminalBrandId,
 			Agreement = args.Agreement && x.JsonData.AgreementPath != null ? Core.App.BaseUrl + "/Media/" + x.JsonData.AgreementPath : null,
 			Merchant = x.Merchant == null ? null : (args.Merchant != null ? MerchantSelector(args.Merchant) : m => null!).Invoke(x.Merchant),
+			TerminalBrand = x.TerminalBrand == null ? null : (args.TerminalBrand != null ? TerminalBrandSelector(args.TerminalBrand) : m => null!).Invoke(x.TerminalBrand),
+			TerminalBroker = x.TerminalBroker == null ? null : (args.TerminalBroker != null ? TerminalBrokerSelector(args.TerminalBroker) : m => null!).Invoke(x.TerminalBroker),
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
 		};
 		return selector.Expand();
