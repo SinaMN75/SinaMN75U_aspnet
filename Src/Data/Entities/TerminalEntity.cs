@@ -64,8 +64,15 @@ public sealed class TerminalBrokerEntity : BaseEntity<TagTerminalBroker, Termina
 }
 
 public sealed class TerminalBrokerJson : BaseJson {
+	public string? RegistrationNumber { get; set; }
+	public string? NationalCode { get; set; }
+	public string? Representative { get; set; }
+	public string? Address { get; set; }
+	public string? PostalCode { get; set; }
+	public string? PhoneNumber { get; set; }
 	public string? Sign1Base64 { get; set; }
 	public string? Sign1Owner { get; set; }
 	public string? Sign2Base64 { get; set; }
 	public string? Sign2Owner { get; set; }
+	public string? LogoBase64 { get; set; }
 }

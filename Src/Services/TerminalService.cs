@@ -8,7 +8,7 @@ public interface ITerminalService {
 	Task<UResponse<TerminalImportResponse?>> Import(TerminalImportParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<TerminalResponse>?>> Read(TerminalReadParams p, CancellationToken ct);
 	Task<UResponse> Update(TerminalUpdateParams p, CancellationToken ct);
-	Task<UResponse<TerminalAvailabilityResponse?>> CheckAvailability(TerminalCheckAvailabilityParams p, CancellationToken ct);
+	Task<UResponse<TerminalAvailabilityResponse?>> CheckAvailability(TerminalAssignParams p, CancellationToken ct);
 	Task<UResponse<TerminalResponse?>> Assign(TerminalAssignParams p, CancellationToken ct);
 	Task<UResponse<TerminalResponse?>> Approve(IdParams p, CancellationToken ct);
 	Task<UResponse> Reject(TerminalRejectParams p, CancellationToken ct);
@@ -84,12 +84,12 @@ public class TerminalService(
 		return new UResponse();
 	}
 
-	public async Task<UResponse<TerminalAvailabilityResponse?>> CheckAvailability(TerminalCheckAvailabilityParams p, CancellationToken ct) {
+	public async Task<UResponse<TerminalAvailabilityResponse?>> CheckAvailability(TerminalAssignParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<TerminalAvailabilityResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<TerminalAvailabilityResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
-		(TerminalEntity? terminal, MerchantEntity? merchant, Usc status, string message) = await ResolveAssignable(p.Serial, p.MerchantId, userData, ct);
+		(TerminalEntity? terminal, MerchantEntity? merchant, Usc status, string message) = await ResolveAssignable(userData, p, ct);
 		if (terminal == null || merchant == null) return new UResponse<TerminalAvailabilityResponse?>(null, status, message);
 
 		(byte[]? _, string? path) = await GenerateAgreement(merchant.User, merchant, terminal);
@@ -108,7 +108,7 @@ public class TerminalService(
 		if (userData.IsExpired) return new UResponse<TerminalResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		if (!p.AcceptedAgreement) return new UResponse<TerminalResponse?>(null, Usc.BadRequest, ls.Get("youHaveToAcceptTheAgreementToContinue"));
 
-		(TerminalEntity? terminal, MerchantEntity? merchant, Usc status, string message) = await ResolveAssignable(p.Serial, p.MerchantId, userData, ct);
+		(TerminalEntity? terminal, MerchantEntity? merchant, Usc status, string message) = await ResolveAssignable(userData, p, ct);
 		if (terminal == null || merchant == null) return new UResponse<TerminalResponse?>(null, status, message);
 
 		(byte[]? agreement, string? path) = await GenerateAgreement(merchant.User, merchant, terminal);
@@ -240,15 +240,14 @@ public class TerminalService(
 	}
 
 	private async Task<(TerminalEntity? Terminal, MerchantEntity? Merchant, Usc Status, string Message)> ResolveAssignable(
-		string serial,
-		Guid? merchantId,
 		JwtClaimData userData,
+		TerminalAssignParams p,
 		CancellationToken ct
-	) {
-		TerminalEntity? terminal = await db.Set<TerminalEntity>().AsTracking().FirstOrDefaultAsync(x => x.Serial == serial, ct);
+		) {
+		TerminalEntity? terminal = await db.Set<TerminalEntity>().AsTracking().FirstOrDefaultAsync(x => x.Serial == p.Serial && x.TerminalBrandId == p.TerminalBrandId && x.TerminalBrokerId == p.TerminalBrokerId, ct);
 		if (terminal == null) return (null, null, Usc.NotFound, ls.Get("terminalNotFoundCheckYourDetails"));
 
-		MerchantEntity? merchant = await db.Set<MerchantEntity>().AsTracking().Include(x => x.User).FirstOrDefaultAsync(x => x.Id == merchantId, ct);
+		MerchantEntity? merchant = await db.Set<MerchantEntity>().AsTracking().Include(x => x.User).FirstOrDefaultAsync(x => x.Id == p.MerchantId, ct);
 		if (merchant == null) return (null, null, Usc.NotFound, ls.Get("merchantNotFound"));
 		if (!userData.IsAdmin && merchant.UserId != userData.Id) return (null, null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
@@ -525,10 +524,24 @@ public class TerminalService(
 		TerminalBrokerEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new TerminalBrokerJson(),
+			JsonData = new TerminalBrokerJson {
+				Detail1 = p.Detail1,
+				Detail2 = p.Detail2,
+				RegistrationNumber = p.RegistrationNumber,
+				NationalCode = p.NationalCode,
+				Representative = p.Representative,
+				Address = p.Address,
+				PostalCode = p.PostalCode,
+				PhoneNumber = p.PhoneNumber,
+				Sign1Base64 = p.Sign1Base64,
+				Sign1Owner = p.Sign1Owner,
+				Sign2Base64 = p.Sign2Base64,
+				Sign2Owner = p.Sign2Owner,
+				LogoBase64 = p.LogoBase64
+			},
 			Tags = p.Tags,
 			CreatorId = p.CreatorId ?? userData.Id,
-			Title = p.Title
+			Title = p.Title,
 		};
 
 		await db.Set<TerminalBrokerEntity>().AddAsync(e, ct);
@@ -553,8 +566,18 @@ public class TerminalService(
 
 		TerminalBrokerEntity? e = await db.Set<TerminalBrokerEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("terminalNotFound"));
-
-		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
+		
+		if (p.RegistrationNumber.IsNotNullOrEmpty()) e.JsonData.RegistrationNumber = p.RegistrationNumber;
+		if (p.NationalCode.IsNotNullOrEmpty()) e.JsonData.NationalCode = p.NationalCode;
+		if (p.Representative.IsNotNullOrEmpty()) e.JsonData.Representative = p.Representative;
+		if (p.Address.IsNotNullOrEmpty()) e.JsonData.Address = p.Address;
+		if (p.PostalCode.IsNotNullOrEmpty()) e.JsonData.PostalCode = p.PostalCode;
+		if (p.PhoneNumber.IsNotNullOrEmpty()) e.JsonData.PhoneNumber = p.PhoneNumber;
+		if (p.Sign1Base64.IsNotNullOrEmpty()) e.JsonData.Sign1Base64 = p.Sign1Base64;
+		if (p.Sign1Owner.IsNotNullOrEmpty()) e.JsonData.Sign1Owner = p.Sign1Owner;
+		if (p.Sign2Base64.IsNotNullOrEmpty()) e.JsonData.Sign2Base64 = p.Sign2Base64;
+		if (p.Sign2Owner.IsNotNullOrEmpty()) e.JsonData.Sign2Owner = p.Sign2Owner;
+		if (p.LogoBase64.IsNotNullOrEmpty()) e.JsonData.LogoBase64 = p.LogoBase64;
 
 		e.ApplyUpdateParam<TerminalBrokerEntity, TagTerminalBroker, TerminalBrokerJson>(p);
 

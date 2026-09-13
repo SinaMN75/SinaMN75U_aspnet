@@ -3,7 +3,7 @@ namespace SinaMN75U.Data.Params;
 public class TerminalCreateParams : BaseCreateParams<TagTerminal> {
 	[UValidationRequired("serialRequired")]
 	public string Serial { get; set; } = null!;
-	
+
 	public required Guid TerminalBrandId { get; set; }
 	public required Guid TerminalBrokerId { get; set; }
 
@@ -25,22 +25,11 @@ public class TerminalUpdateParams : BaseUpdateParams<TagTerminal> {
 	public Guid? MerchantId { get; set; }
 }
 
-public class TerminalCheckAvailabilityParams : BaseParams {
-	[UValidationRequired("serialRequired")]
-	public string Serial { get; set; } = null!;
-
-	public string? SimCardSerial { get; set; }
-	
-	public Guid? MerchantId { get; set; }
-	public Guid? TerminalBrandId { get; set; }
-	public Guid? TerminalBrokerId { get; set; }
-}
-
 public class TerminalAssignParams : BaseParams {
 	public string? Title { get; set; }
 	public string Serial { get; set; } = null!;
 	public string? SimCardSerial { get; set; }
-	public Guid? MerchantId { get; set; }
+	public Guid MerchantId { get; set; }
 	public bool AcceptedAgreement { get; set; }
 	public Guid? TerminalBrandId { get; set; }
 	public Guid? TerminalBrokerId { get; set; }
@@ -96,11 +85,39 @@ public class TerminalBrandUpdateParams : BaseUpdateParams<TagTerminalBrand> {
 public class TerminalBrokerCreateParams : BaseCreateParams<TagTerminalBroker> {
 	[UValidationRequired("TitleRequired")]
 	public string Title { get; set; } = null!;
-	
-	public string? Sign1Base64 { get; set; }
-	public string? Sign1Owner { get; set; }
-	public string? Sign2Base64 { get; set; }
-	public string? Sign2Owner { get; set; }
+
+	[UValidationRequired("TitleRequired")]
+	public string RegistrationNumber { get; set; } = null!;
+
+	[UValidationRequired("TitleRequired")]
+	public string NationalCode { get; set; } = null!;
+
+	[UValidationRequired("TitleRequired")]
+	public string Representative { get; set; } = null!;
+
+	[UValidationRequired("TitleRequired")]
+	public string Address { get; set; } = null!;
+
+	[UValidationRequired("TitleRequired")]
+	public string PostalCode { get; set; } = null!;
+
+	[UValidationRequired("TitleRequired")]
+	public string PhoneNumber { get; set; } = null!;
+
+	[UValidationRequired("TitleRequired")]
+	public string Sign1Base64 { get; set; } = null!;
+
+	[UValidationRequired("TitleRequired")]
+	public string Sign1Owner { get; set; } = null!;
+
+	[UValidationRequired("TitleRequired")]
+	public string Sign2Base64 { get; set; } = null!;
+
+	[UValidationRequired("TitleRequired")]
+	public string Sign2Owner { get; set; } = null!;
+
+	[UValidationRequired("TitleRequired")]
+	public string LogoBase64 { get; set; } = null!;
 }
 
 public class TerminalBrokerReadParams : BaseReadParams<TagTerminalBroker> {
@@ -111,9 +128,16 @@ public class TerminalBrokerReadParams : BaseReadParams<TagTerminalBroker> {
 
 public class TerminalBrokerUpdateParams : BaseUpdateParams<TagTerminalBroker> {
 	public string? Title { get; set; }
-	
+
+	public string? RegistrationNumber { get; set; }
+	public string? NationalCode { get; set; }
+	public string? Representative { get; set; }
+	public string? Address { get; set; }
+	public string? PostalCode { get; set; }
+	public string? PhoneNumber { get; set; }
 	public string? Sign1Base64 { get; set; }
 	public string? Sign1Owner { get; set; }
 	public string? Sign2Base64 { get; set; }
 	public string? Sign2Owner { get; set; }
+	public string? LogoBase64 { get; set; }
 }

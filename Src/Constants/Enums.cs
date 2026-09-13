@@ -347,9 +347,12 @@ public enum TagWalletTxn {
 }
 
 public enum TagTerminal {
-	PendingApproval = 101,
-	Approved = 102,
-	Rejected = 103,
+	Atm = 101,
+	WallCashless = 102,
+	DeskCashless = 103,
+	PendingApproval = 201,
+	Approved = 202,
+	Rejected = 203,
 }
 
 public enum TagTerminalBrand {
