@@ -111,10 +111,10 @@ public class TerminalBrokerCreateParams : BaseCreateParams<TagTerminalBroker> {
 	public string Sign1Owner { get; set; } = null!;
 
 	[UValidationRequired("TitleRequired")]
-	public string Sign2Base64 { get; set; } = null!;
+	public string? Sign2Base64 { get; set; }
 
 	[UValidationRequired("TitleRequired")]
-	public string Sign2Owner { get; set; } = null!;
+	public string? Sign2Owner { get; set; }
 
 	[UValidationRequired("TitleRequired")]
 	public string LogoBase64 { get; set; } = null!;
