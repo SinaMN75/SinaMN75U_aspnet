@@ -356,7 +356,8 @@ public enum TagTerminal {
 }
 
 public enum TagTerminalBrand {
-	Test = 999
+	SimCard = 101,
+	Wifi = 102
 }
 
 public enum TagTerminalBroker {
@@ -376,14 +377,6 @@ public enum TagIpgPayment {
 	Bill = 102,
 	TopUp = 103,
 	MultiplexedSale = 104
-}
-
-public enum TagMpg {
-	Pn = 101
-}
-
-public enum TagPayment {
-	ChargeWallet = 101
 }
 
 public enum TagInquiryHistory {
