@@ -128,12 +128,12 @@ public static class UCountries {
 	}
 
 	public static UCountry? CountryByCode(string code) {
-		string cc = CodeType(code) == UCodeType.Country ? code : CountryCodeOf(code);
+		string? cc = CodeType(code) == UCodeType.Country ? code : CountryCodeOf(code);
 		return cc == null ? null : Countries.FirstOrDefault(c => c.Code == cc);
 	}
 
 	public static UProvince? ProvinceByCode(string code) {
-		string pc = CodeType(code) == UCodeType.Province ? code : ProvinceCodeOf(code);
+		string? pc = CodeType(code) == UCodeType.Province ? code : ProvinceCodeOf(code);
 		UCountry? c = CountryByCode(code);
 		if (pc == null || c == null) return null;
 		return c.Provinces.FirstOrDefault(p => p.Code == pc);

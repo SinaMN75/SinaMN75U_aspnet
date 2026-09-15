@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("Parking")]
-public sealed class ParkingEntity : BaseEntity<TagParking, BaseJson> {
+public sealed class ParkingEntity : BaseEntity<TagParking, ParkingJson> {
 	[Required]
 	[MaxLength(100)]
 	public required string Title { get; set; }
@@ -21,8 +21,10 @@ public sealed class ParkingEntity : BaseEntity<TagParking, BaseJson> {
 	public decimal DailyPrice { get; set; }
 }
 
+public class ParkingJson : BaseJson;
+
 [Table("ParkingReport")]
-public sealed class ParkingReportEntity : BaseEntity<TagParkingReport, BaseJson> {
+public sealed class ParkingReportEntity : BaseEntity<TagParkingReport, ParkingReportJson> {
 	public required DateTime StartDate { get; set; }
 	public DateTime? EndDate { get; set; }
 
@@ -54,10 +56,10 @@ public sealed class ParkingReportEntity : BaseEntity<TagParkingReport, BaseJson>
 	public Guid? ShiftId { get; set; }
 }
 
-/// One row per parking + vehicle type. Carries both the hourly tariff and the subscription prices,
-/// mirroring the two tabs of the tariff screen.
+public class ParkingReportJson : BaseJson;
+
 [Table("ParkingTariff")]
-public sealed class ParkingTariffEntity : BaseEntity<TagParkingTariff, BaseJson> {
+public sealed class ParkingTariffEntity : BaseEntity<TagParkingTariff, ParkingTariffJson> {
 	public required Guid ParkingId { get; set; }
 	public ParkingEntity Parking { get; set; } = null!;
 
@@ -84,8 +86,10 @@ public sealed class ParkingTariffEntity : BaseEntity<TagParkingTariff, BaseJson>
 	public int SubscriptionExpiryReminderDays { get; set; } = 5;
 }
 
+public class ParkingTariffJson : BaseJson;
+
 [Table("ParkingSubscription")]
-public sealed class ParkingSubscriptionEntity : BaseEntity<TagParkingSubscription, BaseJson> {
+public sealed class ParkingSubscriptionEntity : BaseEntity<TagParkingSubscription, ParkingSubscriptionJson> {
 	public required Guid ParkingId { get; set; }
 	public ParkingEntity Parking { get; set; } = null!;
 
@@ -105,8 +109,10 @@ public sealed class ParkingSubscriptionEntity : BaseEntity<TagParkingSubscriptio
 	public bool OfficeHoursOnly { get; set; }
 }
 
+public class ParkingSubscriptionJson : BaseJson;
+
 [Table("ParkingPlateFlag")]
-public sealed class ParkingPlateFlagEntity : BaseEntity<TagParkingPlateFlag, BaseJson> {
+public sealed class ParkingPlateFlagEntity : BaseEntity<TagParkingPlateFlag, ParkingPlateFlagJson> {
 	public required Guid ParkingId { get; set; }
 	public ParkingEntity Parking { get; set; } = null!;
 
@@ -125,8 +131,10 @@ public sealed class ParkingPlateFlagEntity : BaseEntity<TagParkingPlateFlag, Bas
 	public string? SpotNumber { get; set; }
 }
 
+public class ParkingPlateFlagJson : BaseJson;
+
 [Table("ParkingStaff")]
-public sealed class ParkingStaffEntity : BaseEntity<TagParkingStaff, BaseJson> {
+public sealed class ParkingStaffEntity : BaseEntity<TagParkingStaff, ParkingStaffJson> {
 	public required Guid ParkingId { get; set; }
 	public ParkingEntity Parking { get; set; } = null!;
 
@@ -139,8 +147,10 @@ public sealed class ParkingStaffEntity : BaseEntity<TagParkingStaff, BaseJson> {
 	public int MaxDiscountPercent { get; set; }
 }
 
+public class ParkingStaffJson : BaseJson;
+
 [Table("ParkingShift")]
-public sealed class ParkingShiftEntity : BaseEntity<TagParkingShift, BaseJson> {
+public sealed class ParkingShiftEntity : BaseEntity<TagParkingShift, ParkingShiftJson> {
 	public required Guid ParkingId { get; set; }
 	public ParkingEntity Parking { get; set; } = null!;
 
@@ -154,3 +164,5 @@ public sealed class ParkingShiftEntity : BaseEntity<TagParkingShift, BaseJson> {
 	public int EntryCount { get; set; }
 	public int ExitCount { get; set; }
 }
+
+public class ParkingShiftJson : BaseJson;

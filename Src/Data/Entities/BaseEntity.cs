@@ -26,8 +26,12 @@ public class BaseEntity<T, TJ> : BaseEntity<T> where T : Enum where TJ : BaseJso
 	public required TJ JsonData { get; set; }
 }
 
-
 public class BaseJson {
 	public string Detail1 { get; set; } = "";
 	public string Detail2 { get; set; } = "";
+}
+
+public class KeyValue {
+	public required string Key { get; set; }
+	public required string Value { get; set; }
 }

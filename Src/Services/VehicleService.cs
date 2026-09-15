@@ -20,7 +20,7 @@ public class VehicleService(
 		VehicleEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
+			JsonData = new VehicleJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
 			Tags = p.Tags,
 			LicencePlate = p.LicencePlate,
 			Brand = p.Brand,
@@ -55,7 +55,7 @@ public class VehicleService(
 		if (p.Brand.IsNotNull()) e.Brand = p.Brand;
 		if (p.Color.IsNotNull()) e.Color = p.Color;
 		
-		db.Set<VehicleEntity>().Update(e.ApplyUpdateParam<VehicleEntity,TagVehicle, BaseJson>(p));
+		db.Set<VehicleEntity>().Update(e.ApplyUpdateParam<VehicleEntity,TagVehicle, VehicleJson>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}

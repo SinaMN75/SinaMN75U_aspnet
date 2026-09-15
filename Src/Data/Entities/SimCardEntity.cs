@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Entities;
 
 [Table("SimCards")]
-public sealed class SimCardEntity : BaseEntity<TagSimOperator, BaseJson> {
+public sealed class SimCardEntity : BaseEntity<TagSimOperator, SimCardJson> {
 	[Required, MaxLength(20)]
 	public required string Number { get; set; }
 
@@ -11,3 +11,5 @@ public sealed class SimCardEntity : BaseEntity<TagSimOperator, BaseJson> {
 	public required Guid UserId { get; set; }
 	public UserEntity User { get; set; } = null!;
 }
+
+public class SimCardJson : BaseJson;

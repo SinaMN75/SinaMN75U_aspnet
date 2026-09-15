@@ -66,7 +66,7 @@ public class IpgService(
 			Amount = amount,
 			TrackingNumber = trackingNumber,
 			Tags = TxnTags(kind, p.Tag),
-			JsonData = new BaseJson { Detail1 = Detail(kind, p, bill) }
+			JsonData = new TxnJson { Detail1 = Detail(kind, p, bill) }
 		}, new IpgAdditionalData {
 			TrackingNumber = trackingNumber,
 			Tag = p.Tag,
@@ -135,7 +135,7 @@ public class IpgService(
 				Id = Guid.CreateVersion7(),
 				CreatorId = Core.App.Users.SystemAdmin.Id,
 				CreatedAt = DateTime.UtcNow,
-				JsonData = new BaseJson { Detail2 = "شارژ کیف پول" },
+				JsonData = new WalletTxnJson { Detail2 = "شارژ کیف پول" },
 				Tags = [TagWalletTxn.Charge],
 				SenderId = Core.App.Users.AvaPlus.Id,
 				ReceiverId = txn.UserId,

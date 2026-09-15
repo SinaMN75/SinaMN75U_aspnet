@@ -61,7 +61,7 @@ public class MediaService(
 			DormBedId = p.DormBedId,
 			BlogId = p.BlogId,
 			Tags = tags,
-			JsonData = new BaseJson {
+			JsonData = new MediaJson {
 				Detail1 = p.Title ?? "",
 				Detail2 = p.Description ?? ""
 			}

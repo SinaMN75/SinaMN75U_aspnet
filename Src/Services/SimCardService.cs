@@ -21,7 +21,7 @@ public class SimCardService(
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJson { Detail2 = p.Detail2, Detail1 = p.Detail1 },
+			JsonData = new SimCardJson { Detail2 = p.Detail2, Detail1 = p.Detail1 },
 			Tags = p.Tags,
 			UserId = p.CreatorId ?? userData.Id,
 			Number = p.Number,
@@ -49,7 +49,7 @@ public class SimCardService(
 		if (p.Number != null) e.Number = p.Number;
 		if (p.Serial != null) e.Serial = p.Serial;
 
-		db.Set<SimCardEntity>().Update(e.ApplyUpdateParam<SimCardEntity,TagSimOperator, BaseJson>(p));
+		db.Set<SimCardEntity>().Update(e.ApplyUpdateParam<SimCardEntity,TagSimOperator, SimCardJson>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}

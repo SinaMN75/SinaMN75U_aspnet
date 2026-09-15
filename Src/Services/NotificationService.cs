@@ -20,7 +20,7 @@ public class NotificationService(
 		NotificationEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
+			JsonData = new NotificationJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
 			Tags = p.Tags,
 			CreatorId = p.CreatorId ?? userData.Id,
 			UserId = p.UserId
@@ -47,7 +47,7 @@ public class NotificationService(
 		NotificationEntity? e = await db.Set<NotificationEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("notificationNotFound"));
 
-		db.Update(e.ApplyUpdateParam<NotificationEntity,TagNotification, BaseJson>(p));
+		db.Update(e.ApplyUpdateParam<NotificationEntity,TagNotification, NotificationJson>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}

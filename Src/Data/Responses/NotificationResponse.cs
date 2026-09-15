@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Responses;
 
-public sealed class NotificationResponse : BaseResponse<TagNotification, BaseJson> {
+public sealed class NotificationResponse : BaseResponse<TagNotification, NotificationJson> {
 	public string? ZipCode { get; set; }
 	
 	public UserResponse? User { get; set; }

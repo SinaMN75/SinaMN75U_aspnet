@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Responses;
 
-public sealed class ParkingResponse : BaseResponse<TagParking, BaseJson> {
+public sealed class ParkingResponse : BaseResponse<TagParking, ParkingJson> {
 	public required string Title { get; set; }
 	public string? Address { get; set; }
 	public string? PhoneNumber { get; set; }
@@ -10,7 +10,7 @@ public sealed class ParkingResponse : BaseResponse<TagParking, BaseJson> {
 	public decimal DailyPrice { get; set; }
 }
 
-public sealed class ParkingReportResponse : BaseResponse<TagParkingReport, BaseJson> {
+public sealed class ParkingReportResponse : BaseResponse<TagParkingReport, ParkingReportJson> {
 	public required DateTime StartDate { get; set; }
 	public DateTime? EndDate { get; set; }
 	public decimal? Amount { get; set; }
@@ -31,7 +31,7 @@ public sealed class ParkingReportResponse : BaseResponse<TagParkingReport, BaseJ
 	public Guid? SubscriptionId { get; set; }
 	public Guid? ShiftId { get; set; }
 }
-public sealed class ParkingTariffResponse : BaseResponse<TagParkingTariff, BaseJson> {
+public sealed class ParkingTariffResponse : BaseResponse<TagParkingTariff, ParkingTariffJson> {
 	public required Guid ParkingId { get; set; }
 	public required TagVehicle VehicleType { get; set; }
 
@@ -56,7 +56,7 @@ public sealed class ParkingTariffResponse : BaseResponse<TagParkingTariff, BaseJ
 	public int SubscriptionExpiryReminderDays { get; set; }
 }
 
-public sealed class ParkingSubscriptionResponse : BaseResponse<TagParkingSubscription, BaseJson> {
+public sealed class ParkingSubscriptionResponse : BaseResponse<TagParkingSubscription, ParkingSubscriptionJson> {
 	public required Guid ParkingId { get; set; }
 	public required Guid VehicleId { get; set; }
 	public VehicleResponse? Vehicle { get; set; }
@@ -74,7 +74,7 @@ public sealed class ParkingSubscriptionResponse : BaseResponse<TagParkingSubscri
 	public int RemainingDays { get; set; }
 }
 
-public sealed class ParkingPlateFlagResponse : BaseResponse<TagParkingPlateFlag, BaseJson> {
+public sealed class ParkingPlateFlagResponse : BaseResponse<TagParkingPlateFlag, ParkingPlateFlagJson> {
 	public required Guid ParkingId { get; set; }
 	public required string LicencePlate { get; set; }
 	public string? Reason { get; set; }
@@ -84,7 +84,7 @@ public sealed class ParkingPlateFlagResponse : BaseResponse<TagParkingPlateFlag,
 	public string? SpotNumber { get; set; }
 }
 
-public sealed class ParkingStaffResponse : BaseResponse<TagParkingStaff, BaseJson> {
+public sealed class ParkingStaffResponse : BaseResponse<TagParkingStaff, ParkingStaffJson> {
 	public required Guid ParkingId { get; set; }
 	public required Guid UserId { get; set; }
 	public UserResponse? User { get; set; }
@@ -92,7 +92,7 @@ public sealed class ParkingStaffResponse : BaseResponse<TagParkingStaff, BaseJso
 	public int MaxDiscountPercent { get; set; }
 }
 
-public sealed class ParkingShiftResponse : BaseResponse<TagParkingShift, BaseJson> {
+public sealed class ParkingShiftResponse : BaseResponse<TagParkingShift, ParkingShiftJson> {
 	public required Guid ParkingId { get; set; }
 	public required DateTime StartDate { get; set; }
 	public DateTime? EndDate { get; set; }

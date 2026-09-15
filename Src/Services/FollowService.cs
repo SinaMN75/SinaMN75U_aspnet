@@ -54,7 +54,7 @@ public class FollowService(
 			UserId = p.UserId,
 			ProductId = p.ProductId,
 			CategoryId = p.CategoryId,
-			JsonData = new BaseJson(),
+			JsonData = new FollowJson(),
 			Tags = [TagFollow.User]
 		};
 

@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Responses;
 
-public sealed class SimCardResponse : BaseResponse<TagSimOperator, BaseJson> {
+public sealed class SimCardResponse : BaseResponse<TagSimOperator, SimCardJson> {
 	public required string Number { get; set; }
 	public string? Serial { get; set; }
 

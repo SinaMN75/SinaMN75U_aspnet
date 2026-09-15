@@ -99,7 +99,7 @@ public sealed class DormRoomResponse : BaseResponse<TagDormRoom, DormRoomJson> {
 	public IEnumerable<MediaResponse>? Media { get; set; }
 }
 
-public sealed class DormBedResponse : BaseResponse<TagDormBed, BaseJson> {
+public sealed class DormBedResponse : BaseResponse<TagDormBed, DormBedJson> {
 	public required string Title { get; set; }
 	public required decimal Deposit { get; set; }
 	public required decimal MonthlyRent { get; set; }
@@ -111,7 +111,7 @@ public sealed class DormBedResponse : BaseResponse<TagDormBed, BaseJson> {
 	public ICollection<DormBedContractResponse>? Contracts { get; set; }
 }
 
-public sealed class DormBedContractResponse : BaseResponse<TagDormBedContract, BaseJson> {
+public sealed class DormBedContractResponse : BaseResponse<TagDormBedContract, DormBedContractJson> {
 	public required DateTime StartDate { get; set; }
 	public required DateTime EndDate { get; set; }
 	public required decimal Deposit { get; set; }

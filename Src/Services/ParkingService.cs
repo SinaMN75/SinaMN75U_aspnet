@@ -60,7 +60,7 @@ public class ParkingService(
 		ParkingEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
+			JsonData = new ParkingJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
 			Tags = p.Tags,
 			Title = p.Title,
 			Address = p.Address,
@@ -106,7 +106,7 @@ public class ParkingService(
 		if (p.EntrancePrice.IsNotNull()) e.EntrancePrice = p.EntrancePrice.Value;
 		if (p.HourlyPrice.IsNotNull()) e.HourlyPrice = p.HourlyPrice.Value;
 		if (p.DailyPrice.IsNotNull()) e.DailyPrice = p.DailyPrice.Value;
-		db.Set<ParkingEntity>().Update(e.ApplyUpdateParam<ParkingEntity,TagParking, BaseJson>(p));
+		db.Set<ParkingEntity>().Update(e.ApplyUpdateParam<ParkingEntity,TagParking, ParkingJson>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
@@ -197,7 +197,7 @@ public class ParkingService(
 			EntityEntry<VehicleEntity> vEntity = await db.Set<VehicleEntity>().AddAsync(new VehicleEntity {
 				Id = Guid.CreateVersion7(),
 				CreatedAt = DateTime.UtcNow,
-				JsonData = new BaseJson(),
+				JsonData = new VehicleJson(),
 				Tags = [TagVehicle.Car],
 				LicencePlate = p.NumberPlate,
 				CreatorId = p.CreatorId ?? userData.Id
@@ -212,7 +212,7 @@ public class ParkingService(
 			CreatorId = p.CreatorId ?? userData.Id,
 			VehicleId = vehicle.Id,
 			ParkingId = p.ParkingId,
-			JsonData = new BaseJson(),
+			JsonData = new ParkingReportJson(),
 			Tags = [TagParkingReport.Test]
 		};
 		await db.Set<ParkingReportEntity>().AddAsync(e, ct);
@@ -246,7 +246,7 @@ public class ParkingService(
 		if (p.StartDate != null) e.StartDate = p.StartDate.Value;
 		if (p.EndDate != null) e.EndDate = p.EndDate;
 		if (p.Amount.IsNotNull()) e.Amount = p.Amount.Value;
-		db.Set<ParkingReportEntity>().Update(e.ApplyUpdateParam<ParkingReportEntity,TagParkingReport, BaseJson>(p));
+		db.Set<ParkingReportEntity>().Update(e.ApplyUpdateParam<ParkingReportEntity,TagParkingReport, ParkingReportJson>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
@@ -280,7 +280,7 @@ public class ParkingService(
 		ParkingTariffEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
+			JsonData = new ParkingTariffJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
 			Tags = p.Tags,
 			CreatorId = p.CreatorId ?? userData.Id,
 			ParkingId = p.ParkingId,
@@ -343,7 +343,7 @@ public class ParkingService(
 		if (p.SubscriptionOfficeHoursOnly.IsNotNull()) e.SubscriptionOfficeHoursOnly = p.SubscriptionOfficeHoursOnly.Value;
 		if (p.SubscriptionExpiryReminderDays.IsNotNull()) e.SubscriptionExpiryReminderDays = p.SubscriptionExpiryReminderDays.Value;
 
-		db.Set<ParkingTariffEntity>().Update(e.ApplyUpdateParam<ParkingTariffEntity, TagParkingTariff, BaseJson>(p));
+		db.Set<ParkingTariffEntity>().Update(e.ApplyUpdateParam<ParkingTariffEntity, TagParkingTariff, ParkingTariffJson>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
@@ -370,7 +370,7 @@ public class ParkingService(
 		ParkingSubscriptionEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
+			JsonData = new ParkingSubscriptionJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
 			Tags = p.Tags,
 			CreatorId = p.CreatorId ?? userData.Id,
 			ParkingId = p.ParkingId,
@@ -401,7 +401,7 @@ public class ParkingService(
 		EntityEntry<VehicleEntity> entry = await db.Set<VehicleEntity>().AddAsync(new VehicleEntity {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJson(),
+			JsonData = new VehicleJson(),
 			Tags = [vehicleType],
 			LicencePlate = licencePlate,
 			CreatorId = creatorId
@@ -443,7 +443,7 @@ public class ParkingService(
 		if (p.DailyEntryLimit.IsNotNull()) e.DailyEntryLimit = p.DailyEntryLimit.Value;
 		if (p.OfficeHoursOnly.IsNotNull()) e.OfficeHoursOnly = p.OfficeHoursOnly.Value;
 
-		db.Set<ParkingSubscriptionEntity>().Update(e.ApplyUpdateParam<ParkingSubscriptionEntity, TagParkingSubscription, BaseJson>(p));
+		db.Set<ParkingSubscriptionEntity>().Update(e.ApplyUpdateParam<ParkingSubscriptionEntity, TagParkingSubscription, ParkingSubscriptionJson>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
@@ -465,7 +465,7 @@ public class ParkingService(
 		ParkingPlateFlagEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
+			JsonData = new ParkingPlateFlagJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
 			Tags = p.Tags,
 			CreatorId = p.CreatorId ?? userData.Id,
 			ParkingId = p.ParkingId,
@@ -501,7 +501,7 @@ public class ParkingService(
 		if (p.ToDate.IsNotNull()) e.ToDate = p.ToDate;
 		if (p.SpotNumber.IsNotNull()) e.SpotNumber = p.SpotNumber;
 
-		db.Set<ParkingPlateFlagEntity>().Update(e.ApplyUpdateParam<ParkingPlateFlagEntity, TagParkingPlateFlag, BaseJson>(p));
+		db.Set<ParkingPlateFlagEntity>().Update(e.ApplyUpdateParam<ParkingPlateFlagEntity, TagParkingPlateFlag, ParkingPlateFlagJson>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
@@ -544,7 +544,7 @@ public class ParkingService(
 		ParkingStaffEntity staff = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = now,
-			JsonData = new BaseJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
+			JsonData = new ParkingStaffJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
 			Tags = p.Tags,
 			CreatorId = userData.Id,
 			ParkingId = p.ParkingId,
@@ -586,7 +586,7 @@ public class ParkingService(
 			}
 		}
 
-		db.Set<ParkingStaffEntity>().Update(e.ApplyUpdateParam<ParkingStaffEntity, TagParkingStaff, BaseJson>(p));
+		db.Set<ParkingStaffEntity>().Update(e.ApplyUpdateParam<ParkingStaffEntity, TagParkingStaff, ParkingStaffJson>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
@@ -618,7 +618,7 @@ public class ParkingService(
 			open = new ParkingShiftEntity {
 				Id = Guid.CreateVersion7(),
 				CreatedAt = DateTime.UtcNow,
-				JsonData = new BaseJson(),
+				JsonData = new ParkingShiftJson(),
 				Tags = [TagParkingShift.Open],
 				CreatorId = userData.Id,
 				ParkingId = p.ParkingId,
@@ -732,7 +732,7 @@ public class ParkingService(
 		ParkingReportEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = now,
-			JsonData = new BaseJson(),
+			JsonData = new ParkingReportJson(),
 			Tags = p.IsOffline ? [TagParkingReport.Open, TagParkingReport.Offline] : [TagParkingReport.Open],
 			CreatorId = userData.Id,
 			ParkingId = p.ParkingId,

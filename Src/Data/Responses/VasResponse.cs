@@ -1,6 +1,6 @@
 namespace SinaMN75U.Data.Responses;
 
-public sealed class VasResponse : BaseResponse<TagVas, BaseJson> {
+public sealed class VasResponse : BaseResponse<TagVas, VasJson> {
 	public required decimal Amount { get; set; }
 	public required string AuthorizeCode { get; set; }
 	public string? BillId { get; set; }

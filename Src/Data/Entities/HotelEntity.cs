@@ -195,7 +195,7 @@ public sealed class DormRoomJson : BaseJson {
 }
 
 [Table("DormBeds")]
-public class DormBedEntity : BaseEntity<TagDormBed, BaseJson> {
+public class DormBedEntity : BaseEntity<TagDormBed, DormBedJson> {
 	[Required, MaxLength(4)]
 	public required string Title { get; set; }
 
@@ -212,8 +212,10 @@ public class DormBedEntity : BaseEntity<TagDormBed, BaseJson> {
 	public ICollection<DormBedContractEntity> Contracts { get; set; } = [];
 }
 
+public class DormBedJson : BaseJson;
+
 [Table("Contracts")]
-public sealed class DormBedContractEntity : BaseEntity<TagDormBedContract, BaseJson> {
+public sealed class DormBedContractEntity : BaseEntity<TagDormBedContract, DormBedContractJson> {
 	public required DateTime StartDate { get; set; }
 	public required DateTime EndDate { get; set; }
 
@@ -231,6 +233,8 @@ public sealed class DormBedContractEntity : BaseEntity<TagDormBedContract, BaseJ
 
 	public ICollection<DormBedInvoiceEntity> Invoices { get; set; } = [];
 }
+
+public class DormBedContractJson : BaseJson;
 
 [Table("Invoices")]
 public sealed class DormBedInvoiceEntity : BaseEntity<TagDormBedInvoice, DormBedInvoiceJson> {

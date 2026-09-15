@@ -8,7 +8,7 @@ namespace SinaMN75U.Data.Entities;
 [Microsoft.EntityFrameworkCore.Index(nameof(ProductId), Name = "IX_Media_ProductId")]
 [Microsoft.EntityFrameworkCore.Index(nameof(TicketId), Name = "IX_Media_TicketId")]
 [Microsoft.EntityFrameworkCore.Index(nameof(BlogId), Name = "IX_Media_BlogId")]
-public sealed class MediaEntity : BaseEntity<TagMedia, BaseJson> {
+public sealed class MediaEntity : BaseEntity<TagMedia, MediaJson> {
 	[Required]
 	[MaxLength(200)]
 	public required string Path { get; set; }
@@ -49,3 +49,5 @@ public sealed class MediaEntity : BaseEntity<TagMedia, BaseJson> {
 	public Guid? BlogId { get; set; }
 	public BlogEntity? Blog { get; set; }
 }
+
+public class MediaJson : BaseJson;

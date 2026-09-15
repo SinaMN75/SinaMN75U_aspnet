@@ -524,7 +524,7 @@ public class HotelService(
 			CreatorId = userId,
 			UserId = userId,
 			Tags = [tag, TagNotification.Unread],
-			JsonData = new BaseJson { Detail1 = title, Detail2 = body }
+			JsonData = new NotificationJson { Detail1 = title, Detail2 = body }
 		}, ct);
 
 	public async Task<UResponse<IEnumerable<HotelRoomAvailabilityResponse>?>> ReadHotelRoomAvailability(HotelRoomAvailabilityParams p, CancellationToken ct) {
@@ -1075,7 +1075,7 @@ public class HotelService(
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJson(),
+			JsonData = new DormBedJson(),
 			Tags = p.Tags,
 			Title = p.Title,
 			Deposit = p.Deposit,
@@ -1134,7 +1134,7 @@ public class HotelService(
 		if (p.MonthlyRent.HasValue) e.MonthlyRent = p.MonthlyRent.Value;
 		if (p.RoomId.HasValue) e.RoomId = p.RoomId.Value;
 
-		e.ApplyUpdateParam<DormBedEntity, TagDormBed, BaseJson>(p);
+		e.ApplyUpdateParam<DormBedEntity, TagDormBed, DormBedJson>(p);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();
@@ -1180,7 +1180,7 @@ public class HotelService(
 			UserId = user.Id,
 			CreatorId = p.CreatorId ?? userData.Id,
 			BedId = bed.Id,
-			JsonData = new BaseJson(),
+			JsonData = new DormBedContractJson(),
 			Tags = p.Tags
 		};
 		await db.Set<DormBedContractEntity>().AddAsync(e, ct);
@@ -1330,7 +1330,7 @@ public class HotelService(
 		if (p.StartDate.HasValue) e.StartDate = p.StartDate.Value;
 		if (p.EndDate.HasValue) e.EndDate = p.EndDate.Value;
 
-		e.ApplyUpdateParam<DormBedContractEntity, TagDormBedContract, BaseJson>(p);
+		e.ApplyUpdateParam<DormBedContractEntity, TagDormBedContract, DormBedContractJson>(p);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();

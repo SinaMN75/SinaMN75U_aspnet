@@ -21,7 +21,7 @@ public class BankAccountService(
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new BaseJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
+			JsonData = new BankAccountJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
 			Tags = p.Tags,
 			CardNumber = p.CardNumber,
 			AccountNumber = p.AccountNumber,
@@ -67,7 +67,7 @@ public class BankAccountService(
 		if (p.OwnerName.IsNotNullOrEmpty()) e.OwnerName = p.OwnerName;
 		if (p.BankName.IsNotNullOrEmpty()) e.BankName = p.BankName;
 
-		db.Set<BankAccountEntity>().Update(e.ApplyUpdateParam<BankAccountEntity, TagBankAccount, BaseJson>(p));
+		db.Set<BankAccountEntity>().Update(e.ApplyUpdateParam<BankAccountEntity, TagBankAccount, BankAccountJson>(p));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}

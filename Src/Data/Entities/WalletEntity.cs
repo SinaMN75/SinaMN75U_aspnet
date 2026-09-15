@@ -10,7 +10,7 @@ public sealed class WalletJson : BaseJson {
 }
 
 [Table("WalletTxns")]
-public sealed class WalletTxnEntity : BaseEntity<TagWalletTxn, BaseJson> {
+public sealed class WalletTxnEntity : BaseEntity<TagWalletTxn, WalletTxnJson> {
 	public UserEntity Sender { get; set; } = null!;
 	public required Guid SenderId { get; set; }
 
@@ -18,4 +18,8 @@ public sealed class WalletTxnEntity : BaseEntity<TagWalletTxn, BaseJson> {
 	public required Guid ReceiverId { get; set; }
 
 	public required decimal Amount { get; set; }
+}
+
+public class WalletTxnJson : BaseJson {
+	public List<KeyValue> KeyValues { get; set; } = [];
 }
