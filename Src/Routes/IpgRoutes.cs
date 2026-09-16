@@ -32,7 +32,7 @@ public static class IpgRoutes {
 			data.Status = status;
 			data.Rrn = rrn.ToString();
 			data.Token = token;
-			
+
 			return Results.Redirect($"{Core.App.BaseUrl}/api/Verify?additionalData={data.ToJson().ToBase58()}");
 
 			string Field(string key) => form.TryGetValue(key, out StringValues v) && v.ToString() is { Length: > 0 } f ? f : ctx.Request.Query[key].ToString();
@@ -135,7 +135,7 @@ public static class IpgRoutes {
 				      <script>
 				          (function() {
 				              try {
-				                  window.parent.postMessage({ source: 'u_ipg', '*');
+				                  window.parent.postMessage({ source: 'u_ipg', additionalDxata: {{additionalData}} } '*');
 				              } catch (e) {}
 				          })();
 				      </script>
