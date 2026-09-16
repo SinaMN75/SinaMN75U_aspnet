@@ -136,3 +136,10 @@ public class UChargeAmounts {
 		}
 	];
 }
+
+public static class ULocalizedConstants {
+	public const string PhoneNumber = "phoneNumber";
+	public const string Pin = "pin";
+	public const string SimOperator = "simOperator";
+	public const string Amount = "amount";
+}

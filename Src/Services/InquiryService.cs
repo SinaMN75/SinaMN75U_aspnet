@@ -64,8 +64,12 @@ public class InquiryService(
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
-			// Charge the wallet before the billable third-party call so any external hit is always paid for
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.ZipCodeToAddressDetail, Token = p.Token }, ct);
+			await walletService.Purchase(
+				new WalletPurchaseParams {
+					Tag = TagWalletTxn.ZipCodeToAddressDetail, 
+					Token = p.Token,
+					KeyValues = []
+				}, ct);
 
 			HttpResponseMessage? response = await SendZipCodeToAddressDetail(p, tokenResponse.AccessToken, ct);
 

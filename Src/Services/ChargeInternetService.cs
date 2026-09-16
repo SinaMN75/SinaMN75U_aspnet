@@ -69,7 +69,15 @@ public class ChargeInternetService(
 		if (approveResponse is null || approveResponse.Code != MobtakeranOk)
 			return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, approveResponse?.Message ?? ls.Get("thirdPartyServiceError"));
 
-		await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.ChargeSimPin, Amount = payableAmount.Value }, ct);
+		await walletService.Purchase(new WalletPurchaseParams {
+			ApiKey = p.ApiKey,
+			Token = p.Token,
+			Tag = TagWalletTxn.ChargeSimPin,
+			Amount = payableAmount.Value,
+			KeyValues = [
+				new KeyValue {Key = ULocalizedConstants.Pin, Value = approveResponse.Pin ?? "---"}
+			]
+		}, ct);
 		await vs.Create(new VasCreateParams {
 			Id = Guid.CreateVersion7(),
 			ApiKey = p.ApiKey,
@@ -140,7 +148,16 @@ public class ChargeInternetService(
 		if (approveResponse is null || approveResponse.Code != MobtakeranOk)
 			return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, approveResponse?.Message ?? ls.Get("thirdPartyServiceError"));
 
-		await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.ChargeSimTopup, Amount = payableAmount.Value }, ct);
+		await walletService.Purchase(new WalletPurchaseParams {
+			ApiKey = p.ApiKey, 
+			Token = p.Token,
+			Tag = TagWalletTxn.ChargeSimTopup,
+			Amount = payableAmount.Value,
+			KeyValues = [
+				new KeyValue {Key = ULocalizedConstants.PhoneNumber, Value = p.PhoneNumber},
+				new KeyValue {Key = ULocalizedConstants.PhoneNumber, Value = p.OperatorId},
+			]
+		}, ct);
 
 		return new UResponse<ChargeInternetReserveResponse?>(new ChargeInternetReserveResponse {
 			Reserve = data.GetIntOrNull("reserve"),
@@ -198,7 +215,11 @@ public class ChargeInternetService(
 			ApiKey = p.ApiKey,
 			Token = p.Token,
 			Tag = TagWalletTxn.InternetSim,
-			Amount = p.Amount
+			Amount = p.Amount,
+			KeyValues = [
+				new KeyValue {Key = ULocalizedConstants.PhoneNumber, Value = p.Subscriber},
+				new KeyValue {Key = ULocalizedConstants.PhoneNumber, Value = p.OperatorId},
+			]
 		}, ct);
 
 		return new UResponse<ChargeInternetReserveResponse?>(new ChargeInternetReserveResponse {
@@ -443,15 +464,12 @@ public class ChargeInternetService(
 	}
 }
 
-// Test-mode implementation (appsettings "Test": true): behaves exactly like prod for the wallet — checks balance,
-// debits the wallet and records the transaction/VAS — but never calls the external Mobtakeran API.
 public class ChargeInternetServiceFake(
 	ILocalizationService ls,
 	ITokenService ts,
 	IWalletService walletService,
 	IVasService vs
 ) : IChargeInternetService {
-	// Optional hooks so tests can force specific failure paths; the happy path performs the real wallet logic.
 	public bool SimulateUnauthorized { get; set; }
 	public bool SimulateLowBalance { get; set; }
 	public bool SimulateUpstreamFailure { get; set; }
@@ -467,9 +485,17 @@ public class ChargeInternetServiceFake(
 		if (SimulateLowBalance || !await walletService.HasEnoughBalance(userData.Id, payableAmount.Value, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 		if (SimulateUpstreamFailure) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 
-		// No operator call; simulate success then run the SAME wallet + VAS logic as prod.
 		string reference = Math.Abs(Guid.NewGuid().GetHashCode()).ToString();
-		await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.ChargeSimPin, Amount = payableAmount.Value }, ct);
+		await walletService.Purchase(
+			new WalletPurchaseParams {
+				ApiKey = p.ApiKey,
+				Token = p.Token,
+				Tag = TagWalletTxn.ChargeSimPin,
+				Amount = payableAmount.Value,
+				KeyValues = [
+					new KeyValue {Key = ULocalizedConstants.Pin, Value = "---"}
+				]
+			}, ct);
 		await vs.Create(new VasCreateParams {
 			Id = Guid.CreateVersion7(),
 			ApiKey = p.ApiKey,
@@ -492,7 +518,17 @@ public class ChargeInternetServiceFake(
 		if (SimulateLowBalance || !await walletService.HasEnoughBalance(userData.Id, payableAmount.Value, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 		if (SimulateUpstreamFailure) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 
-		await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.ChargeSimTopup, Amount = payableAmount.Value }, ct);
+		await walletService.Purchase(
+			new WalletPurchaseParams {
+				ApiKey = p.ApiKey, 
+				Token = p.Token, 
+				Tag = TagWalletTxn.ChargeSimTopup,
+				Amount = payableAmount.Value,
+				KeyValues = [
+					new KeyValue {Key = ULocalizedConstants.PhoneNumber, Value = p.PhoneNumber},
+					new KeyValue {Key = ULocalizedConstants.PhoneNumber, Value = p.OperatorId},
+				]
+			}, ct);
 		return new UResponse<ChargeInternetReserveResponse?>(BuildReserve(payableAmount.Value, null, Math.Abs(Guid.NewGuid().GetHashCode()).ToString()));
 	}
 
@@ -503,7 +539,17 @@ public class ChargeInternetServiceFake(
 		if (SimulateLowBalance || !await walletService.HasEnoughBalance(userData.Id, p.Amount, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 		if (SimulateUpstreamFailure) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 
-		await walletService.Purchase(new WalletPurchaseParams { ApiKey = p.ApiKey, Token = p.Token, Tag = TagWalletTxn.InternetSim, Amount = p.Amount }, ct);
+		await walletService.Purchase(
+			new WalletPurchaseParams {
+				ApiKey = p.ApiKey,
+				Token = p.Token,
+				Tag = TagWalletTxn.InternetSim, 
+				Amount = p.Amount,
+				KeyValues = [
+					new KeyValue {Key = ULocalizedConstants.PhoneNumber, Value = p.Subscriber},
+					new KeyValue {Key = ULocalizedConstants.PhoneNumber, Value = p.OperatorId},
+				]
+			}, ct);
 		return new UResponse<ChargeInternetReserveResponse?>(BuildReserve(p.Amount, null, Math.Abs(Guid.NewGuid().GetHashCode()).ToString()));
 	}
 

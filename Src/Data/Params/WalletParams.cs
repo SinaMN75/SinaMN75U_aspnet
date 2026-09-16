@@ -3,6 +3,7 @@ namespace SinaMN75U.Data.Params;
 public sealed class WalletPurchaseParams : BaseParams {
 	public required TagWalletTxn Tag { get; set; }
 	public decimal? Amount { get; set; }
+	public ICollection<KeyValue> KeyValues { get; set; } = [];
 }
 
 public sealed class WalletChargeParams : BaseParams {
