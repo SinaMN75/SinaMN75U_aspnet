@@ -3,7 +3,7 @@ namespace SinaMN75U.Services;
 public interface IIpgService {
 	Task<UResponse<IpgPayResponse?>> Pay(IpgPayParams p, CancellationToken ct);
 	Task<UResponse<IpgVerifyResponse?>> Status(IpgStatusParams p, CancellationToken ct);
-	Task<string?> Verify(string token, short status, string? cardNumberMasked, long? rrn, string additionalData, CancellationToken ct);
+	Task<string?> Verify(IpgAdditionalData additionalData, CancellationToken ct);
 }
 
 public class IpgService(
@@ -37,7 +37,7 @@ public class IpgService(
 					return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("billInformationCouldNotBeParsed"));
 				}
 
-				if (bill == null || !bill.IsValid) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("theBillIsNotValid"));
+				if (bill is not { IsValid: true }) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("theBillIsNotValid"));
 				if (bill.BillAmount is not > 0) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("theBillAmountIsNotAvailable"));
 				amount = bill.BillAmount.Value;
 				break;
@@ -54,6 +54,10 @@ public class IpgService(
 				if (accounts.Sum(x => x.Amount) != amount) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("theSumOfMultiplexedAmountsMustBeEqualToTheTotalAmount"));
 				break;
 			}
+			case TagIpgPayment.NormalSale:
+				break;
+			default:
+				throw new Exception();
 		}
 
 		if (amount <= 0) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("amountRequired"));
@@ -93,38 +97,24 @@ public class IpgService(
 		});
 	}
 
-	public async Task<string?> Verify(string token, short status, string? cardNumberMasked, long? rrn, string additionalData, CancellationToken ct) {
-		if (additionalData.IsNullOrEmpty()) return null;
-
-		IpgAdditionalData? data;
-		try {
-			data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58());
-		}
-		catch {
-			return null;
-		}
-
-		if (data == null) return null;
-
-		TxnEntity? txn = await db.Set<TxnEntity>().AsTracking().FirstOrDefaultAsync(x => x.TrackingNumber == data.TrackingNumber, ct);
+	public async Task<string?> Verify(IpgAdditionalData additionalData, CancellationToken ct) {
+		TxnEntity? txn = await db.Set<TxnEntity>().AsTracking().FirstOrDefaultAsync(x => x.TrackingNumber == additionalData.TrackingNumber, ct);
 		if (txn == null) return null;
 
 		if (txn.Tags.Contains(TagTxn.Paid)) return txn.TrackingNumber;
 
-		if (status != 0) {
+		if (additionalData.Status != 0) {
 			await MarkFailed(txn, ct);
 			return txn.TrackingNumber;
 		}
 
-		if (txn.JsonData.Detail2.IsNullOrEmpty() || txn.JsonData.Detail2 != token) return txn.TrackingNumber;
+		if (txn.JsonData.Detail2.IsNullOrEmpty() || txn.JsonData.Detail2 != additionalData.Token) return txn.TrackingNumber;
 
-		TagIpgPayment kind = data.Kind == TagIpgPayment.NormalSale && data.BillId.IsNotNullOrEmpty() ? TagIpgPayment.Bill : data.Kind;
+		TagIpgPayment kind = additionalData.Kind == TagIpgPayment.NormalSale && additionalData.BillId.IsNotNullOrEmpty() ? TagIpgPayment.Bill : additionalData.Kind;
 
 		try {
-			if (Provider.RequiresConfirm(kind) && !await Confirm(token, ct)) return txn.TrackingNumber;
-
-			txn.JsonData.Detail1 = $"Card:{cardNumberMasked}";
-			txn.JsonData.Detail2 = $"RRN:{rrn}";
+			if (Provider.RequiresConfirm(kind) && !await Confirm(additionalData.Token, ct)) return txn.TrackingNumber;
+			
 			txn.Tags = [..txn.Tags.Where(x => x != TagTxn.Pending), TagTxn.Paid];
 			db.Set<TxnEntity>().Update(txn);
 			await db.SaveChangesAsync(ct);
@@ -148,15 +138,15 @@ public class IpgService(
 			db.Update(wallet);
 			await db.SaveChangesAsync(ct);
 
-			if (data is { InvoiceId: not null }) {
-				if (data.Tag == TagTxn.HotelInvoice)
+			if (additionalData is { InvoiceId: not null }) {
+				if (additionalData.Tag == TagTxn.HotelInvoice)
 					await hs.PayHotelInvoiceInternal(new HotelInvoicePayParams {
-						InvoiceId = data.InvoiceId.ToGuid(),
+						InvoiceId = additionalData.InvoiceId.ToGuid(),
 						UserId = txn.UserId
 					}, ct);
 				else
 					await hs.PayDormBedInvoice(new DormBedInvoicePayParams {
-						InvoiceId = data.InvoiceId.ToGuid(),
+						InvoiceId = additionalData.InvoiceId.ToGuid(),
 						UserId = txn.UserId
 					}, ct);
 			}

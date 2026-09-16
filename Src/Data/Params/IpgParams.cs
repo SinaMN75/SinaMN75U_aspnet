@@ -30,4 +30,8 @@ public sealed class IpgAdditionalData {
 	public string? BillId { get; set; }
 	public string? PaymentId { get; set; }
 	public string? ChargeMobileNumber { get; set; }
+
+	public int? Status { get; set; }
+	public string? Rrn { get; set; }
+	public string? Token { get; set; }
 }

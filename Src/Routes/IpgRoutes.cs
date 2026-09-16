@@ -9,11 +9,7 @@ public static class IpgRoutes {
 		r.MapPost("Pay", async (IpgPayParams p, IIpgService s, CancellationToken c) => (await s.Pay(p, c)).ToResult()).Produces<UResponse<IpgPayResponse?>>();
 		r.MapPost("Status", async (IpgStatusParams p, IIpgService s, CancellationToken c) => (await s.Status(p, c)).ToResult()).Produces<UResponse<IpgVerifyResponse?>>();
 
-		r.MapPost("Verify", async (
-			[FromQuery] string additionalData,
-			HttpContext ctx,
-			IIpgService s,
-			CancellationToken c) => {
+		r.MapPost("Verify", async ([FromQuery] string additionalData, HttpContext ctx) => {
 			Dictionary<string, StringValues> form = new();
 			if (ctx.Request.HasFormContentType)
 				try {
@@ -23,15 +19,23 @@ public static class IpgRoutes {
 					ctx.CaptureForApiLog(ex);
 				}
 
-			string Field(string key) => form.TryGetValue(key, out StringValues v) && v.ToString() is { Length: > 0 } f ? f : ctx.Request.Query[key].ToString();
 			string token = Field("Token") is { Length: > 0 } t ? t : Field("token");
 			short status = short.TryParse(Field("status"), out short st) ? st : (short)1;
 			long? rrn = long.TryParse(Field("RRN") is { Length: > 0 } rr ? rr : Field("rrn"), out long result) ? result : null;
-			string? cardNumberMasked = (Field("HashCardNumber") is { Length: > 0 } h ? h : Field("cardNumberMasked")) is { Length: > 0 } cm ? cm : null;
-			string? trackingNumber = await s.Verify(token, status, cardNumberMasked, rrn, additionalData, c);
-			HttpRequest req = ctx.Request;
-			string basePath = req.Path.Value![..(req.Path.Value!.LastIndexOf('/') + 1)];
-			return Results.Redirect($"{req.Scheme}://{req.Host}{basePath}Verify?status={status}&trackingNumber={trackingNumber}");
+			// string? cardNumberMasked = (Field("HashCardNumber") is { Length: > 0 } h ? h : Field("cardNumberMasked")) is { Length: > 0 } cm ? cm : null;
+			// string? trackingNumber = await s.Verify(token, status, cardNumberMasked, rrn, additionalData, c);
+			// HttpRequest req = ctx.Request;
+			// string basePath = req.Path.Value![..(req.Path.Value!.LastIndexOf('/') + 1)];
+			// return Results.Redirect($"{req.Scheme}://{req.Host}{basePath}Verify?status={status}&trackingNumber={trackingNumber}");
+
+			IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58())!;
+			data.Status = status;
+			data.Rrn = rrn.ToString();
+			data.Token = token;
+			
+			return Results.Redirect($"{Core.App.BaseUrl}/api/Verify?additionalData={data.ToJson().ToBase58()}");
+
+			string Field(string key) => form.TryGetValue(key, out StringValues v) && v.ToString() is { Length: > 0 } f ? f : ctx.Request.Query[key].ToString();
 		}).DisableAntiforgery();
 
 		r.MapGet("Gateway", ([FromQuery] string additionalData, [FromQuery] long amount, HttpContext ctx) => {
@@ -96,15 +100,16 @@ public static class IpgRoutes {
 		});
 
 		r.MapGet("Verify", async (
-			[FromQuery] short status,
-			[FromQuery] string? additionalData,
-			[FromQuery] string? token,
-			[FromQuery] long? rrn,
-			[FromQuery] string? cardNumberMasked,
-			[FromQuery] string? trackingNumber,
+			// [FromQuery] short status,
+			[FromQuery] string additionalData,
+			// [FromQuery] string? token,
+			// [FromQuery] long? rrn,
+			// [FromQuery] string? cardNumberMasked,
+			// [FromQuery] string? trackingNumber,
 			IIpgService s,
 			CancellationToken c) => {
-			if (additionalData.IsNotNullOrEmpty()) trackingNumber = await s.Verify(token ?? "", status, cardNumberMasked, rrn, additionalData, c);
+			IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58())!;
+			await s.Verify(data, c);
 			return Results.Content(
 				$$"""
 				  <!DOCTYPE html>
@@ -124,11 +129,16 @@ public static class IpgRoutes {
 				  </head>
 				  <body>
 				      <div class='container'>
-				          <div class='icon {{(status == 0 ? "success" : "error")}}'>{{(status == 0 ? "✅" : "❌")}}</div>
-				          <h2>{{(status == 0 ? "پرداخت موفق" : "پرداخت ناموفق")}}</h2>
+				          <div class='icon {{(data.Status == 0 ? "success" : "error")}}'>{{(data.Status == 0 ? "✅" : "❌")}}</div>
+				          <h2>{{(data.Status == 0 ? "پرداخت موفق" : "پرداخت ناموفق")}}</h2>
 				      </div>
-
-				  
+				      <script>
+				          (function() {
+				              try {
+				                  window.parent.postMessage({ source: 'u_ipg', '*');
+				              } catch (e) {}
+				          })();
+				      </script>
 				  </body>
 				  </html>
 				  """, "text/html");

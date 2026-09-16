@@ -31,13 +31,6 @@ public interface IIpgProvider {
 }
 
 public class PnIpgProvider(IHttpClientService http) : IIpgProvider {
-	private const string NormalSaleUrl = "https://pna.shaparak.ir/mhipg/api/Payment/NormalSale";
-	private const string BillUrl = "https://pna.shaparak.ir/mhipg/api/Payment/bill";
-	private const string TopUpUrl = "https://pna.shaparak.ir/mhipg/api/Payment/topup";
-	private const string MultiplexedSaleUrl = "https://pna.shaparak.ir/mhipg/api/Payment/OnlineMultiplexedSale";
-	private const string ConfirmUrl = "https://pna.shaparak.ir/mhipg/api/Payment/confirm";
-	private const string RedirectUrl = "https://pna.shaparak.ir/mhui/home/index/";
-
 	public TagIpg Tag => TagIpg.Pn;
 
 	public bool SupportsKind(TagIpgPayment kind) => true;
@@ -59,11 +52,11 @@ public class PnIpgProvider(IHttpClientService http) : IIpgProvider {
 		if (Status(e) != 0) return new IpgProviderPayResult { Succeed = false, Message = Text(e, "message") };
 
 		string token = Text(e, "token") ?? "---";
-		return new IpgProviderPayResult { Succeed = true, Token = token, Url = $"{RedirectUrl}{token}" };
+		return new IpgProviderPayResult { Succeed = true, Token = token, Url = $"https://pna.shaparak.ir/mhui/home/index/{token}" };
 	}
 
 	public async Task<bool> Confirm(string token, CancellationToken ct) {
-		HttpResponseMessage? response = await http.Post(ConfirmUrl, new {
+		HttpResponseMessage? response = await http.Post("https://pna.shaparak.ir/mhipg/api/Payment/confirm", new {
 			CorporationPin = Core.App.Ipg.Token,
 			Token = token
 		});
@@ -73,10 +66,11 @@ public class PnIpgProvider(IHttpClientService http) : IIpgProvider {
 	}
 
 	private static string Url(TagIpgPayment kind) => kind switch {
-		TagIpgPayment.Bill => BillUrl,
-		TagIpgPayment.TopUp => TopUpUrl,
-		TagIpgPayment.MultiplexedSale => MultiplexedSaleUrl,
-		_ => NormalSaleUrl
+		TagIpgPayment.Bill => "https://pna.shaparak.ir/mhipg/api/Payment/bill",
+		TagIpgPayment.TopUp => "https://pna.shaparak.ir/mhipg/api/Payment/topup",
+		TagIpgPayment.MultiplexedSale => "https://pna.shaparak.ir/mhipg/api/Payment/OnlineMultiplexedSale",
+		TagIpgPayment.NormalSale => "https://pna.shaparak.ir/mhipg/api/Payment/NormalSale",
+		_ => throw new Exception()
 	};
 
 	private static object Body(IpgProviderPayParams p) => p.Kind switch {
@@ -114,14 +108,15 @@ public class PnIpgProvider(IHttpClientService http) : IIpgProvider {
 				Payid = x.PayId?.ToString()
 			})
 		},
-		_ => new {
+		TagIpgPayment.NormalSale => new {
 			CorporationPin = Core.App.Ipg.Token,
 			Amount = p.Amount,
 			OrderId = p.OrderId,
 			CallBackUrl = p.CallBackUrl,
 			AdditionalData = p.AdditionalData,
 			Originator = p.Originator ?? ""
-		}
+		},
+		_ => throw new Exception()
 	};
 
 	private static string? TopUpType(TagSimOperator? operatorTag) => operatorTag switch {
