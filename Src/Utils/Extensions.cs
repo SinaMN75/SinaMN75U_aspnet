@@ -22,6 +22,9 @@ public static class UExtensions {
 	public static T FromJson<T>(this string json) => JsonSerializer.Deserialize<T>(json, Core.Default)!;
 	public static T Random<T>(this List<T> list) => list[new Random().Next(list.Count)];
 	public static IEnumerable<IdTitleParams> GetValues<T>() where T : Enum => Enum.GetValues(typeof(T)).Cast<int>().Select(item => new IdTitleParams { Title = Enum.GetName(typeof(T), item), Id = item }).ToList();
+	public static int GetNumber<T>(this T value) where T : Enum => Convert.ToInt32(value);
+	public static string GetString<T>(this T value) where T : Enum => value.ToString();
+
 	public static bool ContainsAny<T>(this IEnumerable<T>? source, params T[]? values) {
 		if (source == null || values == null || values.Length == 0) return false;
 		HashSet<T> set = new(source);
@@ -125,13 +128,14 @@ public static class UExtensions {
 	public static Guid FromBase58Guid(this string value) => new(value.FromBase58());
 
 	private static string ToBase58(BigInteger value) {
-        ArgumentOutOfRangeException.ThrowIfNegative(value);
-        if (value == 0) return "1";
+		ArgumentOutOfRangeException.ThrowIfNegative(value);
+		if (value == 0) return "1";
 		StringBuilder result = new();
 		while (value > 0) {
 			value = BigInteger.DivRem(value, 58, out BigInteger remainder);
 			result.Insert(0, "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"[(int)remainder]);
 		}
+
 		return result.ToString();
 	}
 
@@ -143,6 +147,7 @@ public static class UExtensions {
 			if (index < 0) throw new FormatException($"Invalid Base58 character: '{c}'.");
 			result = result * 58 + index;
 		}
+
 		byte[] bytes = result == 0 ? [] : result.ToByteArray(isUnsigned: true, isBigEndian: true);
 		int leadingOnes = value.TakeWhile(c => c == '1').Count();
 		if (leadingOnes == 0) return bytes;

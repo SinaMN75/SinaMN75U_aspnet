@@ -28,7 +28,7 @@ public static class IpgRoutes {
 			// string basePath = req.Path.Value![..(req.Path.Value!.LastIndexOf('/') + 1)];
 			// return Results.Redirect($"{req.Scheme}://{req.Host}{basePath}Verify?status={status}&trackingNumber={trackingNumber}");
 
-			IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58())!;
+			IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58(), Core.Default)!;
 			data.Status = status;
 			data.Rrn = rrn.ToString();
 			data.Token = token;
