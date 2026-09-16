@@ -16,6 +16,9 @@ public class TerminalCreateParams : BaseCreateParams<TagTerminal> {
 }
 
 public class TerminalUpdateParams : BaseUpdateParams<TagTerminal> {
+	public Guid? TerminalBrandId { get; set; }
+	public Guid? TerminalBrokerId { get; set; }
+
 	public string? Serial { get; set; }
 	public string? SimCardNumber { get; set; }
 	public string? SimCardSerial { get; set; }
@@ -86,37 +89,34 @@ public class TerminalBrokerCreateParams : BaseCreateParams<TagTerminalBroker> {
 	[UValidationRequired("TitleRequired")]
 	public string Title { get; set; } = null!;
 
-	[UValidationRequired("TitleRequired")]
+	[UValidationRequired("registrationNumberIsRequired")]
 	public string RegistrationNumber { get; set; } = null!;
 
-	[UValidationRequired("TitleRequired")]
+	[UValidationRequired("nationalCodeIsRequired")]
 	public string NationalCode { get; set; } = null!;
 
-	[UValidationRequired("TitleRequired")]
+	[UValidationRequired("representativeIsRequired")]
 	public string Representative { get; set; } = null!;
 
-	[UValidationRequired("TitleRequired")]
+	[UValidationRequired("addressIsRequired")]
 	public string Address { get; set; } = null!;
 
-	[UValidationRequired("TitleRequired")]
+	[UValidationRequired("postalCodeIsRequired")]
 	public string PostalCode { get; set; } = null!;
 
-	[UValidationRequired("TitleRequired")]
+	[UValidationRequired("phoneNumberIsRequired")]
 	public string PhoneNumber { get; set; } = null!;
 
-	[UValidationRequired("TitleRequired")]
+	[UValidationRequired("signatureIsRequired")]
 	public string Sign1Base64 { get; set; } = null!;
 
-	[UValidationRequired("TitleRequired")]
+	[UValidationRequired("signatureIsRequired")]
 	public string Sign1Owner { get; set; } = null!;
 
-	[UValidationRequired("TitleRequired")]
 	public string? Sign2Base64 { get; set; }
-
-	[UValidationRequired("TitleRequired")]
 	public string? Sign2Owner { get; set; }
 
-	[UValidationRequired("TitleRequired")]
+	[UValidationRequired("logoIsRequired")]
 	public string LogoBase64 { get; set; } = null!;
 }
 

@@ -35,9 +35,7 @@ public sealed class TerminalEntity : BaseEntity<TagTerminal, TerminalJson> {
 	public byte[]? Agreement { get; set; }
 }
 
-public sealed class TerminalJson : BaseJson {
-	public string? AgreementPath { get; set; }
-}
+public sealed class TerminalJson : BaseJson;
 
 [Table("TerminalBrands")]
 public sealed class TerminalBrandEntity : BaseEntity<TagTerminalBrand, TerminalBrandJson> {
