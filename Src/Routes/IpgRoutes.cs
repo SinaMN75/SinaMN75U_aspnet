@@ -33,7 +33,7 @@ public static class IpgRoutes {
 			data.Rrn = rrn.ToString();
 			data.Token = token;
 
-			return Results.Redirect($"{Core.App.BaseUrl}/api/Verify?additionalData={data.ToJson().ToBase58()}");
+			return Results.Redirect($"{Core.App.BaseUrl}/api/Ipg/Verify?additionalData={data.ToJson().ToBase58()}");
 
 			string Field(string key) => form.TryGetValue(key, out StringValues v) && v.ToString() is { Length: > 0 } f ? f : ctx.Request.Query[key].ToString();
 		}).DisableAntiforgery();
