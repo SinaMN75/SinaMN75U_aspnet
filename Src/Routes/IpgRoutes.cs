@@ -108,7 +108,7 @@ public static class IpgRoutes {
 			// [FromQuery] string? trackingNumber,
 			IIpgService s,
 			CancellationToken c) => {
-			IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58())!;
+			IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58(), Core.Default)!;
 			await s.Verify(data, c);
 			return Results.Content(
 				$$"""
