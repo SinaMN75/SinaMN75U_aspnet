@@ -21,6 +21,7 @@ global using Microsoft.EntityFrameworkCore.Metadata;
 global using Microsoft.IdentityModel.Tokens;
 global using System;
 global using System.IO;
+global using System.Numerics;
 global using System.IO.Compression;
 global using System.Text;
 global using System.Text.Json;

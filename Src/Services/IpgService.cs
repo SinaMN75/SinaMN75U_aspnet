@@ -98,7 +98,7 @@ public class IpgService(
 
 		IpgAdditionalData? data;
 		try {
-			data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase64Url());
+			data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58());
 		}
 		catch {
 			return null;
@@ -189,7 +189,7 @@ public class IpgService(
 	};
 
 	private async Task<UResponse<IpgPayResponse?>> Sale(TxnEntity txn, IpgAdditionalData ad, IpgPayParams p, string? originator, CancellationToken ct) {
-		string additionalData = JsonSerializer.SerializeToUtf8Bytes(ad).ToBase64Url();
+		string additionalData = JsonSerializer.SerializeToUtf8Bytes(ad, options: Core.Default).ToBase58();
 
 		await db.Set<TxnEntity>().AddAsync(txn, ct);
 		await db.SaveChangesAsync(ct);

@@ -19,21 +19,11 @@ public static class UExtensions {
 	public static string? ToBase64(this byte[]? s) => s == null ? null : Convert.ToBase64String(s);
 	public static Guid ToGuid(this string s) => Guid.Parse(s);
 	public static byte[]? FromBase64(this string? s) => s == null ? null : Convert.FromBase64String(s);
-	public static string ToBase64Url(this byte[] s) => Convert.ToBase64String(s).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-	public static byte[] FromBase64Url(this string s) {
-		string t = s.Replace('-', '+').Replace('_', '/');
-		return Convert.FromBase64String(t.PadRight(t.Length + (4 - t.Length % 4) % 4, '='));
-	}
-
 	public static T FromJson<T>(this string json) => JsonSerializer.Deserialize<T>(json, Core.Default)!;
-
 	public static T Random<T>(this List<T> list) => list[new Random().Next(list.Count)];
-
 	public static IEnumerable<IdTitleParams> GetValues<T>() where T : Enum => Enum.GetValues(typeof(T)).Cast<int>().Select(item => new IdTitleParams { Title = Enum.GetName(typeof(T), item), Id = item }).ToList();
-
 	public static bool ContainsAny<T>(this IEnumerable<T>? source, params T[]? values) {
 		if (source == null || values == null || values.Length == 0) return false;
-
 		HashSet<T> set = new(source);
 		return values.Any(set.Contains);
 	}
@@ -68,24 +58,24 @@ public static class UExtensions {
 	}
 
 	public static string? GetStringOrNull(this JsonElement element, string propertyName) {
-		if (element.TryGetProperty(propertyName, out JsonElement value) && value.ValueKind == JsonValueKind.String) return value.GetString();
+		if (element.ValueKind == JsonValueKind.Object && element.TryGetProperty(propertyName, out JsonElement value) && value.ValueKind == JsonValueKind.String) return value.GetString();
 		return null;
 	}
 
 	public static decimal? GetDecimalOrNull(this JsonElement element, string propertyName) {
-		if (!element.TryGetProperty(propertyName, out JsonElement value)) return null;
+		if (element.ValueKind != JsonValueKind.Object || !element.TryGetProperty(propertyName, out JsonElement value)) return null;
 		if (value.ValueKind == JsonValueKind.Number && value.TryGetDecimal(out decimal d)) return d;
 		if (value.ValueKind == JsonValueKind.String && decimal.TryParse(value.GetString(), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal ds)) return ds;
 		return null;
 	}
 
 	public static bool? GetBoolOrNull(this JsonElement element, string propertyName) {
-		if (element.TryGetProperty(propertyName, out JsonElement value) && value.ValueKind is JsonValueKind.False or JsonValueKind.True) return value.GetBoolean();
+		if (element.ValueKind == JsonValueKind.Object && element.TryGetProperty(propertyName, out JsonElement value) && value.ValueKind is JsonValueKind.False or JsonValueKind.True) return value.GetBoolean();
 		return null;
 	}
 
 	public static int? GetIntOrNull(this JsonElement element, string propertyName) {
-		if (element.TryGetProperty(propertyName, out JsonElement value))
+		if (element.ValueKind == JsonValueKind.Object && element.TryGetProperty(propertyName, out JsonElement value))
 			if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out int intValue))
 				return intValue;
 		return null;
@@ -100,8 +90,64 @@ public static class UExtensions {
 		context.Items["__U_RequestBody"] = body;
 		return body;
 	}
-	
+
 	public static void CaptureForApiLog(this IHttpContextAccessor accessor, Exception ex) => accessor.HttpContext.CaptureForApiLog(ex);
 
 	public static void CaptureForApiLog(this HttpContext? context, Exception ex) => context?.Items[UConstants.ApiLogExceptionKey] = ex;
+
+	public static string ToBase58(this byte[] bytes) {
+		if (bytes.Length == 0) return string.Empty;
+
+		BigInteger value = new(bytes, isUnsigned: true, isBigEndian: true);
+		StringBuilder result = new();
+		const string alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+		while (value > 0) {
+			value = BigInteger.DivRem(value, 58, out BigInteger remainder);
+			result.Insert(0, alphabet[(int)remainder]);
+		}
+
+		foreach (byte b in bytes) {
+			if (b != 0) break;
+			result.Insert(0, '1');
+		}
+
+		return result.ToString();
+	}
+
+	public static string ToBase58(this string value) => Encoding.UTF8.GetBytes(value).ToBase58();
+	public static string ToBase58(this Guid value) => value.ToByteArray().ToBase58();
+	public static string ToBase58(this int value) => ToBase58((BigInteger)value);
+	public static string ToBase58(this long value) => ToBase58((BigInteger)value);
+	public static string ToBase58(this uint value) => ToBase58((BigInteger)value);
+	public static string ToBase58(this ulong value) => ToBase58((BigInteger)value);
+	public static string FromBase58String(this string value) => Encoding.UTF8.GetString(value.FromBase58());
+	public static Guid FromBase58Guid(this string value) => new(value.FromBase58());
+
+	private static string ToBase58(BigInteger value) {
+        ArgumentOutOfRangeException.ThrowIfNegative(value);
+        if (value == 0) return "1";
+		StringBuilder result = new();
+		while (value > 0) {
+			value = BigInteger.DivRem(value, 58, out BigInteger remainder);
+			result.Insert(0, "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"[(int)remainder]);
+		}
+		return result.ToString();
+	}
+
+	public static byte[] FromBase58(this string value) {
+		if (string.IsNullOrEmpty(value)) return [];
+		BigInteger result = 0;
+		foreach (char c in value) {
+			int index = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz".IndexOf(c);
+			if (index < 0) throw new FormatException($"Invalid Base58 character: '{c}'.");
+			result = result * 58 + index;
+		}
+		byte[] bytes = result == 0 ? [] : result.ToByteArray(isUnsigned: true, isBigEndian: true);
+		int leadingOnes = value.TakeWhile(c => c == '1').Count();
+		if (leadingOnes == 0) return bytes;
+		byte[] resultBytes = new byte[leadingOnes + bytes.Length];
+		bytes.CopyTo(resultBytes, leadingOnes);
+		return resultBytes;
+	}
 }

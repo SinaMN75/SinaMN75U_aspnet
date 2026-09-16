@@ -26,7 +26,7 @@ public static class IpgRoutes {
 			string Field(string key) => form.TryGetValue(key, out StringValues v) && v.ToString() is { Length: > 0 } f ? f : ctx.Request.Query[key].ToString();
 			string token = Field("Token") is { Length: > 0 } t ? t : Field("token");
 			short status = short.TryParse(Field("status"), out short st) ? st : (short)1;
-			long? rrn = long.TryParse(Field("RRN") is { Length: > 0 } rr ? rr : Field("rrn"), out long r) ? r : null;
+			long? rrn = long.TryParse(Field("RRN") is { Length: > 0 } rr ? rr : Field("rrn"), out long result) ? result : null;
 			string? cardNumberMasked = (Field("HashCardNumber") is { Length: > 0 } h ? h : Field("cardNumberMasked")) is { Length: > 0 } cm ? cm : null;
 			string? trackingNumber = await s.Verify(token, status, cardNumberMasked, rrn, additionalData, c);
 			HttpRequest req = ctx.Request;
@@ -41,9 +41,9 @@ public static class IpgRoutes {
 			string successUrl = $"{verify}?additionalData={additionalData}&token=FAKE&status=0&rrn=123456789&cardNumberMasked=627412******2424";
 			string errorUrl = $"{verify}?additionalData={additionalData}&token=FAKE&status=1";
 
-			IpgAdditionalData? data = null;
+			IpgAdditionalData? data;
 			try {
-				data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase64Url());
+				data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58());
 			}
 			catch {
 				data = null;
@@ -56,8 +56,8 @@ public static class IpgRoutes {
 				_ => "پرداخت"
 			};
 			string kindDetail = data?.Kind switch {
-				TagIpgPayment.Bill => $"<div class='badge'>شناسه قبض: {data?.BillId} - شناسه پرداخت: {data?.PaymentId}</div>",
-				TagIpgPayment.TopUp => $"<div class='badge'>شماره شارژ شونده: {data?.ChargeMobileNumber}</div>",
+				TagIpgPayment.Bill => $"<div class='badge'>شناسه قبض: {data.BillId} - شناسه پرداخت: {data.PaymentId}</div>",
+				TagIpgPayment.TopUp => $"<div class='badge'>شماره شارژ شونده: {data.ChargeMobileNumber}</div>",
 				_ => ""
 			};
 			return Results.Content(
@@ -127,13 +127,8 @@ public static class IpgRoutes {
 				          <div class='icon {{(status == 0 ? "success" : "error")}}'>{{(status == 0 ? "✅" : "❌")}}</div>
 				          <h2>{{(status == 0 ? "پرداخت موفق" : "پرداخت ناموفق")}}</h2>
 				      </div>
-				      <script>
-				          (function() {
-				              try {
-				                  window.parent.postMessage({ source: 'u_ipg', trackingNumber: {{JsonSerializer.Serialize(trackingNumber ?? "")}}, status: {{status}} }, '*');
-				              } catch (e) {}
-				          })();
-				      </script>
+
+				  
 				  </body>
 				  </html>
 				  """, "text/html");

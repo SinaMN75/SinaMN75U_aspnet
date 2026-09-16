@@ -2,19 +2,12 @@ namespace SinaMN75U.Data.Params;
 
 public sealed class IpgPayParams : BaseParams {
 	public decimal? Amount { get; set; }
-
 	public TagTxn Tag { get; set; } = TagTxn.ChargeWallet;
-
 	public string? InvoiceId { get; set; }
-
 	public string? BillId { get; set; }
-
 	public string? PaymentId { get; set; }
-
 	public string? ChargeMobileNumber { get; set; }
-
 	public TagSimOperator? TopUpType { get; set; }
-
 	public IEnumerable<IpgMultiplexedAccountParams>? MultiplexedAccounts { get; set; }
 }
 
