@@ -5,10 +5,10 @@ public static partial class AspNetConfig {
 		builder.Services.Configure<KestrelServerOptions>(o => o.AllowSynchronousIO = false);
 		builder.Services.Configure<IISServerOptions>(o => o.AllowSynchronousIO = false);
 		builder.Services.AddCors(options => options.AddDefaultPolicy(policy => {
-			if (builder.Environment.IsDevelopment())
+			// if (builder.Environment.IsDevelopment())
 				policy.AllowAnyOrigin();
-			else
-				policy.WithOrigins(Core.App.Cors.AllowedOrigins);
+			// else
+				// policy.WithOrigins(Core.App.Cors.AllowedOrigins);
 			policy.AllowAnyMethod().AllowAnyHeader();
 		}));
 		builder.Services.AddUSwagger();
