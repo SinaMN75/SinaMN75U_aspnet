@@ -226,7 +226,7 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 		// Contents table is skipped, so this endpoint is safe to call repeatedly.
 		List<ContentEntity> defaults = [
 			BuildContent(
-				tag: TagContent.HeroBanner,
+				tag: TagContent.HomeBanner1,
 				title: "بالش‌ت را بردار، جای خواب اینجاست :)",
 				subTitle: "خواب اینجا، سامانه معرفی و تبلیغات خوابگاه و پانسیون.",
 				description: "اینجا می‌توانید بهترین خوابگاه‌ها و پانسیون‌های نزدیک خودتان را پیدا کنید. اطلاعات تکمیلی هر اقامتگاه، امکانات، بازخورد دانشجویان و شرایط رزرو در اختیار شماست.",
@@ -235,7 +235,7 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 				order: 1
 			),
 			BuildContent(
-				tag: TagContent.AboutSection,
+				tag: TagContent.AboutUs,
 				title: "تعهد ما: آرامش و استاندارد زندگی شماست",
 				subTitle: "چرا خواب‌روم؟",
 				description: "پیدا کردن اقامتگاهی در تهران که همزمان امن، یکپارچه، استاندارد و دارای دسترسی عالی باشد، یک انتخاب دشوار است.",
@@ -247,7 +247,7 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 				]
 			),
 			BuildContent(
-				tag: TagContent.ServicesCarousel,
+				tag: TagContent.Services1,
 				title: "خدمات ما",
 				subTitle: "هر آنچه برای یک اقامت راحت نیاز دارید",
 				order: 3,
@@ -259,14 +259,14 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 				]
 			),
 			BuildContent(
-				tag: TagContent.LatestBlogPosts,
+				tag: TagContent.Blog,
 				title: "آخرین بلاگ",
 				subTitle: "تازه‌ترین مطالب و راهنماها",
 				link: "/blog",
 				order: 4
 			),
 			BuildContent(
-				tag: TagContent.Footer,
+				tag: TagContent.Footer1,
 				title: "خواب‌روم",
 				description: "سامانه معرفی و تبلیغات خوابگاه و پانسیون.",
 				instagram: "https://instagram.com/",
