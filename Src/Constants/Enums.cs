@@ -219,13 +219,24 @@ public enum TagContent {
 	AboutUs = 101,
 	Terms = 102,
 	ContactUs = 103,
+	Qa = 104,
+	Blog = 105,
+	Dorms = 106,
+	Hotels = 107,
+	
 	HomeSlider1 = 201,
 	HomeSlider2 = 202,
-	AboutSection = 301,
-	ServicesCarousel = 302,
-	HeroBanner = 303,
-	Footer = 304,
-	LatestBlogPosts = 305,
+	HomeBanner1 = 203,
+	HomeBanner2 = 204,
+	HomeBanner3 = 205,
+	
+	Menu1 = 401,
+	Menu2 = 402,
+	Footer1 = 403,
+	Footer2 = 404,
+	
+	Services1 = 501,
+	Services2 = 502
 }
 
 public enum TagTicket {

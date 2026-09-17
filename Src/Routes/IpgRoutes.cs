@@ -22,11 +22,6 @@ public static class IpgRoutes {
 			string token = Field("Token") is { Length: > 0 } t ? t : Field("token");
 			short status = short.TryParse(Field("status"), out short st) ? st : (short)1;
 			long? rrn = long.TryParse(Field("RRN") is { Length: > 0 } rr ? rr : Field("rrn"), out long result) ? result : null;
-			// string? cardNumberMasked = (Field("HashCardNumber") is { Length: > 0 } h ? h : Field("cardNumberMasked")) is { Length: > 0 } cm ? cm : null;
-			// string? trackingNumber = await s.Verify(token, status, cardNumberMasked, rrn, additionalData, c);
-			// HttpRequest req = ctx.Request;
-			// string basePath = req.Path.Value![..(req.Path.Value!.LastIndexOf('/') + 1)];
-			// return Results.Redirect($"{req.Scheme}://{req.Host}{basePath}Verify?status={status}&trackingNumber={trackingNumber}");
 
 			IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58(), Core.Default)!;
 			data.Status = status;
@@ -40,26 +35,20 @@ public static class IpgRoutes {
 
 		r.MapGet("Gateway", ([FromQuery] string additionalData, [FromQuery] long amount, HttpContext ctx) => {
 			HttpRequest req = ctx.Request;
-			string basePath = req.Path.Value![..(req.Path.Value!.LastIndexOf('/') + 1)];
-			string verify = $"{req.Scheme}://{req.Host}{basePath}Verify";
-			string successUrl = $"{verify}?additionalData={additionalData}&token=FAKE&status=0&rrn=123456789&cardNumberMasked=627412******2424";
-			string errorUrl = $"{verify}?additionalData={additionalData}&token=FAKE&status=1";
+			string verify = $"{req.Scheme}://{req.Host}{req.Path.Value![..(req.Path.Value!.LastIndexOf('/') + 1)]}Verify";
 
-			IpgAdditionalData? data;
-			try {
-				data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58());
-			}
-			catch {
-				data = null;
-			}
-
-			string kindTitle = data?.Kind switch {
+			IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58())!;
+			data.Status = 0;
+			data.Rrn = "123456789";
+			data.Token = "123456789";
+			
+			string kindTitle = data.Kind switch {
 				TagIpgPayment.Bill => "پرداخت قبض",
 				TagIpgPayment.TopUp => "شارژ مستقیم",
 				TagIpgPayment.MultiplexedSale => "پرداخت تسهیمی",
 				_ => "پرداخت"
 			};
-			string kindDetail = data?.Kind switch {
+			string kindDetail = data.Kind switch {
 				TagIpgPayment.Bill => $"<div class='badge'>شناسه قبض: {data.BillId} - شناسه پرداخت: {data.PaymentId}</div>",
 				TagIpgPayment.TopUp => $"<div class='badge'>شماره شارژ شونده: {data.ChargeMobileNumber}</div>",
 				_ => ""
@@ -90,8 +79,8 @@ public static class IpgRoutes {
 				          <div class='badge'>{{kindTitle}}</div>
 				          {{kindDetail}}
 				          <div class='amount'>{{amount:N0}} ریال</div>
-				          <a class='button pay' href='{{successUrl}}'>پرداخت موفق</a>
-				          <a class='button err' href='{{errorUrl}}'>پرداخت ناموفق / انصراف</a>
+				          <a class='button pay' href='{{$"{verify}?additionalData={data}"}}'>پرداخت موفق</a>
+				          <a class='button err' href='{{$"{verify}?additionalData={data}"}}'>پرداخت ناموفق / انصراف</a>
 				      </div>
 				  </body>
 				  </html>
@@ -99,15 +88,7 @@ public static class IpgRoutes {
 				"text/html");
 		});
 
-		r.MapGet("Verify", async (
-			// [FromQuery] short status,
-			[FromQuery] string additionalData,
-			// [FromQuery] string? token,
-			// [FromQuery] long? rrn,
-			// [FromQuery] string? cardNumberMasked,
-			// [FromQuery] string? trackingNumber,
-			IIpgService s,
-			CancellationToken c) => {
+		r.MapGet("Verify", async ([FromQuery] string additionalData, IIpgService s, CancellationToken c) => {
 			IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58(), Core.Default)!;
 			await s.Verify(data, c);
 			return Results.Content(
