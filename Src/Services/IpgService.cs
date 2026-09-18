@@ -72,6 +72,7 @@ public class IpgService(
 			Tags = TxnTags(kind, p.Tag),
 			JsonData = new TxnJson { Detail1 = Detail(kind, p, bill) }
 		}, new IpgAdditionalData {
+			Amount = amount,
 			TrackingNumber = trackingNumber,
 			Tag = p.Tag,
 			Kind = kind,
@@ -189,7 +190,7 @@ public class IpgService(
 			db.Set<TxnEntity>().Update(txn);
 			await db.SaveChangesAsync(ct);
 			return new UResponse<IpgPayResponse?>(new IpgPayResponse {
-				Url = $"{Core.App.BaseUrl}/api/ipg/Gateway?additionalData={additionalData}&amount={(long)txn.Amount}",
+				Url = $"{Core.App.BaseUrl}/api/ipg/Gateway?additionalData={additionalData}",
 				TrackingNumber = txn.TrackingNumber
 			});
 		}

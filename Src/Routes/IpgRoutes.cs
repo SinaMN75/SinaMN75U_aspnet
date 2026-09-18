@@ -33,9 +33,8 @@ public static class IpgRoutes {
 			string Field(string key) => form.TryGetValue(key, out StringValues v) && v.ToString() is { Length: > 0 } f ? f : ctx.Request.Query[key].ToString();
 		}).DisableAntiforgery();
 
-		r.MapGet("Gateway", ([FromQuery] string additionalData, [FromQuery] long amount, HttpContext ctx) => {
-			HttpRequest req = ctx.Request;
-			string verify = $"{req.Scheme}://{req.Host}{req.Path.Value![..(req.Path.Value!.LastIndexOf('/') + 1)]}Verify";
+		r.MapGet("Gateway", ([FromQuery] string additionalData) => {
+			string verify = $"${Core.App.BaseUrl}/api/Ipg/Verify";
 
 			IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58())!;
 			data.Status = 0;
@@ -78,7 +77,7 @@ public static class IpgRoutes {
 				          <div class='badge'>این یک درگاه تستی است و پولی جابجا نمی‌شود</div>
 				          <div class='badge'>{{kindTitle}}</div>
 				          {{kindDetail}}
-				          <div class='amount'>{{amount:N0}} ریال</div>
+				          <div class='amount'>{{data.Amount:N0}} ریال</div>
 				          <a class='button pay' href='{{$"{verify}?additionalData={data}"}}'>پرداخت موفق</a>
 				          <a class='button err' href='{{$"{verify}?additionalData={data}"}}'>پرداخت ناموفق / انصراف</a>
 				      </div>
