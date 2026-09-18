@@ -2,7 +2,7 @@ namespace SinaMN75U.Data.Responses;
 
 public sealed class IpgPayResponse {
 	public required string Url { get; set; }
-	public required string TrackingNumber { get; set; }
+	public required IpgAdditionalData AdditionalData { get; set; }
 }
 
 public sealed class IpgVerifyResponse {

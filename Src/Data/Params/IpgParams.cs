@@ -19,7 +19,7 @@ public sealed class IpgMultiplexedAccountParams {
 
 public sealed class IpgStatusParams : BaseParams {
 	[UValidationRequired("trackingNumberRequired")]
-	public string TrackingNumber { get; set; } = null!;
+	public IpgAdditionalData AdditionalData { get; set; } = null!;
 }
 
 public sealed class IpgAdditionalData {

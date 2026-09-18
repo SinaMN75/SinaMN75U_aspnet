@@ -40,6 +40,7 @@ public static class IpgRoutes {
 			data.Status = 0;
 			data.Rrn = "123456789";
 			data.Token = "123456789";
+			data.TrackingNumber = "123456789";
 			
 			string kindTitle = data.Kind switch {
 				TagIpgPayment.Bill => "پرداخت قبض",

@@ -88,7 +88,7 @@ public class IpgService(
 		if (userData == null) return new UResponse<IpgVerifyResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<IpgVerifyResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
-		TxnEntity? txn = await db.Set<TxnEntity>().AsNoTracking().FirstOrDefaultAsync(x => x.TrackingNumber == p.TrackingNumber && x.UserId == userData.Id, ct);
+		TxnEntity? txn = await db.Set<TxnEntity>().AsNoTracking().FirstOrDefaultAsync(x => x.TrackingNumber == p.AdditionalData.TrackingNumber && x.UserId == userData.Id, ct);
 		if (txn == null) return new UResponse<IpgVerifyResponse?>(null, Usc.NotFound, ls.Get("notFound"));
 
 		return new UResponse<IpgVerifyResponse?>(new IpgVerifyResponse {
@@ -191,7 +191,7 @@ public class IpgService(
 			await db.SaveChangesAsync(ct);
 			return new UResponse<IpgPayResponse?>(new IpgPayResponse {
 				Url = $"{Core.App.BaseUrl}/api/ipg/Gateway?additionalData={additionalData}",
-				TrackingNumber = txn.TrackingNumber
+				AdditionalData = ad
 			});
 		}
 
@@ -220,7 +220,7 @@ public class IpgService(
 			await db.SaveChangesAsync(ct);
 			return new UResponse<IpgPayResponse?>(new IpgPayResponse {
 				Url = result.Url ?? "",
-				TrackingNumber = txn.TrackingNumber
+				AdditionalData = ad
 			});
 		}
 		catch (Exception ex) {
