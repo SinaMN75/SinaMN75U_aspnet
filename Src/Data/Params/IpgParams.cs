@@ -23,9 +23,9 @@ public sealed class IpgStatusParams : BaseParams {
 }
 
 public sealed class IpgAdditionalData {
-	public required decimal Amount { get; set; }
-	public required string TrackingNumber { get; set; }
-	public required TagTxn Tag { get; set; }
+	public decimal? Amount { get; set; }
+	public string? TrackingNumber { get; set; }
+	public TagTxn? Tag { get; set; }
 	public TagIpgPayment Kind { get; set; } = TagIpgPayment.NormalSale;
 	public string? InvoiceId { get; set; }
 	public string? BillId { get; set; }
