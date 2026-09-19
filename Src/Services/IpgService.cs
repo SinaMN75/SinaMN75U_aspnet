@@ -13,8 +13,6 @@ public class IpgService(
 	IHttpContextAccessor httpContext,
 	IHotelService hs
 ) : IIpgService {
-	public const string TestToken = "FAKE";
-
 	private IIpgProvider Provider => providers.First(x => x.Tag == Core.App.Ipg.Tag);
 
 	public async Task<UResponse<IpgPayResponse?>> Pay(IpgPayParams p, CancellationToken ct) {
@@ -25,7 +23,7 @@ public class IpgService(
 
 		TagIpgPayment kind = Kind(p);
 
-		string trackingNumber = Guid.CreateVersion7().ToString("N");
+		string trackingNumber = Random.Shared.NextInt64(12).ToString();
 		BillInfoResponse? bill = null;
 
 		switch (kind) {
@@ -85,7 +83,7 @@ public class IpgService(
 		await db.SaveChangesAsync(ct);
 
 		if (Core.App.Test) {
-			txn.JsonData.Detail2 = TestToken;
+			txn.JsonData.Detail2 = "FAKE";
 			db.Set<TxnEntity>().Update(txn);
 			await db.SaveChangesAsync(ct);
 			return new UResponse<IpgPayResponse?>(new IpgPayResponse {
@@ -100,7 +98,7 @@ public class IpgService(
 				Amount = (long)txn.Amount,
 				OrderId = Math.Abs(Guid.NewGuid().GetHashCode()),
 				CallBackUrl = $"{Core.App.BaseUrl}/{RouteTags.Ipg}Verify?additionalData={additionalData.ToJson().ToBase58()}",
-				AdditionalData = additionalData,
+				AdditionalData = additionalData.ToJson().ToBase58(),
 				Originator = userData.PhoneNumber,
 				BillId = additionalData.BillId,
 				PaymentId = additionalData.PaymentId,

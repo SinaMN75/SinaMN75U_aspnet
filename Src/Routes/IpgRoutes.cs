@@ -31,10 +31,48 @@ public static class IpgRoutes {
 
 			string Field(string key) => form.TryGetValue(key, out StringValues v) && v.ToString() is { Length: > 0 } f ? f : ctx.Request.Query[key].ToString();
 		}).DisableAntiforgery();
+		
+		r.MapGet("Verify", async ([FromQuery] string additionalData, IIpgService s, CancellationToken c) => {
+			IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58(), Core.Default)!;
+			data.Paid = await s.Verify(data, c);
+			return Results.Content(
+				$$"""
+				  <!DOCTYPE html>
+				  <html lang='fa' dir='rtl'>
+				  <head>
+				      <meta charset='UTF-8'>
+				      <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+				      <title>نتیجه پرداخت</title>
+				      <style>
+				          body { font-family: Tahoma, Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; margin: 0; padding: 20px; }
+				          .container { background: white; border-radius: 20px; padding: 40px; max-width: 450px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+				          .icon { font-size: 72px; margin-bottom: 16px; }
+				          .success { color: #4CAF50; }
+				          .error { color: #f44336; }
+				          h2 { color: #333; }
+				      </style>
+				  </head>
+				  <body>
+				      <div class='container'>
+				          <div class='icon {{(data.Paid ? "success" : "error")}}'>{{(data.Paid ? "✅" : "❌")}}</div>
+				          <h2>{{(data.Paid ? "پرداخت موفق" : "پرداخت ناموفق")}}</h2>
+				      </div>
+				      <script>
+				          (function() {
+				              try {
+				                  window.parent.postMessage({ source: 'u_ipg', additionalData: '{{additionalData}}' }, '*');
+				              } catch (e) {}
+				          })();
+				      </script>
+				  </body>
+				  </html>
+				  """, "text/html"
+			);
+		}).DisableAntiforgery();
 
 		r.MapGet("Gateway", ([FromQuery] string additionalData) => {
 			IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58(), Core.Default)!;
-			data.Token = IpgService.TestToken;
+			data.Token = "FAKE";
 
 			data.Status = 0;
 			data.Rrn = "123456789";
@@ -88,48 +126,6 @@ public static class IpgRoutes {
 				  </html>
 				  """,
 				"text/html");
-		});
-
-		r.MapGet("Verify", async ([FromQuery] string additionalData, IIpgService s, CancellationToken c) => {
-			IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58(), Core.Default)!;
-			data.Paid = await s.Verify(data, c);
-			return Results.Redirect($"{Core.App.BaseUrl}/{RouteTags.Ipg}Result?additionalData={data.ToJson().ToBase58()}");
-		}).DisableAntiforgery();
-
-		r.MapGet("Result", ([FromQuery] string additionalData) => {
-			IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58(), Core.Default)!;
-			return Results.Content(
-				$$"""
-				  <!DOCTYPE html>
-				  <html lang='fa' dir='rtl'>
-				  <head>
-				      <meta charset='UTF-8'>
-				      <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-				      <title>نتیجه پرداخت</title>
-				      <style>
-				          body { font-family: Tahoma, Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; margin: 0; padding: 20px; }
-				          .container { background: white; border-radius: 20px; padding: 40px; max-width: 450px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
-				          .icon { font-size: 72px; margin-bottom: 16px; }
-				          .success { color: #4CAF50; }
-				          .error { color: #f44336; }
-				          h2 { color: #333; }
-				      </style>
-				  </head>
-				  <body>
-				      <div class='container'>
-				          <div class='icon {{(data.Paid ? "success" : "error")}}'>{{(data.Paid ? "✅" : "❌")}}</div>
-				          <h2>{{(data.Paid ? "پرداخت موفق" : "پرداخت ناموفق")}}</h2>
-				      </div>
-				      <script>
-				          (function() {
-				              try {
-				                  window.parent.postMessage({ source: 'u_ipg', additionalData: '{{additionalData}}' }, '*');
-				              } catch (e) {}
-				          })();
-				      </script>
-				  </body>
-				  </html>
-				  """, "text/html");
 		});
 	}
 }

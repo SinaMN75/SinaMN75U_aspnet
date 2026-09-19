@@ -5,7 +5,7 @@ public sealed class IpgProviderPayParams {
 	public required long Amount { get; set; }
 	public required long OrderId { get; set; }
 	public required string CallBackUrl { get; set; }
-	public required IpgAdditionalData AdditionalData { get; set; }
+	public required string AdditionalData { get; set; }
 	public string? Originator { get; set; }
 	public string? BillId { get; set; }
 	public string? PaymentId { get; set; }
@@ -29,8 +29,6 @@ public interface IIpgProvider {
 
 public class PnIpgProvider(IHttpClientService http) : IIpgProvider {
 	public TagIpg Tag => TagIpg.Pn;
-	
-	public bool SupportsTopUpOperator(TagSimOperator operatorTag) => TopUpType(operatorTag) != null;
 	
 	public async Task<IpgProviderPayResult> Pay(IpgProviderPayParams p, CancellationToken ct) {
 		HttpResponseMessage? response = await http.Post(
