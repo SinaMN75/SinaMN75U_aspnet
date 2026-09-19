@@ -294,6 +294,7 @@ public class GoldService(
 			ReceiverId = Core.App.Users.AvaPlus.Id,
 			Amount = reserve,
 			Detail1 = e.Id.ToString(),
+			KeyValues = GoldKeyValues(e, p.GoldAmount ?? (unitPrice > 0 ? p.Amount!.Value / unitPrice : 0), unitPrice),
 			TagWalletTxn = [TagWalletTxn.GoldPurchase]
 		}, ct);
 		if (reserved.Status != Usc.Success) return await FailTxn(e, reserved.Status, reserved.Message, ct);
@@ -426,6 +427,7 @@ public class GoldService(
 				ReceiverId = delta > 0 ? Core.App.Users.AvaPlus.Id : e.UserId,
 				Amount = Math.Abs(delta),
 				Detail1 = e.Id.ToString(),
+				KeyValues = GoldKeyValues(e, dealtGold, e.UnitPrice),
 				TagWalletTxn = [delta > 0 ? TagWalletTxn.GoldPurchase : TagWalletTxn.GoldPurchaseRefund]
 			}, ct);
 
@@ -462,11 +464,18 @@ public class GoldService(
 			ReceiverId = e.UserId,
 			Amount = dealtAmount,
 			Detail1 = e.Id.ToString(),
+			KeyValues = GoldKeyValues(e, dealtGold, e.UnitPrice),
 			TagWalletTxn = [TagWalletTxn.GoldSale]
 		}, ct);
 
 		return await FillTxn(e, order, dealtGold, dealtAmount, ct);
 	}
+
+	private static List<KeyValue> GoldKeyValues(GoldTxnEntity e, decimal goldAmount, decimal unitPrice) => [
+		new KeyValue { Key = ULocalizedConstants.GoldWeight, Value = goldAmount.ToDecimalString() },
+		new KeyValue { Key = ULocalizedConstants.UnitPrice, Value = unitPrice.ToIntString() },
+		new KeyValue { Key = ULocalizedConstants.OrderId, Value = e.Id.ToString() }
+	];
 
 	private async Task RefundReservedAmount(GoldTxnEntity e, BaseParams? p, CancellationToken ct) {
 		decimal reserved = e.JsonData.ReservedAmount ?? 0;
@@ -478,6 +487,7 @@ public class GoldService(
 			ReceiverId = e.UserId,
 			Amount = reserved,
 			Detail1 = e.Id.ToString(),
+			KeyValues = GoldKeyValues(e, e.GoldAmount, e.UnitPrice),
 			TagWalletTxn = [TagWalletTxn.GoldPurchaseRefund]
 		}, ct);
 	}

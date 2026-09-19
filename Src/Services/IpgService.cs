@@ -65,7 +65,7 @@ public class IpgService(
 			Amount = p.Amount,
 			TrackingNumber = trackingNumber,
 			Tags = TxnTags(kind, p.Tag),
-			JsonData = new TxnJson { Detail1 = Detail(kind, p, bill) }
+			JsonData = new TxnJson { Detail1 = Detail(kind, p, bill), KeyValues = TxnKeyValues(kind, p, bill) }
 		};
 
 		IpgAdditionalData additionalData = new() {
@@ -143,9 +143,12 @@ public class IpgService(
 		try {
 			if (!Core.App.Test && !await Provider.Confirm(additionalData.Token, ct)) return false;
 
+			if (additionalData.Rrn.IsNotNullOrEmpty()) txn.JsonData.KeyValues.Add(new KeyValue { Key = ULocalizedConstants.Reference, Value = additionalData.Rrn });
 			txn.Tags = [..txn.Tags.Where(x => x != TagTxn.Pending), TagTxn.Paid];
 			db.Set<TxnEntity>().Update(txn);
 			await db.SaveChangesAsync(ct);
+
+			additionalData.KeyValues = txn.JsonData.KeyValues.Select(x => new KeyValue { Key = x.Key, Value = x.Value }).ToList();
 
 			if (kind != TagIpgPayment.NormalSale) return true;
 
@@ -153,7 +156,13 @@ public class IpgService(
 				Id = Guid.CreateVersion7(),
 				CreatorId = Core.App.Users.SystemAdmin.Id,
 				CreatedAt = DateTime.UtcNow,
-				JsonData = new WalletTxnJson { Detail2 = "شارژ کیف پول" },
+				JsonData = new WalletTxnJson {
+					Detail2 = "شارژ کیف پول",
+					KeyValues = [
+						new KeyValue { Key = ULocalizedConstants.TrackingNumber, Value = txn.TrackingNumber },
+						..txn.JsonData.KeyValues.Select(x => new KeyValue { Key = x.Key, Value = x.Value })
+					]
+				},
 				Tags = [TagWalletTxn.Charge],
 				SenderId = Core.App.Users.AvaPlus.Id,
 				ReceiverId = txn.UserId,
@@ -198,6 +207,29 @@ public class IpgService(
 		TagIpgPayment.MultiplexedSale => [TagTxn.MultiplexedSale, TagTxn.Pending],
 		_ => [TagTxn.ChargeWallet, tag, TagTxn.Pending]
 	};
+
+	private static List<KeyValue> TxnKeyValues(TagIpgPayment kind, IpgPayParams p, BillInfoResponse? bill) {
+		List<KeyValue> keyValues = [];
+		switch (kind) {
+			case TagIpgPayment.Bill:
+				keyValues.Add(new KeyValue { Key = ULocalizedConstants.BillId, Value = bill?.BillId ?? "" });
+				keyValues.Add(new KeyValue { Key = ULocalizedConstants.PaymentId, Value = bill?.PaymentId ?? "" });
+				if (bill != null && bill.ServiceName.IsNotNullOrEmpty()) keyValues.Add(new KeyValue { Key = ULocalizedConstants.BillType, Value = bill.ServiceName });
+				break;
+			case TagIpgPayment.TopUp:
+				keyValues.Add(new KeyValue { Key = ULocalizedConstants.PhoneNumber, Value = p.ChargeMobileNumber ?? "" });
+				if (p.TopUpType != null) keyValues.Add(new KeyValue { Key = ULocalizedConstants.Operator, Value = ((int)p.TopUpType.Value).ToString() });
+				break;
+			case TagIpgPayment.MultiplexedSale:
+				keyValues.AddRange(Enumerable.Select(p.MultiplexedAccounts ?? Array.Empty<IpgMultiplexedAccountParams>(), x => new KeyValue { Key = ULocalizedConstants.IBan, Value = x.Iban }));
+				break;
+			case TagIpgPayment.NormalSale:
+			default:
+				if (p.InvoiceId.IsNotNullOrEmpty()) keyValues.Add(new KeyValue { Key = ULocalizedConstants.InvoiceId, Value = p.InvoiceId });
+				break;
+		}
+		return keyValues;
+	}
 
 	private static string Detail(TagIpgPayment kind, IpgPayParams p, BillInfoResponse? bill) => kind switch {
 		TagIpgPayment.Bill => $"BILL|{bill?.BillId}|{bill?.PaymentId}",

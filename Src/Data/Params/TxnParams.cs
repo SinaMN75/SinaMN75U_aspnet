@@ -6,6 +6,8 @@ public sealed class TxnCreateParams : BaseCreateParams<TagTxn> {
 
 	[UValidationRequired("trackingNumberRequired")]
 	public string TrackingNumber { get; set; } = null!;
+
+	public ICollection<KeyValue> KeyValues { get; set; } = [];
 }
 
 public sealed class TxnUpdateParams : BaseUpdateParams<TagTxn> {
@@ -13,6 +15,7 @@ public sealed class TxnUpdateParams : BaseUpdateParams<TagTxn> {
 	public string? TrackingNumber { get; set; }
 	public DateTime? PaidAt { get; set; }
 	public string? GatewayName { get; set; }
+	public ICollection<KeyValue>? KeyValues { get; set; }
 }
 
 public sealed class TxnReadParams : BaseReadParams<TagTxn> {

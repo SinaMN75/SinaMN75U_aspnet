@@ -75,7 +75,9 @@ public class ChargeInternetService(
 			Tag = TagWalletTxn.ChargeSimPin,
 			Amount = payableAmount.Value,
 			KeyValues = [
-				new KeyValue {Key = ULocalizedConstants.Pin, Value = approveResponse.Pin ?? "---"}
+				new KeyValue { Key = ULocalizedConstants.Operator, Value = p.SimType },
+				new KeyValue { Key = ULocalizedConstants.Pin, Value = approveResponse.Pin ?? "---" },
+				new KeyValue { Key = ULocalizedConstants.Reference, Value = approveResponse.Reference?.ToString() ?? "---" }
 			]
 		}, ct);
 		await vs.Create(new VasCreateParams {
@@ -152,8 +154,9 @@ public class ChargeInternetService(
 			Tag = TagWalletTxn.ChargeSimTopup,
 			Amount = payableAmount.Value,
 			KeyValues = [
-				new KeyValue {Key = ULocalizedConstants.PhoneNumber, Value = p.PhoneNumber},
-				new KeyValue {Key = ULocalizedConstants.PhoneNumber, Value = p.OperatorId},
+				new KeyValue { Key = ULocalizedConstants.PhoneNumber, Value = p.PhoneNumber },
+				new KeyValue { Key = ULocalizedConstants.Operator, Value = p.OperatorId },
+				new KeyValue { Key = ULocalizedConstants.Reference, Value = approveResponse.Reference?.ToString() ?? "---" }
 			]
 		}, ct);
 
@@ -213,8 +216,10 @@ public class ChargeInternetService(
 			Tag = TagWalletTxn.InternetSim,
 			Amount = p.Amount,
 			KeyValues = [
-				new KeyValue {Key = ULocalizedConstants.PhoneNumber, Value = p.Subscriber},
-				new KeyValue {Key = ULocalizedConstants.PhoneNumber, Value = p.OperatorId},
+				new KeyValue { Key = ULocalizedConstants.PhoneNumber, Value = p.Subscriber },
+				new KeyValue { Key = ULocalizedConstants.Operator, Value = p.OperatorId },
+				new KeyValue { Key = ULocalizedConstants.InternetPackage, Value = p.PackageId },
+				new KeyValue { Key = ULocalizedConstants.Reference, Value = approveResponse.Reference?.ToString() ?? "---" }
 			]
 		}, ct);
 
@@ -486,7 +491,9 @@ public class ChargeInternetServiceFake(
 				Tag = TagWalletTxn.ChargeSimPin,
 				Amount = payableAmount.Value,
 				KeyValues = [
-					new KeyValue {Key = ULocalizedConstants.Pin, Value = "---"}
+					new KeyValue { Key = ULocalizedConstants.Operator, Value = p.SimType },
+					new KeyValue { Key = ULocalizedConstants.Pin, Value = FakePin },
+					new KeyValue { Key = ULocalizedConstants.Reference, Value = reference }
 				]
 			}, ct);
 		await vs.Create(new VasCreateParams {
@@ -518,8 +525,8 @@ public class ChargeInternetServiceFake(
 				Tag = TagWalletTxn.ChargeSimTopup,
 				Amount = payableAmount.Value,
 				KeyValues = [
-					new KeyValue {Key = ULocalizedConstants.PhoneNumber, Value = p.PhoneNumber},
-					new KeyValue {Key = ULocalizedConstants.PhoneNumber, Value = p.OperatorId},
+					new KeyValue { Key = ULocalizedConstants.PhoneNumber, Value = p.PhoneNumber },
+					new KeyValue { Key = ULocalizedConstants.Operator, Value = p.OperatorId }
 				]
 			}, ct);
 		return new UResponse<ChargeInternetReserveResponse?>(BuildReserve(payableAmount.Value, null, Math.Abs(Guid.NewGuid().GetHashCode()).ToString()));
@@ -536,11 +543,12 @@ public class ChargeInternetServiceFake(
 			new WalletPurchaseParams {
 				ApiKey = p.ApiKey,
 				Token = p.Token,
-				Tag = TagWalletTxn.InternetSim, 
+				Tag = TagWalletTxn.InternetSim,
 				Amount = p.Amount,
 				KeyValues = [
-					new KeyValue {Key = ULocalizedConstants.PhoneNumber, Value = p.Subscriber},
-					new KeyValue {Key = ULocalizedConstants.PhoneNumber, Value = p.OperatorId},
+					new KeyValue { Key = ULocalizedConstants.PhoneNumber, Value = p.Subscriber },
+					new KeyValue { Key = ULocalizedConstants.Operator, Value = p.OperatorId },
+					new KeyValue { Key = ULocalizedConstants.InternetPackage, Value = p.PackageId }
 				]
 			}, ct);
 		return new UResponse<ChargeInternetReserveResponse?>(BuildReserve(p.Amount, null, Math.Abs(Guid.NewGuid().GetHashCode()).ToString()));

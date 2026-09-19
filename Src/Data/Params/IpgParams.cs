@@ -31,4 +31,5 @@ public sealed class IpgAdditionalData {
 	public string? Rrn { get; set; }
 	public string? Token { get; set; }
 	public bool Paid { get; set; }
+	public List<KeyValue> KeyValues { get; set; } = [];
 }

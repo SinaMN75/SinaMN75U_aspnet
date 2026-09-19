@@ -77,6 +77,7 @@ public class WalletService(
 			ReceiverId = receiverId,
 			Amount = amount,
 			Detail1 = detail1,
+			KeyValues = p.KeyValues,
 			TagWalletTxn = [p.Tag]
 		}, ct);
 	}
@@ -137,7 +138,7 @@ public class WalletService(
 			SenderId = p.SenderId,
 			ReceiverId = p.ReceiverId,
 			Amount = p.Amount,
-			JsonData = new WalletTxnJson { Detail1 = p.Detail1 ?? "" },
+			JsonData = new WalletTxnJson { Detail1 = p.Detail1 ?? "", KeyValues = p.KeyValues.ToList() },
 			Tags = p.TagWalletTxn.Count != 0 ? p.TagWalletTxn : [TagWalletTxn.Transfer]
 		};
 		await db.Set<WalletTxnEntity>().AddAsync(e, ct);

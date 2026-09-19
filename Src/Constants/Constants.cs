@@ -138,8 +138,34 @@ public class UChargeAmounts {
 }
 
 public static class ULocalizedConstants {
+	public const string Bed = "bed";
+	public const string BillId = "billId";
+	public const string BillType = "billType";
+	public const string CheckInDate = "checkInDate";
+	public const string CheckOutDate = "checkOutDate";
+	public const string Contract = "contract";
+	public const string Dorm = "dorm";
+	public const string DrivingLicenceNumber = "drivingLicenseNumber";
+	public const string GoldWeight = "goldWeight";
+	public const string Hotel = "hotel";
+	public const string IBan = "iBan";
+	public const string InternetPackage = "internetPackage";
+	public const string InvoiceId = "invoiceId";
+	public const string LicencePlate = "licencePlate";
+	public const string NationalCode = "nationalCode";
+	public const string NumberOfNights = "numberOfNights";
+	public const string Operator = "operator";
+	public const string OrderId = "orderId";
+	public const string PaymentId = "paymentId";
+	public const string Penalty = "penalty";
+	public const string Period = "period";
 	public const string PhoneNumber = "phoneNumber";
-	public const string Pin = "pin";
-	public const string SimOperator = "simOperator";
-	public const string Amount = "amount";
+	public const string Pin = "chargePin";
+	public const string Reference = "reference";
+	public const string RefundAmount = "refundAmount";
+	public const string ReservationId = "reservationId";
+	public const string Room = "room";
+	public const string TrackingNumber = "trackingNumber";
+	public const string UnitPrice = "unitPrice";
+	public const string ZipCode = "zipCode";
 }

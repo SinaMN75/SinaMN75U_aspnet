@@ -654,6 +654,15 @@ public class HotelService(
 				ReceiverId = e.UserId,
 				Amount = refund,
 				Detail1 = ls.Get("hotelReservationRefund"),
+				KeyValues = [
+					new KeyValue { Key = ULocalizedConstants.Hotel, Value = e.Hotel.Title },
+					new KeyValue { Key = ULocalizedConstants.Room, Value = e.Room.Title },
+					new KeyValue { Key = ULocalizedConstants.CheckInDate, Value = e.CheckInDate.ToString("O") },
+					new KeyValue { Key = ULocalizedConstants.CheckOutDate, Value = e.CheckOutDate.ToString("O") },
+					new KeyValue { Key = ULocalizedConstants.Penalty, Value = penalty.ToIntString() },
+					new KeyValue { Key = ULocalizedConstants.RefundAmount, Value = refund.ToIntString() },
+					new KeyValue { Key = ULocalizedConstants.ReservationId, Value = e.Id.ToString() }
+				],
 				TagWalletTxn = [TagWalletTxn.HotelReservationRefund]
 			}, ct);
 			if (transfer.Result == null) return new UResponse(transfer.Status, transfer.Message);
@@ -676,9 +685,33 @@ public class HotelService(
 		return new UResponse(Usc.Success, ls.Get("theReservationWasCancelled"));
 	}
 
+	private static List<KeyValue> HotelInvoiceKeyValues(HotelInvoiceEntity e) => e.Reservation == null
+		? [new KeyValue { Key = ULocalizedConstants.InvoiceId, Value = e.Id.ToString() }]
+		: [
+			new KeyValue { Key = ULocalizedConstants.Hotel, Value = e.Reservation.Hotel.Title },
+			new KeyValue { Key = ULocalizedConstants.Room, Value = e.Reservation.Room.Title },
+			new KeyValue { Key = ULocalizedConstants.CheckInDate, Value = e.Reservation.CheckInDate.ToString("O") },
+			new KeyValue { Key = ULocalizedConstants.CheckOutDate, Value = e.Reservation.CheckOutDate.ToString("O") },
+			new KeyValue { Key = ULocalizedConstants.NumberOfNights, Value = e.Reservation.JsonData.NightCount.ToString() },
+			new KeyValue { Key = ULocalizedConstants.ReservationId, Value = e.Reservation.Id.ToString() },
+			new KeyValue { Key = ULocalizedConstants.InvoiceId, Value = e.Id.ToString() }
+		];
+
+	private static List<KeyValue> DormBedInvoiceKeyValues(DormBedInvoiceEntity e) => e.Contract == null
+		? [new KeyValue { Key = ULocalizedConstants.InvoiceId, Value = e.Id.ToString() }]
+		: [
+			new KeyValue { Key = ULocalizedConstants.Dorm, Value = e.Contract.Bed.Room.Dorm.Title },
+			new KeyValue { Key = ULocalizedConstants.Room, Value = e.Contract.Bed.Room.Title },
+			new KeyValue { Key = ULocalizedConstants.Bed, Value = e.Contract.Bed.Title },
+			new KeyValue { Key = ULocalizedConstants.Period, Value = $"{e.Contract.StartDate:O}|{e.Contract.EndDate:O}" },
+			new KeyValue { Key = ULocalizedConstants.Contract, Value = e.Contract.Id.ToString() },
+			new KeyValue { Key = ULocalizedConstants.InvoiceId, Value = e.Id.ToString() }
+		];
+
 	public async Task<UResponse> PayHotelInvoiceInternal(HotelInvoicePayParams p, CancellationToken ct) {
 		HotelInvoiceEntity? e = await db.Set<HotelInvoiceEntity>().AsTracking()
 			.Include(x => x.Reservation).ThenInclude(x => x!.Hotel)
+			.Include(x => x.Reservation).ThenInclude(x => x!.Room)
 			.FirstOrDefaultAsync(x => x.Id == p.InvoiceId, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
 		if (!e.Tags.Contains(TagHotelInvoice.NotPaid)) return new UResponse(Usc.Conflict, ls.Get("thisInvoiceHasAlreadyBeenPaid"));
@@ -690,6 +723,7 @@ public class HotelService(
 				ReceiverId = Core.App.Users.SystemAdmin.Id,
 				Amount = amount,
 				Detail1 = ls.Get("hotelReservationPayment"),
+				KeyValues = HotelInvoiceKeyValues(e),
 				TagWalletTxn = [TagWalletTxn.HotelReservation]
 			}, ct);
 			if (transfer.Result == null) return new UResponse(transfer.Status, transfer.Message);
@@ -1443,7 +1477,9 @@ public class HotelService(
 	}
 
 	public async Task<UResponse> PayDormBedInvoice(DormBedInvoicePayParams p, CancellationToken ct) {
-		DormBedInvoiceEntity? e = await db.Set<DormBedInvoiceEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.InvoiceId, ct);
+		DormBedInvoiceEntity? e = await db.Set<DormBedInvoiceEntity>().AsTracking()
+			.Include(x => x.Contract).ThenInclude(x => x!.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm)
+			.FirstOrDefaultAsync(x => x.Id == p.InvoiceId, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
 		if (!e.Tags.Contains(TagDormBedInvoice.NotPaid)) return new UResponse(Usc.Conflict, ls.Get("thisInvoiceHasAlreadyBeenPaid"));
 
@@ -1454,6 +1490,7 @@ public class HotelService(
 				ReceiverId = Core.App.Users.SystemAdmin.Id,
 				Amount = amount,
 				Detail1 = ls.Get("dormInvoicePayment"),
+				KeyValues = DormBedInvoiceKeyValues(e),
 				TagWalletTxn = [TagWalletTxn.DormBedInvoice]
 			}, ct);
 			if (transfer.Result == null) return new UResponse(transfer.Status, transfer.Message);

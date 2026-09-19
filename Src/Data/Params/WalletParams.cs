@@ -23,7 +23,9 @@ public sealed class WalletTransferParams : BaseParams {
 	public decimal Amount { get; set; }
 
 	public string? Detail1 { get; set; }
-	
+
+	public ICollection<KeyValue> KeyValues { get; set; } = [];
+
 	public required ICollection<TagWalletTxn> TagWalletTxn { get; set; }
 }
 
