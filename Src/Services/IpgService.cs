@@ -2,7 +2,7 @@ namespace SinaMN75U.Services;
 
 public interface IIpgService {
 	Task<UResponse<IpgPayResponse?>> Pay(IpgPayParams p, CancellationToken ct);
-	Task<string?> Verify(IpgAdditionalData additionalData, CancellationToken ct);
+	Task<bool> Verify(IpgAdditionalData additionalData, CancellationToken ct);
 }
 
 public class IpgService(
@@ -13,6 +13,8 @@ public class IpgService(
 	IHttpContextAccessor httpContext,
 	IHotelService hs
 ) : IIpgService {
+	public const string TestToken = "FAKE";
+
 	private IIpgProvider Provider => providers.First(x => x.Tag == Core.App.Ipg.Tag);
 
 	public async Task<UResponse<IpgPayResponse?>> Pay(IpgPayParams p, CancellationToken ct) {
@@ -83,11 +85,11 @@ public class IpgService(
 		await db.SaveChangesAsync(ct);
 
 		if (Core.App.Test) {
-			txn.JsonData.Detail2 = "FAKE";
+			txn.JsonData.Detail2 = TestToken;
 			db.Set<TxnEntity>().Update(txn);
 			await db.SaveChangesAsync(ct);
 			return new UResponse<IpgPayResponse?>(new IpgPayResponse {
-				Url = $"{Core.App.BaseUrl}/api/ipg/Gateway?additionalData={additionalData.ToJson().ToBase58()}",
+				Url = $"{Core.App.BaseUrl}/{RouteTags.Ipg}Gateway?additionalData={additionalData.ToJson().ToBase58()}",
 				AdditionalData = additionalData
 			});
 		}
@@ -97,7 +99,7 @@ public class IpgService(
 				Kind = additionalData.Kind,
 				Amount = (long)txn.Amount,
 				OrderId = Math.Abs(Guid.NewGuid().GetHashCode()),
-				CallBackUrl = $"{Core.App.BaseUrl}/api/ipg/Verify?additionalData={additionalData.ToJson().ToBase58()}",
+				CallBackUrl = $"{Core.App.BaseUrl}/{RouteTags.Ipg}Verify?additionalData={additionalData.ToJson().ToBase58()}",
 				AdditionalData = additionalData,
 				Originator = userData.PhoneNumber,
 				BillId = additionalData.BillId,
@@ -127,29 +129,29 @@ public class IpgService(
 		}
 	}
 
-	public async Task<string?> Verify(IpgAdditionalData additionalData, CancellationToken ct) {
+	public async Task<bool> Verify(IpgAdditionalData additionalData, CancellationToken ct) {
 		TxnEntity? txn = await db.Set<TxnEntity>().AsTracking().FirstOrDefaultAsync(x => x.TrackingNumber == additionalData.TrackingNumber, ct);
-		if (txn == null) return null;
+		if (txn == null) return false;
 
-		if (txn.Tags.Contains(TagTxn.Paid)) return txn.TrackingNumber;
+		if (txn.Tags.Contains(TagTxn.Paid)) return true;
 
 		if (additionalData.Status != 0) {
 			await MarkFailed(txn, ct);
-			return txn.TrackingNumber;
+			return false;
 		}
 
-		if (txn.JsonData.Detail2.IsNullOrEmpty() || txn.JsonData.Detail2 != additionalData.Token) return txn.TrackingNumber;
+		if (txn.JsonData.Detail2.IsNullOrEmpty() || txn.JsonData.Detail2 != additionalData.Token) return false;
 
 		TagIpgPayment kind = additionalData.Kind == TagIpgPayment.NormalSale && additionalData.BillId.IsNotNullOrEmpty() ? TagIpgPayment.Bill : additionalData.Kind;
 
 		try {
-			if (!await Provider.Confirm(additionalData.Token, ct)) return txn.TrackingNumber;
+			if (!Core.App.Test && !await Provider.Confirm(additionalData.Token, ct)) return false;
 
 			txn.Tags = [..txn.Tags.Where(x => x != TagTxn.Pending), TagTxn.Paid];
 			db.Set<TxnEntity>().Update(txn);
 			await db.SaveChangesAsync(ct);
 
-			if (kind != TagIpgPayment.NormalSale) return txn.TrackingNumber;
+			if (kind != TagIpgPayment.NormalSale) return true;
 
 			await db.Set<WalletTxnEntity>().AddAsync(new WalletTxnEntity {
 				Id = Guid.CreateVersion7(),
@@ -162,8 +164,7 @@ public class IpgService(
 				Amount = txn.Amount
 			}, ct);
 
-			WalletEntity? wallet = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == txn.UserId, ct);
-			if (wallet == null) return txn.TrackingNumber;
+			WalletEntity wallet = await ReadOrCreateWallet(txn.UserId, ct);
 			wallet.Balance += txn.Amount;
 			db.Update(wallet);
 			await db.SaveChangesAsync(ct);
@@ -180,12 +181,13 @@ public class IpgService(
 						UserId = txn.UserId
 					}, ct);
 			}
+
+			return true;
 		}
 		catch (Exception ex) {
 			httpContext.CaptureForApiLog(ex);
+			return txn.Tags.Contains(TagTxn.Paid);
 		}
-
-		return txn.TrackingNumber;
 	}
 
 	private static TagIpgPayment Kind(IpgPayParams p) {
@@ -207,6 +209,23 @@ public class IpgService(
 		TagIpgPayment.MultiplexedSale => $"MULTIPLEXED|{p.MultiplexedAccounts?.Count()}",
 		_ => "IPG"
 	};
+
+	private async Task<WalletEntity> ReadOrCreateWallet(Guid userId, CancellationToken ct) {
+		WalletEntity? e = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == userId, ct);
+		if (e != null) return e;
+
+		e = new WalletEntity {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = DateTime.UtcNow,
+			CreatorId = userId,
+			Balance = 0,
+			Tags = [TagWallet.Primary],
+			JsonData = new WalletJson()
+		};
+		await db.Set<WalletEntity>().AddAsync(e, ct);
+		await db.SaveChangesAsync(ct);
+		return e;
+	}
 
 	private async Task MarkFailed(TxnEntity txn, CancellationToken ct) {
 		if (txn.Tags.Contains(TagTxn.Paid)) return;

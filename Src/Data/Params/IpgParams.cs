@@ -30,4 +30,5 @@ public sealed class IpgAdditionalData {
 	public int? Status { get; set; }
 	public string? Rrn { get; set; }
 	public string? Token { get; set; }
+	public bool Paid { get; set; }
 }

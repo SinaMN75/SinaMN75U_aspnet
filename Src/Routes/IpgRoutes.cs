@@ -27,18 +27,23 @@ public static class IpgRoutes {
 			data.Rrn = rrn.ToString();
 			data.Token = token;
 
-			return Results.Redirect($"{Core.App.BaseUrl}/api/Ipg/Verify?additionalData={data.ToJson().ToBase58()}");
+			return Results.Redirect($"{Core.App.BaseUrl}/{RouteTags.Ipg}Verify?additionalData={data.ToJson().ToBase58()}");
 
 			string Field(string key) => form.TryGetValue(key, out StringValues v) && v.ToString() is { Length: > 0 } f ? f : ctx.Request.Query[key].ToString();
 		}).DisableAntiforgery();
 
 		r.MapGet("Gateway", ([FromQuery] string additionalData) => {
-			IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58())!;
+			IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58(), Core.Default)!;
+			data.Token = IpgService.TestToken;
+
 			data.Status = 0;
 			data.Rrn = "123456789";
-			data.Token = "123456789";
-			data.TrackingNumber = "123456789";
-			
+			string okUrl = $"{Core.App.BaseUrl}/{RouteTags.Ipg}Verify?additionalData={data.ToJson().ToBase58()}";
+
+			data.Status = 1;
+			data.Rrn = null;
+			string failUrl = $"{Core.App.BaseUrl}/{RouteTags.Ipg}Verify?additionalData={data.ToJson().ToBase58()}";
+
 			string kindTitle = data.Kind switch {
 				TagIpgPayment.Bill => "پرداخت قبض",
 				TagIpgPayment.TopUp => "شارژ مستقیم",
@@ -76,8 +81,8 @@ public static class IpgRoutes {
 				          <div class='badge'>{{kindTitle}}</div>
 				          {{kindDetail}}
 				          <div class='amount'>{{data.Amount:N0}} ریال</div>
-				          <a class='button pay' href='{{$"{Core.App.BaseUrl}/api/Ipg/Verify?additionalData={data.ToJson().ToBase58()}"}}'>پرداخت موفق</a>
-				          <a class='button err' href='{{$"{Core.App.BaseUrl}/api/Ipg/Verify?additionalData={data.ToJson().ToBase58()}"}}'>پرداخت ناموفق / انصراف</a>
+				          <a class='button pay' href='{{okUrl}}'>پرداخت موفق</a>
+				          <a class='button err' href='{{failUrl}}'>پرداخت ناموفق / انصراف</a>
 				      </div>
 				  </body>
 				  </html>
@@ -87,7 +92,12 @@ public static class IpgRoutes {
 
 		r.MapGet("Verify", async ([FromQuery] string additionalData, IIpgService s, CancellationToken c) => {
 			IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58(), Core.Default)!;
-			await s.Verify(data, c);
+			data.Paid = await s.Verify(data, c);
+			return Results.Redirect($"{Core.App.BaseUrl}/{RouteTags.Ipg}Result?additionalData={data.ToJson().ToBase58()}");
+		}).DisableAntiforgery();
+
+		r.MapGet("Result", ([FromQuery] string additionalData) => {
+			IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58(), Core.Default)!;
 			return Results.Content(
 				$$"""
 				  <!DOCTYPE html>
@@ -107,19 +117,19 @@ public static class IpgRoutes {
 				  </head>
 				  <body>
 				      <div class='container'>
-				          <div class='icon {{(data.Status == 0 ? "success" : "error")}}'>{{(data.Status == 0 ? "✅" : "❌")}}</div>
-				          <h2>{{(data.Status == 0 ? "پرداخت موفق" : "پرداخت ناموفق")}}</h2>
+				          <div class='icon {{(data.Paid ? "success" : "error")}}'>{{(data.Paid ? "✅" : "❌")}}</div>
+				          <h2>{{(data.Paid ? "پرداخت موفق" : "پرداخت ناموفق")}}</h2>
 				      </div>
 				      <script>
 				          (function() {
 				              try {
-				                  window.parent.postMessage({ source: 'u_ipg', additionalDxata: {{additionalData}} } '*');
+				                  window.parent.postMessage({ source: 'u_ipg', additionalData: '{{additionalData}}' }, '*');
 				              } catch (e) {}
 				          })();
 				      </script>
 				  </body>
 				  </html>
 				  """, "text/html");
-		}).DisableAntiforgery();
+		});
 	}
 }
