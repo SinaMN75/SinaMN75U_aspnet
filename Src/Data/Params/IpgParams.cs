@@ -1,7 +1,7 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class IpgPayParams : BaseParams {
-	public decimal? Amount { get; set; }
+	public required decimal Amount { get; set; }
 	public TagTxn Tag { get; set; } = TagTxn.ChargeWallet;
 	public string? InvoiceId { get; set; }
 	public string? BillId { get; set; }
@@ -15,11 +15,6 @@ public sealed class IpgMultiplexedAccountParams {
 	public string Iban { get; set; } = null!;
 	public decimal Amount { get; set; }
 	public long? PayId { get; set; }
-}
-
-public sealed class IpgStatusParams : BaseParams {
-	[UValidationRequired("trackingNumberRequired")]
-	public IpgAdditionalData AdditionalData { get; set; } = null!;
 }
 
 public sealed class IpgAdditionalData {

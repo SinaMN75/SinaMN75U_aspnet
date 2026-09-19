@@ -2,7 +2,6 @@ namespace SinaMN75U.Services;
 
 public interface IIpgService {
 	Task<UResponse<IpgPayResponse?>> Pay(IpgPayParams p, CancellationToken ct);
-	Task<UResponse<IpgVerifyResponse?>> Status(IpgStatusParams p, CancellationToken ct);
 	Task<string?> Verify(IpgAdditionalData additionalData, CancellationToken ct);
 }
 
@@ -20,12 +19,11 @@ public class IpgService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IpgPayResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<IpgPayResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (p.Amount <= 0) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("amountRequired"));
 
 		TagIpgPayment kind = Kind(p);
-		if (!Provider.SupportsKind(kind)) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("thisPaymentTypeIsNotSupportedByTheGateway"));
 
 		string trackingNumber = Guid.CreateVersion7().ToString("N");
-		decimal amount = p.Amount ?? 0;
 		BillInfoResponse? bill = null;
 
 		switch (kind) {
@@ -39,19 +37,18 @@ public class IpgService(
 
 				if (bill is not { IsValid: true }) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("theBillIsNotValid"));
 				if (bill.BillAmount is not > 0) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("theBillAmountIsNotAvailable"));
-				amount = bill.BillAmount.Value;
+				p.Amount = bill.BillAmount.Value;
 				break;
 			}
 			case TagIpgPayment.TopUp: {
 				if (p.TopUpType == null) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("topUpTypeIsRequired"));
-				if (!Provider.SupportsTopUpOperator(p.TopUpType.Value)) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("thisOperatorIsNotSupportedForDirectTopUp"));
 				break;
 			}
 			case TagIpgPayment.MultiplexedSale: {
 				List<IpgMultiplexedAccountParams> accounts = p.MultiplexedAccounts!.ToList();
 				if (accounts.Any(x => x.Iban.IsNullOrEmpty())) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("iBanIsRequired"));
 				if (accounts.Any(x => x.Amount <= 0)) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("amountRequired"));
-				if (accounts.Sum(x => x.Amount) != amount) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("theSumOfMultiplexedAmountsMustBeEqualToTheTotalAmount"));
+				if (accounts.Sum(x => x.Amount) != p.Amount) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("theSumOfMultiplexedAmountsMustBeEqualToTheTotalAmount"));
 				break;
 			}
 			case TagIpgPayment.NormalSale:
@@ -60,19 +57,19 @@ public class IpgService(
 				throw new Exception();
 		}
 
-		if (amount <= 0) return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("amountRequired"));
-
-		return await Sale(new TxnEntity {
+		TxnEntity txn = new() {
 			Id = Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
 			CreatorId = userData.Id,
 			UserId = userData.Id,
-			Amount = amount,
+			Amount = p.Amount,
 			TrackingNumber = trackingNumber,
 			Tags = TxnTags(kind, p.Tag),
 			JsonData = new TxnJson { Detail1 = Detail(kind, p, bill) }
-		}, new IpgAdditionalData {
-			Amount = amount,
+		};
+
+		IpgAdditionalData additionalData = new() {
+			Amount = p.Amount,
 			TrackingNumber = trackingNumber,
 			Tag = p.Tag,
 			Kind = kind,
@@ -80,22 +77,54 @@ public class IpgService(
 			BillId = bill?.BillId,
 			PaymentId = bill?.PaymentId,
 			ChargeMobileNumber = p.ChargeMobileNumber
-		}, p, userData.PhoneNumber, ct);
-	}
+		};
 
-	public async Task<UResponse<IpgVerifyResponse?>> Status(IpgStatusParams p, CancellationToken ct) {
-		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<IpgVerifyResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
-		if (userData.IsExpired) return new UResponse<IpgVerifyResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		await db.Set<TxnEntity>().AddAsync(txn, ct);
+		await db.SaveChangesAsync(ct);
 
-		TxnEntity? txn = await db.Set<TxnEntity>().AsNoTracking().FirstOrDefaultAsync(x => x.TrackingNumber == p.AdditionalData.TrackingNumber && x.UserId == userData.Id, ct);
-		if (txn == null) return new UResponse<IpgVerifyResponse?>(null, Usc.NotFound, ls.Get("notFound"));
+		if (Core.App.Test) {
+			txn.JsonData.Detail2 = "FAKE";
+			db.Set<TxnEntity>().Update(txn);
+			await db.SaveChangesAsync(ct);
+			return new UResponse<IpgPayResponse?>(new IpgPayResponse {
+				Url = $"{Core.App.BaseUrl}/api/ipg/Gateway?additionalData={additionalData.ToJson().ToBase58()}",
+				AdditionalData = additionalData
+			});
+		}
 
-		return new UResponse<IpgVerifyResponse?>(new IpgVerifyResponse {
-			Paid = txn.Tags.Contains(TagTxn.Paid),
-			Failed = txn.Tags.Contains(TagTxn.Failed),
-			Balance = await db.Set<WalletEntity>().AsNoTracking().Where(x => x.CreatorId == userData.Id).Select(x => x.Balance).FirstOrDefaultAsync(ct)
-		});
+		try {
+			IpgProviderPayResult result = await Provider.Pay(new IpgProviderPayParams {
+				Kind = additionalData.Kind,
+				Amount = (long)txn.Amount,
+				OrderId = Math.Abs(Guid.NewGuid().GetHashCode()),
+				CallBackUrl = $"{Core.App.BaseUrl}/api/ipg/Verify?additionalData={additionalData.ToJson().ToBase58()}",
+				AdditionalData = additionalData,
+				Originator = userData.PhoneNumber,
+				BillId = additionalData.BillId,
+				PaymentId = additionalData.PaymentId,
+				ChargeMobileNumber = additionalData.ChargeMobileNumber,
+				TopUpType = p.TopUpType,
+				MultiplexedAccounts = p.MultiplexedAccounts
+			}, ct);
+
+			if (!result.Succeed) {
+				await MarkFailed(txn, ct);
+				return new UResponse<IpgPayResponse?>(null, Usc.ThirdPartyError, result.Message ?? ls.Get("paymentGatewayErrorPleaseTryAgain"));
+			}
+
+			txn.JsonData.Detail2 = result.Token ?? "---";
+			db.Set<TxnEntity>().Update(txn);
+			await db.SaveChangesAsync(ct);
+			return new UResponse<IpgPayResponse?>(new IpgPayResponse {
+				Url = result.Url ?? "",
+				AdditionalData = additionalData
+			});
+		}
+		catch (Exception ex) {
+			httpContext.CaptureForApiLog(ex);
+			await MarkFailed(txn, ct);
+			return new UResponse<IpgPayResponse?>(null, Usc.InternalServerError, ls.Get("internalServerError"));
+		}
 	}
 
 	public async Task<string?> Verify(IpgAdditionalData additionalData, CancellationToken ct) {
@@ -114,8 +143,8 @@ public class IpgService(
 		TagIpgPayment kind = additionalData.Kind == TagIpgPayment.NormalSale && additionalData.BillId.IsNotNullOrEmpty() ? TagIpgPayment.Bill : additionalData.Kind;
 
 		try {
-			if (Provider.RequiresConfirm(kind) && !await Confirm(additionalData.Token, ct)) return txn.TrackingNumber;
-			
+			if (!await Provider.Confirm(additionalData.Token, ct)) return txn.TrackingNumber;
+
 			txn.Tags = [..txn.Tags.Where(x => x != TagTxn.Pending), TagTxn.Paid];
 			db.Set<TxnEntity>().Update(txn);
 			await db.SaveChangesAsync(ct);
@@ -178,59 +207,6 @@ public class IpgService(
 		TagIpgPayment.MultiplexedSale => $"MULTIPLEXED|{p.MultiplexedAccounts?.Count()}",
 		_ => "IPG"
 	};
-
-	private async Task<UResponse<IpgPayResponse?>> Sale(TxnEntity txn, IpgAdditionalData ad, IpgPayParams p, string? originator, CancellationToken ct) {
-		string additionalData = JsonSerializer.SerializeToUtf8Bytes(ad, options: Core.Default).ToBase58();
-
-		await db.Set<TxnEntity>().AddAsync(txn, ct);
-		await db.SaveChangesAsync(ct);
-
-		if (Core.App.Test) {
-			txn.JsonData.Detail2 = "FAKE";
-			db.Set<TxnEntity>().Update(txn);
-			await db.SaveChangesAsync(ct);
-			return new UResponse<IpgPayResponse?>(new IpgPayResponse {
-				Url = $"{Core.App.BaseUrl}/api/ipg/Gateway?additionalData={additionalData}",
-				AdditionalData = ad
-			});
-		}
-
-		try {
-			IpgProviderPayResult result = await Provider.Pay(new IpgProviderPayParams {
-				Kind = ad.Kind,
-				Amount = (long)txn.Amount,
-				OrderId = Math.Abs(Guid.NewGuid().GetHashCode()),
-				CallBackUrl = $"{Core.App.BaseUrl}/api/ipg/Verify?additionalData={additionalData}",
-				AdditionalData = additionalData,
-				Originator = originator,
-				BillId = ad.BillId,
-				PaymentId = ad.PaymentId,
-				ChargeMobileNumber = ad.ChargeMobileNumber,
-				TopUpType = p.TopUpType,
-				MultiplexedAccounts = p.MultiplexedAccounts
-			}, ct);
-
-			if (!result.Succeed) {
-				await MarkFailed(txn, ct);
-				return new UResponse<IpgPayResponse?>(null, Usc.ThirdPartyError, result.Message ?? ls.Get("paymentGatewayErrorPleaseTryAgain"));
-			}
-
-			txn.JsonData.Detail2 = result.Token ?? "---";
-			db.Set<TxnEntity>().Update(txn);
-			await db.SaveChangesAsync(ct);
-			return new UResponse<IpgPayResponse?>(new IpgPayResponse {
-				Url = result.Url ?? "",
-				AdditionalData = ad
-			});
-		}
-		catch (Exception ex) {
-			httpContext.CaptureForApiLog(ex);
-			await MarkFailed(txn, ct);
-			return new UResponse<IpgPayResponse?>(null, Usc.InternalServerError, ls.Get("internalServerError"));
-		}
-	}
-
-	private async Task<bool> Confirm(string token, CancellationToken ct) => Core.App.Test || await Provider.Confirm(token, ct);
 
 	private async Task MarkFailed(TxnEntity txn, CancellationToken ct) {
 		if (txn.Tags.Contains(TagTxn.Paid)) return;

@@ -7,7 +7,6 @@ public static class IpgRoutes {
 	public static void MapIpgRoutes(this IEndpointRouteBuilder app, string tag) {
 		RouteGroupBuilder r = app.MapGroup(tag).WithTags(tag).AddEndpointFilter<UValidationFilter>();
 		r.MapPost("Pay", async (IpgPayParams p, IIpgService s, CancellationToken c) => (await s.Pay(p, c)).ToResult()).Produces<UResponse<IpgPayResponse?>>();
-		r.MapPost("Status", async (IpgStatusParams p, IIpgService s, CancellationToken c) => (await s.Status(p, c)).ToResult()).Produces<UResponse<IpgVerifyResponse?>>();
 
 		r.MapPost("Verify", async ([FromQuery] string additionalData, HttpContext ctx) => {
 			Dictionary<string, StringValues> form = new();
@@ -34,8 +33,6 @@ public static class IpgRoutes {
 		}).DisableAntiforgery();
 
 		r.MapGet("Gateway", ([FromQuery] string additionalData) => {
-			string verify = $"${Core.App.BaseUrl}/api/Ipg/Verify";
-
 			IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58())!;
 			data.Status = 0;
 			data.Rrn = "123456789";
@@ -79,8 +76,8 @@ public static class IpgRoutes {
 				          <div class='badge'>{{kindTitle}}</div>
 				          {{kindDetail}}
 				          <div class='amount'>{{data.Amount:N0}} ریال</div>
-				          <a class='button pay' href='{{$"{verify}?additionalData={data}"}}'>پرداخت موفق</a>
-				          <a class='button err' href='{{$"{verify}?additionalData={data}"}}'>پرداخت ناموفق / انصراف</a>
+				          <a class='button pay' href='{{$"{Core.App.BaseUrl}/api/Ipg/Verify?additionalData={data.ToJson().ToBase58()}"}}'>پرداخت موفق</a>
+				          <a class='button err' href='{{$"{Core.App.BaseUrl}/api/Ipg/Verify?additionalData={data.ToJson().ToBase58()}"}}'>پرداخت ناموفق / انصراف</a>
 				      </div>
 				  </body>
 				  </html>

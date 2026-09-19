@@ -5,7 +5,7 @@ public sealed class IpgProviderPayParams {
 	public required long Amount { get; set; }
 	public required long OrderId { get; set; }
 	public required string CallBackUrl { get; set; }
-	public required string AdditionalData { get; set; }
+	public required IpgAdditionalData AdditionalData { get; set; }
 	public string? Originator { get; set; }
 	public string? BillId { get; set; }
 	public string? PaymentId { get; set; }
@@ -23,22 +23,15 @@ public sealed class IpgProviderPayResult {
 
 public interface IIpgProvider {
 	TagIpg Tag { get; }
-	bool SupportsKind(TagIpgPayment kind);
-	bool SupportsTopUpOperator(TagSimOperator operatorTag);
-	bool RequiresConfirm(TagIpgPayment kind);
 	Task<IpgProviderPayResult> Pay(IpgProviderPayParams p, CancellationToken ct);
 	Task<bool> Confirm(string token, CancellationToken ct);
 }
 
 public class PnIpgProvider(IHttpClientService http) : IIpgProvider {
 	public TagIpg Tag => TagIpg.Pn;
-
-	public bool SupportsKind(TagIpgPayment kind) => true;
-
+	
 	public bool SupportsTopUpOperator(TagSimOperator operatorTag) => TopUpType(operatorTag) != null;
-
-	public bool RequiresConfirm(TagIpgPayment kind) => kind is TagIpgPayment.NormalSale or TagIpgPayment.MultiplexedSale;
-
+	
 	public async Task<IpgProviderPayResult> Pay(IpgProviderPayParams p, CancellationToken ct) {
 		HttpResponseMessage? response = await http.Post(
 			Url(p.Kind),
