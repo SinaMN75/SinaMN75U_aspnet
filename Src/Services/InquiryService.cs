@@ -64,13 +64,6 @@ public class InquiryService(
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
-			await walletService.Purchase(
-				new WalletPurchaseParams {
-					Tag = TagWalletTxn.ZipCodeToAddressDetail, 
-					Token = p.Token,
-					KeyValues = []
-				}, ct);
-
 			HttpResponseMessage? response = await SendZipCodeToAddressDetail(p, tokenResponse.AccessToken, ct);
 
 			if (response == null) return new UResponse<ZipCodeToAddressDetailResponse?>(null);
@@ -83,6 +76,7 @@ public class InquiryService(
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.ZipCodeToAddressDetail, Token = p.Token, KeyValues = [] }, ct);
 			await CreateZipCodeToAddressHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.ZipCodeToAddressDetail], "", p, ct);
 		}
 
@@ -127,8 +121,6 @@ public class InquiryService(
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.VehicleViolationsDetail, Token = p.Token }, ct);
-
 			HttpResponseMessage? response = await SendVehicleViolationsDetail(p, tokenResponse.AccessToken, ct);
 
 			if (response == null) return new UResponse<VehicleViolationDetailResponse?>(null);
@@ -142,6 +134,7 @@ public class InquiryService(
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.VehicleViolationsDetail, Token = p.Token }, ct);
 			await CreateVehicleViolationsDetailHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.VehicleViolationsDetail], "", p, ct);
 		}
 
@@ -204,8 +197,6 @@ public class InquiryService(
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceStatus, Token = p.Token }, ct);
-
 			HttpResponseMessage? response = await SendDrivingLicenceDetail(p, tokenResponse.AccessToken, ct);
 
 			if (response == null) return new UResponse<DrivingLicenceDetailResponse?>(null);
@@ -218,6 +209,7 @@ public class InquiryService(
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceStatus, Token = p.Token }, ct);
 			await CreateDrivingLicenceStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceDetail], "", p, ct);
 		}
 
@@ -259,8 +251,6 @@ public class InquiryService(
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<LicencePlateDetailResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.LicencePlateDetail, Token = p.Token }, ct);
-
 			HttpResponseMessage? response = await SendLicencePlateDetail(p, tokenResponse.AccessToken, ct);
 
 			if (response == null) return new UResponse<LicencePlateDetailResponse?>(null);
@@ -273,6 +263,7 @@ public class InquiryService(
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<LicencePlateDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.LicencePlateDetail, Token = p.Token }, ct);
 			await CreateLicencePlateStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.LicencePlateDetail], "", p, ct);
 		}
 
@@ -312,8 +303,6 @@ public class InquiryService(
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceNegativePoint, Token = p.Token }, ct);
-
 			HttpResponseMessage? response = await SendDrivingLicenceNegativePoint(p, tokenResponse.AccessToken, ct);
 
 			if (response == null) return new UResponse<DrivingLicenceNegativePointResponse?>(null);
@@ -326,6 +315,7 @@ public class InquiryService(
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceNegativePoint, Token = p.Token }, ct);
 			await CreateDrivingLicenceNegativePointHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceNegativePoint], "", p, ct);
 		}
 
@@ -358,8 +348,6 @@ public class InquiryService(
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<FreewayTollsResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.FreewayTolls, Token = p.Token }, ct);
-
 			HttpResponseMessage? response = await SendFreewayTolls(p, tokenResponse.AccessToken, ct);
 
 			if (response == null) return new UResponse<FreewayTollsResponse?>(null);
@@ -372,6 +360,7 @@ public class InquiryService(
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<FreewayTollsResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.FreewayTolls, Token = p.Token }, ct);
 			await CreateFreewayTollsHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.FreewayTolls], "", p, ct);
 		}
 
@@ -408,8 +397,6 @@ public class InquiryService(
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.IBanToBankAccountDetail, Token = p.Token }, ct);
-
 			HttpResponseMessage? response = await SendIBanToBankAccountDetail(p, tokenResponse.AccessToken, ct);
 
 			if (response == null) return new UResponse<IBanToBankAccountDetailResponse?>(null);
@@ -422,6 +409,7 @@ public class InquiryService(
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
+			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.IBanToBankAccountDetail, Token = p.Token }, ct);
 			await CreateIBanToBankAccountDetailHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.IBanToBankAccountDetail], "", p, ct);
 		}
 
