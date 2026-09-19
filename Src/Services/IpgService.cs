@@ -23,7 +23,7 @@ public class IpgService(
 
 		TagIpgPayment kind = Kind(p);
 
-		string trackingNumber = Random.Shared.NextInt64(12).ToString();
+		string trackingNumber = Random.Shared.NextInt64(100_000_000_000, 999_999_999_999).ToString();
 		BillInfoResponse? bill = null;
 
 		switch (kind) {
@@ -130,9 +130,7 @@ public class IpgService(
 	public async Task<bool> Verify(IpgAdditionalData additionalData, CancellationToken ct) {
 		TxnEntity? txn = await db.Set<TxnEntity>().AsTracking().FirstOrDefaultAsync(x => x.TrackingNumber == additionalData.TrackingNumber, ct);
 		if (txn == null) return false;
-
-		if (txn.Tags.Contains(TagTxn.Paid)) return true;
-
+		
 		if (additionalData.Status != 0) {
 			await MarkFailed(txn, ct);
 			return false;

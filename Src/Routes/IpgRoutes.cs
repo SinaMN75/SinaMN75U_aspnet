@@ -32,9 +32,14 @@ public static class IpgRoutes {
 			string Field(string key) => form.TryGetValue(key, out StringValues v) && v.ToString() is { Length: > 0 } f ? f : ctx.Request.Query[key].ToString();
 		}).DisableAntiforgery();
 		
-		r.MapGet("Verify", async ([FromQuery] string additionalData, IIpgService s, CancellationToken c) => {
+		r.MapGet("Verify", async ([FromQuery] string additionalData, [FromQuery] bool? done, IIpgService s, CancellationToken c) => {
 			IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58(), Core.Default)!;
-			data.Paid = await s.Verify(data, c);
+
+			if (done != true) {
+				data.Paid = await s.Verify(data, c);
+				return Results.Redirect($"{Core.App.BaseUrl}/{RouteTags.Ipg}Verify?additionalData={data.ToJson().ToBase58()}&done=true");
+			}
+
 			return Results.Content(
 				$$"""
 				  <!DOCTYPE html>
