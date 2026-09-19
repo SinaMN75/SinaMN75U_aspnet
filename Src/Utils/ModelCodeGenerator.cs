@@ -435,9 +435,7 @@ public static partial class ModelCodeGenerator {
 			.ToList();
 		return new { sections = outSections, types, apis = BuildApis(eds, models) };
 	}
-
-	// ---------- apis ----------
-
+	
 	private static readonly JsonSerializerOptions ExampleOpts = new() { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
 	private static string ExampleJson(Type? t) => t == null ? "null" : JsonSerializer.Serialize(BuildExample(t, []), ExampleOpts);
@@ -518,7 +516,6 @@ public static partial class ModelCodeGenerator {
 
 	private static string Block(List<Model> list, Func<Model, string> gen) => list.Count == 0 ? "// (none)" : string.Join("\n\n", list.Select(gen));
 
-	// Transitive set of generated models reachable from a type (unwraps the UResponse<T> envelope, collections, nullables).
 	private static List<Model> Closure(Type? start, Dictionary<Type, Model> models) {
 		List<Model> order = [];
 		if (start == null) return order;

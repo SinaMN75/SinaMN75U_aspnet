@@ -126,7 +126,6 @@ public class PnService(
 		ULog.Info($"Auth method called for phone number: {p.PhoneNumber}");
 		ULog.Debug($"Auth params - FirstName: {p.FirstName}, LastName: {p.LastName}");
 
-		// API Key validation
 		if (p.ApiKey != Core.App.Pn.ApiKey) {
 			ULog.Warning($"Auth failed: Invalid API key provided for phone {p.PhoneNumber}");
 			return new UResponse(Usc.UnAuthorized, ls.Get("invalidAPIKey"));
@@ -134,14 +133,12 @@ public class PnService(
 
 		ULog.Debug("API key validation passed");
 
-		// Search for existing user
 		ULog.Debug($"Searching for existing user with phone: {p.PhoneNumber}");
 		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
 
 		if (e == null) {
 			ULog.Info($"No existing user found for {p.PhoneNumber}, creating new user");
 
-			// Create new user
 			Guid userId = Guid.CreateVersion7();
 			UserEntity user = new() {
 				Id = userId,
@@ -182,7 +179,6 @@ public class PnService(
 
 		ULog.Info($"Existing user found for {p.PhoneNumber} with ID: {e.Id}");
 
-		// Update user fields
 		bool updated = false;
 
 		if (p.FirstName.IsNotNullOrEmpty()) {
@@ -293,7 +289,6 @@ public class PnService(
 		ULog.Info($"CreateMerchant called for user phone: {p.UserPhoneNumber}");
 		ULog.Debug($"Merchant params - Title: {p.Title}, NationalCode: {p.NationalCode}, Mcc: {p.Mcc}, CityCode: {p.CityCode}");
 
-		// API Key validation
 		if (p.ApiKey != Core.App.Pn.ApiKey) {
 			ULog.Warning($"CreateMerchant failed: Invalid API key for user {p.UserPhoneNumber}");
 			return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("invalidAPIKey"));
@@ -301,7 +296,6 @@ public class PnService(
 
 		ULog.Debug("API key validation passed");
 
-		// Find user
 		ULog.Debug($"Fetching user with phone: {p.UserPhoneNumber}");
 		UserResponse? user = await db.Set<UserEntity>().Select(Projections.UserSelector(new UserSelectorArgs())).FirstOrDefaultAsync(x => x.PhoneNumber == p.UserPhoneNumber, ct);
 		if (user == null) {
@@ -311,7 +305,6 @@ public class PnService(
 
 		ULog.Debug($"User found with ID: {user.Id}, Tags: {string.Join(", ", user.Tags)}");
 
-		// Check if user is fully verified
 		bool fullyVerified =
 			user.Tags.Contains(TagUser.NationalCardFrontVerified) &&
 			user.Tags.Contains(TagUser.NationalCardBackVerified) &&
@@ -325,7 +318,6 @@ public class PnService(
 			return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("userIdentityVerificationIsNotCompleted"));
 		}
 
-		// Check for duplicate merchant
 		ULog.Debug($"Checking for duplicate merchant with NationalCode: {p.NationalCode}");
 		bool duplicate = await db.Set<MerchantEntity>().AnyAsync(x => x.UserId == user.Id && x.NationalCode == p.NationalCode && x.ZipCode == p.ZipCode, ct);
 		if (duplicate) {
@@ -333,7 +325,6 @@ public class PnService(
 			return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("thisMerchantAlreadyExists"));
 		}
 
-		// Create new merchant
 		ULog.Info($"Creating new merchant for user {user.Id}");
 		MerchantEntity e = new() {
 			Id = Guid.CreateVersion7(),
@@ -369,7 +360,6 @@ public class PnService(
 		ULog.Info($"CreateTerminal called for MerchantId: {p.MerchantId}");
 		ULog.Debug($"Terminal params - Serial: {p.Serial}, SimCardSerial: {p.SimCardSerial}, Imei: {p.Imei}");
 
-		// API Key validation
 		if (p.ApiKey != Core.App.Pn.ApiKey) {
 			ULog.Warning($"CreateTerminal failed: Invalid API key for merchant {p.MerchantId}");
 			return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("invalidAPIKey"));
@@ -377,7 +367,6 @@ public class PnService(
 
 		ULog.Debug("API key validation passed");
 
-		// Find terminal
 		ULog.Debug($"Searching for terminal with Serial: {p.Serial}, SimCardSerial: {p.SimCardSerial}");
 		TerminalEntity? terminal = await db.Set<TerminalEntity>().AsTracking().FirstOrDefaultAsync(x => x.Serial == p.Serial && x.SimCardSerial == p.SimCardSerial, ct);
 		if (terminal == null) {
@@ -392,7 +381,6 @@ public class PnService(
 			return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("terminalIsAlreadyAssignedToAMerchant"));
 		}
 
-		// Find merchant
 		ULog.Debug($"Fetching merchant with ID: {p.MerchantId}");
 		MerchantEntity? merchant = await db.Set<MerchantEntity>().AsTracking().Include(x => x.User).FirstOrDefaultAsync(x => x.Id == p.MerchantId, ct);
 		if (merchant == null) {
@@ -414,7 +402,6 @@ public class PnService(
 
 		ULog.Debug("User has ESignature present");
 
-		// Generate agreement before making any external calls — fail fast if template is missing
 		ULog.Info($"Generating agreement for merchant {merchant.Id}");
 		string agreement;
 		try {
@@ -428,13 +415,11 @@ public class PnService(
 
 		ULog.Debug($"Agreement generated for terminal {terminal.Id}");
 
-		// Start transaction for Avreen integration
 		ULog.Info($"Starting transaction for Avreen integration for terminal {terminal.Id}");
 		await using IDbContextTransaction transaction = await db.Database.BeginTransactionAsync(ct);
 		try {
 			terminal.MerchantId = p.MerchantId;
 			terminal.Agreement = agreement.FromBase64();
-			// Register merchant with Avreen
 			ULog.Debug("Calling Avreen API to add merchant...");
 			HttpResponseMessage? response = await http.Post(
 				$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/addMerchant",
@@ -479,7 +464,6 @@ public class PnService(
 				return new UResponse<Guid?>(null, Usc.InternalServerError, ls.Get("merchantRegistrationSucceededButMerchantIdentifierWasNotReturnedByAvreen"));
 			}
 
-			// Bind terminal with Avreen
 			ULog.Debug("Calling Avreen API to define and bind terminal...");
 			HttpResponseMessage? terminalResponse = await http.Post(
 				$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/defineAndBindTerminal",
@@ -528,7 +512,6 @@ public class PnService(
 	public async Task<UResponse<PnUserStatusResponse?>> UserStatus(PnPhoneNumberParams p, CancellationToken ct) {
 		ULog.Info($"UserStatus called for phone number: {p.PhoneNumber}");
 
-		// API Key validation
 		if (p.ApiKey != Core.App.Pn.ApiKey) {
 			ULog.Warning($"UserStatus failed: Invalid API key for phone {p.PhoneNumber}");
 			return new UResponse<PnUserStatusResponse?>(null, Usc.UnAuthorized, ls.Get("invalidAPIKey"));
@@ -538,7 +521,6 @@ public class PnService(
 
 		PnUserStatusResponse response = new();
 
-		// Find user with all related data
 		ULog.Debug($"Fetching user data for phone: {p.PhoneNumber}");
 		UserResponse? e = await db.Set<UserEntity>()
 			.Select(Projections.UserSelector(new UserSelectorArgs {
@@ -553,7 +535,6 @@ public class PnService(
 
 		ULog.Debug($"User found with ID: {e.Id}");
 
-		// Build status response
 		response.BirthCertificateFirst = new PnUserStatusItem {
 			IsUploaded = e.BirthCertificateFirst.IsNotNullOrEmpty(),
 			IsVerified = e.Tags.Contains(TagUser.BirthCertificateFirstVerified),

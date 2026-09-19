@@ -10,8 +10,6 @@ public interface IDbAdminService {
 	Task<UResponse> DeleteRow(DbAdminDeleteRowParams p, CancellationToken ct);
 }
 
-// SystemAdmin-only PgAdmin-style console. Every statement runs against the live connection with full SQL power,
-// so access is gated by GuardAdmin and identifiers are always quoted server side.
 public class DbAdminService(DbContext db, ITokenService ts, ILocalizationService ls) : IDbAdminService {
 	public async Task<UResponse<List<DbAdminTableResponse>?>> Tables(DbAdminTablesParams p, CancellationToken ct) {
 		UResponse<List<DbAdminTableResponse>?>? guard = GuardAdmin<List<DbAdminTableResponse>?>(p.Token);
@@ -19,15 +17,15 @@ public class DbAdminService(DbContext db, ITokenService ts, ILocalizationService
 
 		NpgsqlConnection conn = await OpenConnection(ct);
 		const string sql = """
-			SELECT c.relname AS name,
-			       c.reltuples::bigint AS estimated_rows,
-			       pg_size_pretty(pg_total_relation_size(c.oid)) AS size,
-			       (SELECT count(*) FROM information_schema.columns col WHERE col.table_schema = @schema AND col.table_name = c.relname) AS column_count
-			FROM pg_class c
-			JOIN pg_namespace n ON n.oid = c.relnamespace
-			WHERE n.nspname = @schema AND c.relkind = 'r'
-			ORDER BY c.relname;
-			""";
+		                   SELECT c.relname AS name,
+		                          c.reltuples::bigint AS estimated_rows,
+		                          pg_size_pretty(pg_total_relation_size(c.oid)) AS size,
+		                          (SELECT count(*) FROM information_schema.columns col WHERE col.table_schema = @schema AND col.table_name = c.relname) AS column_count
+		                   FROM pg_class c
+		                   JOIN pg_namespace n ON n.oid = c.relnamespace
+		                   WHERE n.nspname = @schema AND c.relkind = 'r'
+		                   ORDER BY c.relname;
+		                   """;
 		await using NpgsqlCommand cmd = new(sql, conn);
 		cmd.Parameters.AddWithValue("schema", p.Schema);
 		List<DbAdminTableResponse> tables = [];
@@ -56,11 +54,11 @@ public class DbAdminService(DbContext db, ITokenService ts, ILocalizationService
 		result.PrimaryKeys = pks;
 
 		const string colSql = """
-			SELECT column_name, data_type, udt_name, is_nullable, column_default, ordinal_position
-			FROM information_schema.columns
-			WHERE table_schema = @schema AND table_name = @table
-			ORDER BY ordinal_position;
-			""";
+		                      SELECT column_name, data_type, udt_name, is_nullable, column_default, ordinal_position
+		                      FROM information_schema.columns
+		                      WHERE table_schema = @schema AND table_name = @table
+		                      ORDER BY ordinal_position;
+		                      """;
 		await using (NpgsqlCommand cmd = new(colSql, conn)) {
 			cmd.Parameters.AddWithValue("schema", p.Schema);
 			cmd.Parameters.AddWithValue("table", p.Table);
@@ -98,12 +96,12 @@ public class DbAdminService(DbContext db, ITokenService ts, ILocalizationService
 		}
 
 		const string fkSql = """
-			SELECT kcu.column_name, ccu.table_name AS ref_table, ccu.column_name AS ref_column, tc.constraint_name
-			FROM information_schema.table_constraints tc
-			JOIN information_schema.key_column_usage kcu ON kcu.constraint_name = tc.constraint_name AND kcu.table_schema = tc.table_schema
-			JOIN information_schema.constraint_column_usage ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema
-			WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_schema = @schema AND tc.table_name = @table;
-			""";
+		                     SELECT kcu.column_name, ccu.table_name AS ref_table, ccu.column_name AS ref_column, tc.constraint_name
+		                     FROM information_schema.table_constraints tc
+		                     JOIN information_schema.key_column_usage kcu ON kcu.constraint_name = tc.constraint_name AND kcu.table_schema = tc.table_schema
+		                     JOIN information_schema.constraint_column_usage ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema
+		                     WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_schema = @schema AND tc.table_name = @table;
+		                     """;
 		await using (NpgsqlCommand cmd = new(fkSql, conn)) {
 			cmd.Parameters.AddWithValue("schema", p.Schema);
 			cmd.Parameters.AddWithValue("table", p.Table);
@@ -139,7 +137,6 @@ public class DbAdminService(DbContext db, ITokenService ts, ILocalizationService
 
 		try {
 			int? total = null;
-			// count(*) scans the table, so only recompute it when explicitly requested (first load / new filter / new page size).
 			if (p.WithCount) {
 				await using NpgsqlCommand countCmd = new($"SELECT count(*) FROM {relation}{where};", conn);
 				total = Convert.ToInt32(await countCmd.ExecuteScalarAsync(ct) ?? 0);
@@ -210,7 +207,8 @@ public class DbAdminService(DbContext db, ITokenService ts, ILocalizationService
 		NpgsqlConnection conn = await OpenConnection(ct);
 		Dictionary<string, string> udt = await ColumnUdtMap(conn, p.Schema, p.Table, ct);
 		List<string> assignments = [];
-		await using NpgsqlCommand cmd = new() { Connection = conn };
+		await using NpgsqlCommand cmd = new();
+		cmd.Connection = conn;
 		int i = 0;
 		foreach ((string column, JsonElement value) in p.Values) {
 			if (!udt.TryGetValue(column, out string? type)) continue;
@@ -252,7 +250,8 @@ public class DbAdminService(DbContext db, ITokenService ts, ILocalizationService
 		Dictionary<string, string> udt = await ColumnUdtMap(conn, p.Schema, p.Table, ct);
 		List<string> columns = [];
 		List<string> valuesSql = [];
-		await using NpgsqlCommand cmd = new() { Connection = conn };
+		await using NpgsqlCommand cmd = new();
+		cmd.Connection = conn;
 		int i = 0;
 		foreach ((string column, JsonElement value) in p.Values) {
 			if (!udt.TryGetValue(column, out string? type)) continue;
@@ -297,9 +296,7 @@ public class DbAdminService(DbContext db, ITokenService ts, ILocalizationService
 			return new UResponse(Usc.BadRequest, e.MessageText);
 		}
 	}
-
-	// ===== Helpers =====
-
+	
 	private async Task<NpgsqlConnection> OpenConnection(CancellationToken ct) {
 		NpgsqlConnection conn = (NpgsqlConnection)db.Database.GetDbConnection();
 		if (conn.State != System.Data.ConnectionState.Open) await conn.OpenAsync(ct);
@@ -333,12 +330,12 @@ public class DbAdminService(DbContext db, ITokenService ts, ILocalizationService
 
 	private static async Task<List<string>> PrimaryKeys(NpgsqlConnection conn, string schema, string table, CancellationToken ct) {
 		const string sql = """
-			SELECT a.attname
-			FROM pg_index i
-			JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY (i.indkey)
-			WHERE i.indrelid = format('%I.%I', @schema, @table)::regclass AND i.indisprimary
-			ORDER BY array_position(i.indkey, a.attnum);
-			""";
+		                   SELECT a.attname
+		                   FROM pg_index i
+		                   JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY (i.indkey)
+		                   WHERE i.indrelid = format('%I.%I', @schema, @table)::regclass AND i.indisprimary
+		                   ORDER BY array_position(i.indkey, a.attnum);
+		                   """;
 		List<string> pks = [];
 		await using NpgsqlCommand cmd = new(sql, conn);
 		cmd.Parameters.AddWithValue("schema", schema);
@@ -377,27 +374,24 @@ public class DbAdminService(DbContext db, ITokenService ts, ILocalizationService
 		_ => (false, e.GetRawText())
 	};
 
-	private static string? Normalize(object? v) {
-		switch (v) {
-			case null or DBNull: return null;
-			case string s: return s;
-			case bool b: return b ? "true" : "false";
-			case DateTime dt: return dt.ToString("o", CultureInfo.InvariantCulture);
-			case DateTimeOffset dto: return dto.ToString("o", CultureInfo.InvariantCulture);
-			case Guid g: return g.ToString();
-			case byte[] bytes: return "\\x" + Convert.ToHexString(bytes);
-			case IEnumerable when v is not string: return JsonSerializer.Serialize(v);
-			default: return Convert.ToString(v, CultureInfo.InvariantCulture);
-		}
-	}
+	private static string? Normalize(object? v) => v switch {
+		null or DBNull => null,
+		string s => s,
+		bool b => b ? "true" : "false",
+		DateTime dt => dt.ToString("o", CultureInfo.InvariantCulture),
+		DateTimeOffset dto => dto.ToString("o", CultureInfo.InvariantCulture),
+		Guid g => g.ToString(),
+		byte[] bytes => "\\x" + Convert.ToHexString(bytes),
+		IEnumerable and not string => JsonSerializer.Serialize(v),
+		_ => Convert.ToString(v, CultureInfo.InvariantCulture)
+	};
 
 	private static string Quote(string identifier) => $"\"{identifier.Replace("\"", "\"\"")}\"";
 
 	private UResponse? GuardAdmin(string? token) {
 		JwtClaimData? userData = ts.ExtractClaims(token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
-		if (!userData.Tags.Contains(TagUser.SystemAdmin)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
-		return null;
+		return !userData.Tags.Contains(TagUser.SystemAdmin) ? new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction")) : null;
 	}
 
 	private UResponse<T>? GuardAdmin<T>(string? token) {

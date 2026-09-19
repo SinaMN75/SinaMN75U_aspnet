@@ -93,7 +93,7 @@ public class InquiryService(
 		return new UResponse<ZipCodeToAddressDetailResponse?>(new ZipCodeToAddressDetailResponse {
 			IsCached = inquiryHistory != null,
 			CachedAt = inquiryHistory?.CreatedAt,
-			CacheExpiresAt = inquiryHistory == null ? null : inquiryHistory.CreatedAt.AddDays(Core.App.InquiryCacheDurations.ZipCodeToAddressDetail),
+			CacheExpiresAt = inquiryHistory?.CreatedAt.AddDays(Core.App.InquiryCacheDurations.ZipCodeToAddressDetail),
 			BuildingName = json.GetStringOrNull("BuildingName"),
 			Description = json.GetStringOrNull("description"),
 			Floor = json.GetStringOrNull("floor"),
@@ -127,7 +127,6 @@ public class InquiryService(
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
-			// Charge the wallet before the billable third-party call so any external hit is always paid for
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.VehicleViolationsDetail, Token = p.Token }, ct);
 
 			HttpResponseMessage? response = await SendVehicleViolationsDetail(p, tokenResponse.AccessToken, ct);
@@ -153,7 +152,7 @@ public class InquiryService(
 		return new UResponse<VehicleViolationDetailResponse?>(new VehicleViolationDetailResponse {
 			IsCached = inquiryHistory != null,
 			CachedAt = inquiryHistory?.CreatedAt,
-			CacheExpiresAt = inquiryHistory == null ? null : inquiryHistory.CreatedAt.AddDays(Core.App.InquiryCacheDurations.VehicleViolationsDetail),
+			CacheExpiresAt = inquiryHistory?.CreatedAt.AddDays(Core.App.InquiryCacheDurations.VehicleViolationsDetail),
 			PlateDictation = data.GetStringOrNull("plateDictation"),
 			PlateChar = data.GetStringOrNull("plateChar"),
 			ComplaintStatus = data.GetStringOrNull("complaintStatus"),
@@ -205,7 +204,6 @@ public class InquiryService(
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
-			// Charge the wallet before the billable third-party call so any external hit is always paid for
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceStatus, Token = p.Token }, ct);
 
 			HttpResponseMessage? response = await SendDrivingLicenceDetail(p, tokenResponse.AccessToken, ct);
@@ -261,7 +259,6 @@ public class InquiryService(
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<LicencePlateDetailResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
-			// Charge the wallet before the billable third-party call so any external hit is always paid for
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.LicencePlateDetail, Token = p.Token }, ct);
 
 			HttpResponseMessage? response = await SendLicencePlateDetail(p, tokenResponse.AccessToken, ct);
@@ -286,7 +283,7 @@ public class InquiryService(
 		return new UResponse<LicencePlateDetailResponse?>(new LicencePlateDetailResponse {
 			IsCached = inquiryHistory != null,
 			CachedAt = inquiryHistory?.CreatedAt,
-			CacheExpiresAt = inquiryHistory == null ? null : inquiryHistory.CreatedAt.AddDays(Core.App.InquiryCacheDurations.LicencePlateDetail),
+			CacheExpiresAt = inquiryHistory?.CreatedAt.AddDays(Core.App.InquiryCacheDurations.LicencePlateDetail),
 			Status = data.GetStringOrNull("plateStatus"),
 			TracePlate = data.GetStringOrNull("tracePlate"),
 			Items = data.GetProperty("historyPlate")
@@ -309,14 +306,12 @@ public class InquiryService(
 		string? responseBody = inquiryHistory?.Response;
 
 		if (inquiryHistory == null || responseBody == null) {
-			// Group A gate: without an explicit paid refresh, never auto-charge - signal the app to show the payment screen first
 			if (!p.Refresh) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.InquiryNotCached, ls.Get("noCachedResultYetPleaseConfirmPaymentToFetchFreshData"));
 			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.DrivingLicenceNegativePoint, ct)) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
-			// Charge the wallet before the billable third-party call so any external hit is always paid for
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceNegativePoint, Token = p.Token }, ct);
 
 			HttpResponseMessage? response = await SendDrivingLicenceNegativePoint(p, tokenResponse.AccessToken, ct);
@@ -357,14 +352,12 @@ public class InquiryService(
 		string? responseBody = inquiryHistory?.Response;
 
 		if (inquiryHistory == null || responseBody == null) {
-			// Group A gate: without an explicit paid refresh, never auto-charge - signal the app to show the payment screen first
 			if (!p.Refresh) return new UResponse<FreewayTollsResponse?>(null, Usc.InquiryNotCached, ls.Get("noCachedResultYetPleaseConfirmPaymentToFetchFreshData"));
 			if (!await walletService.HasEnoughBalance(userData.Id, Core.App.ApiCallCosts.FreewayToll, ct)) return new UResponse<FreewayTollsResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<FreewayTollsResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
-			// Charge the wallet before the billable third-party call so any external hit is always paid for
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.FreewayTolls, Token = p.Token }, ct);
 
 			HttpResponseMessage? response = await SendFreewayTolls(p, tokenResponse.AccessToken, ct);
@@ -389,7 +382,7 @@ public class InquiryService(
 		return new UResponse<FreewayTollsResponse?>(new FreewayTollsResponse {
 			IsCached = inquiryHistory != null,
 			CachedAt = inquiryHistory?.CreatedAt,
-			CacheExpiresAt = inquiryHistory == null ? null : inquiryHistory.CreatedAt.AddDays(Core.App.InquiryCacheDurations.FreewayToll),
+			CacheExpiresAt = inquiryHistory?.CreatedAt.AddDays(Core.App.InquiryCacheDurations.FreewayToll),
 			TotalPrice = data.GetIntOrNull("total_price").ToString(),
 			Items = data.GetProperty("items").EnumerateArray().Select(x => new FreewayTollsResponse.FreewayTollsItem {
 				Id = x.GetStringOrNull("id"),
@@ -415,7 +408,6 @@ public class InquiryService(
 			GetAccessTokenResponse? tokenResponse = await GetAccessToken(ct);
 			if (tokenResponse?.AccessToken == null) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.ShahkarException, ls.Get("shahkarIsNotAvailableAtThisTimePleaseTryAgainLater"));
 
-			// Charge the wallet before the billable third-party call so any external hit is always paid for
 			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.IBanToBankAccountDetail, Token = p.Token }, ct);
 
 			HttpResponseMessage? response = await SendIBanToBankAccountDetail(p, tokenResponse.AccessToken, ct);
@@ -440,7 +432,7 @@ public class InquiryService(
 		return new UResponse<IBanToBankAccountDetailResponse?>(new IBanToBankAccountDetailResponse {
 			IsCached = inquiryHistory != null,
 			CachedAt = inquiryHistory?.CreatedAt,
-			CacheExpiresAt = inquiryHistory == null ? null : inquiryHistory.CreatedAt.AddDays(Core.App.InquiryCacheDurations.IBanToBankAccountDetail),
+			CacheExpiresAt = inquiryHistory?.CreatedAt.AddDays(Core.App.InquiryCacheDurations.IBanToBankAccountDetail),
 			DepositNumber = data.GetStringOrNull("depositNumber"),
 			IBanType = data.GetStringOrNull("iBanType"),
 			BankCode = data.GetStringOrNull("bankCode"),
@@ -449,7 +441,6 @@ public class InquiryService(
 		});
 	}
 
-	// Read-only: reports which vehicle inquiries are already cached (and their expiry) without touching the wallet or any third-party API.
 	public async Task<UResponse<InquiryCacheStatusResponse?>> InquiryCacheStatus(InquiryCacheStatusParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<InquiryCacheStatusResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));

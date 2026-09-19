@@ -4,7 +4,7 @@ public static class RateLimiter {
 	public static void AddURateLimiter(this IServiceCollection services) {
 		services.AddRateLimiter(o => {
 			o.AddConcurrencyLimiter("global-concurrency", opts => {
-				opts.PermitLimit = 50; // simultaneous requests
+				opts.PermitLimit = 50;
 			});
 
 			o.AddFixedWindowLimiter("per-ip-minute", opts => {
@@ -14,7 +14,6 @@ public static class RateLimiter {
 				opts.QueueLimit = 10;
 			});
 
-			// Strict per-IP limit for auth endpoints (login, OTP request/verify, refresh) to blunt brute-force and OTP guessing.
 			o.AddPolicy("auth", ctx => RateLimitPartition.GetFixedWindowLimiter(
 				ctx.GetRealIp() ?? "unknown",
 				_ => new FixedWindowRateLimiterOptions {

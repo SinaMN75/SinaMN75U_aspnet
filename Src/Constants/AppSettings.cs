@@ -97,8 +97,6 @@ public sealed class Gold {
 	public required string ClientKey { get; set; }
 	public required string ClientSecret { get; set; }
 	public required IEnumerable<string> Scopes { get; set; }
-
-	// When empty the provider mints an API token from the client credentials on first use and caches it.
 	public string? ApiToken { get; set; }
 }
 
@@ -128,7 +126,6 @@ public sealed class ApiCallCosts {
 	public required decimal IBanToBankAccountDetail { get; set; }
 }
 
-// How long a cached inquiry result stays valid, per inquiry type (in days). After this it is treated as a miss.
 public sealed class InquiryCacheDurations {
 	public required int MobileAndNationalCodeVerification { get; set; }
 	public required int ZipCodeToAddressDetail { get; set; }

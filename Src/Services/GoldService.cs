@@ -32,13 +32,7 @@ public class GoldService(
 	private const string ClientPath = "api/v1/client/";
 	private const int MinPageLimit = 1;
 	private const int MaxPageLimit = 100;
-
-	// Buying a fixed weight reserves a little more than the quoted price so a tick up between the quote and the fill
-	// never leaves the order underfunded; the unused part is refunded in the same request.
 	private const decimal BuyReserveBuffer = 1.02m;
-
-	// Taline caps the number of active tokens per account, so a token minted from the client credentials
-	// is reused for the whole process and only re-created after a 401.
 	private static string? _cachedApiToken;
 	private static readonly SemaphoreSlim TokenLock = new(1, 1);
 
@@ -96,8 +90,7 @@ public class GoldService(
 		if (p.QuoteAmount is > 0) body.Add("quoteAmount", p.QuoteAmount.Value.ToString(CultureInfo.InvariantCulture));
 
 		GoldResult r = await CallWithToken(HttpMethod.Post, $"{ClientPath}orders", body, ct);
-		if (!r.Ok) return new UResponse<GoldOrderResponse?>(null, r.Status, r.Message);
-		return new UResponse<GoldOrderResponse?>(MapOrder(r.Item), Usc.Created);
+		return !r.Ok ? new UResponse<GoldOrderResponse?>(null, r.Status, r.Message) : new UResponse<GoldOrderResponse?>(MapOrder(r.Item), Usc.Created);
 	}
 
 	public async Task<UResponse<GoldOrderListResponse?>> ReadOrders(GoldReadOrdersParams p, CancellationToken ct) {
@@ -120,8 +113,7 @@ public class GoldService(
 		if (userData.IsExpired) return new UResponse<GoldOrderResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		GoldResult r = await CallWithToken(HttpMethod.Get, $"{ClientPath}orders/{Uri.EscapeDataString(p.Id)}", null, ct);
-		if (!r.Ok) return new UResponse<GoldOrderResponse?>(null, r.Status, r.Message);
-		return new UResponse<GoldOrderResponse?>(MapOrder(r.Item));
+		return !r.Ok ? new UResponse<GoldOrderResponse?>(null, r.Status, r.Message) : new UResponse<GoldOrderResponse?>(MapOrder(r.Item));
 	}
 
 	public async Task<UResponse<IEnumerable<GoldBalanceResponse>?>> ReadBalances(BaseParams p, CancellationToken ct) {
@@ -140,8 +132,7 @@ public class GoldService(
 		if (userData.IsExpired) return new UResponse<GoldBalanceResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		GoldResult r = await CallWithToken(HttpMethod.Get, $"{ClientPath}wallets/main/balances/{AssetCode(p.Asset)}", null, ct);
-		if (!r.Ok) return new UResponse<GoldBalanceResponse?>(null, r.Status, r.Message);
-		return new UResponse<GoldBalanceResponse?>(MapBalance(r.Item));
+		return !r.Ok ? new UResponse<GoldBalanceResponse?>(null, r.Status, r.Message) : new UResponse<GoldBalanceResponse?>(MapBalance(r.Item));
 	}
 
 	public async Task<UResponse<GoldTransactionListResponse?>> ReadTransactions(GoldReadTransactionsParams p, CancellationToken ct) {
@@ -231,8 +222,7 @@ public class GoldService(
 		if (!userData.IsAdmin) return new UResponse<IEnumerable<GoldApiTokenResponse>?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		GoldResult r = await CallWithBasic(HttpMethod.Get, $"{ClientPath}auth/api-tokens", null, ct);
-		if (!r.Ok) return new UResponse<IEnumerable<GoldApiTokenResponse>?>(null, r.Status, r.Message);
-		return new UResponse<IEnumerable<GoldApiTokenResponse>?>(r.Items.Select(MapApiToken).ToList());
+		return !r.Ok ? new UResponse<IEnumerable<GoldApiTokenResponse>?>(null, r.Status, r.Message) : new UResponse<IEnumerable<GoldApiTokenResponse>?>(r.Items.Select(MapApiToken).ToList());
 	}
 
 	public async Task<UResponse> DeleteApiToken(GoldDeleteApiTokenParams p, CancellationToken ct) {
@@ -288,7 +278,7 @@ public class GoldService(
 			UnitPrice = unitPrice,
 			IdempotencyKey = Guid.CreateVersion7().ToString("N"),
 			JsonData = new GoldTxnJson {
-				Detail1 = TagGoldTxn.Buy.ToString(),
+				Detail1 = nameof(TagGoldTxn.Buy),
 				RequestedAmount = p.Amount,
 				RequestedGoldAmount = p.GoldAmount,
 				ReservedAmount = reserve
@@ -353,7 +343,7 @@ public class GoldService(
 			UnitPrice = unitPrice,
 			IdempotencyKey = Guid.CreateVersion7().ToString("N"),
 			JsonData = new GoldTxnJson {
-				Detail1 = TagGoldTxn.Sell.ToString(),
+				Detail1 = nameof(TagGoldTxn.Sell),
 				RequestedAmount = p.Amount,
 				RequestedGoldAmount = p.GoldAmount,
 				ReservedGoldAmount = reserve
@@ -380,7 +370,6 @@ public class GoldService(
 		return await SettleSell(e, order.Result, p.ApiKey, p.Token, ct);
 	}
 
-	// A provider order that came back PENDING is settled the next time the client asks about it, so no background poller is needed.
 	public async Task<UResponse<GoldTxnResponse?>> SyncTxn(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<GoldTxnResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
@@ -389,8 +378,7 @@ public class GoldService(
 		GoldTxnEntity? e = await db.Set<GoldTxnEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse<GoldTxnResponse?>(null, Usc.NotFound, ls.Get("theGoldTransactionWasNotFound"));
 		if (e.UserId != userData.Id && !userData.IsAdmin) return new UResponse<GoldTxnResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
-		if (!e.Tags.Contains(TagGoldTxn.Pending)) return new UResponse<GoldTxnResponse?>(MapTxn(e));
-		if (!e.OrderId.IsNotNullOrEmpty()) return new UResponse<GoldTxnResponse?>(MapTxn(e));
+		if (!e.Tags.Contains(TagGoldTxn.Pending) || !e.OrderId.IsNotNullOrEmpty()) return new UResponse<GoldTxnResponse?>(MapTxn(e));
 
 		UResponse<GoldOrderResponse?> order = await ReadOrderById(new GoldReadOrderParams { ApiKey = p.ApiKey, Token = p.Token, Id = e.OrderId! }, ct);
 		if (order.Result == null) return new UResponse<GoldTxnResponse?>(MapTxn(e), order.Status, order.Message);
@@ -561,8 +549,7 @@ public class GoldService(
 		if (ipWhitelist.IsNotNullOrEmpty()) body.Add("ipWhitelist", ipWhitelist);
 
 		GoldResult r = await CallWithBasic(HttpMethod.Post, $"{ClientPath}auth/api-tokens", body, ct);
-		if (!r.Ok) return new UResponse<GoldApiTokenResponse?>(null, r.Status, r.Message);
-		return new UResponse<GoldApiTokenResponse?>(MapApiToken(r.Item), Usc.Created);
+		return !r.Ok ? new UResponse<GoldApiTokenResponse?>(null, r.Status, r.Message) : new UResponse<GoldApiTokenResponse?>(MapApiToken(r.Item), Usc.Created);
 	}
 
 	private async Task<GoldResult> CallWithBasic(HttpMethod method, string path, object? body, CancellationToken ct) {
@@ -580,7 +567,6 @@ public class GoldService(
 		GoldResult result = await Send(method, path, body, $"Bearer {token}", ct);
 		if (result.Ok || result.HttpCode != 401 || Core.App.Gold.ApiToken.IsNotNullOrEmpty()) return result;
 
-		// The cached auto-created token was revoked or expired: mint a new one and replay once.
 		string? refreshed = await ResolveApiToken(true, ct);
 		return refreshed.IsNotNullOrEmpty() ? await Send(method, path, body, $"Bearer {refreshed}", ct) : result;
 	}
@@ -789,8 +775,7 @@ public class GoldService(
 	}).ToList();
 
 	private static IEnumerable<JsonElement> ReadArray(JsonElement element, string propertyName) {
-		if (element.ValueKind != JsonValueKind.Object) return [];
-		if (!element.TryGetProperty(propertyName, out JsonElement value) || value.ValueKind != JsonValueKind.Array) return [];
+		if (element.ValueKind != JsonValueKind.Object || !element.TryGetProperty(propertyName, out JsonElement value) || value.ValueKind != JsonValueKind.Array) return [];
 		return value.EnumerateArray().ToList();
 	}
 
@@ -803,7 +788,6 @@ public class GoldService(
 		return DateTime.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out DateTime parsed) ? parsed : null;
 	}
 
-	// Unwraps the provider envelope: { success, data: { item | items }, meta: { pagination: { nextCursor } } }
 	private sealed class GoldResult {
 		public bool Ok { get; init; }
 		public JsonElement Root { get; init; }
@@ -818,8 +802,7 @@ public class GoldService(
 		public IEnumerable<JsonElement> Items {
 			get {
 				JsonElement data = Data;
-				if (data.ValueKind != JsonValueKind.Object) return [];
-				if (!data.TryGetProperty("items", out JsonElement items) || items.ValueKind != JsonValueKind.Array) return [];
+				if (data.ValueKind != JsonValueKind.Object || !data.TryGetProperty("items", out JsonElement items) || items.ValueKind != JsonValueKind.Array) return [];
 				return items.EnumerateArray().ToList();
 			}
 		}

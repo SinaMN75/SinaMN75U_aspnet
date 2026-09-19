@@ -118,10 +118,7 @@ public class FileManagerService(
 		if (!provider.TryGetContentType(full, out string? contentType)) contentType = "application/octet-stream";
 		return new UResponse<(string, string)?>((full, contentType));
 	}
-
-	// ---- helpers ----
-
-	// Resolves a wwwroot-relative path to an absolute one and rejects anything that escapes the root.
+	
 	private bool TryResolve(string? relative, out string fullPath) {
 		string combined = Path.GetFullPath(Path.Combine(Root, (relative ?? "").Replace('\\', '/').TrimStart('/')));
 		fullPath = combined;
@@ -134,7 +131,6 @@ public class FileManagerService(
 
 	private string ToRelative(string fullPath) => Path.GetRelativePath(Root, fullPath).Replace('\\', '/') is "." ? "" : Path.GetRelativePath(Root, fullPath).Replace('\\', '/');
 
-	// Strips any directory components so a name can never be used to traverse.
 	private static string SanitizeName(string name) => Path.GetFileName(name.Trim());
 
 	private FileManagerEntryResponse ToEntry(FileSystemInfo info) {

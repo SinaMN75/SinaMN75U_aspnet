@@ -1,7 +1,5 @@
 namespace SinaMN75U.Data.Params;
 
-// ---------------- Hotel ----------------
-
 public sealed class HotelCreateParams : BaseCreateParams<TagHotel> {
 	[UValidationRequired("titleIsRequired"), UValidationStringLength(2, 100, "TitleMinLength")]
 	public string Title { get; set; } = null!;
@@ -51,8 +49,6 @@ public sealed class HotelReadParams : BaseReadParams<TagHotel> {
 
 	public HotelSelectorArgs SelectorArgs { get; set; } = new();
 }
-
-// ---------------- HotelRoom ----------------
 
 public sealed class HotelRoomCreateParams : BaseCreateParams<TagRoom> {
 	[UValidationRequired("titleIsRequired"), UValidationStringLength(2, 100, "TitleMinLength")]
@@ -123,8 +119,6 @@ public sealed class HotelRoomReadParams : BaseReadParams<TagRoom> {
 	public HotelRoomSelectorArgs SelectorArgs { get; set; } = new();
 }
 
-// ---------------- HotelReservation ----------------
-
 public sealed class HotelReservationCreateParams : BaseCreateParams<TagHotelReservation> {
 	[UValidationRequired("checkInDateIsRequired")]
 	public DateTime CheckInDate { get; set; }
@@ -141,15 +135,12 @@ public sealed class HotelReservationCreateParams : BaseCreateParams<TagHotelRese
 	[UValidationRequired("roomIsRequired")]
 	public Guid RoomId { get; set; }
 
-	/// <summary>Optional override; when null the total is computed from nights * room price.</summary>
 	public decimal? TotalPrice { get; set; }
 
 	public string? GuestName { get; set; }
 	public string? GuestPhone { get; set; }
 	public string? Notes { get; set; }
 	public List<ReservationGuestParams>? Guests { get; set; }
-
-	/// <summary>Daily late-fee percent applied to the generated invoice.</summary>
 	public int PenaltyPrecentEveryDate { get; set; }
 }
 
@@ -161,7 +152,6 @@ public sealed class ReservationGuestParams {
 	public string? PhoneNumber { get; set; }
 }
 
-/// <summary>Self-service booking: the reservation belongs to the caller, no admin permission needed.</summary>
 public sealed class HotelReservationBookParams : BaseParams {
 	[UValidationRequired("roomIsRequired")]
 	public Guid RoomId { get; set; }
@@ -214,20 +204,12 @@ public sealed class HotelReservationReadParams : BaseReadParams<TagHotelReservat
 	public Guid? HotelId { get; set; }
 	public DateTime? CheckInDate { get; set; }
 	public DateTime? CheckOutDate { get; set; }
-
-	/// <summary>Reservation currently in-stay (check-in passed, check-out not yet).</summary>
 	public bool? ActiveOnly { get; set; }
-
-	/// <summary>Check-in date is in the future.</summary>
 	public bool? UpcomingOnly { get; set; }
-
-	/// <summary>Check-out date has passed.</summary>
 	public bool? PastOnly { get; set; }
 
 	public HotelReservationSelectorArgs SelectorArgs { get; set; } = new();
 }
-
-// ---------------- HotelInvoice ----------------
 
 public sealed class HotelInvoiceCreateParams : BaseCreateParams<TagHotelInvoice> {
 	[UValidationRequired("priceIsRequired")]
@@ -261,20 +243,13 @@ public sealed class HotelInvoiceReadParams : BaseReadParams<TagHotelInvoice> {
 	public Guid? ReservationId { get; set; }
 	public Guid? UserId { get; set; }
 	public Guid? HotelId { get; set; }
-
-	/// <summary>true = only paid invoices, false = only unpaid invoices.</summary>
 	public bool? IsPaid { get; set; }
-
-	/// <summary>true = only unpaid invoices whose due date has passed.</summary>
 	public bool? IsOverdue { get; set; }
-
 	public DateTime? MinDueDate { get; set; }
 	public DateTime? MaxDueDate { get; set; }
 	public decimal? MinDebtAmount { get; set; }
 	public decimal? MaxDebtAmount { get; set; }
 }
-
-// ---------------- Dorm ----------------
 
 public sealed class DormCreateParams : BaseCreateParams<TagDorm> {
 	[UValidationRequired("titleIsRequired"), UValidationStringLength(2, 100, "TitleMinLength")]
@@ -317,8 +292,6 @@ public sealed class DormReadParams : BaseReadParams<TagDorm> {
 	public DormSelectorArgs SelectorArgs { get; set; } = new();
 }
 
-// ---------------- DormRoom ----------------
-
 public sealed class DormRoomCreateParams : BaseCreateParams<TagDormRoom> {
 	[UValidationRequired("titleIsRequired"), UValidationStringLength(2, 100, "TitleMinLength")]
 	public string Title { get; set; } = null!;
@@ -349,8 +322,6 @@ public sealed class DormRoomReadParams : BaseReadParams<TagDormRoom> {
 
 	public DormRoomSelectorArgs SelectorArgs { get; set; } = new();
 }
-
-// ---------------- DormBed ----------------
 
 public sealed class DormBedCreateParams : BaseCreateParams<TagDormBed> {
 	[UValidationRequired("titleIsRequired"), UValidationStringLength(1, 4, "TitleMaxLength")]
@@ -383,8 +354,6 @@ public sealed class DormBedReadParams : BaseReadParams<TagDormBed> {
 	public decimal? MaxMonthlyRent { get; set; }
 	public DormBedSelectorArgs SelectorArgs { get; set; } = new();
 }
-
-// ---------------- DormBedContract ----------------
 
 public sealed class DormBedContractCreateParams : BaseCreateParams<TagDormBedContract> {
 	[UValidationRequired("startDateIsRequired")]
@@ -419,23 +388,12 @@ public sealed class DormBedContractReadParams : BaseReadParams<TagDormBedContrac
 	public Guid? DormId { get; set; }
 	public DateTime? StartDate { get; set; }
 	public DateTime? EndDate { get; set; }
-
-	/// <summary>Contract is currently within its start/end date range.</summary>
 	public bool? ActiveOnly { get; set; }
-
-	/// <summary>Contract's start date hasn't arrived yet.</summary>
 	public bool? UpcomingOnly { get; set; }
-
-	/// <summary>Contract's end date has already passed.</summary>
 	public bool? ExpiredOnly { get; set; }
-
-	/// <summary>Contract ends within this many days from now (and hasn't already expired).</summary>
 	public int? ExpiringWithinDays { get; set; }
-
 	public DormBedContractSelectorArgs SelectorArgs { get; set; } = new();
 }
-
-// ---------------- DormBedInvoice ----------------
 
 public sealed class DormBedInvoiceCreateParams : BaseCreateParams<TagDormBedInvoice> {
 	[UValidationRequired("priceIsRequired")]
@@ -472,17 +430,11 @@ public sealed class DormBedInvoiceUpdateParams : BaseUpdateParams<TagDormBedInvo
 
 public sealed class DormBedInvoiceReadParams : BaseReadParams<TagDormBedInvoice> {
 	public DormBedInvoiceSelectorArgs SelectorArgs { get; set; } = new();
-
 	public Guid? ContractId { get; set; }
 	public Guid? UserId { get; set; }
 	public Guid? DormId { get; set; }
-
-	/// <summary>true = only paid invoices, false = only unpaid invoices.</summary>
 	public bool? IsPaid { get; set; }
-
-	/// <summary>true = only unpaid invoices whose due date has passed.</summary>
 	public bool? IsOverdue { get; set; }
-
 	public DateTime? MinDueDate { get; set; }
 	public DateTime? MaxDueDate { get; set; }
 	public decimal? MinDebtAmount { get; set; }

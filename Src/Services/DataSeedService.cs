@@ -222,8 +222,6 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 	}
 
 	public async Task<UResponse> SeedContents() {
-		// One default row per TagContent. Idempotent: a tag already present in the
-		// Contents table is skipped, so this endpoint is safe to call repeatedly.
 		List<ContentEntity> defaults = [
 			BuildContent(
 				tag: TagContent.HomeBanner1,

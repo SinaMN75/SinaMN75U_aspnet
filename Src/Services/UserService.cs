@@ -18,11 +18,6 @@ public class UserService(
 	IMemoryCache cache,
 	IWebHostEnvironment env
 ) : IUserService {
-	/// <summary>
-	/// Role/permission tags are the keys to the admin panel. Only a full admin (SuperAdmin/SystemAdmin/SystemUser)
-	/// may ever grant or revoke these on any user - never a SubAdmin, and never a user acting on themselves,
-	/// otherwise a SubAdmin (or a compromised regular account) could self-escalate to SuperAdmin.
-	/// </summary>
 	private static readonly HashSet<TagUser> RoleOrPermissionTags = [
 		TagUser.SuperAdmin, TagUser.SystemAdmin, TagUser.SystemUser, TagUser.SubAdmin,
 		TagUser.PermissionManageHotels, TagUser.PermissionDeleteHotels,
@@ -179,11 +174,7 @@ public class UserService(
 		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("accountNotFound"));
 
-		if (userData.Id != e.Id && !userData.IsAdmin && !userData.HasPermission(TagUser.PermissionManageUsers)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
-
-		// Role/permission tags can only ever be changed by a full admin - never by the user themselves,
-		// and never by a SubAdmin, even one holding PermissionManageUsers - otherwise anyone could self-escalate.
-		if (!userData.IsAdmin && TouchesRoleOrPermissionTags(p.Tags, p.AddTags, p.RemoveTags)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (userData.Id != e.Id && !userData.IsAdmin && !userData.HasPermission(TagUser.PermissionManageUsers) || !userData.IsAdmin && TouchesRoleOrPermissionTags(p.Tags, p.AddTags, p.RemoveTags)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Password.IsNotNullOrEmpty()) e.Password = UPasswordHasher.Hash(p.Password);
 		if (p.FirstName.IsNotNullOrEmpty()) e.FirstName = p.FirstName;

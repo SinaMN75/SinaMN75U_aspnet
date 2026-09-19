@@ -23,7 +23,6 @@ public class DashboardService(
 	ITokenService ts,
 	ILocalizationService ls
 ) : IDashboardService {
-	// Wallet-txn tags that represent spending/consumption (mirrors AccountingService).
 	private static readonly TagWalletTxn[] SpendingTags = [
 		TagWalletTxn.MobileAndNationalCodeVerification, TagWalletTxn.ZipCodeToAddressDetail,
 		TagWalletTxn.VehicleViolationsDetail, TagWalletTxn.DrivingLicenceStatus, TagWalletTxn.LicencePlateDetail,
@@ -79,7 +78,6 @@ public class DashboardService(
 					}
 				}
 
-				// Memory metrics
 				(double macTotalGb, double macFreeGb, double _, double macUsagePercent) = await GetMacMemory(CancellationToken.None);
 				totalMem = macTotalGb;
 				freeMem = macFreeGb;
@@ -140,8 +138,7 @@ public class DashboardService(
 
 	private static async Task<(ulong user, ulong nice, ulong system, ulong total)> GetLinuxCpuSample() {
 		string[] lines = await File.ReadAllLinesAsync("/proc/stat");
-		string[] values = lines.First(l => l.StartsWith("cpu "))
-			.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+		string[] values = lines.First(l => l.StartsWith("cpu ")).Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
 		ulong user = ulong.Parse(values[1]);
 		ulong nice = ulong.Parse(values[2]);
@@ -151,9 +148,7 @@ public class DashboardService(
 
 		return (user, nice, system, total);
 	}
-
-	// ===================== Financial / Operations Dashboard =====================
-
+	
 	public async Task<UResponse<FinancialOpsDashboardResponse?>> ReadFinancialOpsDashboard(DashboardRangeParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<FinancialOpsDashboardResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
@@ -273,9 +268,7 @@ public class DashboardService(
 			RecentUsers = recentUsers
 		});
 	}
-
-	// ===================== Property (Hotels/Dorms) Dashboard =====================
-
+	
 	public async Task<UResponse<PropertyDashboardResponse?>> ReadPropertyDashboard(DashboardRangeParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<PropertyDashboardResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
@@ -410,9 +403,7 @@ public class DashboardService(
 			DormsByCity = dormsByCity
 		});
 	}
-
-	// ===================== OS / Server Metrics =====================
-
+	
 	public async Task<UResponse<OsMetricsResponse?>> ReadOsMetrics(BaseParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<OsMetricsResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
@@ -499,11 +490,9 @@ public class DashboardService(
 		}
 		else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 			try {
-				Win32FileTime firstIdle, firstKernel, firstUser;
-				GetSystemTimes(out firstIdle, out firstKernel, out firstUser);
+				GetSystemTimes(out Win32FileTime firstIdle, out Win32FileTime firstKernel, out Win32FileTime firstUser);
 				await Task.Delay(700, ct);
-				Win32FileTime secondIdle, secondKernel, secondUser;
-				GetSystemTimes(out secondIdle, out secondKernel, out secondUser);
+				GetSystemTimes(out Win32FileTime secondIdle, out Win32FileTime secondKernel, out Win32FileTime secondUser);
 
 				ulong idleDelta = ToUlong(secondIdle) - ToUlong(firstIdle);
 				ulong kernelDelta = ToUlong(secondKernel) - ToUlong(firstKernel);
@@ -522,8 +511,7 @@ public class DashboardService(
 				/* fallback values remain at 0 */
 			}
 		}
-
-		// Storage is read per-platform (like CPU and memory): df on Linux/macOS, DriveInfo on Windows.
+		
 		(double diskTotalGb, double diskUsedGb, double diskFreeGb, double diskUsagePercent) = await GetDisk(ct);
 
 		DateTime processStartedAt = DateTime.UtcNow;
@@ -565,9 +553,7 @@ public class DashboardService(
 			DiskUsagePercent = diskUsagePercent
 		});
 	}
-
-	// ===================== API Logs =====================
-
+	
 	public async Task CreateApiLog(ApiLogCreateParams p, CancellationToken ct) {
 		ApiLogEntity? entity = MapToApiLogEntity(p);
 		if (entity == null) return;
@@ -764,8 +750,6 @@ public class DashboardService(
 		return output;
 	}
 
-	// Total RAM comes from hw.memsize (exact physical memory); usage is derived from vm_stat using the
-	// page size reported in its header (4 KB on Intel, 16 KB on Apple Silicon) rather than a hard-coded value.
 	private static async Task<(double totalGb, double freeGb, double usedGb, double usagePercent)> GetMacMemory(CancellationToken ct) {
 		const double bytesToGb = 1024.0 * 1024 * 1024;
 		double totalBytes = 0;
@@ -813,10 +797,7 @@ public class DashboardService(
 			totalBytes == 0 ? 0 : usedBytes / totalBytes * 100
 		);
 	}
-
-	// Primary storage volume, read per-platform (like CPU and memory). Linux/macOS use `df` on the root
-	// filesystem and derive used as total - available, so shared-space filesystems (APFS containers)
-	// report real usage rather than a single volume's. Windows uses DriveInfo on the system drive.
+	
 	private static async Task<(double totalGb, double usedGb, double freeGb, double usagePercent)> GetDisk(CancellationToken ct) {
 		const double bytesToGb = 1024.0 * 1024 * 1024;
 		double totalBytes = 0, freeBytes = 0;

@@ -268,7 +268,6 @@ public class ParkingService(
 		if (parking == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("parkingNotFound"));
 		if (!userData.CanManage(parking.CreatorId, parking.AdminUserIds)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
-		// One tariff row per parking + vehicle type: creating an existing pair updates it instead of duplicating.
 		ParkingTariffEntity? existing = await db.Set<ParkingTariffEntity>().FirstOrDefaultAsync(x => x.ParkingId == p.ParkingId && x.VehicleType == p.VehicleType, ct);
 		if (existing != null) {
 			ApplyTariff(existing, p);
@@ -554,7 +553,6 @@ public class ParkingService(
 		};
 		await db.Set<ParkingStaffEntity>().AddAsync(staff, ct);
 
-		// Keep the parking's admin list in sync so the existing scoping rules see this operator.
 		parking.AdminUserIds.Add(userId);
 		db.Set<ParkingEntity>().Update(parking);
 
@@ -721,7 +719,6 @@ public class ParkingService(
 
 		ParkingShiftEntity? shift = await db.Set<ParkingShiftEntity>().FirstOrDefaultAsync(x => x.ParkingId == p.ParkingId && x.CreatorId == userData.Id && x.EndDate == null, ct);
 		if (shift != null) {
-			// The context is NoTracking, so a mutated entity has to be attached explicitly or the change is dropped.
 			shift.EntryCount++;
 			db.Set<ParkingShiftEntity>().Update(shift);
 		}
@@ -753,7 +750,6 @@ public class ParkingService(
 		return new UResponse<ParkingReportResponse?>(result, Usc.Created);
 	}
 
-	/// Receipt numbers read as yyyyMMdd-NNNN and restart every day, per parking.
 	private async Task<string> NextReceiptNumber(Guid parkingId, DateTime now, CancellationToken ct) {
 		DateTime dayStart = now.Date;
 		DateTime dayEnd = dayStart.AddDays(1);
@@ -803,7 +799,6 @@ public class ParkingService(
 			Discount = discount
 		};
 
-		// A live subscription makes the stay free; the exit receipt is still issued.
 		if (report.SubscriptionId.IsNotNull() && await db.Set<ParkingSubscriptionEntity>().AnyAsync(x => x.Id == report.SubscriptionId && x.ExpiryDate > finish, ct)) {
 			bill.IsSubscription = true;
 			bill.Lines.Add(new ParkingBillLineResponse { Key = "Subscription", Amount = 0, IsFree = true });
@@ -888,7 +883,6 @@ public class ParkingService(
 
 	private static bool IsWeekend(DateTime date) => date.DayOfWeek is DayOfWeek.Thursday or DayOfWeek.Friday;
 
-	/// Minutes of [from, to) that fall inside the nightly window, which may wrap past midnight.
 	private static int NightMinutes(DateTime from, DateTime to, int nightStart, int nightEnd) {
 		if (to <= from || nightStart == nightEnd) return 0;
 		int total = 0;

@@ -1,14 +1,12 @@
 namespace SinaMN75U.Services;
 
 public interface IHotelService {
-	// Hotel
 	public Task<UResponse<Guid?>> CreateHotel(HotelCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<HotelResponse>?>> ReadHotels(HotelReadParams p, CancellationToken ct);
 	public Task<UResponse<HotelResponse?>> ReadHotelById(IdParams<HotelSelectorArgs> p, CancellationToken ct);
 	public Task<UResponse> UpdateHotel(HotelUpdateParams p, CancellationToken ct);
 	public Task<UResponse> DeleteHotel(IdParams p, CancellationToken ct);
 
-	// HotelRoom
 	public Task<UResponse<Guid?>> CreateHotelRoom(HotelRoomCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<HotelRoomResponse>?>> ReadHotelRooms(HotelRoomReadParams p, CancellationToken ct);
 	public Task<UResponse<HotelRoomResponse?>> ReadHotelRoomById(IdParams<HotelRoomSelectorArgs> p, CancellationToken ct);
@@ -16,7 +14,6 @@ public interface IHotelService {
 	public Task<UResponse> UpdateHotelRoom(HotelRoomUpdateParams p, CancellationToken ct);
 	public Task<UResponse> DeleteHotelRoom(IdParams p, CancellationToken ct);
 
-	// HotelReservation
 	public Task<UResponse<Guid?>> CreateHotelReservation(HotelReservationCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<HotelReservationResponse>?>> ReadHotelReservations(HotelReservationReadParams p, CancellationToken ct);
 	public Task<UResponse<HotelReservationResponse?>> ReadHotelReservationById(IdParams<HotelReservationSelectorArgs> p, CancellationToken ct);
@@ -29,7 +26,6 @@ public interface IHotelService {
 	public Task<UResponse<HotelReservationResponse?>> BookHotelReservation(HotelReservationBookParams p, CancellationToken ct);
 	public Task<UResponse> CancelHotelReservationByUser(HotelReservationCancelParams p, CancellationToken ct);
 
-	// HotelInvoice
 	public Task<UResponse<Guid?>> CreateHotelInvoice(HotelInvoiceCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<HotelInvoiceResponse>?>> ReadHotelInvoices(HotelInvoiceReadParams p, CancellationToken ct);
 	public Task<UResponse> UpdateHotelInvoice(HotelInvoiceUpdateParams p, CancellationToken ct);
@@ -37,34 +33,29 @@ public interface IHotelService {
 	public Task<UResponse> PayHotelInvoice(IdParams p, CancellationToken ct);
 	public Task<UResponse> PayHotelInvoiceInternal(HotelInvoicePayParams p, CancellationToken ct);
 
-	// Dorm
 	public Task<UResponse<Guid?>> CreateDorm(DormCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<DormResponse>?>> ReadDorms(DormReadParams p, CancellationToken ct);
 	public Task<UResponse<DormResponse?>> ReadDormById(IdParams<DormSelectorArgs> p, CancellationToken ct);
 	public Task<UResponse> UpdateDorm(DormUpdateParams p, CancellationToken ct);
 	public Task<UResponse> DeleteDorm(IdParams p, CancellationToken ct);
 
-	// DormRoom
 	public Task<UResponse<Guid?>> CreateDormRoom(DormRoomCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<DormRoomResponse>?>> ReadDormRooms(DormRoomReadParams p, CancellationToken ct);
 	public Task<UResponse<DormRoomResponse?>> ReadDormRoomById(IdParams<DormRoomSelectorArgs> p, CancellationToken ct);
 	public Task<UResponse> UpdateDormRoom(DormRoomUpdateParams p, CancellationToken ct);
 	public Task<UResponse> DeleteDormRoom(IdParams p, CancellationToken ct);
 
-	// DormBed
 	public Task<UResponse<Guid?>> CreateDormBed(DormBedCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<DormBedResponse>?>> ReadDormBeds(DormBedReadParams p, CancellationToken ct);
 	public Task<UResponse<DormBedResponse?>> ReadDormBedById(IdParams<DormBedSelectorArgs> p, CancellationToken ct);
 	public Task<UResponse> UpdateDormBed(DormBedUpdateParams p, CancellationToken ct);
 	public Task<UResponse> DeleteDormBed(IdParams p, CancellationToken ct);
 
-	// DormBedContract
 	public Task<UResponse<Guid?>> CreateDormBedContract(DormBedContractCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<DormBedContractResponse>?>> ReadDormBedContracts(DormBedContractReadParams p, CancellationToken ct);
 	public Task<UResponse> UpdateDormBedContract(DormBedContractUpdateParams p, CancellationToken ct);
 	public Task<UResponse> DeleteDormBedContract(IdParams p, CancellationToken ct);
 
-	// DormBedInvoice
 	public Task<UResponse<Guid?>> CreateDormBedInvoice(DormBedInvoiceCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<DormBedInvoiceResponse>?>> ReadDormBedInvoices(DormBedInvoiceReadParams p, CancellationToken ct);
 	public Task<UResponse> UpdateDormBedInvoice(DormBedInvoiceUpdateParams p, CancellationToken ct);
@@ -80,15 +71,12 @@ public class HotelService(
 	ITokenService ts,
 	IWalletService ws
 ) : IHotelService {
-	// Managers see what they own; everyone else only sees the public catalogue of active places.
 	private static bool IsHotelManager(JwtClaimData? u) => u != null && (u.IsSuperAdmin || u.HasPermission(TagUser.PermissionManageHotels));
 
 	private static bool IsDormManager(JwtClaimData? u) => u != null && (u.IsSuperAdmin || u.HasPermission(TagUser.PermissionManageDorms));
 
 	private static Guid UserIdOf(JwtClaimData? u) => u?.Id ?? Guid.Empty;
-
-	// ===================== Hotel =====================
-
+	
 	public async Task<UResponse<Guid?>> CreateHotel(HotelCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
@@ -192,9 +180,7 @@ public class HotelService(
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
-
-	// ===================== HotelRoom =====================
-
+	
 	public async Task<UResponse<Guid?>> CreateHotelRoom(HotelRoomCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
@@ -315,9 +301,7 @@ public class HotelService(
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
-
-	// ===================== HotelReservation =====================
-
+	
 	public async Task<UResponse<Guid?>> CreateHotelReservation(HotelReservationCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
@@ -336,7 +320,6 @@ public class HotelService(
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
 		if (user == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("accountNotFound"));
 
-		// Count overlapping, still-blocking reservations for this room type.
 		int overlapping = await db.Set<HotelReservationEntity>().CountAsync(r =>
 			r.RoomId == room.Id &&
 			r.CheckInDate < p.CheckOutDate &&
@@ -377,7 +360,6 @@ public class HotelService(
 		};
 		await db.Set<HotelReservationEntity>().AddAsync(e, ct);
 
-		// Generate the reservation's invoice.
 		await db.Set<HotelInvoiceEntity>().AddAsync(new HotelInvoiceEntity {
 			Id = Guid.CreateVersion7(),
 			CreatorId = p.CreatorId ?? userData.Id,
@@ -497,7 +479,6 @@ public class HotelService(
 	public Task<UResponse> CheckOutHotelReservation(IdParams p, CancellationToken ct) => TransitionReservation(p, TagHotelReservation.CheckedOut, ct);
 	public Task<UResponse> CancelHotelReservation(IdParams p, CancellationToken ct) => TransitionReservation(p, TagHotelReservation.Cancelled, ct);
 
-	// Availability and pricing use one rule so the quote the user sees equals what booking charges.
 	private static decimal ComputeStayPrice(HotelRoomEntity room, int nights, int guestCount) {
 		decimal total = nights * room.PricePerNight;
 		int extraGuests = Math.Max(0, guestCount - room.Capacity);
@@ -728,9 +709,7 @@ public class HotelService(
 		await db.SaveChangesAsync(ct);
 		return new UResponse(Usc.Success, ls.Get("paymentCompleted"));
 	}
-
-	// ===================== HotelInvoice =====================
-
+	
 	public async Task<UResponse<Guid?>> CreateHotelInvoice(HotelInvoiceCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
@@ -821,9 +800,8 @@ public class HotelService(
 
 		HotelInvoiceEntity? e = await db.Set<HotelInvoiceEntity>().AsTracking().Include(x => x.Reservation).ThenInclude(x => x!.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
-		if (e.Reservation != null && (!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Reservation.Hotel.CreatorId, e.Reservation.Hotel.AdminUserIds)))
+		if (e.Reservation != null && (!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Reservation.Hotel.CreatorId, e.Reservation.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageInvoices))
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
-		if (!userData.HasPermission(TagUser.PermissionManageInvoices)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.DebtAmount.IsNotNull()) e.DebtAmount = p.DebtAmount.Value;
 		if (p.CreditorAmount.IsNotNull()) e.CreditorAmount = p.CreditorAmount.Value;
@@ -844,9 +822,8 @@ public class HotelService(
 
 		HotelInvoiceEntity? e = await db.Set<HotelInvoiceEntity>().Include(x => x.Reservation).ThenInclude(x => x!.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
-		if (e.Reservation != null && (!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Reservation.Hotel.CreatorId, e.Reservation.Hotel.AdminUserIds)))
+		if (e.Reservation != null && (!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Reservation.Hotel.CreatorId, e.Reservation.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionDeleteInvoices))
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
-		if (!userData.HasPermission(TagUser.PermissionDeleteInvoices)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		await db.Set<HotelInvoiceEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 		return new UResponse();
@@ -866,9 +843,7 @@ public class HotelService(
 
 		return await PayHotelInvoiceInternal(new HotelInvoicePayParams { InvoiceId = e.Id, UserId = e.Reservation!.UserId }, ct);
 	}
-
-	// ===================== Dorm =====================
-
+	
 	public async Task<UResponse<Guid?>> CreateDorm(DormCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
@@ -963,9 +938,7 @@ public class HotelService(
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
-
-	// ===================== DormRoom =====================
-
+	
 	public async Task<UResponse<Guid?>> CreateDormRoom(DormRoomCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
@@ -1059,9 +1032,7 @@ public class HotelService(
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
-
-	// ===================== DormBed =====================
-
+	
 	public async Task<UResponse<Guid?>> CreateDormBed(DormBedCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
@@ -1153,9 +1124,7 @@ public class HotelService(
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
-
-	// ===================== DormBedContract =====================
-
+	
 	public async Task<UResponse<Guid?>> CreateDormBedContract(DormBedContractCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
@@ -1349,9 +1318,7 @@ public class HotelService(
 
 		return new UResponse();
 	}
-
-	// ===================== DormBedInvoice =====================
-
+	
 	public async Task<UResponse<Guid?>> CreateDormBedInvoice(DormBedInvoiceCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
@@ -1445,9 +1412,8 @@ public class HotelService(
 
 		DormBedInvoiceEntity? e = await db.Set<DormBedInvoiceEntity>().AsTracking().Include(x => x.Contract).ThenInclude(x => x!.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
-		if (e.Contract != null && (!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Contract.Bed.Room.Dorm.CreatorId, e.Contract.Bed.Room.Dorm.AdminUserIds)))
+		if (e.Contract != null && (!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Contract.Bed.Room.Dorm.CreatorId, e.Contract.Bed.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageInvoices))
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
-		if (!userData.HasPermission(TagUser.PermissionManageInvoices)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		if (p.CreditorAmount.IsNotNull()) e.CreditorAmount = p.CreditorAmount.Value;
 		if (p.DebtAmount.IsNotNull()) e.DebtAmount = p.DebtAmount.Value;
 		if (p.PenaltyAmount.IsNotNull()) e.PenaltyAmount = p.PenaltyAmount.Value;
@@ -1468,9 +1434,8 @@ public class HotelService(
 
 		DormBedInvoiceEntity? e = await db.Set<DormBedInvoiceEntity>().Include(x => x.Contract).ThenInclude(x => x!.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
-		if (e.Contract != null && (!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Contract.Bed.Room.Dorm.CreatorId, e.Contract.Bed.Room.Dorm.AdminUserIds)))
+		if (e.Contract != null && (!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Contract.Bed.Room.Dorm.CreatorId, e.Contract.Bed.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionDeleteInvoices))
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
-		if (!userData.HasPermission(TagUser.PermissionDeleteInvoices)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		await db.Set<DormBedInvoiceEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
