@@ -381,6 +381,7 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 				JsonData = new UserJson()
 			});
 		}
+
 		// Users that already exist from an earlier partial run are looked up so the demo data can still reference them.
 		List<Guid> userIds = users.Select(x => x.Id).ToList();
 		if (userIds.Count < firstNames.Length)
@@ -425,7 +426,10 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 					PetsAllowed = false, SmokingAllowed = false, ChildrenAllowed = true, ExtraBedAvailable = true, PriceIncludesTax = true,
 					ChildrenPolicy = "کودکان زیر ۶ سال با والدین رایگان اقامت می‌کنند.",
 					HowToGetThere = "از خیابان چهارباغ عباسی وارد کوچه‌ی ملک شوید؛ هتل سمت راست، روبه‌روی نانوایی سنتی است.",
-					Nearby = [new PlaceNearby { Title = "میدان نقش جهان", Type = "attraction", DistanceMeters = 800, Minutes = 10 }, new PlaceNearby { Title = "سی‌وسه‌پل", Type = "attraction", DistanceMeters = 1200, Minutes = 15 }, new PlaceNearby { Title = "بازار قیصریه", Type = "market", DistanceMeters = 900, Minutes = 11 }, new PlaceNearby { Title = "ایستگاه مترو", Type = "metro", DistanceMeters = 1500, Minutes = 5 }],
+					Nearby = [
+						new PlaceNearby { Title = "میدان نقش جهان", Type = "attraction", DistanceMeters = 800, Minutes = 10 }, new PlaceNearby { Title = "سی‌وسه‌پل", Type = "attraction", DistanceMeters = 1200, Minutes = 15 }, new PlaceNearby { Title = "بازار قیصریه", Type = "market", DistanceMeters = 900, Minutes = 11 },
+						new PlaceNearby { Title = "ایستگاه مترو", Type = "metro", DistanceMeters = 1500, Minutes = 5 }
+					],
 					Faqs = [new PlaceFaq { Question = "آیا پارکینگ دارید؟", Answer = "بله، پارکینگ اختصاصی و رایگان برای مهمانان وجود دارد." }, new PlaceFaq { Question = "امکان تحویل زودتر اتاق هست؟", Answer = "با هماهنگی قبلی و بسته به ظرفیت، ورود از ساعت ۱۲ ممکن است." }, new PlaceFaq { Question = "صبحانه شامل چه چیزهایی است؟", Answer = "نان سنگک، پنیر، تخم‌مرغ محلی، مربا، عسل و چای سماوری." }],
 					Description = "خانه‌ی قاجاری مرمت‌شده با حیاط مرکزی، حوض و چهار باغچه؛ ده دقیقه پیاده تا میدان نقش جهان.",
 					Policies = "ورود از ساعت ۱۴ و خروج تا ساعت ۱۲ ظهر. پرداخت بیعانه هنگام رزرو الزامی است.",
@@ -434,9 +438,11 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 					Rules = ["استعمال دخانیات در اتاق‌ها ممنوع است", "ورود حیوان خانگی ممنوع است", "سکوت پس از ساعت ۲۳ رعایت شود"],
 					Latitude = 32.6607, Longitude = 51.6693, CancellationFreeHours = 48, CancellationPenaltyNights = 1
 				},
-				[("اتاق دو تخته سنتی", 2, 4_200_000m, 12, "دو تخت", 24, 1, "courtyard", "breakfast", ["tv", "minibar", "airConditioning", "wardrobe", "privateBathroom"], ["تخت سنتی با ارسی اصل"]),
-				 ("اتاق سه تخته", 3, 5_400_000m, 8, "سه تخت", 32, 1, "courtyard", "breakfast", ["tv", "minibar", "airConditioning", "kettle", "privateBathroom"], ["ارسی رنگی اصل"]),
-				 ("سوئیت خانوادگی", 4, 7_800_000m, 4, "یک دو نفره و دو تک", 48, 2, "garden", "halfBoard", ["tv", "minibar", "airConditioning", "fridge", "kettle", "balcony", "bathtub"], ["دو فضای مجزا", "بالکن رو به باغ"])]),
+				[
+					("اتاق دو تخته سنتی", 2, 4_200_000m, 12, "دو تخت", 24, 1, "courtyard", "breakfast", ["tv", "minibar", "airConditioning", "wardrobe", "privateBathroom"], ["تخت سنتی با ارسی اصل"]),
+					("اتاق سه تخته", 3, 5_400_000m, 8, "سه تخت", 32, 1, "courtyard", "breakfast", ["tv", "minibar", "airConditioning", "kettle", "privateBathroom"], ["ارسی رنگی اصل"]),
+					("سوئیت خانوادگی", 4, 7_800_000m, 4, "یک دو نفره و دو تک", 48, 2, "garden", "halfBoard", ["tv", "minibar", "airConditioning", "fridge", "kettle", "balcony", "bathtub"], ["دو فضای مجزا", "بالکن رو به باغ"])
+				]),
 
 			("هتل پارسیان ولیعصر", "108012", 5, "تهران، بلوار ولیعصر، بالاتر از پارک ملت", "02122000200", 35.7580, 51.4090, "hotel",
 				"هتل پنج‌ستاره‌ی مدرن در قلب تهران با استخر سرپوشیده، اسپا و سالن‌های همایش؛ مناسب سفرهای کاری و خانوادگی.",
@@ -449,7 +455,10 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 					PetsAllowed = false, SmokingAllowed = false, ChildrenAllowed = true, ExtraBedAvailable = true, PriceIncludesTax = false,
 					ChildrenPolicy = "کودکان زیر ۱۲ سال با استفاده از تخت موجود رایگان هستند.",
 					HowToGetThere = "ورودی اصلی از بلوار ولیعصر است؛ پارکینگ طبقات منفی از خیابان فرعی شرقی.",
-					Nearby = [new PlaceNearby { Title = "مترو ولیعصر", Type = "metro", DistanceMeters = 600, Minutes = 8 }, new PlaceNearby { Title = "پارک ملت", Type = "park", DistanceMeters = 400, Minutes = 5 }, new PlaceNearby { Title = "بیمارستان آرش", Type = "hospital", DistanceMeters = 1800, Minutes = 6 }, new PlaceNearby { Title = "فرودگاه امام خمینی", Type = "airport", DistanceMeters = 48000, Minutes = 50 }],
+					Nearby = [
+						new PlaceNearby { Title = "مترو ولیعصر", Type = "metro", DistanceMeters = 600, Minutes = 8 }, new PlaceNearby { Title = "پارک ملت", Type = "park", DistanceMeters = 400, Minutes = 5 }, new PlaceNearby { Title = "بیمارستان آرش", Type = "hospital", DistanceMeters = 1800, Minutes = 6 },
+						new PlaceNearby { Title = "فرودگاه امام خمینی", Type = "airport", DistanceMeters = 48000, Minutes = 50 }
+					],
 					Faqs = [new PlaceFaq { Question = "آیا سالن همایش دارید؟", Answer = "بله، سه سالن با ظرفیت ۵۰ تا ۳۰۰ نفر، با تجهیزات کامل صوتی و تصویری." }, new PlaceFaq { Question = "ساعت کار استخر چیست؟", Answer = "هر روز از ۷ صبح تا ۲۲ شب، ویژه‌ی مهمانان هتل." }],
 					Description = "هتل پنج‌ستاره‌ی مدرن در قلب تهران با استخر سرپوشیده، اسپا و سالن‌های همایش.",
 					Policies = "ورود از ساعت ۱۴ و خروج تا ۱۲. کارت ملی یا گذرنامه هنگام ورود الزامی است.",
@@ -458,9 +467,11 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 					Rules = ["ساعت سکوت ۲۳ تا ۷ صبح", "میهمان‌پذیری در لابی تا ساعت ۲۲ مجاز است"],
 					Latitude = 35.7580, Longitude = 51.4090, CancellationFreeHours = 24, CancellationPenaltyNights = 1
 				},
-				[("اتاق استاندارد", 2, 6_500_000m, 30, "دو تخت", 28, 5, "city", "breakfast", ["tv", "minibar", "safeBox", "airConditioning", "hairDryer", "iron", "privateBathroom"], ["پنجره‌ی بزرگ رو به شهر"]),
-				 ("اتاق دلوکس", 3, 8_900_000m, 20, "کینگ + کاناپه", 38, 10, "city", "breakfast", ["tv", "minibar", "safeBox", "airConditioning", "desk", "kettle", "bathtub", "toiletries"], ["فضای کار جداگانه"]),
-				 ("سوئیت رویال", 4, 16_500_000m, 6, "کینگ", 75, 17, "mountain", "halfBoard", ["tv", "minibar", "safeBox", "airConditioning", "desk", "kettle", "bathtub", "balcony", "fridge"], ["منظره‌ی کوه‌های البرز", "نشیمن و اتاق پذیرایی"])]),
+				[
+					("اتاق استاندارد", 2, 6_500_000m, 30, "دو تخت", 28, 5, "city", "breakfast", ["tv", "minibar", "safeBox", "airConditioning", "hairDryer", "iron", "privateBathroom"], ["پنجره‌ی بزرگ رو به شهر"]),
+					("اتاق دلوکس", 3, 8_900_000m, 20, "کینگ + کاناپه", 38, 10, "city", "breakfast", ["tv", "minibar", "safeBox", "airConditioning", "desk", "kettle", "bathtub", "toiletries"], ["فضای کار جداگانه"]),
+					("سوئیت رویال", 4, 16_500_000m, 6, "کینگ", 75, 17, "mountain", "halfBoard", ["tv", "minibar", "safeBox", "airConditioning", "desk", "kettle", "bathtub", "balcony", "fridge"], ["منظره‌ی کوه‌های البرز", "نشیمن و اتاق پذیرایی"])
+				]),
 
 			("مهمان‌پذیر باغ‌نو شیراز", "117044", 3, "شیراز، خیابان لطفعلی‌خان زند، کوچه‌ی باغ‌نو", "07132300300", 29.6100, 52.5420, "guesthouse",
 				"اقامتگاه صمیمی و خانوادگی در بافت تاریخی شیراز، با باغچه‌ی نارنج و صبحانه‌ی خانگی؛ پنج دقیقه تا ارگ کریم‌خان.",
@@ -480,8 +491,10 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 					Rules = ["ورود پس از ساعت ۲۳ با هماهنگی"],
 					Latitude = 29.6100, Longitude = 52.5420, CancellationFreeHours = 24, CancellationPenaltyNights = 1
 				},
-				[("اتاق دو نفره", 2, 2_800_000m, 5, "دو تخت", 20, 1, "garden", "breakfast", ["airConditioning", "tv", "privateBathroom"], []),
-				 ("اتاق خانوادگی", 4, 4_100_000m, 3, "چهار تخت", 34, 1, "courtyard", "breakfast", ["airConditioning", "tv", "fridge", "privateBathroom"], ["مناسب خانواده‌ی چهارنفره"])]),
+				[
+					("اتاق دو نفره", 2, 2_800_000m, 5, "دو تخت", 20, 1, "garden", "breakfast", ["airConditioning", "tv", "privateBathroom"], []),
+					("اتاق خانوادگی", 4, 4_100_000m, 3, "چهار تخت", 34, 1, "courtyard", "breakfast", ["airConditioning", "tv", "fridge", "privateBathroom"], ["مناسب خانواده‌ی چهارنفره"])
+				]),
 
 			("هتل‌آپارتمان زائر مشهد", "111062", 4, "مشهد، خیابان امام رضا، نبش امام رضا ۲۱", "05132400400", 36.2880, 59.6170, "apartment",
 				"واحدهای مبله با آشپزخانه‌ی کامل، ۵ دقیقه پیاده تا حرم مطهر؛ مناسب اقامت‌های چندشبه‌ی خانوادگی.",
@@ -501,8 +514,10 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 					Rules = ["حداقل اقامت دو شب", "تعداد مهمان بیش از ظرفیت واحد مجاز نیست"],
 					Latitude = 36.2880, Longitude = 59.6170, CancellationFreeHours = 72, CancellationPenaltyNights = 1
 				},
-				[("واحد یک‌خوابه", 3, 3_600_000m, 10, "یک دو نفره + مبل تخت‌شو", 45, 3, "city", "roomOnly", ["kitchenette", "fridge", "tv", "airConditioning", "privateBathroom"], []),
-				 ("واحد دوخوابه", 5, 5_200_000m, 8, "دو دو نفره + مبل تخت‌شو", 70, 5, "city", "roomOnly", ["kitchenette", "fridge", "tv", "airConditioning", "balcony", "privateBathroom"], ["دو سرویس بهداشتی"])])
+				[
+					("واحد یک‌خوابه", 3, 3_600_000m, 10, "یک دو نفره + مبل تخت‌شو", 45, 3, "city", "roomOnly", ["kitchenette", "fridge", "tv", "airConditioning", "privateBathroom"], []),
+					("واحد دوخوابه", 5, 5_200_000m, 8, "دو دو نفره + مبل تخت‌شو", 70, 5, "city", "roomOnly", ["kitchenette", "fridge", "tv", "airConditioning", "balcony", "privateBathroom"], ["دو سرویس بهداشتی"])
+				])
 		];
 
 		int hotelIndex = 0;
@@ -523,11 +538,12 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 					JsonData = new HotelRoomJson {
 						View = r.View, BathroomType = "private", MaxAdults = r.Capacity, MaxChildren = 1, MealPlan = r.Meal, SmokingAllowed = false, NonRefundable = false,
 						Highlights = [.. r.Highlights], Description = $"{r.Title} با امکانات کامل و پاکیزگی روزانه.", BedType = r.Bed, SizeSquareMeters = r.Size, Floor = r.Floor,
-						Amenities = [.. r.Amenities], ExtraGuestCapacity = 1, ExtraGuestPrice = Math.Round(r.Price * 0.25m, -4)
+						Amenities = [.. r.Amenities], ExtraGuestCapacity = 1, ExtraGuestPrice = 10000
 					}
 				};
 				hotelRooms.Add(room);
 			}
+
 			rooms.AddRange(hotelRooms);
 
 			// reservations: one of every status, with an invoice that matches it
@@ -693,7 +709,7 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 						bool inPast = due < today;
 						bool late = lateResident && inPast && due.AddMonths(1) >= today;
 						bool paid = inPast && !late;
-						decimal penalty = late ? Math.Round(r.Rent * 0.01m * Math.Max(1, (today - due).Days), -3) : 0;
+						decimal penalty = late ? 10000 : 0;
 						dormInvoices.Add(new DormBedInvoiceEntity {
 							Id = Guid.CreateVersion7(), CreatedAt = due.AddDays(-7), CreatorId = adminId,
 							Tags = paid ? [TagDormBedInvoice.Rent, TagDormBedInvoice.Paid, m % 2 == 0 ? TagDormBedInvoice.PaidOnline : TagDormBedInvoice.PaidManual] : [TagDormBedInvoice.Rent, TagDormBedInvoice.NotPaid],
@@ -708,11 +724,11 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 				string[] texts = ["نزدیک دانشگاه و امن؛ سرپرست خوبی دارد.", "اینترنت پایدار و اتاق مطالعه‌ی عالی، قیمت منطقی.", "تمیز و آرام است؛ فقط آشپزخانه در ساعات اوج شلوغ می‌شود."];
 				for (int i = 0; i < texts.Length; i++) comments.Add(Review(null, dormId, dormIndex * 3 + i + 2, i == 2 ? 4m : 5m - i * 0.5m, texts[i], TagComment.Released, 8 + i * 12));
 			}
+
 			dormIndex++;
 		}
 
 		// ---------------------------------------------------------------- save everything in one transaction
-		await using var tx = await db.Database.BeginTransactionAsync(ct);
 		await db.Set<UserEntity>().AddRangeAsync(users, ct);
 		await db.Set<HotelEntity>().AddRangeAsync(hotels, ct);
 		await db.Set<HotelRoomEntity>().AddRangeAsync(rooms, ct);
@@ -725,7 +741,6 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 		await db.Set<DormBedInvoiceEntity>().AddRangeAsync(dormInvoices, ct);
 		await db.Set<CommentEntity>().AddRangeAsync(comments, ct);
 		await db.SaveChangesAsync(ct);
-		await tx.CommitAsync(ct);
 
 		return new UResponse<List<KeyValue>?>([
 			new KeyValue { Key = "users", Value = users.Count.ToString() },
