@@ -841,6 +841,7 @@ public static class Projections {
 			AverageScore = x.Comments.Count == 0 ? 0 : (double)x.Comments.Average(c => c.Score),
 			CommentCount = x.Comments.Count,
 			MinPricePerNight = x.Rooms.Count == 0 ? null : x.Rooms.Min(r => r.PricePerNight),
+			RoomCount = x.Rooms.Sum(r => r.Quantity),
 			Rooms = args.Rooms == null ? null : x.Rooms.AsQueryable().Select(HotelRoomSelector(args.Rooms)).ToList(),
 			Reservations = args.Reservations == null ? null : x.Reservations.AsQueryable().Select(HotelReservationSelector(args.Reservations)).ToList(),
 			Comments = args.Comments == null ? null : x.Comments.AsQueryable().Select(CommentSelector(args.Comments)).ToList(),
@@ -932,6 +933,9 @@ public static class Projections {
 			AverageScore = x.Comments.Count == 0 ? 0 : (double)x.Comments.Average(c => c.Score),
 			CommentCount = x.Comments.Count,
 			MinMonthlyRent = x.Rooms.SelectMany(r => r.Beds).Any() ? x.Rooms.SelectMany(r => r.Beds).Min(b => b.MonthlyRent) : null,
+			BedCount = x.Rooms.SelectMany(r => r.Beds).Count(),
+			// A bed is taken while one of its contracts is running.
+			AvailableBedCount = x.Rooms.SelectMany(r => r.Beds).Count(b => !b.Contracts.Any(c => c.StartDate <= DateTime.UtcNow && c.EndDate >= DateTime.UtcNow)),
 			Rooms = args.Rooms == null ? null : x.Rooms.AsQueryable().Select(DormRoomSelector(args.Rooms)).ToList(),
 			Beds = args.Beds == null ? null : x.Rooms.SelectMany(r => r.Beds).AsQueryable().Select(DormBedSelector(args.Beds)).ToList(),
 			Comments = args.Comments == null ? null : x.Comments.AsQueryable().Select(CommentSelector(args.Comments)).ToList(),

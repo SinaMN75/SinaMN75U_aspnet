@@ -156,7 +156,19 @@ public enum TagCategory {
 
 public enum TagMedia {
 	Image = 101,
-	Profile = 102
+	Profile = 102,
+
+	// The main photo of a hotel / dorm / room (shown first).
+	Cover = 201,
+
+	// Gallery categories of hotel and dorm photos.
+	Exterior = 301,
+	Interior = 302,
+	Room = 303,
+	Bathroom = 304,
+	Dining = 305,
+	Facility = 306,
+	Surroundings = 307
 }
 
 public enum TagProduct {
@@ -223,12 +235,18 @@ public enum TagContent {
 	Blog = 105,
 	Dorms = 106,
 	Hotels = 107,
+	AboutStats = 108,
 	
 	HomeSlider1 = 201,
 	HomeSlider2 = 202,
 	HomeBanner1 = 203,
 	HomeBanner2 = 204,
 	HomeBanner3 = 205,
+	HomeHero = 206,
+	HomeStats = 207,
+	HomeMarquee = 208,
+	HomeReasons = 209,
+	HomeApp = 210,
 	
 	Menu1 = 401,
 	Menu2 = 402,
@@ -511,7 +529,10 @@ public enum TagHotel {
 	Hotel = 101,
 	Featured = 201,
 	Active = 202,
-	Inactive = 203
+	Inactive = 203,
+
+	// Visited in person by the team (shown as a trust badge).
+	Verified = 204
 }
 
 public enum TagHotelReservation {
@@ -534,7 +555,14 @@ public enum TagHotelInvoice {
 
 public enum TagDorm {
 	Girls = 101,
-	Boys = 102
+	Boys = 102,
+	Featured = 201,
+
+	// Inactive dorms are hidden from the public (managers still see them).
+	Inactive = 203,
+
+	// Visited in person by the team (shown as a trust badge).
+	Verified = 204
 }
 
 public enum TagRoom {

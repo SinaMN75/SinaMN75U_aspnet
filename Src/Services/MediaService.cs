@@ -90,6 +90,11 @@ public class MediaService(
 		if (p.ContentId != null) e.ContentId = p.ContentId;
 		if (p.ProductId != null) e.ProductId = p.ProductId;
 		if (p.BlogId != null) e.BlogId = p.BlogId;
+		if (p.HotelId != null) e.HotelId = p.HotelId;
+		if (p.HotelRoomId != null) e.HotelRoomId = p.HotelRoomId;
+		if (p.DormId != null) e.DormId = p.DormId;
+		if (p.DormRoomId != null) e.DormRoomId = p.DormRoomId;
+		if (p.DormBedId != null) e.DormBedId = p.DormBedId;
 		if (p.UserId != null) e.UserId = p.UserId;
 		if (p.AddTags != null) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags != null) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));

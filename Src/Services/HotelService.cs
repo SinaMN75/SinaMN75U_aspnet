@@ -88,6 +88,27 @@ public class HotelService(
 			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
 			JsonData = new HotelJson {
+				Type = p.Type,
+				Highlights = p.Highlights ?? [],
+				Website = p.Website,
+				Whatsapp = p.Whatsapp,
+				Instagram = p.Instagram,
+				Telegram = p.Telegram,
+				YearBuilt = p.YearBuilt,
+				YearRenovated = p.YearRenovated,
+				FloorCount = p.FloorCount,
+				Languages = p.Languages ?? [],
+				MealPlans = p.MealPlans ?? [],
+				PaymentMethods = p.PaymentMethods ?? [],
+				PetsAllowed = p.PetsAllowed,
+				SmokingAllowed = p.SmokingAllowed,
+				ChildrenAllowed = p.ChildrenAllowed,
+				ExtraBedAvailable = p.ExtraBedAvailable,
+				PriceIncludesTax = p.PriceIncludesTax,
+				ChildrenPolicy = p.ChildrenPolicy,
+				HowToGetThere = p.HowToGetThere,
+				Nearby = p.Nearby ?? [],
+				Faqs = p.Faqs ?? [],
 				Description = p.Description,
 				Policies = p.Policies,
 				CheckInTime = p.CheckInTime,
@@ -122,6 +143,9 @@ public class HotelService(
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.CityCode.IsNotNullOrEmpty()) q = q.Where(x => x.CityCode == p.CityCode);
 		if (p.MinStars.HasValue) q = q.Where(x => x.Stars >= p.MinStars);
+		if (p.MinPrice.HasValue) q = q.Where(x => x.Rooms.Any(r => r.PricePerNight >= p.MinPrice));
+		if (p.MaxPrice.HasValue) q = q.Where(x => x.Rooms.Any(r => r.PricePerNight <= p.MaxPrice));
+		if (p.MinScore.HasValue) q = q.Where(x => x.Comments.Count > 0 && x.Comments.Average(c => c.Score) >= p.MinScore);
 
 		IQueryable<HotelResponse> projected = q.Select(Projections.HotelSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
@@ -161,6 +185,27 @@ public class HotelService(
 		if (p.CancellationFreeHours.HasValue) e.JsonData.CancellationFreeHours = p.CancellationFreeHours.Value;
 		if (p.CancellationPenaltyNights.HasValue) e.JsonData.CancellationPenaltyNights = p.CancellationPenaltyNights.Value;
 
+		if (p.Type != null) e.JsonData.Type = p.Type;
+		if (p.Highlights != null) e.JsonData.Highlights = p.Highlights;
+		if (p.Website != null) e.JsonData.Website = p.Website;
+		if (p.Whatsapp != null) e.JsonData.Whatsapp = p.Whatsapp;
+		if (p.Instagram != null) e.JsonData.Instagram = p.Instagram;
+		if (p.Telegram != null) e.JsonData.Telegram = p.Telegram;
+		if (p.YearBuilt != null) e.JsonData.YearBuilt = p.YearBuilt;
+		if (p.YearRenovated != null) e.JsonData.YearRenovated = p.YearRenovated;
+		if (p.FloorCount != null) e.JsonData.FloorCount = p.FloorCount;
+		if (p.Languages != null) e.JsonData.Languages = p.Languages;
+		if (p.MealPlans != null) e.JsonData.MealPlans = p.MealPlans;
+		if (p.PaymentMethods != null) e.JsonData.PaymentMethods = p.PaymentMethods;
+		if (p.PetsAllowed != null) e.JsonData.PetsAllowed = p.PetsAllowed;
+		if (p.SmokingAllowed != null) e.JsonData.SmokingAllowed = p.SmokingAllowed;
+		if (p.ChildrenAllowed != null) e.JsonData.ChildrenAllowed = p.ChildrenAllowed;
+		if (p.ExtraBedAvailable != null) e.JsonData.ExtraBedAvailable = p.ExtraBedAvailable;
+		if (p.PriceIncludesTax != null) e.JsonData.PriceIncludesTax = p.PriceIncludesTax;
+		if (p.ChildrenPolicy != null) e.JsonData.ChildrenPolicy = p.ChildrenPolicy;
+		if (p.HowToGetThere != null) e.JsonData.HowToGetThere = p.HowToGetThere;
+		if (p.Nearby != null) e.JsonData.Nearby = p.Nearby;
+		if (p.Faqs != null) e.JsonData.Faqs = p.Faqs;
 		e.ApplyUpdateParam<HotelEntity, TagHotel, HotelJson>(p);
 		await db.SaveChangesAsync(ct);
 
@@ -195,6 +240,14 @@ public class HotelService(
 			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
 			JsonData = new HotelRoomJson {
+				View = p.View,
+				BathroomType = p.BathroomType,
+				MaxAdults = p.MaxAdults,
+				MaxChildren = p.MaxChildren,
+				MealPlan = p.MealPlan,
+				SmokingAllowed = p.SmokingAllowed,
+				NonRefundable = p.NonRefundable,
+				Highlights = p.Highlights ?? [],
 				Description = p.Description,
 				BedType = p.BedType,
 				SizeSquareMeters = p.SizeSquareMeters,
@@ -282,6 +335,14 @@ public class HotelService(
 		if (p.ExtraGuestCapacity.HasValue) e.JsonData.ExtraGuestCapacity = p.ExtraGuestCapacity;
 		if (p.ExtraGuestPrice.HasValue) e.JsonData.ExtraGuestPrice = p.ExtraGuestPrice;
 
+		if (p.View != null) e.JsonData.View = p.View;
+		if (p.BathroomType != null) e.JsonData.BathroomType = p.BathroomType;
+		if (p.MaxAdults != null) e.JsonData.MaxAdults = p.MaxAdults;
+		if (p.MaxChildren != null) e.JsonData.MaxChildren = p.MaxChildren;
+		if (p.MealPlan != null) e.JsonData.MealPlan = p.MealPlan;
+		if (p.SmokingAllowed != null) e.JsonData.SmokingAllowed = p.SmokingAllowed;
+		if (p.NonRefundable != null) e.JsonData.NonRefundable = p.NonRefundable;
+		if (p.Highlights != null) e.JsonData.Highlights = p.Highlights;
 		e.ApplyUpdateParam<HotelRoomEntity, TagRoom, HotelRoomJson>(p);
 		await db.SaveChangesAsync(ct);
 
@@ -889,6 +950,27 @@ public class HotelService(
 			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
 			JsonData = new DormJson {
+				Highlights = p.Highlights ?? [],
+				Website = p.Website,
+				Whatsapp = p.Whatsapp,
+				Instagram = p.Instagram,
+				Telegram = p.Telegram,
+				YearBuilt = p.YearBuilt,
+				FloorCount = p.FloorCount,
+				CurfewTime = p.CurfewTime,
+				MealServices = p.MealServices ?? [],
+				ServicesIncluded = p.ServicesIncluded ?? [],
+				ResidentTypes = p.ResidentTypes ?? [],
+				MinimumStayMonths = p.MinimumStayMonths,
+				PaymentSchedule = p.PaymentSchedule,
+				DepositPolicy = p.DepositPolicy,
+				EarlyTerminationPolicy = p.EarlyTerminationPolicy,
+				VisitorsPolicy = p.VisitorsPolicy,
+				WifiSpeedMbps = p.WifiSpeedMbps,
+				UniversityWalkMinutes = p.UniversityWalkMinutes,
+				HowToGetThere = p.HowToGetThere,
+				Nearby = p.Nearby ?? [],
+				Faqs = p.Faqs ?? [],
 				Description = p.Description,
 				NearbyUniversity = p.NearbyUniversity,
 				VisitingHours = p.VisitingHours,
@@ -914,10 +996,13 @@ public class HotelService(
 	public async Task<UResponse<IEnumerable<DormResponse>?>> ReadDorms(DormReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		IQueryable<DormEntity> q = db.Set<DormEntity>().ApplyReadParams(p);
-		if (IsDormManager(userData)) q = q.ApplyOwnerScope<DormEntity, TagDorm>(userData);
+		q = IsDormManager(userData) ? q.ApplyOwnerScope<DormEntity, TagDorm>(userData) : q.Where(x => !x.Tags.Contains(TagDorm.Inactive));
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.CityCode.IsNotNullOrEmpty()) q = q.Where(x => x.CityCode.Contains(p.CityCode!));
+		if (p.MinRent.HasValue) q = q.Where(x => x.Rooms.SelectMany(r => r.Beds).Any(b => b.MonthlyRent >= p.MinRent));
+		if (p.MaxRent.HasValue) q = q.Where(x => x.Rooms.SelectMany(r => r.Beds).Any(b => b.MonthlyRent <= p.MaxRent));
+		if (p.AvailableOnly == true) q = q.Where(x => x.Rooms.SelectMany(r => r.Beds).Any(b => !b.Contracts.Any(c => c.StartDate <= DateTime.UtcNow && c.EndDate >= DateTime.UtcNow)));
 
 		IQueryable<DormResponse> projected = q.Select(Projections.DormSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
@@ -926,7 +1011,7 @@ public class HotelService(
 	public async Task<UResponse<DormResponse?>> ReadDormById(IdParams<DormSelectorArgs> p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		IQueryable<DormEntity> dorms = db.Set<DormEntity>();
-		if (IsDormManager(userData)) dorms = dorms.ApplyOwnerScope<DormEntity, TagDorm>(userData);
+		dorms = IsDormManager(userData) ? dorms.ApplyOwnerScope<DormEntity, TagDorm>(userData) : dorms.Where(x => !x.Tags.Contains(TagDorm.Inactive));
 		DormResponse? e = await dorms.Select(Projections.DormSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<DormResponse?>(null, Usc.NotFound, ls.Get("dormNotFound")) : new UResponse<DormResponse?>(e);
 	}
@@ -953,6 +1038,27 @@ public class HotelService(
 		if (p.Latitude.HasValue) e.JsonData.Latitude = p.Latitude;
 		if (p.Longitude.HasValue) e.JsonData.Longitude = p.Longitude;
 
+		if (p.Highlights != null) e.JsonData.Highlights = p.Highlights;
+		if (p.Website != null) e.JsonData.Website = p.Website;
+		if (p.Whatsapp != null) e.JsonData.Whatsapp = p.Whatsapp;
+		if (p.Instagram != null) e.JsonData.Instagram = p.Instagram;
+		if (p.Telegram != null) e.JsonData.Telegram = p.Telegram;
+		if (p.YearBuilt != null) e.JsonData.YearBuilt = p.YearBuilt;
+		if (p.FloorCount != null) e.JsonData.FloorCount = p.FloorCount;
+		if (p.CurfewTime != null) e.JsonData.CurfewTime = p.CurfewTime;
+		if (p.MealServices != null) e.JsonData.MealServices = p.MealServices;
+		if (p.ServicesIncluded != null) e.JsonData.ServicesIncluded = p.ServicesIncluded;
+		if (p.ResidentTypes != null) e.JsonData.ResidentTypes = p.ResidentTypes;
+		if (p.MinimumStayMonths != null) e.JsonData.MinimumStayMonths = p.MinimumStayMonths;
+		if (p.PaymentSchedule != null) e.JsonData.PaymentSchedule = p.PaymentSchedule;
+		if (p.DepositPolicy != null) e.JsonData.DepositPolicy = p.DepositPolicy;
+		if (p.EarlyTerminationPolicy != null) e.JsonData.EarlyTerminationPolicy = p.EarlyTerminationPolicy;
+		if (p.VisitorsPolicy != null) e.JsonData.VisitorsPolicy = p.VisitorsPolicy;
+		if (p.WifiSpeedMbps != null) e.JsonData.WifiSpeedMbps = p.WifiSpeedMbps;
+		if (p.UniversityWalkMinutes != null) e.JsonData.UniversityWalkMinutes = p.UniversityWalkMinutes;
+		if (p.HowToGetThere != null) e.JsonData.HowToGetThere = p.HowToGetThere;
+		if (p.Nearby != null) e.JsonData.Nearby = p.Nearby;
+		if (p.Faqs != null) e.JsonData.Faqs = p.Faqs;
 		e.ApplyUpdateParam<DormEntity, TagDorm, DormJson>(p);
 		await db.SaveChangesAsync(ct);
 
@@ -987,6 +1093,10 @@ public class HotelService(
 			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
 			JsonData = new DormRoomJson {
+				BathroomType = p.BathroomType,
+				View = p.View,
+				Furnished = p.Furnished,
+				Highlights = p.Highlights ?? [],
 				Description = p.Description,
 				Floor = p.Floor,
 				SizeSquareMeters = p.SizeSquareMeters,
@@ -1047,6 +1157,10 @@ public class HotelService(
 		if (p.SizeSquareMeters.HasValue) e.JsonData.SizeSquareMeters = p.SizeSquareMeters;
 		if (p.Amenities != null) e.JsonData.Amenities = p.Amenities;
 
+		if (p.BathroomType != null) e.JsonData.BathroomType = p.BathroomType;
+		if (p.View != null) e.JsonData.View = p.View;
+		if (p.Furnished != null) e.JsonData.Furnished = p.Furnished;
+		if (p.Highlights != null) e.JsonData.Highlights = p.Highlights;
 		e.ApplyUpdateParam<DormRoomEntity, TagDormRoom, DormRoomJson>(p);
 		await db.SaveChangesAsync(ct);
 
@@ -1080,7 +1194,11 @@ public class HotelService(
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatorId = p.CreatorId ?? userData.Id,
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new DormBedJson(),
+			JsonData = new DormBedJson {
+				Level = p.Level,
+				Description = p.Description,
+				Amenities = p.Amenities ?? [],
+			},
 			Tags = p.Tags,
 			Title = p.Title,
 			Deposit = p.Deposit,
@@ -1139,6 +1257,9 @@ public class HotelService(
 		if (p.MonthlyRent.HasValue) e.MonthlyRent = p.MonthlyRent.Value;
 		if (p.RoomId.HasValue) e.RoomId = p.RoomId.Value;
 
+		if (p.Level != null) e.JsonData.Level = p.Level;
+		if (p.Description != null) e.JsonData.Description = p.Description;
+		if (p.Amenities != null) e.JsonData.Amenities = p.Amenities;
 		e.ApplyUpdateParam<DormBedEntity, TagDormBed, DormBedJson>(p);
 		await db.SaveChangesAsync(ct);
 

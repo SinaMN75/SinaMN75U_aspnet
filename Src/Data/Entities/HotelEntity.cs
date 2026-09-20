@@ -28,6 +28,28 @@ public class HotelEntity : BaseEntity<TagHotel, HotelJson> {
 }
 
 public sealed class HotelJson : BaseJson {
+	// hotel, boutique, resort, guesthouse, apartment, traditional, hostel, villa
+	public string? Type { get; set; }
+	public List<string> Highlights { get; set; } = [];
+	public string? Website { get; set; }
+	public string? Whatsapp { get; set; }
+	public string? Instagram { get; set; }
+	public string? Telegram { get; set; }
+	public int? YearBuilt { get; set; }
+	public int? YearRenovated { get; set; }
+	public int? FloorCount { get; set; }
+	public List<string> Languages { get; set; } = [];
+	public List<string> MealPlans { get; set; } = [];
+	public List<string> PaymentMethods { get; set; } = [];
+	public bool? PetsAllowed { get; set; }
+	public bool? SmokingAllowed { get; set; }
+	public bool? ChildrenAllowed { get; set; }
+	public bool? ExtraBedAvailable { get; set; }
+	public bool? PriceIncludesTax { get; set; }
+	public string? ChildrenPolicy { get; set; }
+	public string? HowToGetThere { get; set; }
+	public List<PlaceNearby> Nearby { get; set; } = [];
+	public List<PlaceFaq> Faqs { get; set; } = [];
 	public string? Description { get; set; }
 	public string? Policies { get; set; }
 	public string? CheckInTime { get; set; }
@@ -36,12 +58,22 @@ public sealed class HotelJson : BaseJson {
 	public List<string> Rules { get; set; } = [];
 	public double? Latitude { get; set; }
 	public double? Longitude { get; set; }
-
-	// Cancellation window: free until this many hours before check-in, after that
-	// CancellationPenaltyNights nights are charged and the rest is refunded.
 	public int CancellationFreeHours { get; set; } = 24;
 	public int CancellationPenaltyNights { get; set; } = 1;
 }
+
+public sealed class PlaceNearby {
+	public string Title { get; set; } = "";
+	public string? Type { get; set; }
+	public int? DistanceMeters { get; set; }
+	public int? Minutes { get; set; }
+}
+
+public sealed class PlaceFaq {
+	public string Question { get; set; } = "";
+	public string Answer { get; set; } = "";
+}
+
 
 // ---------------- HotelRoom ----------------
 
@@ -70,6 +102,14 @@ public class HotelRoomEntity : BaseEntity<TagRoom, HotelRoomJson> {
 }
 
 public sealed class HotelRoomJson : BaseJson {
+	public string? View { get; set; }
+	public string? BathroomType { get; set; }
+	public int? MaxAdults { get; set; }
+	public int? MaxChildren { get; set; }
+	public string? MealPlan { get; set; }
+	public bool? SmokingAllowed { get; set; }
+	public bool? NonRefundable { get; set; }
+	public List<string> Highlights { get; set; } = [];
 	public string? Description { get; set; }
 	public string? BedType { get; set; }
 	public double? SizeSquareMeters { get; set; }
@@ -163,6 +203,27 @@ public class DormEntity : BaseEntity<TagDorm, DormJson> {
 }
 
 public sealed class DormJson : BaseJson {
+	public List<string> Highlights { get; set; } = [];
+	public string? Website { get; set; }
+	public string? Whatsapp { get; set; }
+	public string? Instagram { get; set; }
+	public string? Telegram { get; set; }
+	public int? YearBuilt { get; set; }
+	public int? FloorCount { get; set; }
+	public string? CurfewTime { get; set; }
+	public List<string> MealServices { get; set; } = [];
+	public List<string> ServicesIncluded { get; set; } = [];
+	public List<string> ResidentTypes { get; set; } = [];
+	public int? MinimumStayMonths { get; set; }
+	public string? PaymentSchedule { get; set; }
+	public string? DepositPolicy { get; set; }
+	public string? EarlyTerminationPolicy { get; set; }
+	public string? VisitorsPolicy { get; set; }
+	public int? WifiSpeedMbps { get; set; }
+	public int? UniversityWalkMinutes { get; set; }
+	public string? HowToGetThere { get; set; }
+	public List<PlaceNearby> Nearby { get; set; } = [];
+	public List<PlaceFaq> Faqs { get; set; } = [];
 	public string? Description { get; set; }
 	public string? NearbyUniversity { get; set; }
 	public string? VisitingHours { get; set; }
@@ -188,6 +249,10 @@ public class DormRoomEntity : BaseEntity<TagDormRoom, DormRoomJson> {
 }
 
 public sealed class DormRoomJson : BaseJson {
+	public string? BathroomType { get; set; }
+	public string? View { get; set; }
+	public bool? Furnished { get; set; }
+	public List<string> Highlights { get; set; } = [];
 	public string? Description { get; set; }
 	public int? Floor { get; set; }
 	public double? SizeSquareMeters { get; set; }
@@ -212,7 +277,11 @@ public class DormBedEntity : BaseEntity<TagDormBed, DormBedJson> {
 	public ICollection<DormBedContractEntity> Contracts { get; set; } = [];
 }
 
-public class DormBedJson : BaseJson;
+public class DormBedJson : BaseJson {
+	public string? Level { get; set; }
+	public string? Description { get; set; }
+	public List<string> Amenities { get; set; } = [];
+}
 
 [Table("Contracts")]
 public sealed class DormBedContractEntity : BaseEntity<TagDormBedContract, DormBedContractJson> {

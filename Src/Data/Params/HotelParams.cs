@@ -1,6 +1,27 @@
 namespace SinaMN75U.Data.Params;
 
 public sealed class HotelCreateParams : BaseCreateParams<TagHotel> {
+	public string? Type { get; set; }
+	public List<string>? Highlights { get; set; }
+	public string? Website { get; set; }
+	public string? Whatsapp { get; set; }
+	public string? Instagram { get; set; }
+	public string? Telegram { get; set; }
+	public int? YearBuilt { get; set; }
+	public int? YearRenovated { get; set; }
+	public int? FloorCount { get; set; }
+	public List<string>? Languages { get; set; }
+	public List<string>? MealPlans { get; set; }
+	public List<string>? PaymentMethods { get; set; }
+	public bool? PetsAllowed { get; set; }
+	public bool? SmokingAllowed { get; set; }
+	public bool? ChildrenAllowed { get; set; }
+	public bool? ExtraBedAvailable { get; set; }
+	public bool? PriceIncludesTax { get; set; }
+	public string? ChildrenPolicy { get; set; }
+	public string? HowToGetThere { get; set; }
+	public List<PlaceNearby>? Nearby { get; set; }
+	public List<PlaceFaq>? Faqs { get; set; }
 	[UValidationRequired("titleIsRequired"), UValidationStringLength(2, 100, "TitleMinLength")]
 	public string Title { get; set; } = null!;
 
@@ -24,6 +45,27 @@ public sealed class HotelCreateParams : BaseCreateParams<TagHotel> {
 }
 
 public sealed class HotelUpdateParams : BaseUpdateParams<TagHotel> {
+	public string? Type { get; set; }
+	public List<string>? Highlights { get; set; }
+	public string? Website { get; set; }
+	public string? Whatsapp { get; set; }
+	public string? Instagram { get; set; }
+	public string? Telegram { get; set; }
+	public int? YearBuilt { get; set; }
+	public int? YearRenovated { get; set; }
+	public int? FloorCount { get; set; }
+	public List<string>? Languages { get; set; }
+	public List<string>? MealPlans { get; set; }
+	public List<string>? PaymentMethods { get; set; }
+	public bool? PetsAllowed { get; set; }
+	public bool? SmokingAllowed { get; set; }
+	public bool? ChildrenAllowed { get; set; }
+	public bool? ExtraBedAvailable { get; set; }
+	public bool? PriceIncludesTax { get; set; }
+	public string? ChildrenPolicy { get; set; }
+	public string? HowToGetThere { get; set; }
+	public List<PlaceNearby>? Nearby { get; set; }
+	public List<PlaceFaq>? Faqs { get; set; }
 	public string? Title { get; set; }
 	public string? CityCode { get; set; }
 	public int? Stars { get; set; }
@@ -46,11 +88,22 @@ public sealed class HotelReadParams : BaseReadParams<TagHotel> {
 	public string? Title { get; set; }
 	public string? CityCode { get; set; }
 	public int? MinStars { get; set; }
+	public decimal? MinPrice { get; set; }
+	public decimal? MaxPrice { get; set; }
+	public decimal? MinScore { get; set; }
 
 	public HotelSelectorArgs SelectorArgs { get; set; } = new();
 }
 
 public sealed class HotelRoomCreateParams : BaseCreateParams<TagRoom> {
+	public string? View { get; set; }
+	public string? BathroomType { get; set; }
+	public int? MaxAdults { get; set; }
+	public int? MaxChildren { get; set; }
+	public string? MealPlan { get; set; }
+	public bool? SmokingAllowed { get; set; }
+	public bool? NonRefundable { get; set; }
+	public List<string>? Highlights { get; set; }
 	[UValidationRequired("titleIsRequired"), UValidationStringLength(2, 100, "TitleMinLength")]
 	public string Title { get; set; } = null!;
 
@@ -76,6 +129,14 @@ public sealed class HotelRoomCreateParams : BaseCreateParams<TagRoom> {
 }
 
 public sealed class HotelRoomUpdateParams : BaseUpdateParams<TagRoom> {
+	public string? View { get; set; }
+	public string? BathroomType { get; set; }
+	public int? MaxAdults { get; set; }
+	public int? MaxChildren { get; set; }
+	public string? MealPlan { get; set; }
+	public bool? SmokingAllowed { get; set; }
+	public bool? NonRefundable { get; set; }
+	public List<string>? Highlights { get; set; }
 	public string? Title { get; set; }
 	public int? Capacity { get; set; }
 	public decimal? PricePerNight { get; set; }
@@ -252,6 +313,27 @@ public sealed class HotelInvoiceReadParams : BaseReadParams<TagHotelInvoice> {
 }
 
 public sealed class DormCreateParams : BaseCreateParams<TagDorm> {
+	public List<string>? Highlights { get; set; }
+	public string? Website { get; set; }
+	public string? Whatsapp { get; set; }
+	public string? Instagram { get; set; }
+	public string? Telegram { get; set; }
+	public int? YearBuilt { get; set; }
+	public int? FloorCount { get; set; }
+	public string? CurfewTime { get; set; }
+	public List<string>? MealServices { get; set; }
+	public List<string>? ServicesIncluded { get; set; }
+	public List<string>? ResidentTypes { get; set; }
+	public int? MinimumStayMonths { get; set; }
+	public string? PaymentSchedule { get; set; }
+	public string? DepositPolicy { get; set; }
+	public string? EarlyTerminationPolicy { get; set; }
+	public string? VisitorsPolicy { get; set; }
+	public int? WifiSpeedMbps { get; set; }
+	public int? UniversityWalkMinutes { get; set; }
+	public string? HowToGetThere { get; set; }
+	public List<PlaceNearby>? Nearby { get; set; }
+	public List<PlaceFaq>? Faqs { get; set; }
 	[UValidationRequired("titleIsRequired"), UValidationStringLength(2, 100, "TitleMinLength")]
 	public string Title { get; set; } = null!;
 
@@ -271,6 +353,27 @@ public sealed class DormCreateParams : BaseCreateParams<TagDorm> {
 }
 
 public sealed class DormUpdateParams : BaseUpdateParams<TagDorm> {
+	public List<string>? Highlights { get; set; }
+	public string? Website { get; set; }
+	public string? Whatsapp { get; set; }
+	public string? Instagram { get; set; }
+	public string? Telegram { get; set; }
+	public int? YearBuilt { get; set; }
+	public int? FloorCount { get; set; }
+	public string? CurfewTime { get; set; }
+	public List<string>? MealServices { get; set; }
+	public List<string>? ServicesIncluded { get; set; }
+	public List<string>? ResidentTypes { get; set; }
+	public int? MinimumStayMonths { get; set; }
+	public string? PaymentSchedule { get; set; }
+	public string? DepositPolicy { get; set; }
+	public string? EarlyTerminationPolicy { get; set; }
+	public string? VisitorsPolicy { get; set; }
+	public int? WifiSpeedMbps { get; set; }
+	public int? UniversityWalkMinutes { get; set; }
+	public string? HowToGetThere { get; set; }
+	public List<PlaceNearby>? Nearby { get; set; }
+	public List<PlaceFaq>? Faqs { get; set; }
 	public string? Title { get; set; }
 	public string? CityCode { get; set; }
 	public string? Address { get; set; }
@@ -288,11 +391,20 @@ public sealed class DormUpdateParams : BaseUpdateParams<TagDorm> {
 public sealed class DormReadParams : BaseReadParams<TagDorm> {
 	public string? Title { get; set; }
 	public string? CityCode { get; set; }
+	public decimal? MinRent { get; set; }
+	public decimal? MaxRent { get; set; }
+
+	// true = only dorms that have at least one free bed
+	public bool? AvailableOnly { get; set; }
 
 	public DormSelectorArgs SelectorArgs { get; set; } = new();
 }
 
 public sealed class DormRoomCreateParams : BaseCreateParams<TagDormRoom> {
+	public string? BathroomType { get; set; }
+	public string? View { get; set; }
+	public bool? Furnished { get; set; }
+	public List<string>? Highlights { get; set; }
 	[UValidationRequired("titleIsRequired"), UValidationStringLength(2, 100, "TitleMinLength")]
 	public string Title { get; set; } = null!;
 
@@ -307,6 +419,10 @@ public sealed class DormRoomCreateParams : BaseCreateParams<TagDormRoom> {
 }
 
 public sealed class DormRoomUpdateParams : BaseUpdateParams<TagDormRoom> {
+	public string? BathroomType { get; set; }
+	public string? View { get; set; }
+	public bool? Furnished { get; set; }
+	public List<string>? Highlights { get; set; }
 	public string? Title { get; set; }
 	public Guid? DormId { get; set; }
 	public int? Capacity { get; set; }
@@ -324,6 +440,9 @@ public sealed class DormRoomReadParams : BaseReadParams<TagDormRoom> {
 }
 
 public sealed class DormBedCreateParams : BaseCreateParams<TagDormBed> {
+	public string? Level { get; set; }
+	public string? Description { get; set; }
+	public List<string>? Amenities { get; set; }
 	[UValidationRequired("titleIsRequired"), UValidationStringLength(1, 4, "TitleMaxLength")]
 	public string Title { get; set; } = null!;
 	
@@ -338,6 +457,9 @@ public sealed class DormBedCreateParams : BaseCreateParams<TagDormBed> {
 }
 
 public sealed class DormBedUpdateParams : BaseUpdateParams<TagDormBed> {
+	public string? Level { get; set; }
+	public string? Description { get; set; }
+	public List<string>? Amenities { get; set; }
 	public string? Title { get; set; }
 	public decimal? Deposit { get; set; }
 	public decimal? MonthlyRent { get; set; }

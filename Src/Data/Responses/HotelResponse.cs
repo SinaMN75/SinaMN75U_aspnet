@@ -11,6 +11,7 @@ public sealed class HotelResponse : BaseResponse<TagHotel, HotelJson> {
 	public double AverageScore { get; set; }
 	public int CommentCount { get; set; }
 	public decimal? MinPricePerNight { get; set; }
+	public int RoomCount { get; set; }
 
 	public IEnumerable<HotelRoomResponse>? Rooms { get; set; }
 	public IEnumerable<HotelReservationResponse>? Reservations { get; set; }
@@ -81,6 +82,8 @@ public sealed class DormResponse : BaseResponse<TagDorm, DormJson> {
 	public double AverageScore { get; set; }
 	public int CommentCount { get; set; }
 	public decimal? MinMonthlyRent { get; set; }
+	public int BedCount { get; set; }
+	public int AvailableBedCount { get; set; }
 
 	public IEnumerable<DormRoomResponse>? Rooms { get; set; }
 	public IEnumerable<DormBedResponse>? Beds { get; set; }
