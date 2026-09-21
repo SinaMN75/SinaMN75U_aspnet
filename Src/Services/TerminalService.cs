@@ -104,7 +104,7 @@ public class TerminalService(
 
 		byte[]? pdf = await GenerateAgreement(merchant.User, merchant, terminal, brand, broker);
 		if (pdf == null) return new UResponse<TerminalAvailabilityResponse?>(null, Usc.InternalServerError, ls.Get("generatingTheAgreementFailed"));
-		
+
 		return new UResponse<TerminalAvailabilityResponse?>(new TerminalAvailabilityResponse {
 			Id = terminal.Id,
 			Serial = terminal.Serial,
@@ -273,7 +273,7 @@ public class TerminalService(
 		if (terminal.Tags.Contains(TagTerminal.Approved)) return (null, null, null, null, Usc.Conflict, ls.Get("terminalIsAlreadyAssignedToAMerchant"));
 		if (terminal.Tags.Contains(TagTerminal.PendingApproval)) return (null, null, null, null, Usc.Conflict, ls.Get("thisTerminalRequestIsWaitingForApproval"));
 		if (terminal.MerchantId.IsNotNullOrEmpty() && terminal.MerchantId != merchant.Id) return (null, null, null, null, Usc.Conflict, ls.Get("terminalIsAlreadyAssignedToAMerchant"));
-		
+
 		return (terminal, merchant, terminal.TerminalBrand, terminal.TerminalBroker, Usc.Success, "");
 	}
 
@@ -697,40 +697,93 @@ public class TerminalService(
 			template.RemoveUnmatchedTokens = true;
 
 			template
-				.Set("day", PersianDateTime.Now.Day.ToString())
-				.Set("month", PersianDateTime.Now.Month.ToString())
-				.SetLtr("number", terminal.Serial)
-				.Set("fullName", $"{user.FirstName ?? "---"} {user.LastName ?? "---"}")
-				.Set("address", merchant.JsonData.Address ?? "---")
-				.Set("fatherName", user.JsonData.FatherName ?? "---")
-				.SetLtr("nationalCode", user.NationalCode ?? "---")
-				.SetLtr("birthdate", PersianDateTime.FromDateTime(user.Birthdate ?? DateTime.Now).ToString("yyyy-MM-dd"))
-				.SetLtr("postalCode", merchant.ZipCode)
-				.SetLtr("phoneNumber", user.PhoneNumber ?? "---")
-				.SetLtr("landLine", user.LandLine ?? "---")
-				.Set("brokerTitle", broker.Title)
-				.Set("brokerRepresentative", broker.JsonData.Representative ?? "---")
-				.Set("brokerAddress", broker.JsonData.Address ?? "---")
-				.Set("brokerSign1Owner", broker.JsonData.Sign1Owner ?? "")
-				.Set("brokerSign2Owner", broker.JsonData.Sign2Owner ?? "")
-				.SetLtr("brokerRegistrationNumber", broker.JsonData.RegistrationNumber ?? "---")
-				.SetLtr("brokerNationalCode", broker.JsonData.NationalCode ?? "---")
-				.SetLtr("brokerPostalCode", broker.JsonData.PostalCode ?? "---")
-				.SetLtr("brokerPhoneNumber", broker.JsonData.PhoneNumber ?? "---")
-				.SetImageBase64("brokerLogo", broker.JsonData.LogoBase64, attributes: "alt=\"\"");
-			
+				// ---- Header ----
+				.Set("broker_day", PersianDateTime.Now.Day.ToString())
+				.Set("broker_month", PersianDateTime.Now.Month.ToString())
+				.SetLtr("broker_contract_number", terminal.Serial)
+				.SetImageBase64("broker_logo", broker.JsonData.LogoBase64, attributes: "alt=\"\"")
+
+				// Broker side
+				.Set("broker_company_name", broker.Title)
+				.SetLtr("broker_registration_number", broker.JsonData.RegistrationNumber ?? "---")
+				.SetLtr("broker_national_id", broker.JsonData.NationalCode ?? "---")
+				.Set("broker_representative_name", broker.JsonData.Representative ?? "---")
+				.Set("broker_representative_title", broker.JsonData.Representative ?? "---")
+				.Set("broker_address", broker.JsonData.Address ?? "---")
+				.SetLtr("broker_postal_code", broker.JsonData.PostalCode ?? "---")
+				.SetLtr("broker_phone", broker.JsonData.PhoneNumber ?? "---")
+				.SetLtr("broker_support_phone", broker.JsonData.PhoneNumber ?? "---")
+
+				// User / acceptor side
+				.Set("user_full_name", $"{user.FirstName ?? "---"} {user.LastName ?? "---"}")
+				.Set("user_father_name", user.JsonData.FatherName ?? "---")
+				.Set("user_id_number", user.NationalCode ?? "---")
+				.SetLtr("user_national_code", user.NationalCode ?? "---")
+				.SetLtr("user_birthdate", PersianDateTime.FromDateTime(user.Birthdate ?? DateTime.Now).ToString("yyyy-MM-dd"))
+				.Set("user_address", merchant.JsonData.Address ?? "---")
+				.SetLtr("user_postal_code", merchant.ZipCode)
+				.SetLtr("user_mobile", user.PhoneNumber ?? "---")
+				.SetLtr("user_landline", user.LandLine ?? "---")
+
+				// Property plaque
+				.Set("user_plaque_number", "---")
+				.Set("user_main_plaque", "---")
+
+				// signature box
+				.Set("broker_name1", broker.JsonData.Sign1Owner ?? "---")
+				.Set("broker_name2", broker.JsonData.Sign1Owner ?? "---")
+				.SetImageBase64("broker_signatures1", broker.JsonData.Sign1Base64)
+				.SetImageBase64("broker_signatures2", broker.JsonData.Sign1Base64)
+				.SetImageBytes("user_signature", ReadSignature(user));
+
 			if (brand.Tags.Contains(TagTerminalBrand.Atm)) {
 				template
-					.Clear("brokerSign1")
-					.Clear("brokerSign2")
-					.Clear("customerSignature")
+					.Clear("broker_signatures1")
+					.Clear("broker_signatures2")
+					.Clear("user_signature")
 					.Set("printInstruction", ls.Get("printTheAgreementSignItAndSendItByPost"));
 			}
 			else {
-				template.SetImageBase64("brokerSign1", broker.JsonData.Sign1Base64);
-				template.SetImageBase64("brokerSign2", broker.JsonData.Sign2Base64);
-				template.SetImageBytes("customerSignature", ReadSignature(user));
+				template.SetImageBase64("broker_signatures", broker.JsonData.Sign1Base64);
+				template.SetImageBytes("user_signature", ReadSignature(user));
 			}
+
+
+			// template
+			// 	.Set("day", PersianDateTime.Now.Day.ToString())
+			// 	.Set("month", PersianDateTime.Now.Month.ToString())
+			// 	.SetLtr("number", terminal.Serial)
+			// 	.Set("fullName", $"{user.FirstName ?? "---"} {user.LastName ?? "---"}")
+			// 	.Set("address", merchant.JsonData.Address ?? "---")
+			// 	.Set("fatherName", user.JsonData.FatherName ?? "---")
+			// 	.SetLtr("nationalCode", user.NationalCode ?? "---")
+			// 	.SetLtr("birthdate", PersianDateTime.FromDateTime(user.Birthdate ?? DateTime.Now).ToString("yyyy-MM-dd"))
+			// 	.SetLtr("postalCode", merchant.ZipCode)
+			// 	.SetLtr("phoneNumber", user.PhoneNumber ?? "---")
+			// 	.SetLtr("landLine", user.LandLine ?? "---")
+			// 	.Set("brokerTitle", broker.Title)
+			// 	.Set("brokerRepresentative", broker.JsonData.Representative ?? "---")
+			// 	.Set("brokerAddress", broker.JsonData.Address ?? "---")
+			// 	.Set("brokerSign1Owner", broker.JsonData.Sign1Owner ?? "")
+			// 	.Set("brokerSign2Owner", broker.JsonData.Sign2Owner ?? "")
+			// 	.SetLtr("brokerRegistrationNumber", broker.JsonData.RegistrationNumber ?? "---")
+			// 	.SetLtr("brokerNationalCode", broker.JsonData.NationalCode ?? "---")
+			// 	.SetLtr("brokerPostalCode", broker.JsonData.PostalCode ?? "---")
+			// 	.SetLtr("brokerPhoneNumber", broker.JsonData.PhoneNumber ?? "---")
+			// 	.SetImageBase64("brokerLogo", broker.JsonData.LogoBase64, attributes: "alt=\"\"");
+			//
+			// if (brand.Tags.Contains(TagTerminalBrand.Atm)) {
+			// 	template
+			// 		.Clear("brokerSign1")
+			// 		.Clear("brokerSign2")
+			// 		.Clear("customerSignature")
+			// 		.Set("printInstruction", ls.Get("printTheAgreementSignItAndSendItByPost"));
+			// }
+			// else {
+			// 	template.SetImageBase64("brokerSign1", broker.JsonData.Sign1Base64);
+			// 	template.SetImageBase64("brokerSign2", broker.JsonData.Sign2Base64);
+			// 	template.SetImageBytes("customerSignature", ReadSignature(user));
+			// }
 
 			return await template.RenderPdfAsync();
 		}
