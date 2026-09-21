@@ -6,7 +6,8 @@ public class HtmlTemplate {
 	private readonly string _content;
 	private readonly Dictionary<string, string> _map = new();
 
-	public static string FontPath { get; set; } = Path.Combine(AppContext.BaseDirectory, "Templates", "Fonts", "Vazir.ttf");
+	public static string FontPath { get; set; } =
+		Path.Combine(AppContext.BaseDirectory, "Templates", "Fonts", "Vazir.ttf");
 
 	private HtmlTemplate(string content) => _content = content;
 
@@ -177,6 +178,11 @@ public class HtmlTemplate {
 		await using (FileStream fontStream = File.OpenRead(FontPath)) {
 			await generator.AddFontFromStream(fontStream);
 		}
+
+		generator.AddFontFamilyMapping("Segoe UI", "Vazir");
+		generator.AddFontFamilyMapping("Liberation Sans", "Vazir");
+		generator.AddFontFamilyMapping("Arial", "Vazir");
+		generator.AddFontFamilyMapping("sans-serif", "Vazir");
 
 		PeachPdfDocument document = await generator.GeneratePdf(
 			Render(),
