@@ -6,6 +6,8 @@ public class HtmlTemplate {
 	private readonly string _content;
 	private readonly Dictionary<string, string> _map = new();
 
+	public static string FontPath { get; set; } = Path.Combine(AppContext.BaseDirectory, "Templates", "Fonts", "Vazir.ttf");
+
 	private HtmlTemplate(string content) => _content = content;
 
 	public static HtmlTemplate FromString(string html) => new(html);
@@ -172,15 +174,9 @@ public class HtmlTemplate {
 
 		PdfGenerator generator = new();
 
-		string fontPath = Path.Combine(AppContext.BaseDirectory, "Templates", "Fonts", "Vazir.ttf");
-		if (!File.Exists(fontPath))
-			throw new FileNotFoundException(
-				$"PDF font not found: {fontPath}",
-				fontPath
-			);
-
-		await using (FileStream fontStream = File.OpenRead(fontPath)) await generator.AddFontFromStream(fontStream);
-		generator.AddFontFamilyMapping("Liberation Sans", "Vazir");
+		await using (FileStream fontStream = File.OpenRead(FontPath)) {
+			await generator.AddFontFromStream(fontStream);
+		}
 
 		PeachPdfDocument document = await generator.GeneratePdf(
 			Render(),
