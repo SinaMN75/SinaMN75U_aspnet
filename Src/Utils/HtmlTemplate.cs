@@ -172,7 +172,17 @@ public class HtmlTemplate {
 
 		PdfGenerator generator = new();
 
-		var document = await generator.GeneratePdf(
+		string fontPath = Path.Combine(AppContext.BaseDirectory, "Templates", "Fonts", "Vazir.ttf");
+		if (!File.Exists(fontPath))
+			throw new FileNotFoundException(
+				$"PDF font not found: {fontPath}",
+				fontPath
+			);
+
+		await using (FileStream fontStream = File.OpenRead(fontPath)) await generator.AddFontFromStream(fontStream);
+		generator.AddFontFamilyMapping("Liberation Sans", "Vazir");
+
+		PeachPdfDocument document = await generator.GeneratePdf(
 			Render(),
 			config
 		);
