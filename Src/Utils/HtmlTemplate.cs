@@ -6,6 +6,8 @@ public class HtmlTemplate {
 	private readonly string _content;
 	private readonly Dictionary<string, string> _map = new();
 
+	public bool RemoveUnmatchedTokens { get; set; }
+
 	public static string FontPath { get; set; } =
 		Path.Combine(AppContext.BaseDirectory, "Templates", "Fonts", "Vazir.ttf");
 
@@ -126,110 +128,6 @@ public class HtmlTemplate {
 		return this;
 	}
 
-	public bool RemoveUnmatchedTokens { get; set; }
-
-	public string Render() {
-		string result = _map.Aggregate(
-			_content,
-			(current, kv) =>
-				current.Replace(kv.Key, kv.Value)
-		);
-
-		return RemoveUnmatchedTokens
-			? Regex.Replace(
-				result,
-				@"\{\{[A-Za-z0-9_]+\}\}",
-				""
-			)
-			: result;
-	}
-
-	public byte[] RenderBytes() =>
-		Encoding.UTF8.GetBytes(Render());
-
-	public string RenderBase64() =>
-		Convert.ToBase64String(RenderBytes());
-
-	public async Task SaveAsync(
-		string path,
-		CancellationToken ct = default
-	) =>
-		await File.WriteAllTextAsync(
-			path,
-			Render(),
-			Encoding.UTF8,
-			ct
-		);
-
-	public async Task<byte[]> RenderPdfAsync(
-		PageSize pageSize = PageSize.A4,
-		PageOrientation orientation = PageOrientation.Portrait,
-		CancellationToken ct = default
-	) {
-		ct.ThrowIfCancellationRequested();
-
-		PdfGenerateConfig config = new() {
-			PageSize = pageSize,
-			PageOrientation = orientation
-		};
-
-		PdfGenerator generator = new();
-
-		await using (FileStream fontStream = File.OpenRead(FontPath)) {
-			await generator.AddFontFromStream(fontStream);
-		}
-
-		generator.AddFontFamilyMapping("Segoe UI", "Vazir");
-		generator.AddFontFamilyMapping("Liberation Sans", "Vazir");
-		generator.AddFontFamilyMapping("Arial", "Vazir");
-		generator.AddFontFamilyMapping("sans-serif", "Vazir");
-
-		PeachPdfDocument document = await generator.GeneratePdf(
-			Render(),
-			config
-		);
-
-		ct.ThrowIfCancellationRequested();
-
-		using MemoryStream stream = new();
-
-		document.Save(stream);
-
-		return stream.ToArray();
-	}
-
-	public async Task<string> RenderPdfBase64Async(
-		PageSize pageSize = PageSize.A4,
-		PageOrientation orientation = PageOrientation.Portrait,
-		CancellationToken ct = default
-	) =>
-		Convert.ToBase64String(
-			await RenderPdfAsync(
-				pageSize,
-				orientation,
-				ct
-			)
-		);
-
-	public async Task SavePdfAsync(
-		string path,
-		PageSize pageSize = PageSize.A4,
-		PageOrientation orientation = PageOrientation.Portrait,
-		CancellationToken ct = default
-	) {
-		byte[] pdf = await RenderPdfAsync(
-			pageSize,
-			orientation,
-			ct
-		);
-
-		await File.WriteAllBytesAsync(
-			path,
-			pdf,
-			ct
-		);
-	}
-
 	private static string Key(string token) =>
 		token.StartsWith("{{")
 			? token
@@ -267,4 +165,64 @@ public class HtmlTemplate {
 			".avif" => "image/avif",
 			_ => "application/octet-stream"
 		};
+
+	public async Task<byte[]> RenderPdfAsync(
+		PageSize pageSize = PageSize.A4,
+		PageOrientation orientation = PageOrientation.Portrait,
+		CancellationToken ct = default
+	) {
+		ct.ThrowIfCancellationRequested();
+
+		PdfGenerateConfig config = new() {
+			PageSize = pageSize,
+			PageOrientation = orientation
+		};
+
+		PdfGenerator generator = new();
+
+		await using (FileStream fontStream = File.OpenRead(FontPath)) {
+			await generator.AddFontFromStream(fontStream);
+		}
+
+		generator.AddFontFamilyMapping("Segoe UI", "Vazir");
+		generator.AddFontFamilyMapping("Liberation Sans", "Vazir");
+		generator.AddFontFamilyMapping("Arial", "Vazir");
+		generator.AddFontFamilyMapping("sans-serif", "Vazir");
+
+		PeachPdfDocument document = await generator.GeneratePdf(Render(), config);
+
+		ct.ThrowIfCancellationRequested();
+		using MemoryStream stream = new();
+		document.Save(stream);
+		return stream.ToArray();
+	}
+
+	public async Task<string> RenderPdfBase64Async(
+		PageSize pageSize = PageSize.A4,
+		PageOrientation orientation = PageOrientation.Portrait,
+		CancellationToken ct = default
+	) =>
+		Convert.ToBase64String(await RenderPdfAsync(pageSize, orientation, ct));
+
+	public async Task SavePdfAsync(
+		string path,
+		PageSize pageSize = PageSize.A4,
+		PageOrientation orientation = PageOrientation.Portrait,
+		CancellationToken ct = default
+	) {
+		byte[] pdf = await RenderPdfAsync(pageSize, orientation, ct);
+		await File.WriteAllBytesAsync(path, pdf, ct);
+	}
+
+	public string Render() {
+		string result = _map.Aggregate(_content, (current, kv) => current.Replace(kv.Key, kv.Value));
+
+		return RemoveUnmatchedTokens ? Regex.Replace(result, @"\{\{[A-Za-z0-9_]+\}\}", "") : result;
+	}
+
+	public byte[] RenderBytes() => Encoding.UTF8.GetBytes(Render());
+
+	public string RenderBase64() => Convert.ToBase64String(RenderBytes());
+
+	public async Task SaveAsync(string path, CancellationToken ct = default) => await File.WriteAllTextAsync(path, Render(), Encoding.UTF8, ct);
 }
