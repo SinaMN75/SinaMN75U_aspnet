@@ -14,7 +14,7 @@ public sealed class MerchantEntity : BaseEntity<TagMerchant, MerchantJson> {
 	[Required, StringLength(100)]
 	public required string Title { get; set; } // عنوان فروشگاه
 
-	[Required, MinLength(6), MaxLength(12)]
+	[Required, MinLength(6), MaxLength(15)]
 	public required string Landline { get; set; } // شماره ثابت
 
 	[Required, StringLength(10)]
