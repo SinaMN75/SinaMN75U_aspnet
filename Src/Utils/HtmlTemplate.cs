@@ -1,4 +1,6 @@
 using PeachPDF;
+using PuppeteerSharp;
+using PuppeteerSharp.Media;
 
 namespace SinaMN75U.Utils;
 
@@ -173,28 +175,30 @@ public class HtmlTemplate {
 	) {
 		ct.ThrowIfCancellationRequested();
 
-		PdfGenerateConfig config = new() {
-			PageSize = pageSize,
-			PageOrientation = orientation
-		};
+		// Launch Chromium (reuse browser instance in production for performance)
+		await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions {
+			Headless = true,
+			Args = new[] { "--no-sandbox", "--disable-setuid-sandbox" }
+		});
 
-		PdfGenerator generator = new();
+		await using var page = await browser.NewPageAsync();
 
-		await using (FileStream fontStream = File.OpenRead(FontPath)) {
-			await generator.AddFontFromStream(fontStream);
-		}
+		// Render your HTML (with tokens already replaced by Render())
+		await page.SetContentAsync(Render(), new NavigationOptions {
+			WaitUntil = new[] { WaitUntilNavigation.Networkidle0 }
+		});
 
-		generator.AddFontFamilyMapping("Segoe UI", "Vazir");
-		generator.AddFontFamilyMapping("Liberation Sans", "Vazir");
-		generator.AddFontFamilyMapping("Arial", "Vazir");
-		generator.AddFontFamilyMapping("sans-serif", "Vazir");
+		// Generate PDF — Chromium handles RTL, Persian shaping, and BiDi natively
+		byte[] pdf = await page.PdfDataAsync(new PdfOptions {
+			Format = PaperFormat.A4,
+			Landscape = orientation == PageOrientation.Landscape,
+			PrintBackground = true,
+			MarginOptions = new MarginOptions {
+				Top = "20mm", Bottom = "20mm", Left = "15mm", Right = "15mm"
+			}
+		});
 
-		PeachPdfDocument document = await generator.GeneratePdf(Render(), config);
-
-		ct.ThrowIfCancellationRequested();
-		using MemoryStream stream = new();
-		document.Save(stream);
-		return stream.ToArray();
+		return pdf;
 	}
 
 	public async Task<string> RenderPdfBase64Async(
