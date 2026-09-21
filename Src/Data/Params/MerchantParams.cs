@@ -18,7 +18,7 @@ public class MerchantCreateParams : BaseCreateParams<TagMerchant> {
 	[UValidationRequired("merchantNameIsRequired"), UValidationStringLength(5, 100, "merchantNameIsNotValid")]
 	public string Title { get; set; } = null!;
 
-	[UValidationRequired("landlineIsRequired"), UValidationStringLength(6, 12, "landlineIsNotValid")]
+	[UValidationRequired("landlineIsRequired"), UValidationStringLength(6, 15, "landlineIsNotValid")]
 	public string Landline { get; set; } = null!;
 
 	[UValidationRequired("nationalCodeIsRequired"), UValidationStringLength(10, 10, "NationalCodeNotValid")]
