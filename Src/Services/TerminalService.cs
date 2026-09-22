@@ -103,7 +103,7 @@ public class TerminalService(
 		if (terminal == null || merchant == null || brand == null || broker == null) return new UResponse<TerminalAvailabilityResponse?>(null, status, message);
 
 		string? pdf = await GenerateAgreement(merchant.User, merchant, terminal, brand, broker);
-		string? agreement = UserFileStore.SaveText(env.WebRootPath, userData.Id, $"terminal-{terminal.Serial}", pdf, terminal.AgreementHtml, null);
+		string? agreement = UserFileStore.SaveText(env.WebRootPath, userData.Id, $"terminal-{terminal.Serial}", pdf, terminal.AgreementHtml);
 		terminal.AgreementHtml = agreement;
 		db.Update(terminal);
 		await db.SaveChangesAsync(ct);
