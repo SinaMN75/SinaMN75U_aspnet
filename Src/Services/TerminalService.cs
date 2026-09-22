@@ -715,7 +715,6 @@ public class TerminalService(
 				.SetLtr("broker_registration_number", broker.JsonData.RegistrationNumber ?? "---")
 				.SetLtr("broker_national_id", broker.JsonData.NationalCode ?? "---")
 				.Set("broker_representative_name", broker.JsonData.Representative ?? "---")
-				.Set("broker_representative_title", broker.JsonData.Representative ?? "---")
 				.Set("broker_address", broker.JsonData.Address ?? "---")
 				.SetLtr("broker_postal_code", broker.JsonData.PostalCode ?? "---")
 				.SetLtr("broker_phone", broker.JsonData.PhoneNumber ?? "---")
@@ -738,9 +737,9 @@ public class TerminalService(
 
 				// signature box
 				.Set("broker_name1", broker.JsonData.Sign1Owner ?? "---")
-				.Set("broker_name2", broker.JsonData.Sign1Owner ?? "---")
+				.Set("broker_name2", broker.JsonData.Sign2Owner ?? "---")
 				.SetImageBase64("broker_signatures1", broker.JsonData.Sign1Base64)
-				.SetImageBase64("broker_signatures2", broker.JsonData.Sign1Base64)
+				.SetImageBase64("broker_signatures2", broker.JsonData.Sign2Base64)
 				.SetImageBytes("user_signature", ReadSignature(user));
 
 			if (brand.Tags.Contains(TagTerminalBrand.Atm)) {
