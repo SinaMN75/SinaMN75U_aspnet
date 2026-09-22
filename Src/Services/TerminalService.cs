@@ -103,7 +103,7 @@ public class TerminalService(
 		if (terminal == null || merchant == null || brand == null || broker == null) return new UResponse<TerminalAvailabilityResponse?>(null, status, message);
 
 		string? pdf = await GenerateAgreement(merchant.User, merchant, terminal, brand, broker);
-		string? agreement = UserFileStore.Save(env.WebRootPath, userData.Id, $"terminal-{terminal.Serial}", pdf, terminal.AgreementHtml, null);
+		string? agreement = UserFileStore.SaveText(env.WebRootPath, userData.Id, $"terminal-{terminal.Serial}", pdf, terminal.AgreementHtml, null);
 		terminal.AgreementHtml = agreement;
 		db.Update(terminal);
 		await db.SaveChangesAsync(ct);
@@ -113,7 +113,7 @@ public class TerminalService(
 		return new UResponse<TerminalAvailabilityResponse?>(new TerminalAvailabilityResponse {
 			Id = terminal.Id,
 			Serial = terminal.Serial,
-			Agreement = agreement
+			Agreement = UserFileStore.ReadText(env.WebRootPath, agreement)
 		});
 	}
 
@@ -129,7 +129,7 @@ public class TerminalService(
 		string? pdf = await GenerateAgreement(merchant.User, merchant, terminal, brand, broker);
 		
 		if (pdf == null) return new UResponse<TerminalResponse?>(null, Usc.InternalServerError, ls.Get("generatingTheAgreementFailed"));
-		string? agreement = UserFileStore.Save(env.WebRootPath, userData.Id, $"terminal-{terminal.Serial}", pdf, terminal.AgreementHtml, null);
+		string? agreement = UserFileStore.SaveText(env.WebRootPath, userData.Id, $"terminal-{terminal.Serial}", pdf, terminal.AgreementHtml);
 
 		terminal.JsonData.Detail1 = p.Title ?? "";
 		terminal.JsonData.Detail2 = "";
@@ -151,7 +151,7 @@ public class TerminalService(
 			SimCardSerial = terminal.SimCardSerial,
 			Imei = terminal.Imei,
 			TerminalId = terminal.TerminalId,
-			AgreementHtml = terminal.AgreementHtml,
+			AgreementHtml = UserFileStore.ReadText(env.WebRootPath, agreement),
 			MerchantId = terminal.MerchantId,
 			TerminalBrandId = terminal.TerminalBrandId,
 			TerminalBrokerId = terminal.TerminalBrokerId,

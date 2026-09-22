@@ -27,6 +27,21 @@ public static class UserFileStore {
 
 		return relative;
 	}
+	
+	public static string SaveText(string webRoot, Guid userId, string field, string? content, string? oldPath, string ext = "html") {
+		if (string.IsNullOrWhiteSpace(content)) return oldPath ?? string.Empty;
+
+		Delete(webRoot, oldPath);
+
+		string relative = $"{IdentityFolder}/{userId}/{field}_{Guid.CreateVersion7()}.{ext}";
+
+		string fullPath = Path.Combine(webRoot, MediaRoot, relative);
+		string? dir = Path.GetDirectoryName(fullPath);
+		if (dir != null && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+		File.WriteAllText(fullPath, content);
+
+		return relative;
+	}
 
 	public static string SaveBytes(string webRoot, Guid userId, string fileName, byte[] bytes) {
 		string relative = $"{IdentityFolder}/{userId}/{fileName}";
@@ -54,5 +69,11 @@ public static class UserFileStore {
 		if (string.IsNullOrWhiteSpace(relativePath)) return null;
 		string fullPath = Path.Combine(webRoot, MediaRoot, relativePath);
 		return File.Exists(fullPath) ? Convert.ToBase64String(File.ReadAllBytes(fullPath)) : null;
+	}
+	
+	public static string? ReadText(string webRoot, string? relativePath) {
+		if (string.IsNullOrWhiteSpace(relativePath)) return null;
+		string fullPath = Path.Combine(webRoot, MediaRoot, relativePath);
+		return File.Exists(fullPath) ? File.ReadAllText(fullPath) : null;
 	}
 }
