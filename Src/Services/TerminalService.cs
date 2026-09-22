@@ -103,12 +103,17 @@ public class TerminalService(
 		if (terminal == null || merchant == null || brand == null || broker == null) return new UResponse<TerminalAvailabilityResponse?>(null, status, message);
 
 		string? pdf = await GenerateAgreement(merchant.User, merchant, terminal, brand, broker);
+		string? agreement = UserFileStore.Save(env.WebRootPath, userData.Id, $"terminal-{terminal.Serial}", pdf, terminal.AgreementHtml, null);
+		terminal.AgreementHtml = agreement;
+		db.Update(terminal);
+		await db.SaveChangesAsync(ct);
+		
 		if (pdf == null) return new UResponse<TerminalAvailabilityResponse?>(null, Usc.InternalServerError, ls.Get("generatingTheAgreementFailed"));
 
 		return new UResponse<TerminalAvailabilityResponse?>(new TerminalAvailabilityResponse {
 			Id = terminal.Id,
 			Serial = terminal.Serial,
-			Agreement = pdf
+			Agreement = agreement
 		});
 	}
 
@@ -118,12 +123,13 @@ public class TerminalService(
 		if (userData.IsExpired) return new UResponse<TerminalResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		if (!p.AcceptedAgreement) return new UResponse<TerminalResponse?>(null, Usc.BadRequest, ls.Get("youHaveToAcceptTheAgreementToContinue"));
 
-		(TerminalEntity? terminal, MerchantEntity? merchant, TerminalBrandEntity? brand, TerminalBrokerEntity? broker, Usc status, string message) =
-			await ResolveAssignable(userData, p, ct);
+		(TerminalEntity? terminal, MerchantEntity? merchant, TerminalBrandEntity? brand, TerminalBrokerEntity? broker, Usc status, string message) = await ResolveAssignable(userData, p, ct);
 		if (terminal == null || merchant == null || brand == null || broker == null) return new UResponse<TerminalResponse?>(null, status, message);
 
-		string? agreement = await GenerateAgreement(merchant.User, merchant, terminal, brand, broker);
-		if (agreement == null) return new UResponse<TerminalResponse?>(null, Usc.InternalServerError, ls.Get("generatingTheAgreementFailed"));
+		string? pdf = await GenerateAgreement(merchant.User, merchant, terminal, brand, broker);
+		
+		if (pdf == null) return new UResponse<TerminalResponse?>(null, Usc.InternalServerError, ls.Get("generatingTheAgreementFailed"));
+		string? agreement = UserFileStore.Save(env.WebRootPath, userData.Id, $"terminal-{terminal.Serial}", pdf, terminal.AgreementHtml, null);
 
 		terminal.JsonData.Detail1 = p.Title ?? "";
 		terminal.JsonData.Detail2 = "";
@@ -145,7 +151,7 @@ public class TerminalService(
 			SimCardSerial = terminal.SimCardSerial,
 			Imei = terminal.Imei,
 			TerminalId = terminal.TerminalId,
-			Agreement = terminal.Agreement.ToBase64(),
+			AgreementHtml = terminal.AgreementHtml,
 			MerchantId = terminal.MerchantId,
 			TerminalBrandId = terminal.TerminalBrandId,
 			TerminalBrokerId = terminal.TerminalBrokerId,
@@ -230,7 +236,7 @@ public class TerminalService(
 			SimCardSerial = terminal.SimCardSerial,
 			Imei = terminal.Imei,
 			TerminalId = terminal.TerminalId,
-			Agreement = terminal.Agreement.ToBase64(),
+			Agreement = terminal.AgreementHtml,
 			MerchantId = terminal.MerchantId
 		});
 	}
@@ -748,43 +754,6 @@ public class TerminalService(
 				template.SetImageBase64("broker_signatures", broker.JsonData.Sign1Base64);
 				template.SetImageBytes("user_signature", ReadSignature(user));
 			}
-
-
-			// template
-			// 	.Set("day", PersianDateTime.Now.Day.ToString())
-			// 	.Set("month", PersianDateTime.Now.Month.ToString())
-			// 	.SetLtr("number", terminal.Serial)
-			// 	.Set("fullName", $"{user.FirstName ?? "---"} {user.LastName ?? "---"}")
-			// 	.Set("address", merchant.JsonData.Address ?? "---")
-			// 	.Set("fatherName", user.JsonData.FatherName ?? "---")
-			// 	.SetLtr("nationalCode", user.NationalCode ?? "---")
-			// 	.SetLtr("birthdate", PersianDateTime.FromDateTime(user.Birthdate ?? DateTime.Now).ToString("yyyy-MM-dd"))
-			// 	.SetLtr("postalCode", merchant.ZipCode)
-			// 	.SetLtr("phoneNumber", user.PhoneNumber ?? "---")
-			// 	.SetLtr("landLine", user.LandLine ?? "---")
-			// 	.Set("brokerTitle", broker.Title)
-			// 	.Set("brokerRepresentative", broker.JsonData.Representative ?? "---")
-			// 	.Set("brokerAddress", broker.JsonData.Address ?? "---")
-			// 	.Set("brokerSign1Owner", broker.JsonData.Sign1Owner ?? "")
-			// 	.Set("brokerSign2Owner", broker.JsonData.Sign2Owner ?? "")
-			// 	.SetLtr("brokerRegistrationNumber", broker.JsonData.RegistrationNumber ?? "---")
-			// 	.SetLtr("brokerNationalCode", broker.JsonData.NationalCode ?? "---")
-			// 	.SetLtr("brokerPostalCode", broker.JsonData.PostalCode ?? "---")
-			// 	.SetLtr("brokerPhoneNumber", broker.JsonData.PhoneNumber ?? "---")
-			// 	.SetImageBase64("brokerLogo", broker.JsonData.LogoBase64, attributes: "alt=\"\"");
-			//
-			// if (brand.Tags.Contains(TagTerminalBrand.Atm)) {
-			// 	template
-			// 		.Clear("brokerSign1")
-			// 		.Clear("brokerSign2")
-			// 		.Clear("customerSignature")
-			// 		.Set("printInstruction", ls.Get("printTheAgreementSignItAndSendItByPost"));
-			// }
-			// else {
-			// 	template.SetImageBase64("brokerSign1", broker.JsonData.Sign1Base64);
-			// 	template.SetImageBase64("brokerSign2", broker.JsonData.Sign2Base64);
-			// 	template.SetImageBytes("customerSignature", ReadSignature(user));
-			// }
 
 			return template.Render();
 		}

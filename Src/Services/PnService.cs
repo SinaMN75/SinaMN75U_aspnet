@@ -419,7 +419,6 @@ public class PnService(
 		await using IDbContextTransaction transaction = await db.Database.BeginTransactionAsync(ct);
 		try {
 			terminal.MerchantId = p.MerchantId;
-			terminal.Agreement = agreement.FromBase64();
 			ULog.Debug("Calling Avreen API to add merchant...");
 			HttpResponseMessage? response = await http.Post(
 				$"{Core.App.Avreen.BaseUrl}api/mms/ing/v2/addMerchant",
