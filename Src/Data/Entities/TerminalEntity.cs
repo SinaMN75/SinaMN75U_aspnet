@@ -31,8 +31,6 @@ public sealed class TerminalEntity : BaseEntity<TagTerminal, TerminalJson> {
 
 	public Guid? MerchantId { get; set; }
 	public MerchantEntity? Merchant { get; set; }
-
-	public byte[]? Agreement { get; set; }
 	
 	public string? AgreementHtml { get; set; }
 }
