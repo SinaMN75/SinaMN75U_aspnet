@@ -113,7 +113,7 @@ public class TerminalService(
 		return new UResponse<TerminalAvailabilityResponse?>(new TerminalAvailabilityResponse {
 			Id = terminal.Id,
 			Serial = terminal.Serial,
-			Agreement = UserFileStore.ReadText(env.WebRootPath, agreement)
+			Agreement = Core.App.BaseUrl + "/Media/" + agreement
 		});
 	}
 
@@ -151,7 +151,7 @@ public class TerminalService(
 			SimCardSerial = terminal.SimCardSerial,
 			Imei = terminal.Imei,
 			TerminalId = terminal.TerminalId,
-			AgreementHtml = UserFileStore.ReadText(env.WebRootPath, agreement),
+			AgreementHtml = Core.App.BaseUrl + "/Media/" + agreement,
 			MerchantId = terminal.MerchantId,
 			TerminalBrandId = terminal.TerminalBrandId,
 			TerminalBrokerId = terminal.TerminalBrokerId,
