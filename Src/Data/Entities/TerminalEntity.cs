@@ -33,6 +33,8 @@ public sealed class TerminalEntity : BaseEntity<TagTerminal, TerminalJson> {
 	public MerchantEntity? Merchant { get; set; }
 
 	public byte[]? Agreement { get; set; }
+	
+	public string? AgreementHtml { get; set; }
 }
 
 public sealed class TerminalJson : BaseJson;

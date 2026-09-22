@@ -1,5 +1,3 @@
-using PeachPDF;
-
 namespace SinaMN75U.Utils;
 
 public class HtmlTemplate {
@@ -166,52 +164,8 @@ public class HtmlTemplate {
 			_ => "application/octet-stream"
 		};
 
-	public async Task<byte[]> RenderPdfAsync(
-		PageSize pageSize = PageSize.A4,
-		PageOrientation orientation = PageOrientation.Portrait,
-		CancellationToken ct = default
-	) {
-		ct.ThrowIfCancellationRequested();
-
-		PdfGenerateConfig config = new() {
-			PageSize = pageSize,
-			PageOrientation = orientation
-		};
-
-		PdfGenerator generator = new();
-
-		await using (FileStream fontStream = File.OpenRead(FontPath)) {
-			await generator.AddFontFromStream(fontStream);
-		}
-
-		generator.AddFontFamilyMapping("Segoe UI", "Vazir");
-		generator.AddFontFamilyMapping("Liberation Sans", "Vazir");
-		generator.AddFontFamilyMapping("Arial", "Vazir");
-		generator.AddFontFamilyMapping("sans-serif", "Vazir");
-
-		PeachPdfDocument document = await generator.GeneratePdf(Render(), config);
-
-		ct.ThrowIfCancellationRequested();
-		using MemoryStream stream = new();
-		document.Save(stream);
-		return stream.ToArray();
-	}
-
-	public async Task<string> RenderPdfBase64Async(
-		PageSize pageSize = PageSize.A4,
-		PageOrientation orientation = PageOrientation.Portrait,
-		CancellationToken ct = default
-	) =>
-		Convert.ToBase64String(await RenderPdfAsync(pageSize, orientation, ct));
-
-	public async Task SavePdfAsync(
-		string path,
-		PageSize pageSize = PageSize.A4,
-		PageOrientation orientation = PageOrientation.Portrait,
-		CancellationToken ct = default
-	) {
-		byte[] pdf = await RenderPdfAsync(pageSize, orientation, ct);
-		await File.WriteAllBytesAsync(path, pdf, ct);
+	public async Task SaveHtmlAsync(string path, CancellationToken ct = default) {
+		await File.WriteAllTextAsync(path, Render(), Encoding.UTF8, ct);
 	}
 
 	public string Render() {

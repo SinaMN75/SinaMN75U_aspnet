@@ -679,6 +679,7 @@ public static class Projections {
 			TerminalBrandId = x.TerminalBrandId,
 			TerminalBrokerId = x.TerminalBrokerId,
 			Agreement = args.Agreement ? x.Agreement.ToBase64() : null,
+			AgreementHtml = args.Agreement ? x.AgreementHtml : null,
 			Merchant = x.Merchant == null ? null : (args.Merchant != null ? MerchantSelector(args.Merchant) : m => null!).Invoke(x.Merchant),
 			TerminalBrand = x.TerminalBrand == null ? null : (args.TerminalBrand != null ? TerminalBrandSelector(args.TerminalBrand) : m => null!).Invoke(x.TerminalBrand),
 			TerminalBroker = x.TerminalBroker == null ? null : (args.TerminalBroker != null ? TerminalBrokerSelector(args.TerminalBroker) : m => null!).Invoke(x.TerminalBroker),

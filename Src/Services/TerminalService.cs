@@ -102,13 +102,13 @@ public class TerminalService(
 		(TerminalEntity? terminal, MerchantEntity? merchant, TerminalBrandEntity? brand, TerminalBrokerEntity? broker, Usc status, string message) = await ResolveAssignable(userData, p, ct);
 		if (terminal == null || merchant == null || brand == null || broker == null) return new UResponse<TerminalAvailabilityResponse?>(null, status, message);
 
-		byte[]? pdf = await GenerateAgreement(merchant.User, merchant, terminal, brand, broker);
+		string? pdf = await GenerateAgreement(merchant.User, merchant, terminal, brand, broker);
 		if (pdf == null) return new UResponse<TerminalAvailabilityResponse?>(null, Usc.InternalServerError, ls.Get("generatingTheAgreementFailed"));
 
 		return new UResponse<TerminalAvailabilityResponse?>(new TerminalAvailabilityResponse {
 			Id = terminal.Id,
 			Serial = terminal.Serial,
-			Agreement = pdf.ToBase64()
+			Agreement = pdf
 		});
 	}
 
@@ -122,13 +122,14 @@ public class TerminalService(
 			await ResolveAssignable(userData, p, ct);
 		if (terminal == null || merchant == null || brand == null || broker == null) return new UResponse<TerminalResponse?>(null, status, message);
 
-		byte[]? agreement = await GenerateAgreement(merchant.User, merchant, terminal, brand, broker);
+		string? agreement = await GenerateAgreement(merchant.User, merchant, terminal, brand, broker);
 		if (agreement == null) return new UResponse<TerminalResponse?>(null, Usc.InternalServerError, ls.Get("generatingTheAgreementFailed"));
 
 		terminal.JsonData.Detail1 = p.Title ?? "";
 		terminal.JsonData.Detail2 = "";
 		terminal.MerchantId = merchant.Id;
-		terminal.Agreement = agreement;
+		// terminal.Agreement = agreement;
+		terminal.AgreementHtml = agreement;
 		SetStatus(terminal, TagTerminal.PendingApproval);
 
 		await db.SaveChangesAsync(ct);
@@ -679,7 +680,7 @@ public class TerminalService(
 		return true;
 	}
 
-	private async Task<byte[]?> GenerateAgreement(
+	private async Task<string?> GenerateAgreement(
 		UserEntity user,
 		MerchantEntity merchant,
 		TerminalEntity terminal,
@@ -785,7 +786,7 @@ public class TerminalService(
 			// 	template.SetImageBytes("customerSignature", ReadSignature(user));
 			// }
 
-			return await template.RenderPdfAsync();
+			return template.Render();
 		}
 		catch (Exception ex) {
 			ULog.Error(ex, $"Generating the agreement failed for terminal {terminal.Id}");
