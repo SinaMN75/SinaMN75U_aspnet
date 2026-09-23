@@ -236,7 +236,7 @@ public enum TagContent {
 	Dorms = 106,
 	Hotels = 107,
 	AboutStats = 108,
-	
+
 	HomeSlider1 = 201,
 	HomeSlider2 = 202,
 	HomeBanner1 = 203,
@@ -247,12 +247,12 @@ public enum TagContent {
 	HomeMarquee = 208,
 	HomeReasons = 209,
 	HomeApp = 210,
-	
+
 	Menu1 = 401,
 	Menu2 = 402,
 	Footer1 = 403,
 	Footer2 = 404,
-	
+
 	Services1 = 501,
 	Services2 = 502
 }
@@ -527,12 +527,27 @@ public enum TagBed {
 
 public enum TagHotel {
 	Hotel = 101,
+	Boutique = 102,
+	Resort = 103,
+	Guesthouse = 104,
+	Apartment = 105,
+	Traditional = 106,
+	Hostel = 107,
+	Villa = 108,
+	
 	Featured = 201,
 	Active = 202,
 	Inactive = 203,
 
-	// Visited in person by the team (shown as a trust badge).
-	Verified = 204
+	PetsAllowed = 301,
+	SmokingAllowed = 302,
+	ChildrenAllowed = 303,
+	ExtraBedAvailable = 304,
+	PriceIncludesTax = 305,
+	
+	PendingApproval = 401,
+	Approved = 402,
+	Rejected = 403,
 }
 
 public enum TagHotelReservation {
