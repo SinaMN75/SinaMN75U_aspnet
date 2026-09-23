@@ -797,7 +797,7 @@ public static class Projections {
 			CreatorId = x.CreatorId,
 			BedId = x.BedId,
 			CreatedAt = x.CreatedAt,
-			IsActive = x.EndDate < DateTime.UtcNow,
+			IsActive = x.StartDate <= DateTime.UtcNow && x.EndDate >= DateTime.UtcNow,
 			Invoices = args.Invoice == null ? null : x.Invoices.AsQueryable().Select(DormBedInvoiceSelector(args.Invoice)).ToList(),
 			User = x.User == null ? null : (args.User != null ? UserSelector(args.User) : t => null!).Invoke(x.User),
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : t => null!).Invoke(x.Creator),
@@ -934,7 +934,6 @@ public static class Projections {
 			CommentCount = x.Comments.Count,
 			MinMonthlyRent = x.Rooms.SelectMany(r => r.Beds).Any() ? x.Rooms.SelectMany(r => r.Beds).Min(b => b.MonthlyRent) : null,
 			BedCount = x.Rooms.SelectMany(r => r.Beds).Count(),
-			// A bed is taken while one of its contracts is running.
 			AvailableBedCount = x.Rooms.SelectMany(r => r.Beds).Count(b => !b.Contracts.Any(c => c.StartDate <= DateTime.UtcNow && c.EndDate >= DateTime.UtcNow)),
 			Rooms = args.Rooms == null ? null : x.Rooms.AsQueryable().Select(DormRoomSelector(args.Rooms)).ToList(),
 			Beds = args.Beds == null ? null : x.Rooms.SelectMany(r => r.Beds).AsQueryable().Select(DormBedSelector(args.Beds)).ToList(),

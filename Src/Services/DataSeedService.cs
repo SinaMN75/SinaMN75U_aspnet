@@ -414,109 +414,111 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 		};
 
 		// ---------------------------------------------------------------- hotels
-		(string Title, string City, int Stars, string Address, string Phone, double Lat, double Lng, string Type, string Description, List<TagHotel> Tags, HotelJson Json, (string Title, int Capacity, decimal Price, int Quantity, string Bed, double Size, int Floor, string View, string Meal, string[] Amenities, string[] Highlights)[] Rooms)[] hotelSeeds = [
-			("هتل سنتی عباسی اصفهان", "104005", 4, "اصفهان، خیابان چهارباغ عباسی، کوچه ملک", "03132200100", 32.6607, 51.6693, "traditional",
-				"خانه‌ی قاجاری مرمت‌شده با حیاط مرکزی، حوض و چهار باغچه؛ ده دقیقه پیاده تا میدان نقش جهان. اتاق‌ها دور حیاط چیده شده‌اند و شب‌ها سکوت کامل است.",
-				[TagHotel.Hotel, TagHotel.Active, TagHotel.Featured, TagHotel.Verified],
+		// Type, policies, amenities and meal plans are tags; the Json only keeps texts and numbers.
+		(string Title, string City, int Stars, string Address, string Phone, List<TagHotel> Tags, HotelJson Json, (string Title, int Capacity, decimal Price, int Quantity, string Bed, double Size, int Floor, List<TagRoom> Tags)[] Rooms)[] hotelSeeds = [
+			("هتل سنتی عباسی اصفهان", "104005", 4, "اصفهان، خیابان چهارباغ عباسی، کوچه ملک", "03132200100",
+				[
+					TagHotel.Traditional, TagHotel.Active, TagHotel.Featured, TagHotel.Approved,
+					TagHotel.ChildrenAllowed, TagHotel.ExtraBedAvailable, TagHotel.PriceIncludesTax,
+					TagHotel.Wifi, TagHotel.Parking, TagHotel.Reception24, TagHotel.LuggageStorage, TagHotel.Cafe, TagHotel.Garden, TagHotel.Cctv,
+					TagHotel.Breakfast, TagHotel.HalfBoard
+				],
 				new HotelJson {
 					Highlights = ["حیاط مرکزی با حوض و چهار باغچه", "ده دقیقه پیاده تا میدان نقش جهان", "صبحانه سنتی هر روز", "بنای مرمت‌شده‌ی دوره قاجار"],
 					Website = "https://khabroom.com", Whatsapp = "989120000001", Instagram = "khabroom", Telegram = "khabroom",
-					YearBuilt = 1290, YearRenovated = 1402, FloorCount = 2, Languages = ["fa", "en", "ar"],
-					MealPlans = ["breakfast", "halfBoard"], PaymentMethods = ["cash", "card", "online"],
-					PetsAllowed = false, SmokingAllowed = false, ChildrenAllowed = true, ExtraBedAvailable = true, PriceIncludesTax = true,
-					ChildrenPolicy = "کودکان زیر ۶ سال با والدین رایگان اقامت می‌کنند.",
 					HowToGetThere = "از خیابان چهارباغ عباسی وارد کوچه‌ی ملک شوید؛ هتل سمت راست، روبه‌روی نانوایی سنتی است.",
 					Nearby = [
-						new PlaceNearby { Title = "میدان نقش جهان", Type = "attraction", DistanceMeters = 800, Minutes = 10 }, new PlaceNearby { Title = "سی‌وسه‌پل", Type = "attraction", DistanceMeters = 1200, Minutes = 15 }, new PlaceNearby { Title = "بازار قیصریه", Type = "market", DistanceMeters = 900, Minutes = 11 },
-						new PlaceNearby { Title = "ایستگاه مترو", Type = "metro", DistanceMeters = 1500, Minutes = 5 }
+						new PlaceNearby { Title = "میدان نقش جهان", DistanceMeters = 800, Minutes = 10 }, new PlaceNearby { Title = "سی‌وسه‌پل", DistanceMeters = 1200, Minutes = 15 }, new PlaceNearby { Title = "بازار قیصریه", DistanceMeters = 900, Minutes = 11 },
+						new PlaceNearby { Title = "ایستگاه مترو", DistanceMeters = 1500, Minutes = 5 }
 					],
 					Faqs = [new PlaceFaq { Question = "آیا پارکینگ دارید؟", Answer = "بله، پارکینگ اختصاصی و رایگان برای مهمانان وجود دارد." }, new PlaceFaq { Question = "امکان تحویل زودتر اتاق هست؟", Answer = "با هماهنگی قبلی و بسته به ظرفیت، ورود از ساعت ۱۲ ممکن است." }, new PlaceFaq { Question = "صبحانه شامل چه چیزهایی است؟", Answer = "نان سنگک، پنیر، تخم‌مرغ محلی، مربا، عسل و چای سماوری." }],
-					Description = "خانه‌ی قاجاری مرمت‌شده با حیاط مرکزی، حوض و چهار باغچه؛ ده دقیقه پیاده تا میدان نقش جهان.",
-					Policies = "ورود از ساعت ۱۴ و خروج تا ساعت ۱۲ ظهر. پرداخت بیعانه هنگام رزرو الزامی است.",
+					Description = "خانه‌ی قاجاری مرمت‌شده با حیاط مرکزی، حوض و چهار باغچه؛ ده دقیقه پیاده تا میدان نقش جهان. اتاق‌ها دور حیاط چیده شده‌اند و شب‌ها سکوت کامل است.",
+					Policies = "ورود از ساعت ۱۴ و خروج تا ساعت ۱۲ ظهر. پرداخت بیعانه هنگام رزرو الزامی است. کودکان زیر ۶ سال با والدین رایگان اقامت می‌کنند.",
 					CheckInTime = "14:00", CheckOutTime = "12:00",
-					Amenities = ["wifi", "parking", "reception24", "luggageStorage", "breakfast", "courtyard", "garden", "airConditioning", "heating", "dailyCleaning", "cafe", "smartLock", "cctv"],
 					Rules = ["استعمال دخانیات در اتاق‌ها ممنوع است", "ورود حیوان خانگی ممنوع است", "سکوت پس از ساعت ۲۳ رعایت شود"],
 					Latitude = 32.6607, Longitude = 51.6693, CancellationFreeHours = 48, CancellationPenaltyNights = 1
 				},
 				[
-					("اتاق دو تخته سنتی", 2, 4_200_000m, 12, "دو تخت", 24, 1, "courtyard", "breakfast", ["tv", "minibar", "airConditioning", "wardrobe", "privateBathroom"], ["تخت سنتی با ارسی اصل"]),
-					("اتاق سه تخته", 3, 5_400_000m, 8, "سه تخت", 32, 1, "courtyard", "breakfast", ["tv", "minibar", "airConditioning", "kettle", "privateBathroom"], ["ارسی رنگی اصل"]),
-					("سوئیت خانوادگی", 4, 7_800_000m, 4, "یک دو نفره و دو تک", 48, 2, "garden", "halfBoard", ["tv", "minibar", "airConditioning", "fridge", "kettle", "balcony", "bathtub"], ["دو فضای مجزا", "بالکن رو به باغ"])
+					("اتاق دو تخته سنتی", 2, 4_200_000m, 12, "دو تخت", 24, 1, [TagRoom.Double, TagRoom.BreakfastIncluded, TagRoom.CourtyardView, TagRoom.Tv, TagRoom.Minibar, TagRoom.AirConditioning, TagRoom.Wardrobe, TagRoom.PrivateBathroom]),
+					("اتاق سه تخته", 3, 5_400_000m, 8, "سه تخت", 32, 1, [TagRoom.Triple, TagRoom.BreakfastIncluded, TagRoom.CourtyardView, TagRoom.Tv, TagRoom.Minibar, TagRoom.AirConditioning, TagRoom.Kettle, TagRoom.PrivateBathroom]),
+					("سوئیت خانوادگی", 4, 7_800_000m, 4, "یک دو نفره و دو تک", 48, 2, [TagRoom.Family, TagRoom.BreakfastIncluded, TagRoom.GardenView, TagRoom.Tv, TagRoom.Minibar, TagRoom.AirConditioning, TagRoom.Fridge, TagRoom.Kettle, TagRoom.Balcony, TagRoom.Bathtub])
 				]),
 
-			("هتل پارسیان ولیعصر", "108012", 5, "تهران، بلوار ولیعصر، بالاتر از پارک ملت", "02122000200", 35.7580, 51.4090, "hotel",
-				"هتل پنج‌ستاره‌ی مدرن در قلب تهران با استخر سرپوشیده، اسپا و سالن‌های همایش؛ مناسب سفرهای کاری و خانوادگی.",
-				[TagHotel.Hotel, TagHotel.Active, TagHotel.Featured],
+			("هتل پارسیان ولیعصر", "108012", 5, "تهران، بلوار ولیعصر، بالاتر از پارک ملت", "02122000200",
+				[
+					TagHotel.Hotel, TagHotel.Active, TagHotel.Featured, TagHotel.Approved,
+					TagHotel.ChildrenAllowed, TagHotel.ExtraBedAvailable,
+					TagHotel.Wifi, TagHotel.Parking, TagHotel.Elevator, TagHotel.Reception24, TagHotel.LuggageStorage, TagHotel.Laundry, TagHotel.AirportShuttle, TagHotel.Restaurant, TagHotel.Cafe,
+					TagHotel.RoomService, TagHotel.Pool, TagHotel.Gym, TagHotel.Sauna, TagHotel.Spa, TagHotel.MeetingRoom, TagHotel.Wheelchair, TagHotel.Cctv,
+					TagHotel.RoomOnly, TagHotel.Breakfast, TagHotel.HalfBoard, TagHotel.FullBoard
+				],
 				new HotelJson {
 					Highlights = ["استخر و سونای اختصاصی مهمانان", "ترانسفر رایگان فرودگاه امام", "سالن همایش تا ۳۰۰ نفر", "ده دقیقه تا مترو ولیعصر"],
 					Website = "https://example.com/parsian", Whatsapp = "989120000002", Instagram = "parsian_valiasr",
-					YearBuilt = 1385, YearRenovated = 1401, FloorCount = 18, Languages = ["fa", "en", "ar", "tr"],
-					MealPlans = ["roomOnly", "breakfast", "halfBoard", "fullBoard"], PaymentMethods = ["cash", "card", "online", "transfer"],
-					PetsAllowed = false, SmokingAllowed = false, ChildrenAllowed = true, ExtraBedAvailable = true, PriceIncludesTax = false,
-					ChildrenPolicy = "کودکان زیر ۱۲ سال با استفاده از تخت موجود رایگان هستند.",
 					HowToGetThere = "ورودی اصلی از بلوار ولیعصر است؛ پارکینگ طبقات منفی از خیابان فرعی شرقی.",
 					Nearby = [
-						new PlaceNearby { Title = "مترو ولیعصر", Type = "metro", DistanceMeters = 600, Minutes = 8 }, new PlaceNearby { Title = "پارک ملت", Type = "park", DistanceMeters = 400, Minutes = 5 }, new PlaceNearby { Title = "بیمارستان آرش", Type = "hospital", DistanceMeters = 1800, Minutes = 6 },
-						new PlaceNearby { Title = "فرودگاه امام خمینی", Type = "airport", DistanceMeters = 48000, Minutes = 50 }
+						new PlaceNearby { Title = "مترو ولیعصر", DistanceMeters = 600, Minutes = 8 }, new PlaceNearby { Title = "پارک ملت", DistanceMeters = 400, Minutes = 5 }, new PlaceNearby { Title = "بیمارستان آرش", DistanceMeters = 1800, Minutes = 6 },
+						new PlaceNearby { Title = "فرودگاه امام خمینی", DistanceMeters = 48000, Minutes = 50 }
 					],
 					Faqs = [new PlaceFaq { Question = "آیا سالن همایش دارید؟", Answer = "بله، سه سالن با ظرفیت ۵۰ تا ۳۰۰ نفر، با تجهیزات کامل صوتی و تصویری." }, new PlaceFaq { Question = "ساعت کار استخر چیست؟", Answer = "هر روز از ۷ صبح تا ۲۲ شب، ویژه‌ی مهمانان هتل." }],
-					Description = "هتل پنج‌ستاره‌ی مدرن در قلب تهران با استخر سرپوشیده، اسپا و سالن‌های همایش.",
-					Policies = "ورود از ساعت ۱۴ و خروج تا ۱۲. کارت ملی یا گذرنامه هنگام ورود الزامی است.",
+					Description = "هتل پنج‌ستاره‌ی مدرن در قلب تهران با استخر سرپوشیده، اسپا و سالن‌های همایش؛ مناسب سفرهای کاری و خانوادگی.",
+					Policies = "ورود از ساعت ۱۴ و خروج تا ۱۲. کارت ملی یا گذرنامه هنگام ورود الزامی است. کودکان زیر ۱۲ سال با استفاده از تخت موجود رایگان هستند.",
 					CheckInTime = "14:00", CheckOutTime = "12:00",
-					Amenities = ["wifi", "parking", "elevator", "reception24", "luggageStorage", "laundry", "airportShuttle", "concierge", "restaurant", "cafe", "roomService", "pool", "gym", "sauna", "spa", "meetingRoom", "coworking", "printer", "wheelchair", "familyRooms", "nonSmokingRooms", "cctv", "securityGuard", "fireSafety", "firstAid", "metroNearby", "evCharging"],
 					Rules = ["ساعت سکوت ۲۳ تا ۷ صبح", "میهمان‌پذیری در لابی تا ساعت ۲۲ مجاز است"],
 					Latitude = 35.7580, Longitude = 51.4090, CancellationFreeHours = 24, CancellationPenaltyNights = 1
 				},
 				[
-					("اتاق استاندارد", 2, 6_500_000m, 30, "دو تخت", 28, 5, "city", "breakfast", ["tv", "minibar", "safeBox", "airConditioning", "hairDryer", "iron", "privateBathroom"], ["پنجره‌ی بزرگ رو به شهر"]),
-					("اتاق دلوکس", 3, 8_900_000m, 20, "کینگ + کاناپه", 38, 10, "city", "breakfast", ["tv", "minibar", "safeBox", "airConditioning", "desk", "kettle", "bathtub", "toiletries"], ["فضای کار جداگانه"]),
-					("سوئیت رویال", 4, 16_500_000m, 6, "کینگ", 75, 17, "mountain", "halfBoard", ["tv", "minibar", "safeBox", "airConditioning", "desk", "kettle", "bathtub", "balcony", "fridge"], ["منظره‌ی کوه‌های البرز", "نشیمن و اتاق پذیرایی"])
+					("اتاق استاندارد", 2, 6_500_000m, 30, "دو تخت", 28, 5, [TagRoom.Double, TagRoom.BreakfastIncluded, TagRoom.CityView, TagRoom.Tv, TagRoom.Minibar, TagRoom.SafeBox, TagRoom.AirConditioning, TagRoom.HairDryer, TagRoom.PrivateBathroom]),
+					("اتاق دلوکس", 3, 8_900_000m, 20, "کینگ + کاناپه", 38, 10, [TagRoom.Deluxe, TagRoom.BreakfastIncluded, TagRoom.CityView, TagRoom.Tv, TagRoom.Minibar, TagRoom.SafeBox, TagRoom.AirConditioning, TagRoom.Desk, TagRoom.Kettle, TagRoom.Bathtub]),
+					("سوئیت رویال", 4, 16_500_000m, 6, "کینگ", 75, 17, [TagRoom.Suite, TagRoom.MountainView, TagRoom.Tv, TagRoom.Minibar, TagRoom.SafeBox, TagRoom.AirConditioning, TagRoom.Desk, TagRoom.Kettle, TagRoom.Bathtub, TagRoom.Balcony, TagRoom.Fridge])
 				]),
 
-			("مهمان‌پذیر باغ‌نو شیراز", "117044", 3, "شیراز، خیابان لطفعلی‌خان زند، کوچه‌ی باغ‌نو", "07132300300", 29.6100, 52.5420, "guesthouse",
-				"اقامتگاه صمیمی و خانوادگی در بافت تاریخی شیراز، با باغچه‌ی نارنج و صبحانه‌ی خانگی؛ پنج دقیقه تا ارگ کریم‌خان.",
-				[TagHotel.Hotel, TagHotel.Active, TagHotel.Verified],
+			("مهمان‌پذیر باغ‌نو شیراز", "117044", 3, "شیراز، خیابان لطفعلی‌خان زند، کوچه‌ی باغ‌نو", "07132300300",
+				[
+					TagHotel.Guesthouse, TagHotel.Active, TagHotel.Approved,
+					TagHotel.PetsAllowed, TagHotel.ChildrenAllowed, TagHotel.PriceIncludesTax,
+					TagHotel.Wifi, TagHotel.Parking, TagHotel.Garden,
+					TagHotel.Breakfast
+				],
 				new HotelJson {
 					Highlights = ["باغچه‌ی نارنج و سایه‌بان", "صبحانه‌ی خانگی", "پنج دقیقه تا ارگ کریم‌خان"],
-					Whatsapp = "989120000003", Instagram = "baghnow_shiraz", YearBuilt = 1310, FloorCount = 2, Languages = ["fa", "en"],
-					MealPlans = ["breakfast"], PaymentMethods = ["cash", "card"],
-					PetsAllowed = true, SmokingAllowed = false, ChildrenAllowed = true, ExtraBedAvailable = false, PriceIncludesTax = true,
+					Whatsapp = "989120000003", Instagram = "baghnow_shiraz",
 					HowToGetThere = "از میدان شهدا به سمت لطفعلی‌خان زند؛ کوچه‌ی باغ‌نو دومین کوچه‌ی سمت چپ.",
-					Nearby = [new PlaceNearby { Title = "ارگ کریم‌خان", Type = "attraction", DistanceMeters = 450, Minutes = 6 }, new PlaceNearby { Title = "بازار وکیل", Type = "market", DistanceMeters = 600, Minutes = 8 }],
+					Nearby = [new PlaceNearby { Title = "ارگ کریم‌خان", DistanceMeters = 450, Minutes = 6 }, new PlaceNearby { Title = "بازار وکیل", DistanceMeters = 600, Minutes = 8 }],
 					Faqs = [new PlaceFaq { Question = "آیا حیوان خانگی مجاز است؟", Answer = "بله، سگ و گربه‌ی کوچک با هماهنگی قبلی." }],
-					Description = "اقامتگاه صمیمی و خانوادگی در بافت تاریخی شیراز، با باغچه‌ی نارنج و صبحانه‌ی خانگی.",
+					Description = "اقامتگاه صمیمی و خانوادگی در بافت تاریخی شیراز، با باغچه‌ی نارنج و صبحانه‌ی خانگی؛ پنج دقیقه تا ارگ کریم‌خان.",
 					Policies = "ورود از ساعت ۱۳ و خروج تا ۱۱:۳۰.",
 					CheckInTime = "13:00", CheckOutTime = "11:30",
-					Amenities = ["wifi", "parking", "breakfast", "garden", "courtyard", "airConditioning", "heating", "petFriendly", "dailyCleaning"],
 					Rules = ["ورود پس از ساعت ۲۳ با هماهنگی"],
 					Latitude = 29.6100, Longitude = 52.5420, CancellationFreeHours = 24, CancellationPenaltyNights = 1
 				},
 				[
-					("اتاق دو نفره", 2, 2_800_000m, 5, "دو تخت", 20, 1, "garden", "breakfast", ["airConditioning", "tv", "privateBathroom"], []),
-					("اتاق خانوادگی", 4, 4_100_000m, 3, "چهار تخت", 34, 1, "courtyard", "breakfast", ["airConditioning", "tv", "fridge", "privateBathroom"], ["مناسب خانواده‌ی چهارنفره"])
+					("اتاق دو نفره", 2, 2_800_000m, 5, "دو تخت", 20, 1, [TagRoom.Double, TagRoom.BreakfastIncluded, TagRoom.GardenView, TagRoom.AirConditioning, TagRoom.Tv, TagRoom.PrivateBathroom]),
+					("اتاق خانوادگی", 4, 4_100_000m, 3, "چهار تخت", 34, 1, [TagRoom.Family, TagRoom.BreakfastIncluded, TagRoom.CourtyardView, TagRoom.AirConditioning, TagRoom.Tv, TagRoom.Fridge, TagRoom.PrivateBathroom])
 				]),
 
-			("هتل‌آپارتمان زائر مشهد", "111062", 4, "مشهد، خیابان امام رضا، نبش امام رضا ۲۱", "05132400400", 36.2880, 59.6170, "apartment",
-				"واحدهای مبله با آشپزخانه‌ی کامل، ۵ دقیقه پیاده تا حرم مطهر؛ مناسب اقامت‌های چندشبه‌ی خانوادگی.",
-				[TagHotel.Hotel, TagHotel.Active],
+			("هتل‌آپارتمان زائر مشهد", "111062", 4, "مشهد، خیابان امام رضا، نبش امام رضا ۲۱", "05132400400",
+				[
+					TagHotel.Apartment, TagHotel.Active, TagHotel.PendingApproval,
+					TagHotel.ChildrenAllowed, TagHotel.ExtraBedAvailable, TagHotel.PriceIncludesTax,
+					TagHotel.Wifi, TagHotel.Elevator, TagHotel.Parking, TagHotel.Reception24, TagHotel.LuggageStorage, TagHotel.PrayerRoom, TagHotel.Laundry,
+					TagHotel.RoomOnly, TagHotel.Breakfast
+				],
 				new HotelJson {
 					Highlights = ["آشپزخانه‌ی کامل در هر واحد", "پنج دقیقه پیاده تا حرم", "نمازخانه و انبار چمدان"],
-					Whatsapp = "989120000004", YearBuilt = 1395, FloorCount = 8, Languages = ["fa", "ar", "tr"],
-					MealPlans = ["roomOnly", "breakfast"], PaymentMethods = ["cash", "card", "online"],
-					PetsAllowed = false, SmokingAllowed = false, ChildrenAllowed = true, ExtraBedAvailable = true, PriceIncludesTax = true,
+					Whatsapp = "989120000004",
 					HowToGetThere = "ورودی از خیابان امام رضا ۲۱؛ ایستگاه مترو حرم رضوی ۳ دقیقه پیاده.",
-					Nearby = [new PlaceNearby { Title = "حرم مطهر امام رضا (ع)", Type = "attraction", DistanceMeters = 400, Minutes = 5 }, new PlaceNearby { Title = "مترو شهدا", Type = "metro", DistanceMeters = 250, Minutes = 3 }, new PlaceNearby { Title = "مرکز خرید رضوی", Type = "mall", DistanceMeters = 700, Minutes = 9 }],
+					Nearby = [new PlaceNearby { Title = "حرم مطهر امام رضا (ع)", DistanceMeters = 400, Minutes = 5 }, new PlaceNearby { Title = "مترو شهدا", DistanceMeters = 250, Minutes = 3 }, new PlaceNearby { Title = "مرکز خرید رضوی", DistanceMeters = 700, Minutes = 9 }],
 					Faqs = [new PlaceFaq { Question = "آیا لوازم آشپزخانه در واحدها موجود است؟", Answer = "بله، ظروف، اجاق و یخچال کامل است." }],
-					Description = "واحدهای مبله با آشپزخانه‌ی کامل، ۵ دقیقه پیاده تا حرم مطهر.",
+					Description = "واحدهای مبله با آشپزخانه‌ی کامل، ۵ دقیقه پیاده تا حرم مطهر؛ مناسب اقامت‌های چندشبه‌ی خانوادگی.",
 					Policies = "حداقل اقامت ۲ شب. ورود ۱۴ و خروج ۱۲.",
 					CheckInTime = "14:00", CheckOutTime = "12:00",
-					Amenities = ["wifi", "elevator", "parking", "reception24", "luggageStorage", "kitchenette", "fridge", "airConditioning", "tv", "prayerRoom", "familyRooms", "metroNearby", "laundry"],
 					Rules = ["حداقل اقامت دو شب", "تعداد مهمان بیش از ظرفیت واحد مجاز نیست"],
 					Latitude = 36.2880, Longitude = 59.6170, CancellationFreeHours = 72, CancellationPenaltyNights = 1
 				},
 				[
-					("واحد یک‌خوابه", 3, 3_600_000m, 10, "یک دو نفره + مبل تخت‌شو", 45, 3, "city", "roomOnly", ["kitchenette", "fridge", "tv", "airConditioning", "privateBathroom"], []),
-					("واحد دوخوابه", 5, 5_200_000m, 8, "دو دو نفره + مبل تخت‌شو", 70, 5, "city", "roomOnly", ["kitchenette", "fridge", "tv", "airConditioning", "balcony", "privateBathroom"], ["دو سرویس بهداشتی"])
+					("واحد یک‌خوابه", 3, 3_600_000m, 10, "یک دو نفره + مبل تخت‌شو", 45, 3, [TagRoom.Triple, TagRoom.CityView, TagRoom.Kitchenette, TagRoom.Fridge, TagRoom.Tv, TagRoom.AirConditioning, TagRoom.PrivateBathroom]),
+					("واحد دوخوابه", 5, 5_200_000m, 8, "دو دو نفره + مبل تخت‌شو", 70, 5, [TagRoom.Family, TagRoom.NonRefundable, TagRoom.CityView, TagRoom.Kitchenette, TagRoom.Fridge, TagRoom.Tv, TagRoom.AirConditioning, TagRoom.Balcony, TagRoom.PrivateBathroom])
 				])
 		];
 
@@ -533,12 +535,11 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 			foreach (var r in h.Rooms) {
 				HotelRoomEntity room = new() {
 					Id = Guid.CreateVersion7(), CreatedAt = now.AddDays(-79), CreatorId = adminId, HotelId = hotelId,
-					Tags = [TagRoom.Available, r.Capacity switch { 1 => TagRoom.Single, 2 => TagRoom.Double, 3 => TagRoom.Triple, _ => TagRoom.Family }],
+					Tags = [TagRoom.Available, .. r.Tags],
 					Title = r.Title, Capacity = r.Capacity, PricePerNight = r.Price, Quantity = r.Quantity, IsAvailable = true, RoomNumber = $"{100 * (hotelRooms.Count + 1)}",
 					JsonData = new HotelRoomJson {
-						View = r.View, BathroomType = "private", MaxAdults = r.Capacity, MaxChildren = 1, MealPlan = r.Meal, SmokingAllowed = false, NonRefundable = false,
-						Highlights = [.. r.Highlights], Description = $"{r.Title} با امکانات کامل و پاکیزگی روزانه.", BedType = r.Bed, SizeSquareMeters = r.Size, Floor = r.Floor,
-						Amenities = [.. r.Amenities], ExtraGuestCapacity = 1, ExtraGuestPrice = 10000
+						Description = $"{r.Title} با امکانات کامل و پاکیزگی روزانه.", BedType = r.Bed, SizeSquareMeters = r.Size, Floor = r.Floor,
+						ExtraGuestCapacity = 1, ExtraGuestPrice = 10000
 					}
 				};
 				hotelRooms.Add(room);
@@ -588,72 +589,102 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 		}
 
 		// ---------------------------------------------------------------- dorms
-		(string Title, string City, string Address, string Phone, double Lat, double Lng, List<TagDorm> Tags, string University, string Description, DormJson Json, (string Title, int Beds, decimal Rent, decimal Deposit, string Bathroom, double Size, int Floor, string[] Amenities)[] Rooms)[] dormSeeds = [
-			("خوابگاه دخترانه‌ی نگین", "108012", "تهران، امیرآباد شمالی، خیابان چهارم", "02166001000", 35.7300, 51.3900, [TagDorm.Girls, TagDorm.Featured, TagDorm.Verified], "دانشگاه تهران",
-				"هفت دقیقه پیاده تا درِ اصلی دانشگاه تهران؛ اتاق‌های مبله‌ی دو و چهارنفره، اتاق مطالعه‌ی شبانه‌روزی و سرپرست مقیم.",
+		// Residents, amenities, meals and what the rent includes are tags; the Json only keeps texts and numbers.
+		(string Title, string City, string Address, string Phone, List<TagDorm> Tags, DormJson Json, (string Title, int Beds, decimal Rent, decimal Deposit, double Size, int Floor, List<TagDormRoom> Tags)[] Rooms)[] dormSeeds = [
+			("خوابگاه دخترانه‌ی نگین", "108012", "تهران، امیرآباد شمالی، خیابان چهارم", "02166001000",
+				[
+					TagDorm.Girls, TagDorm.Active, TagDorm.Featured, TagDorm.Approved,
+					TagDorm.Bachelor, TagDorm.Master, TagDorm.Phd,
+					TagDorm.Wifi, TagDorm.SharedKitchen, TagDorm.StudyRoom, TagDorm.Laundry, TagDorm.Supervisor, TagDorm.Cctv, TagDorm.SecurityGuard, TagDorm.Lockers, TagDorm.Lounge,
+					TagDorm.Breakfast, TagDorm.Dinner,
+					TagDorm.InternetIncluded, TagDorm.UtilitiesIncluded, TagDorm.CleaningIncluded
+				],
 				new DormJson {
 					Highlights = ["هفت دقیقه پیاده تا دانشگاه تهران", "اتاق مطالعه‌ی شبانه‌روزی", "اینترنت فیبر ۱۰۰ مگابیت"],
-					Website = "https://example.com/negin", Whatsapp = "989120000011", Instagram = "negin_dorm", YearBuilt = 1398, FloorCount = 5, CurfewTime = "23:00",
-					MealServices = ["breakfast", "dinner"], ServicesIncluded = ["internet", "water", "electricity", "gas", "heating", "cooling", "cleaning"], ResidentTypes = ["bachelor", "master", "phd"],
-					MinimumStayMonths = 6, PaymentSchedule = "ودیعه هنگام عقد قرارداد و اجاره‌ی ماهانه تا پنجم هر ماه", DepositPolicy = "ودیعه پس از تسویه و تحویل اتاق حداکثر ظرف ۷ روز کاری مسترد می‌شود.",
-					EarlyTerminationPolicy = "فسخ زودهنگام با معرفی جایگزین بدون جریمه است؛ در غیر این صورت ودیعه‌ی یک ماه کسر می‌شود.", VisitorsPolicy = "ورود مهمان تنها در لابی و ساعات ۱۶ تا ۲۰ مجاز است.",
-					WifiSpeedMbps = 100, UniversityWalkMinutes = 7, HowToGetThere = "از ایستگاه مترو دانشگاه تهران با تاکسی یا ۱۰ دقیقه پیاده تا خیابان چهارم امیرآباد.",
-					Nearby = [new PlaceNearby { Title = "دانشگاه تهران", Type = "university", DistanceMeters = 450, Minutes = 7 }, new PlaceNearby { Title = "مترو دانشگاه تهران", Type = "metro", DistanceMeters = 900, Minutes = 12 }, new PlaceNearby { Title = "داروخانه‌ی شبانه‌روزی", Type = "pharmacy", DistanceMeters = 200, Minutes = 3 }],
+					Website = "https://example.com/negin", Whatsapp = "989120000011", Instagram = "negin_dorm", CurfewTime = "23:00", MinimumStayMonths = 6,
+					Policies = "ودیعه هنگام عقد قرارداد و اجاره‌ی ماهانه تا پنجم هر ماه پرداخت می‌شود. ودیعه پس از تسویه و تحویل اتاق حداکثر ظرف ۷ روز کاری مسترد می‌شود. فسخ زودهنگام با معرفی جایگزین بدون جریمه است.",
+					UniversityWalkMinutes = 7, HowToGetThere = "از ایستگاه مترو دانشگاه تهران با تاکسی یا ۱۰ دقیقه پیاده تا خیابان چهارم امیرآباد.",
+					Nearby = [new PlaceNearby { Title = "دانشگاه تهران", DistanceMeters = 450, Minutes = 7 }, new PlaceNearby { Title = "مترو دانشگاه تهران", DistanceMeters = 900, Minutes = 12 }, new PlaceNearby { Title = "داروخانه‌ی شبانه‌روزی", DistanceMeters = 200, Minutes = 3 }],
 					Faqs = [new PlaceFaq { Question = "ساعت آخرین ورود چه زمانی است؟", Answer = "ساعت ۲۳؛ برای ورود دیرتر باید از پیش با سرپرست هماهنگ کنید." }, new PlaceFaq { Question = "آیا امکان آشپزی وجود دارد؟", Answer = "بله، در هر طبقه یک آشپزخانه‌ی مشترک با یخچال جداگانه برای هر اتاق هست." }],
 					Description = "هفت دقیقه پیاده تا درِ اصلی دانشگاه تهران؛ اتاق‌های مبله‌ی دو و چهارنفره، اتاق مطالعه‌ی شبانه‌روزی و سرپرست مقیم.",
 					NearbyUniversity = "دانشگاه تهران", VisitingHours = "۱۶ تا ۲۰",
-					Amenities = ["wifi", "fastInternet", "sharedKitchen", "studyRoom", "laundry", "washingMachine", "supervisor", "cctv", "securityGuard", "lockers", "hotWater", "lounge", "metroNearby", "fireSafety"],
 					Rules = ["رعایت سکوت از ساعت ۲۲", "استعمال دخانیات ممنوع", "ورود مهمان تنها در لابی"], RequiredDocuments = ["کارت ملی", "گواهی اشتغال به تحصیل", "دو قطعه عکس ۳×۴"],
 					Latitude = 35.7300, Longitude = 51.3900
 				},
-				[("اتاق دو نفره‌ی A", 2, 3_200_000m, 15_000_000m, "private", 18, 2, ["desk", "wardrobe", "airConditioning"]), ("اتاق چهارنفره‌ی B", 4, 2_100_000m, 10_000_000m, "shared", 28, 3, ["desk", "wardrobe", "heating"]), ("اتاق سه نفره‌ی C", 3, 2_600_000m, 12_000_000m, "private", 22, 4, ["desk", "airConditioning", "balcony"])]),
+				[
+					("اتاق دو نفره‌ی A", 2, 3_200_000m, 15_000_000m, 18, 2, [TagDormRoom.Double, TagDormRoom.Furnished, TagDormRoom.PrivateBathroom, TagDormRoom.Desk, TagDormRoom.Wardrobe, TagDormRoom.AirConditioning]),
+					("اتاق چهارنفره‌ی B", 4, 2_100_000m, 10_000_000m, 28, 3, [TagDormRoom.Dorm, TagDormRoom.Furnished, TagDormRoom.Desk, TagDormRoom.Wardrobe, TagDormRoom.Heating]),
+					("اتاق سه نفره‌ی C", 3, 2_600_000m, 12_000_000m, 22, 4, [TagDormRoom.Dorm, TagDormRoom.Furnished, TagDormRoom.PrivateBathroom, TagDormRoom.Desk, TagDormRoom.AirConditioning, TagDormRoom.Balcony])
+				]),
 
-			("خوابگاه پسرانه‌ی آرمان", "108012", "تهران، انقلاب، خیابان فخر رازی", "02166002000", 35.7010, 51.3950, [TagDorm.Boys, TagDorm.Verified], "دانشگاه تهران",
-				"ساختمان بازسازی‌شده‌ی چهارطبقه با آشپزخانه‌ی مرکزی؛ ۱۰ دقیقه تا مترو انقلاب.",
+			("خوابگاه پسرانه‌ی آرمان", "108012", "تهران، انقلاب، خیابان فخر رازی", "02166002000",
+				[
+					TagDorm.Boys, TagDorm.Active, TagDorm.Approved,
+					TagDorm.Bachelor, TagDorm.Master,
+					TagDorm.Wifi, TagDorm.SharedKitchen, TagDorm.BikeParking, TagDorm.Laundry, TagDorm.Cctv, TagDorm.Lockers, TagDorm.Lounge,
+					TagDorm.Dinner,
+					TagDorm.InternetIncluded, TagDorm.UtilitiesIncluded
+				],
 				new DormJson {
-					Highlights = ["نزدیک مترو انقلاب", "آشپزخانه‌ی مرکزی", "پارکینگ دوچرخه و موتور"], Whatsapp = "989120000012", YearBuilt = 1392, FloorCount = 4,
-					MealServices = ["dinner"], ServicesIncluded = ["internet", "water", "electricity", "gas"], ResidentTypes = ["bachelor", "master"],
-					MinimumStayMonths = 4, PaymentSchedule = "اجاره‌ی ماهانه", DepositPolicy = "ودیعه معادل دو ماه اجاره است.", VisitorsPolicy = "ورود مهمان ممنوع.",
-					WifiSpeedMbps = 50, UniversityWalkMinutes = 15, HowToGetThere = "خروجی ۳ مترو انقلاب، ۱۰ دقیقه پیاده به سمت خیابان فخر رازی.",
-					Nearby = [new PlaceNearby { Title = "مترو انقلاب", Type = "metro", DistanceMeters = 800, Minutes = 10 }, new PlaceNearby { Title = "کتابفروشی‌های انقلاب", Type = "market", DistanceMeters = 300, Minutes = 4 }],
+					Highlights = ["نزدیک مترو انقلاب", "آشپزخانه‌ی مرکزی", "پارکینگ دوچرخه و موتور"], Whatsapp = "989120000012", MinimumStayMonths = 4,
+					Policies = "اجاره‌ی ماهانه. ودیعه معادل دو ماه اجاره است. ورود مهمان ممنوع.",
+					UniversityWalkMinutes = 15, HowToGetThere = "خروجی ۳ مترو انقلاب، ۱۰ دقیقه پیاده به سمت خیابان فخر رازی.",
+					Nearby = [new PlaceNearby { Title = "مترو انقلاب", DistanceMeters = 800, Minutes = 10 }, new PlaceNearby { Title = "کتابفروشی‌های انقلاب", DistanceMeters = 300, Minutes = 4 }],
 					Faqs = [new PlaceFaq { Question = "قرارداد ترمی است یا ماهانه؟", Answer = "هر دو ممکن است؛ حداقل مدت ۴ ماه." }],
 					Description = "ساختمان بازسازی‌شده‌ی چهارطبقه با آشپزخانه‌ی مرکزی؛ ۱۰ دقیقه تا مترو انقلاب.", NearbyUniversity = "دانشگاه تهران", VisitingHours = "۱۷ تا ۲۰",
-					Amenities = ["wifi", "sharedKitchen", "bikeParking", "laundry", "cctv", "lockers", "hotWater", "lounge", "metroNearby"],
 					Rules = ["ورود تا ساعت ۲۴", "ورود مهمان ممنوع"], RequiredDocuments = ["کارت ملی", "گواهی اشتغال به تحصیل"], Latitude = 35.7010, Longitude = 51.3950
 				},
-				[("اتاق دو نفره", 2, 2_800_000m, 12_000_000m, "shared", 16, 1, ["desk", "heating"]), ("اتاق چهارنفره", 4, 1_800_000m, 8_000_000m, "shared", 26, 2, ["desk", "wardrobe"])]),
+				[
+					("اتاق دو نفره", 2, 2_800_000m, 12_000_000m, 16, 1, [TagDormRoom.Double, TagDormRoom.Furnished, TagDormRoom.Desk, TagDormRoom.Heating]),
+					("اتاق چهارنفره", 4, 1_800_000m, 8_000_000m, 26, 2, [TagDormRoom.Dorm, TagDormRoom.Desk, TagDormRoom.Wardrobe])
+				]),
 
-			("خوابگاه دخترانه‌ی نسیم شیراز", "117044", "شیراز، بلوار ارم، خیابان دانشجو", "07132500500", 29.6400, 52.5250, [TagDorm.Girls, TagDorm.Verified], "دانشگاه شیراز",
-				"ویژه‌ی خواهران با ورودی مستقل، حیاط، سلف‌سرویس و سرویس رفت‌وآمد رایگان تا دانشگاه.",
+			("خوابگاه دخترانه‌ی نسیم شیراز", "117044", "شیراز، بلوار ارم، خیابان دانشجو", "07132500500",
+				[
+					TagDorm.Girls, TagDorm.Active, TagDorm.Approved,
+					TagDorm.Bachelor, TagDorm.Master,
+					TagDorm.Wifi, TagDorm.Shuttle, TagDorm.SelfService, TagDorm.Garden, TagDorm.Supervisor, TagDorm.Cctv, TagDorm.SecurityGuard, TagDorm.SharedKitchen, TagDorm.StudyRoom,
+					TagDorm.Lunch, TagDorm.Dinner,
+					TagDorm.InternetIncluded, TagDorm.UtilitiesIncluded, TagDorm.CleaningIncluded
+				],
 				new DormJson {
-					Highlights = ["سرویس رفت‌وآمد رایگان", "سلف‌سرویس ناهار و شام", "حیاط و فضای سبز"], Instagram = "nasim_dorm", YearBuilt = 1396, FloorCount = 3, CurfewTime = "22:30",
-					MealServices = ["lunch", "dinner"], ServicesIncluded = ["internet", "water", "electricity", "gas", "cleaning"], ResidentTypes = ["bachelor", "master"],
-					MinimumStayMonths = 6, PaymentSchedule = "ودیعه + اجاره‌ی ماهانه", DepositPolicy = "ودیعه پس از تسویه مسترد می‌شود.", EarlyTerminationPolicy = "فسخ پیش از پایان ترم با معرفی جایگزین.", VisitorsPolicy = "ورود خانواده در ساعات ۱۶ تا ۱۹.",
-					WifiSpeedMbps = 60, UniversityWalkMinutes = 20, HowToGetThere = "ایستگاه اتوبوس دانشگاه شیراز مقابل درب ورودی است.",
-					Nearby = [new PlaceNearby { Title = "دانشگاه شیراز", Type = "university", DistanceMeters = 1500, Minutes = 20 }, new PlaceNearby { Title = "ایستگاه اتوبوس", Type = "bus", DistanceMeters = 50, Minutes = 1 }],
+					Highlights = ["سرویس رفت‌وآمد رایگان", "سلف‌سرویس ناهار و شام", "حیاط و فضای سبز"], Instagram = "nasim_dorm", CurfewTime = "22:30", MinimumStayMonths = 6,
+					Policies = "ودیعه + اجاره‌ی ماهانه. ودیعه پس از تسویه مسترد می‌شود. فسخ پیش از پایان ترم با معرفی جایگزین. ورود خانواده در ساعات ۱۶ تا ۱۹.",
+					UniversityWalkMinutes = 20, HowToGetThere = "ایستگاه اتوبوس دانشگاه شیراز مقابل درب ورودی است.",
+					Nearby = [new PlaceNearby { Title = "دانشگاه شیراز", DistanceMeters = 1500, Minutes = 20 }, new PlaceNearby { Title = "ایستگاه اتوبوس", DistanceMeters = 50, Minutes = 1 }],
 					Faqs = [new PlaceFaq { Question = "سرویس رفت‌وآمد چند بار در روز است؟", Answer = "دو بار: صبح و عصر؛ رایگان برای ساکنین." }],
 					Description = "ویژه‌ی خواهران با ورودی مستقل، حیاط، سلف‌سرویس و سرویس رفت‌وآمد رایگان تا دانشگاه.", NearbyUniversity = "دانشگاه شیراز", VisitingHours = "۱۶ تا ۱۹",
-					Amenities = ["wifi", "shuttle", "selfService", "garden", "supervisor", "cctv", "securityGuard", "sharedKitchen", "studyRoom", "busNearby", "hotWater"],
 					Rules = ["رعایت پوشش و شئونات", "ورود تا ساعت ۲۲:۳۰"], RequiredDocuments = ["کارت ملی", "گواهی اشتغال به تحصیل", "معرفی‌نامه‌ی دانشگاه"], Latitude = 29.6400, Longitude = 52.5250
 				},
-				[("اتاق سه نفره", 3, 1_900_000m, 10_000_000m, "private", 22, 1, ["desk", "wardrobe"]), ("اتاق دو نفره", 2, 2_400_000m, 10_000_000m, "private", 16, 2, ["desk", "airConditioning"])]),
+				[
+					("اتاق سه نفره", 3, 1_900_000m, 10_000_000m, 22, 1, [TagDormRoom.Dorm, TagDormRoom.Furnished, TagDormRoom.PrivateBathroom, TagDormRoom.Desk, TagDormRoom.Wardrobe]),
+					("اتاق دو نفره", 2, 2_400_000m, 10_000_000m, 16, 2, [TagDormRoom.Double, TagDormRoom.Furnished, TagDormRoom.PrivateBathroom, TagDormRoom.Desk, TagDormRoom.AirConditioning])
+				]),
 
-			("خوابگاه پسرانه‌ی دانا", "101013", "تبریز، خیابان دانشگاه، کوچه‌ی سوم", "04133600600", 38.0800, 46.3200, [TagDorm.Boys], "دانشگاه تبریز",
-				"ارزان‌ترین گزینه‌ی ما با آشپزخانه‌ی بزرگ و پارکینگ دوچرخه؛ شارژ و اینترنت در اجاره لحاظ شده است.",
+			("خوابگاه پسرانه‌ی دانا", "101013", "تبریز، خیابان دانشگاه، کوچه‌ی سوم", "04133600600",
+				[
+					TagDorm.Boys, TagDorm.Active, TagDorm.PendingApproval,
+					TagDorm.Bachelor,
+					TagDorm.Wifi, TagDorm.SharedKitchen, TagDorm.BikeParking, TagDorm.Laundry, TagDorm.Lockers,
+					TagDorm.InternetIncluded, TagDorm.UtilitiesIncluded
+				],
 				new DormJson {
-					Highlights = ["هزینه‌ی شارژ و اینترنت در اجاره", "آشپزخانه‌ی بزرگ مرکزی"], YearBuilt = 1390, FloorCount = 3,
-					ServicesIncluded = ["internet", "water", "electricity", "gas", "heating"], ResidentTypes = ["bachelor"], MinimumStayMonths = 3,
-					PaymentSchedule = "اجاره‌ی ماهانه", DepositPolicy = "ودیعه‌ی ۸ میلیون تومان.", WifiSpeedMbps = 30, UniversityWalkMinutes = 12,
-					Nearby = [new PlaceNearby { Title = "دانشگاه تبریز", Type = "university", DistanceMeters = 900, Minutes = 12 }],
-					Description = "ارزان‌ترین گزینه‌ی ما با آشپزخانه‌ی بزرگ و پارکینگ دوچرخه.", NearbyUniversity = "دانشگاه تبریز", VisitingHours = "۱۷ تا ۲۰",
-					Amenities = ["wifi", "sharedKitchen", "bikeParking", "laundry", "lockers", "hotWater"], Rules = ["سکوت پس از ۲۳"], RequiredDocuments = ["کارت ملی"], Latitude = 38.0800, Longitude = 46.3200
+					Highlights = ["هزینه‌ی شارژ و اینترنت در اجاره", "آشپزخانه‌ی بزرگ مرکزی"], MinimumStayMonths = 3,
+					Policies = "اجاره‌ی ماهانه. ودیعه‌ی ۸ میلیون تومان.", UniversityWalkMinutes = 12,
+					Nearby = [new PlaceNearby { Title = "دانشگاه تبریز", DistanceMeters = 900, Minutes = 12 }],
+					Description = "ارزان‌ترین گزینه‌ی ما با آشپزخانه‌ی بزرگ و پارکینگ دوچرخه؛ شارژ و اینترنت در اجاره لحاظ شده است.", NearbyUniversity = "دانشگاه تبریز", VisitingHours = "۱۷ تا ۲۰",
+					Rules = ["سکوت پس از ۲۳"], RequiredDocuments = ["کارت ملی"], Latitude = 38.0800, Longitude = 46.3200
 				},
-				[("اتاق چهارنفره", 4, 1_500_000m, 8_000_000m, "shared", 26, 1, ["desk"]), ("اتاق دو نفره", 2, 2_000_000m, 8_000_000m, "shared", 15, 2, ["desk", "heating"])]),
+				[
+					("اتاق چهارنفره", 4, 1_500_000m, 8_000_000m, 26, 1, [TagDormRoom.Dorm, TagDormRoom.Desk]),
+					("اتاق دو نفره", 2, 2_000_000m, 8_000_000m, 15, 2, [TagDormRoom.Double, TagDormRoom.Desk, TagDormRoom.Heating])
+				]),
 
-			("خوابگاه دخترانه‌ی آرام کرج", "105009", "کرج، گوهردشت، فاز ۳", "02634700700", 35.8300, 50.9300, [TagDorm.Girls, TagDorm.Inactive], "دانشگاه آزاد کرج",
-				"کوچک‌ترین مجموعه‌ی ما؛ سی تخت، حیاط و سکوت. (این خوابگاه برای نمایش وضعیت «غیرفعال» ساخته شده و در سایت و اپ مخفی است.)",
-				new DormJson { Highlights = ["سی تخت", "حیاط بزرگ"], YearBuilt = 1394, FloorCount = 2, ResidentTypes = ["bachelor"], Description = "کوچک‌ترین مجموعه‌ی ما؛ سی تخت، حیاط و سکوت.", NearbyUniversity = "دانشگاه آزاد کرج", Amenities = ["wifi", "garden", "sharedKitchen"], Latitude = 35.83, Longitude = 50.93 },
-				[("اتاق دو نفره", 2, 1_600_000m, 7_000_000m, "shared", 18, 1, ["desk"])])
+			// Built without the Active tag to show the "hidden" state: the site and the app do not list it.
+			("خوابگاه دخترانه‌ی آرام کرج", "105009", "کرج، گوهردشت، فاز ۳", "02634700700",
+				[TagDorm.Girls, TagDorm.Inactive, TagDorm.Bachelor, TagDorm.Wifi, TagDorm.Garden, TagDorm.SharedKitchen],
+				new DormJson { Highlights = ["سی تخت", "حیاط بزرگ"], Description = "کوچک‌ترین مجموعه‌ی ما؛ سی تخت، حیاط و سکوت.", NearbyUniversity = "دانشگاه آزاد کرج", Latitude = 35.83, Longitude = 50.93 },
+				[("اتاق دو نفره", 2, 1_600_000m, 7_000_000m, 18, 1, [TagDormRoom.Double, TagDormRoom.Desk])])
 		];
 
 		int dormIndex = 0;
@@ -671,19 +702,18 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 				Guid roomId = Guid.CreateVersion7();
 				dormRooms.Add(new DormRoomEntity {
 					Id = roomId, CreatedAt = now.AddDays(-84), CreatorId = adminId, DormId = dormId, Title = r.Title, Capacity = r.Beds,
-					Tags = [r.Beds == 1 ? TagDormRoom.Single : r.Beds == 2 ? TagDormRoom.Double : TagDormRoom.Dorm],
-					JsonData = new DormRoomJson {
-						BathroomType = r.Bathroom, View = roomNumber % 2 == 0 ? "courtyard" : "city", Furnished = true, Highlights = roomNumber == 1 ? ["نورگیر و پنجره‌ی بزرگ"] : [],
-						Description = $"{r.Title}؛ مبله با میز مطالعه و کمد شخصی برای هر نفر.", Floor = r.Floor, SizeSquareMeters = r.Size, Amenities = [.. r.Amenities]
-					}
+					Tags = r.Tags,
+					JsonData = new DormRoomJson { Description = $"{r.Title}؛ با میز مطالعه و کمد شخصی برای هر نفر.", Floor = r.Floor, SizeSquareMeters = r.Size }
 				});
 
 				for (int b = 0; b < r.Beds; b++) {
 					Guid bedId = Guid.CreateVersion7();
 					beds.Add(new DormBedEntity {
 						Id = bedId, CreatedAt = now.AddDays(-83), CreatorId = adminId, RoomId = roomId, Title = $"{(char)('A' + roomNumber - 1)}{b + 1}", Deposit = r.Deposit, MonthlyRent = r.Rent,
-						Tags = [r.Beds > 2 && b % 2 == 0 ? TagDormBed.Single : TagDormBed.Double],
-						JsonData = new DormBedJson { Level = r.Beds > 2 ? (b % 2 == 0 ? "bottom" : "top") : "single", Description = "تخت با تشک طبی و پرده‌ی حریم.", Amenities = ["desk", "locker", "lamp", "outlet"] }
+						Tags = r.Beds > 2
+							? [TagDormBed.Single, b % 2 == 0 ? TagDormBed.BunkBottom : TagDormBed.BunkTop, TagDormBed.Locker, TagDormBed.ReadingLamp, TagDormBed.PowerOutlet]
+							: [TagDormBed.Single, TagDormBed.Desk, TagDormBed.Locker, TagDormBed.PrivacyCurtain, TagDormBed.PowerOutlet],
+						JsonData = new DormBedJson { Description = "تخت با تشک طبی." }
 					});
 
 					// pattern per bed: 0 = active contract, 1 = expired contract, 2 = free (no contract); inactive dorms have none

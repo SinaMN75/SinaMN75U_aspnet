@@ -544,10 +544,37 @@ public enum TagHotel {
 	ChildrenAllowed = 303,
 	ExtraBedAvailable = 304,
 	PriceIncludesTax = 305,
-	
+
 	PendingApproval = 401,
 	Approved = 402,
 	Rejected = 403,
+
+	Wifi = 501,
+	Parking = 502,
+	Elevator = 503,
+	Reception24 = 504,
+	Restaurant = 505,
+	Cafe = 506,
+	RoomService = 507,
+	Laundry = 508,
+	LuggageStorage = 509,
+	AirportShuttle = 510,
+	Pool = 511,
+	Gym = 512,
+	Sauna = 513,
+	Spa = 514,
+	Garden = 515,
+	MeetingRoom = 516,
+	PrayerRoom = 517,
+	Playground = 518,
+	Wheelchair = 519,
+	Cctv = 520,
+
+	RoomOnly = 601,
+	Breakfast = 602,
+	HalfBoard = 603,
+	FullBoard = 604,
+	AllInclusive = 605
 }
 
 public enum TagHotelReservation {
@@ -571,13 +598,46 @@ public enum TagHotelInvoice {
 public enum TagDorm {
 	Girls = 101,
 	Boys = 102,
-	Featured = 201,
 
-	// Inactive dorms are hidden from the public (managers still see them).
+	Featured = 201,
+	Active = 202,
 	Inactive = 203,
 
-	// Visited in person by the team (shown as a trust badge).
-	Verified = 204
+	Bachelor = 301,
+	Master = 302,
+	Phd = 303,
+	Staff = 304,
+
+	PendingApproval = 401,
+	Approved = 402,
+	Rejected = 403,
+
+	Wifi = 501,
+	Parking = 502,
+	Elevator = 503,
+	SharedKitchen = 504,
+	SelfService = 505,
+	Laundry = 506,
+	StudyRoom = 507,
+	Library = 508,
+	PrayerRoom = 509,
+	Gym = 510,
+	Lounge = 511,
+	Garden = 512,
+	Lockers = 513,
+	Cctv = 514,
+	SecurityGuard = 515,
+	Supervisor = 516,
+	Shuttle = 517,
+	BikeParking = 518,
+
+	Breakfast = 601,
+	Lunch = 602,
+	Dinner = 603,
+
+	InternetIncluded = 701,
+	UtilitiesIncluded = 702,
+	CleaningIncluded = 703
 }
 
 public enum TagRoom {
@@ -588,19 +648,66 @@ public enum TagRoom {
 	Suite = 105,
 	Family = 106,
 	Deluxe = 107,
+
 	Available = 201,
-	OutOfService = 202
+	OutOfService = 202,
+
+	NonRefundable = 301,
+	BreakfastIncluded = 302,
+
+	CityView = 401,
+	GardenView = 402,
+	CourtyardView = 403,
+	SeaView = 404,
+	MountainView = 405,
+	PoolView = 406,
+
+	PrivateBathroom = 501,
+	Bathtub = 502,
+	AirConditioning = 503,
+	Heating = 504,
+	Tv = 505,
+	Minibar = 506,
+	Fridge = 507,
+	Kettle = 508,
+	SafeBox = 509,
+	Desk = 510,
+	Balcony = 511,
+	HairDryer = 512,
+	Kitchenette = 513,
+	Wardrobe = 514
 }
 
 public enum TagDormRoom {
 	Single = 101,
 	Double = 102,
-	Dorm = 103
+	Dorm = 103,
+
+	Furnished = 301,
+
+	PrivateBathroom = 501,
+	AirConditioning = 502,
+	Heating = 503,
+	Fridge = 504,
+	Tv = 505,
+	Balcony = 506,
+	Wardrobe = 507,
+	Desk = 508
 }
 
 public enum TagDormBed {
 	Single = 101,
-	Double = 102
+	Double = 102,
+
+	BunkBottom = 201,
+	BunkTop = 202,
+
+	Desk = 501,
+	Locker = 502,
+	ReadingLamp = 503,
+	PrivacyCurtain = 504,
+	PowerOutlet = 505,
+	Shelf = 506
 }
 
 public enum TagGoldAsset {
