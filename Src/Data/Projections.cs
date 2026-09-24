@@ -189,6 +189,33 @@ public sealed class GoldTxnSelectorArgs : BaseSelectorArgs {
 	public UserSelectorArgs? User { get; set; }
 }
 
+public static class SelectorArgsGuard {
+	public const int MaxDepth = 8;
+	public const int MaxChildrenDebt = 10;
+
+	private static readonly ConcurrentDictionary<Type, PropertyInfo[]> Properties = new();
+
+	public static void Limit(object? args, int depth = 0) {
+		if (args == null) return;
+		foreach (PropertyInfo p in Properties.GetOrAdd(args.GetType(), ResolveProperties)) {
+			if (p.PropertyType == typeof(int)) {
+				if ((int)p.GetValue(args)! > MaxChildrenDebt) p.SetValue(args, MaxChildrenDebt);
+				continue;
+			}
+
+			object? child = p.GetValue(args);
+			if (child == null) continue;
+			if (depth >= MaxDepth) p.SetValue(args, null);
+			else Limit(child, depth + 1);
+		}
+	}
+
+	private static PropertyInfo[] ResolveProperties(Type type) => type.GetProperties()
+		.Where(p => p is { CanRead: true, CanWrite: true } && p.GetIndexParameters().Length == 0)
+		.Where(p => p.PropertyType.Name.EndsWith("SelectorArgs", StringComparison.Ordinal) || p is { Name: "ChildrenDebt" } && p.PropertyType == typeof(int))
+		.ToArray();
+}
+
 public static class Projections {
 	public static Expression<Func<ApiLogEntity, ApiLogResponse>> ApiLogSelector(ApiLogSelectorArgs args) {
 		Expression<Func<ApiLogEntity, ApiLogResponse>> selector = x => new ApiLogResponse {
@@ -578,7 +605,8 @@ public static class Projections {
 	}
 
 	public static Expression<Func<ProductEntity, ProductResponse>> ProductSelector(ProductSelectorArgs args) {
-		bool hasChildren = args is { Children: not null, ChildrenDebt: > 0 };
+		int childrenDebt = Math.Min(args.ChildrenDebt, SelectorArgsGuard.MaxChildrenDebt);
+		bool hasChildren = args.Children != null && childrenDebt > 0;
 
 		Expression<Func<ProductEntity, ProductResponse>> selector = x => new ProductResponse {
 			Id = x.Id,
@@ -612,7 +640,7 @@ public static class Projections {
 					Children = args.Children,
 					Category = args.Category,
 					Creator = args.Creator,
-					ChildrenDebt = args.ChildrenDebt - 1
+					ChildrenDebt = childrenDebt - 1
 				})).ToList(),
 			CommentCount = args.CommentsCount ? x.Comments.Count : null,
 			ChildrenCount = args.ChildrenCount ? x.Children.Count : null,
@@ -624,7 +652,8 @@ public static class Projections {
 	}
 
 	public static Expression<Func<CategoryEntity, CategoryResponse>> CategorySelector(CategorySelectorArgs args) {
-		bool hasChildren = args is { Children: not null, ChildrenDebt: > 0 };
+		int childrenDebt = Math.Min(args.ChildrenDebt, SelectorArgsGuard.MaxChildrenDebt);
+		bool hasChildren = args.Children != null && childrenDebt > 0;
 
 		Expression<Func<CategoryEntity, CategoryResponse>> selector = x => new CategoryResponse {
 			Id = x.Id,
@@ -643,7 +672,7 @@ public static class Projections {
 					Media = args.Media,
 					Creator = args.Creator,
 					Children = args.Children,
-					ChildrenDebt = args.ChildrenDebt - 1
+					ChildrenDebt = childrenDebt - 1
 				})).ToList(),
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
 		};
@@ -982,7 +1011,8 @@ public static class Projections {
 	}
 
 	public static Expression<Func<BlogEntity, BlogResponse>> BlogSelector(BlogSelectorArgs args) {
-		bool hasChildren = args is { Children: not null, ChildrenDebt: > 0 };
+		int childrenDebt = Math.Min(args.ChildrenDebt, SelectorArgsGuard.MaxChildrenDebt);
+		bool hasChildren = args.Children != null && childrenDebt > 0;
 
 		Expression<Func<BlogEntity, BlogResponse>> selector = x => new BlogResponse {
 			Id = x.Id,
@@ -1015,7 +1045,7 @@ public static class Projections {
 					CommentsCount = args.CommentsCount,
 					ChildrenCount = args.ChildrenCount,
 					Creator = args.Creator,
-					ChildrenDebt = args.ChildrenDebt - 1
+					ChildrenDebt = childrenDebt - 1
 				})).ToList(),
 			CommentCount = args.CommentsCount ? x.Comments.Count : null,
 			ChildrenCount = args.ChildrenCount ? x.Children.Count : null,

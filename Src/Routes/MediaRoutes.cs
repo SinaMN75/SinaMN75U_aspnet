@@ -9,10 +9,18 @@ public static class MediaRoutes {
 		r.MapPost("Delete", async (IdParams d, IMediaService s, CancellationToken c) => (await s.Delete(d, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("DeleteRange", async (IdListParams p, IMediaService s, CancellationToken c) => (await s.DeleteRange(p, c)).ToResult()).Produces<UResponse>();
 		r.MapGet("Download", (string filePath, IWebHostEnvironment env) => {
-			if (!File.Exists(filePath)) return Task.FromResult(Results.NotFound("File not found"));
-			FileExtensionContentTypeProvider provider = new();
-			if (!provider.TryGetContentType(filePath, out string? contentType)) contentType = "application/octet-stream";
-			return Task.FromResult(Results.File(new FileStream(filePath, FileMode.Open, FileAccess.Read), contentType, Path.Combine(env.WebRootPath, "Media", filePath)));
+			string? fullPath = ResolveMediaPath(env, filePath);
+			if (fullPath == null) return Results.NotFound("File not found");
+			if (!ContentTypeProvider.TryGetContentType(fullPath, out string? contentType)) contentType = "application/octet-stream";
+			return Results.File(path: fullPath, contentType: contentType, fileDownloadName: Path.GetFileName(fullPath), enableRangeProcessing: true);
 		});
+	}
+
+	private static readonly FileExtensionContentTypeProvider ContentTypeProvider = new();
+
+	private static string? ResolveMediaPath(IWebHostEnvironment env, string? filePath) {
+		if (string.IsNullOrWhiteSpace(filePath)) return null;
+		string mediaRoot = Path.GetFullPath(Path.Combine(env.WebRootPath, "Media")) + Path.DirectorySeparatorChar;
+		return new[] { Path.Combine(mediaRoot, filePath.TrimStart('/', '\\')), filePath }.Select(Path.GetFullPath).FirstOrDefault(full => full.StartsWith(mediaRoot, StringComparison.Ordinal) && File.Exists(full));
 	}
 }

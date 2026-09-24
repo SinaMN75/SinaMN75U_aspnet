@@ -14,7 +14,7 @@ public sealed class LoginParams : BaseParams {
 	public string? UserName { get; set; }
 	public string? Email { get; set; }
 
-	[UValidationRequired("pleaseEnterAPassword"), UValidationStringLength(4, 100, "passwordMustBeAtLeast6Characters")]
+	[UValidationRequired("pleaseEnterAPassword"), UValidationStringLength(4, 100, "passwordLengthMustBeBetween4And100Characters")]
 	public string Password { get; set; } = null!;
 }
 
@@ -22,7 +22,7 @@ public sealed class RegisterParams : BaseParams {
 	[UValidationRequired("userNameIsRequired"), UValidationStringLength(2, 100, "userNameIsNotValid")]
 	public string UserName { get; set; } = null!;
 
-	[UValidationRequired("pleaseEnterAPassword"), UValidationStringLength(4, 100, "passwordMustBeAtLeast6Characters")]
+	[UValidationRequired("pleaseEnterAPassword"), UValidationStringLength(4, 100, "passwordLengthMustBeBetween4And100Characters")]
 	public string Password { get; set; } = null!;
 
 	[UValidationMinCollectionLength(1, "tagsIsRequired")]

@@ -6,9 +6,11 @@ public sealed class TimezoneMiddleware(RequestDelegate next) {
 		await next(context);
 	}
 
+	private const int MaxOffsetMinutes = 14 * 60;
+
 	private static TimeSpan ParseOffset(string? value) {
 		if (string.IsNullOrWhiteSpace(value)) return UTimeZone.Default;
-		if (int.TryParse(value, out int minutes)) return TimeSpan.FromMinutes(minutes);
+		if (int.TryParse(value, out int minutes)) return Math.Abs(minutes) <= MaxOffsetMinutes ? TimeSpan.FromMinutes(minutes) : UTimeZone.Default;
 		try {
 			return TimeZoneInfo.FindSystemTimeZoneById(value).GetUtcOffset(DateTime.UtcNow);
 		}
@@ -34,6 +36,5 @@ public sealed class UDateTimeConverter : JsonConverter<DateTime> {
 			? dto.UtcDateTime
 			: DateTime.SpecifyKind(reader.GetDateTime(), DateTimeKind.Utc);
 
-	public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options) =>
-		writer.WriteStringValue(new DateTimeOffset(DateTime.SpecifyKind(value, DateTimeKind.Utc)).ToOffset(UTimeZone.Offset).ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture));
+	public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options) => writer.WriteStringValue(new DateTimeOffset(DateTime.SpecifyKind(value, DateTimeKind.Utc)).ToOffset(UTimeZone.Offset).ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture));
 }

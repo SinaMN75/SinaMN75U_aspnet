@@ -8,20 +8,41 @@ public interface ITokenService {
 }
 
 public class TokenService : ITokenService {
-	public string GenerateRefreshToken() {
-		byte[] randomNumber = new byte[64];
-		using RandomNumberGenerator rng = RandomNumberGenerator.Create();
-		rng.GetBytes(randomNumber);
-		return Convert.ToBase64String(randomNumber);
+	private static readonly JwtSecurityTokenHandler Handler = new() { MapInboundClaims = false };
+	private sealed record JwtCache(Jwt Jwt, SigningCredentials Credentials, TokenValidationParameters Validation);
+
+	private static JwtCache Settings {
+		get {
+			Jwt jwt = Core.App.Jwt;
+			JwtCache? cache = field;
+			if (cache != null && ReferenceEquals(cache.Jwt, jwt)) return cache;
+
+			SymmetricSecurityKey key = new(Encoding.UTF8.GetBytes(jwt.Key));
+			cache = new JwtCache(jwt, new SigningCredentials(key, SecurityAlgorithms.HmacSha256), new TokenValidationParameters {
+				ValidateIssuerSigningKey = true,
+				IssuerSigningKey = key,
+				ValidateIssuer = true,
+				ValidIssuer = jwt.Issuer,
+				ValidateAudience = true,
+				ValidAudience = jwt.Audience,
+				ValidateLifetime = false,
+				ClockSkew = TimeSpan.Zero
+			});
+			field = cache;
+			return cache;
+		}
 	}
+
+	public string GenerateRefreshToken() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
 
 	public DateTime RefreshTokenExpiry() => DateTime.UtcNow.AddDays(Core.App.Jwt.RefreshTokenExpiresInDays);
 
 	public string GenerateJwt(UserEntity user) {
-		DateTime expires = DateTime.UtcNow.AddMinutes(Core.App.Jwt.Expires);
-		return new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
-			Core.App.Jwt.Issuer,
-			Core.App.Jwt.Audience,
+		(Jwt jwt, SigningCredentials credentials, _) = Settings;
+		DateTime expires = DateTime.UtcNow.AddMinutes(jwt.Expires);
+		return Handler.WriteToken(new JwtSecurityToken(
+			jwt.Issuer,
+			jwt.Audience,
 			[
 				new Claim(JwtRegisteredClaimNames.Jti, user.Id.ToString()),
 				new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName),
@@ -35,46 +56,35 @@ public class TokenService : ITokenService {
 				new Claim(ClaimTypes.Role, string.Join(",", user.Tags.Select(x => (int)x)))
 			],
 			expires: expires,
-			signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Core.App.Jwt.Key)), SecurityAlgorithms.HmacSha256)
+			signingCredentials: credentials
 		));
 	}
 
 	public JwtClaimData? ExtractClaims(string? token) {
 		if (token.IsNullOrEmpty()) return null;
 		try {
-			JwtSecurityTokenHandler handler = new() { MapInboundClaims = false }; 
-			ClaimsPrincipal principal = handler.ValidateToken(token, new TokenValidationParameters {
-				ValidateIssuerSigningKey = true,
-				IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Core.App.Jwt.Key)),
-				ValidateIssuer = true,
-				ValidIssuer = Core.App.Jwt.Issuer,
-				ValidateAudience = true,
-				ValidAudience = Core.App.Jwt.Audience,
-				ValidateLifetime = false,
-				ClockSkew = TimeSpan.Zero
-			}, out _);
-			IEnumerable<Claim> claims = principal.Claims.ToList();
-			string? rolesClaim = claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-			IEnumerable<TagUser> tags = [];
-			if (!string.IsNullOrWhiteSpace(rolesClaim)) {
-				tags = rolesClaim.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(roleStr => {
-					if (int.TryParse(roleStr, out int roleInt)) return (TagUser)roleInt;
-					return Enum.Parse<TagUser>(roleStr);
-				});
-			}
+			ClaimsPrincipal principal = Handler.ValidateToken(token, Settings.Validation, out _);
+			Dictionary<string, string> claims = new();
+			foreach (Claim claim in principal.Claims) claims.TryAdd(claim.Type, claim.Value);
+			List<TagUser> tags = [];
+			if (claims.TryGetValue(ClaimTypes.Role, out string? rolesClaim) && !string.IsNullOrWhiteSpace(rolesClaim)) tags.AddRange(rolesClaim.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(roleStr => int.TryParse(roleStr, out int roleInt) ? (TagUser)roleInt : Enum.Parse<TagUser>(roleStr)));
 
+			string firstName = Claim(JwtRegisteredClaimNames.Name);
+			string lastName = Claim(JwtRegisteredClaimNames.FamilyName);
 			return new JwtClaimData {
-				Id = Guid.Parse(claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value ?? Guid.Empty.ToString()),
-				UserName = claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.UniqueName)?.Value ?? "",
-				Email = claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value ?? "",
-				PhoneNumber = claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.PhoneNumber)?.Value ?? "",
-				FirstName = claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Name)?.Value ?? "",
-				LastName = claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.FamilyName)?.Value ?? "",
-				NationalCode = claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.NameId)?.Value ?? "",
-				FullName = claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.GivenName)?.Value ?? "",
-				Expiration = ParseExpiration(claims.FirstOrDefault(c => c.Type == ClaimTypes.Expiration)?.Value),
+				Id = Guid.Parse(claims.GetValueOrDefault(JwtRegisteredClaimNames.Jti) ?? Guid.Empty.ToString()),
+				UserName = Claim(JwtRegisteredClaimNames.UniqueName),
+				Email = Claim(JwtRegisteredClaimNames.Email),
+				PhoneNumber = Claim(JwtRegisteredClaimNames.PhoneNumber),
+				FirstName = firstName,
+				LastName = lastName,
+				NationalCode = Claim(JwtRegisteredClaimNames.NameId),
+				FullName = $"{firstName} {lastName}".Trim(),
+				Expiration = ParseExpiration(claims.GetValueOrDefault(ClaimTypes.Expiration)),
 				Tags = tags
 			};
+
+			string Claim(string type) => claims.GetValueOrDefault(type) ?? "";
 		}
 		catch (Exception) {
 			return null;

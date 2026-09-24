@@ -5,7 +5,7 @@ public interface ILocalizationService {
 }
 
 public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizationService {
-	private readonly Dictionary<string, string> _en = new() {
+	private static readonly Dictionary<string, string> En = new() {
 		// ===== Required =====
 		{ "addressIsRequired", "Address is Required." },
 		{ "amountRequired", "Amount Required." },
@@ -365,10 +365,29 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "topUpTypeIsRequired", "Top Up Type is Required." },
 		{ "thisOperatorIsNotSupportedForDirectTopUp", "This operator is not supported for direct top up." },
 		{ "theSumOfMultiplexedAmountsMustBeEqualToTheTotalAmount", "The sum of multiplexed amounts must be equal to the total amount." },
-		{ "thisPaymentTypeIsNotSupportedByTheGateway", "This payment type is not supported by the gateway." }
+		{ "thisPaymentTypeIsNotSupportedByTheGateway", "This payment type is not supported by the gateway." },
+
+		// ===== Validation (previously missing) =====
+		{ "BedIdRequired", "Bed is Required." },
+		{ "CapacityRequired", "Capacity is Required." },
+		{ "CityMinLength", "City must be between 2 and 100 characters." },
+		{ "CityRequired", "City is Required." },
+		{ "ContractIdRequired", "Contract is Required." },
+		{ "DepositRequired", "Deposit is Required." },
+		{ "DormIdRequired", "Dorm is Required." },
+		{ "DrivingLicenceNumberInvalid", "Driving Licence Number is Invalid." },
+		{ "DrivingLicenceNumberRequired", "Driving Licence Number is Required." },
+		{ "HotelIdRequired", "Hotel is Required." },
+		{ "MonthlyRentRequired", "Monthly Rent is Required." },
+		{ "NationalCodeNotValid", "National Code is Invalid." },
+		{ "PricePerNightRequired", "Price Per Night is Required." },
+		{ "TitleMaxLength", "Title is too long." },
+		{ "TitleMinLength", "Title must be between 2 and 100 characters." },
+		{ "UsersRequired", "Users are Required." },
+		{ "passwordLengthMustBeBetween4And100Characters", "Password must be between 4 and 100 characters." }
 	};
 
-	private readonly Dictionary<string, string> _fa = new() {
+	private static readonly Dictionary<string, string> Fa = new() {
 		// ===== Required =====
 		{ "addressIsRequired", "آدرس الزامی است" },
 		{ "amountRequired", "مبلغ الزامی است" },
@@ -727,17 +746,30 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "topUpTypeIsRequired", "نوع شارژ الزامی است." },
 		{ "thisOperatorIsNotSupportedForDirectTopUp", "این اپراتور برای شارژ مستقیم پشتیبانی نمی‌شود." },
 		{ "theSumOfMultiplexedAmountsMustBeEqualToTheTotalAmount", "مجموع مبالغ تسهیم باید با مبلغ کل برابر باشد." },
-		{ "thisPaymentTypeIsNotSupportedByTheGateway", "این نوع پرداخت توسط درگاه پشتیبانی نمی‌شود." }
+		{ "thisPaymentTypeIsNotSupportedByTheGateway", "این نوع پرداخت توسط درگاه پشتیبانی نمی‌شود." },
+
+		// ===== Validation (previously missing) =====
+		{ "BedIdRequired", "تخت الزامی است." },
+		{ "CapacityRequired", "ظرفیت الزامی است." },
+		{ "CityMinLength", "نام شهر باید بین ۲ تا ۱۰۰ کاراکتر باشد." },
+		{ "CityRequired", "شهر الزامی است." },
+		{ "ContractIdRequired", "قرارداد الزامی است." },
+		{ "DepositRequired", "ودیعه الزامی است." },
+		{ "DormIdRequired", "خوابگاه الزامی است." },
+		{ "DrivingLicenceNumberInvalid", "شماره گواهینامه نامعتبر است." },
+		{ "DrivingLicenceNumberRequired", "شماره گواهینامه الزامی است." },
+		{ "HotelIdRequired", "هتل الزامی است." },
+		{ "MonthlyRentRequired", "اجاره ماهانه الزامی است." },
+		{ "NationalCodeNotValid", "کد ملی نامعتبر است." },
+		{ "PricePerNightRequired", "قیمت هر شب الزامی است." },
+		{ "TitleMaxLength", "عنوان بیش از حد طولانی است." },
+		{ "TitleMinLength", "عنوان باید بین ۲ تا ۱۰۰ کاراکتر باشد." },
+		{ "UsersRequired", "کاربران الزامی هستند." },
+		{ "passwordLengthMustBeBetween4And100Characters", "رمز عبور باید بین ۴ تا ۱۰۰ کاراکتر باشد." }
 	};
 
 	public string Get(string key, string? locale = null) {
-		string l = locale ?? httpContext.HttpContext?.Request.Headers["Locale"].FirstOrDefault() ?? "en";
-		try {
-			if (l == "fa") return _fa[key];
-			return _en[key];
-		}
-		catch (Exception) {
-			return string.Empty;
-		}
+		if ((locale ?? httpContext.HttpContext?.Request.Headers["Locale"].FirstOrDefault() ?? "en") == "fa" && Fa.TryGetValue(key, out string? fa)) return fa;
+		return En.GetValueOrDefault(key, key);
 	}
 }

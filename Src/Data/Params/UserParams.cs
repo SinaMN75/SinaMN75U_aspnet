@@ -4,7 +4,7 @@ public sealed class UserCreateParams : BaseCreateParams<TagUser> {
 	[UValidationRequired("userNameIsRequired"), UValidationStringLength(2, 100, "userNameIsNotValid")]
 	public string UserName { get; set; } = null!;
 
-	[UValidationRequired("pleaseEnterAPassword"), UValidationStringLength(4, 100, "passwordMustBeAtLeast6Characters")]
+	[UValidationRequired("pleaseEnterAPassword"), UValidationStringLength(4, 100, "passwordLengthMustBeBetween4And100Characters")]
 	public string Password { get; set; } = null!;
 
 	public string? PhoneNumber { get; set; }

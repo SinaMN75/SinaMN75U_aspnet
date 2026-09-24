@@ -76,6 +76,7 @@ public static class IpgRoutes {
 		}).DisableAntiforgery();
 
 		r.MapGet("Gateway", ([FromQuery] string additionalData) => {
+			if (!Core.App.Test) return Results.NotFound();
 			IpgAdditionalData data = JsonSerializer.Deserialize<IpgAdditionalData>(additionalData.FromBase58(), Core.Default)!;
 			data.Token = "FAKE";
 

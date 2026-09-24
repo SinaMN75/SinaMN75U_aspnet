@@ -12,8 +12,9 @@ public static class FileManagerRoutes {
 		r.MapGet("Download", (string path, string token, IFileManagerService s) => {
 			UResponse<(string fullPath, string contentType)?> res = s.ResolveDownload(new FileManagerDeleteParams { Path = path, Token = token });
 			if (res.Result == null) return Results.NotFound(res.Message);
-			(string fullPath, string contentType) = res.Result.Value;
-			return Results.File(new FileStream(fullPath, FileMode.Open, FileAccess.Read), contentType, Path.GetFileName(fullPath));
+			(string resolvedPath, string contentType) = res.Result.Value;
+			string fullPath = Path.GetFullPath(resolvedPath);
+			return !File.Exists(fullPath) ? Results.NotFound(res.Message) : Results.File(path: fullPath, contentType: contentType, fileDownloadName: Path.GetFileName(fullPath), enableRangeProcessing: true);
 		});
 	}
 }

@@ -84,19 +84,12 @@ public enum UCodeType {
 }
 
 public static class UCountries {
-	public static string? CityFullName(string cityCode) {
-		if (cityCode == null) return null;
-		foreach (UProvince province in IranProvinces)
-		foreach (UCity city in province.Cities)
-			if (city.Code == cityCode)
-				return $"{province.NameFa} - {city.NameFa}";
-		return cityCode;
-	}
-
+	public static string CityFullName(string cityCode) => IranCityFullNames.GetValueOrDefault(cityCode, cityCode);
+	
 	public static UCountry Iran() => Countries.First(i => i.Code == "001");
 
 	public static UCodeType CodeType(string code) {
-		if (code == null || !Regex.IsMatch(code, @"^\d+$")) return UCodeType.Unknown;
+		if (string.IsNullOrEmpty(code) || !code.All(char.IsAsciiDigit)) return UCodeType.Unknown;
 		return code.Length switch {
 			3 => UCodeType.Country,
 			7 => UCodeType.Province,
@@ -145,7 +138,7 @@ public static class UCountries {
 		return p?.Cities.FirstOrDefault(city => city.Code == code);
 	}
 
-	public static List<UProvince> IranProvinces => [
+	public static readonly List<UProvince> IranProvinces = [
 		new(
 			code: "0010101",
 			nameEn: "East Azerbaijan",
@@ -980,8 +973,12 @@ public static class UCountries {
 			cities: new List<UCity> { new(code: "999999", nameEn: "Unknown City", nameFa: "شهر ناشناخته") }
 		)
 	];
+	
+	private static readonly Dictionary<string, string> IranCityFullNames = IranProvinces
+		.SelectMany(p => p.Cities.Select(c => (c.Code, FullName: $"{p.NameFa} - {c.NameFa}")))
+		.DistinctBy(x => x.Code)
+		.ToDictionary(x => x.Code, x => x.FullName);
 
-	// All countries with their provinces.
 	public static readonly List<UCountry> Countries = [
 		new(
 			code: "001",
