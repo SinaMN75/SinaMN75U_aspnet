@@ -32,7 +32,7 @@ public sealed class TerminalEntity : BaseEntity<TagTerminal, TerminalJson> {
 	public Guid? MerchantId { get; set; }
 	public MerchantEntity? Merchant { get; set; }
 	
-	public string? AgreementHtml { get; set; }
+	public string? Agreement { get; set; }
 }
 
 public sealed class TerminalJson : BaseJson;

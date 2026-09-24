@@ -102,13 +102,13 @@ public class TerminalService(
 		(TerminalEntity? terminal, MerchantEntity? merchant, TerminalBrandEntity? brand, TerminalBrokerEntity? broker, Usc status, string message) = await ResolveAssignable(userData, p, ct);
 		if (terminal == null || merchant == null || brand == null || broker == null) return new UResponse<TerminalAvailabilityResponse?>(null, status, message);
 
-		string? pdf = await GenerateAgreement(merchant.User, merchant, terminal, brand, broker);
-		string agreement = UserFileStore.SaveText(env.WebRootPath, userData.Id, $"terminal-{terminal.Serial}", pdf, terminal.AgreementHtml);
-		terminal.AgreementHtml = agreement;
+		byte[]? pdf = await GenerateAgreement(merchant.User, merchant, terminal, brand, broker);
+		if (pdf == null) return new UResponse<TerminalAvailabilityResponse?>(null, Usc.InternalServerError, ls.Get("generatingTheAgreementFailed"));
+		string agreement = UserFileStore.SaveBytes(env.WebRootPath, userData.Id, $"terminal-{terminal.Serial}.pdf", pdf);
+		terminal.Agreement = agreement;
 		db.Update(terminal);
 		await db.SaveChangesAsync(ct);
 		
-		if (pdf == null) return new UResponse<TerminalAvailabilityResponse?>(null, Usc.InternalServerError, ls.Get("generatingTheAgreementFailed"));
 
 		return new UResponse<TerminalAvailabilityResponse?>(new TerminalAvailabilityResponse {
 			Id = terminal.Id,
@@ -126,15 +126,14 @@ public class TerminalService(
 		(TerminalEntity? terminal, MerchantEntity? merchant, TerminalBrandEntity? brand, TerminalBrokerEntity? broker, Usc status, string message) = await ResolveAssignable(userData, p, ct);
 		if (terminal == null || merchant == null || brand == null || broker == null) return new UResponse<TerminalResponse?>(null, status, message);
 
-		string? pdf = await GenerateAgreement(merchant.User, merchant, terminal, brand, broker);
-		
+		byte[]? pdf = await GenerateAgreement(merchant.User, merchant, terminal, brand, broker);
 		if (pdf == null) return new UResponse<TerminalResponse?>(null, Usc.InternalServerError, ls.Get("generatingTheAgreementFailed"));
-		string agreement = UserFileStore.SaveText(env.WebRootPath, userData.Id, $"terminal-{terminal.Serial}", pdf, terminal.AgreementHtml);
+		string agreement = UserFileStore.SaveBytes(env.WebRootPath, userData.Id, $"terminal-{terminal.Serial}.pdf", pdf);
 
 		terminal.JsonData.Detail1 = p.Title ?? "";
 		terminal.JsonData.Detail2 = "";
 		terminal.MerchantId = merchant.Id;
-		terminal.AgreementHtml = agreement;
+		terminal.Agreement = agreement;
 		terminal.Tags.RemoveRangeIfExist([TagTerminal.Rejected, TagTerminal.Approved]);
 		terminal.Tags.AddRangeIfNotExist([TagTerminal.Rejected]);
 
@@ -151,7 +150,7 @@ public class TerminalService(
 			SimCardSerial = terminal.SimCardSerial,
 			Imei = terminal.Imei,
 			TerminalId = terminal.TerminalId,
-			AgreementHtml = Core.App.BaseUrl + "/Media/" + agreement,
+			Agreement = Core.App.BaseUrl + "/Media/" + agreement,
 			MerchantId = terminal.MerchantId,
 			TerminalBrandId = terminal.TerminalBrandId,
 			TerminalBrokerId = terminal.TerminalBrokerId,
@@ -242,7 +241,7 @@ public class TerminalService(
 			SimCardSerial = terminal.SimCardSerial,
 			Imei = terminal.Imei,
 			TerminalId = terminal.TerminalId,
-			Agreement = terminal.AgreementHtml,
+			Agreement = terminal.Agreement,
 			MerchantId = terminal.MerchantId
 		});
 	}
@@ -691,7 +690,7 @@ public class TerminalService(
 		return true;
 	}
 
-	private async Task<string?> GenerateAgreement(
+	private async Task<byte[]?> GenerateAgreement(
 		UserEntity user,
 		MerchantEntity merchant,
 		TerminalEntity terminal,
@@ -759,7 +758,7 @@ public class TerminalService(
 				template.SetImageBytes("user_signature", ReadSignature(user));
 			}
 
-			return template.Render();
+			return await HtmlToPdf.ConvertAsync(template.Render());
 		}
 		catch (Exception ex) {
 			ULog.Error(ex, $"Generating the agreement failed for terminal {terminal.Id}");
