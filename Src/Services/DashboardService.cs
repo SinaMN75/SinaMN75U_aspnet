@@ -633,29 +633,41 @@ public class DashboardService(
 	}
 
 	public async Task<UResponse<IEnumerable<ApiLogResponse>?>> ReadApiLogs(ApiLogReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<ApiLogResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<ApiLogResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.IsAdmin) return new UResponse<IEnumerable<ApiLogResponse>?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
 		IQueryable<ApiLogEntity> q = FilterApiLogs(db.Set<ApiLogEntity>(), p).ApplyReadParams(p);
 		IQueryable<ApiLogResponse> projected = q.Select(Projections.ApiLogSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}
 
 	public async Task<UResponse<ApiLogStatsResponse?>> ApiLogStats(ApiLogStatsParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<ApiLogStatsResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<ApiLogStatsResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.IsAdmin) return new UResponse<ApiLogStatsResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
 		DateTime to = p.ToCreatedAt ?? DateTime.UtcNow;
 		DateTime from = p.FromCreatedAt ?? to.AddDays(-1);
 		bool byDay = p.Bucket == "day";
 
 		IQueryable<ApiLogEntity> range = db.Set<ApiLogEntity>().Where(x => x.CreatedAt >= from && x.CreatedAt <= to);
 
-		int total = await range.CountAsync(ct);
-		int errorCount = await range.CountAsync(x => x.StatusCode >= 400, ct);
-		int successCount = total - errorCount;
-		double avgDuration = total == 0 ? 0 : await range.AverageAsync(x => (double)x.DurationMs, ct);
+		// One scan of the range; counts, average and percentiles are computed from it instead of 4 extra queries
+		// (one of which loaded every duration a second time).
+		List<StatRow> rows = await range.Select(x => new StatRow { CreatedAt = x.CreatedAt, StatusCode = x.StatusCode, DurationMs = x.DurationMs, Path = x.Path }).ToListAsync(ct);
 
-		List<long> durations = total == 0 ? [] : await range.OrderBy(x => x.DurationMs).Select(x => x.DurationMs).ToListAsync(ct);
+		int total = rows.Count;
+		int errorCount = rows.Count(x => x.StatusCode >= 400);
+		int successCount = total - errorCount;
+		double avgDuration = total == 0 ? 0 : rows.Average(x => (double)x.DurationMs);
+
+		List<long> durations = rows.Select(x => x.DurationMs).Order().ToList();
 		double p50 = Percentile(durations, 0.50);
 		double p95 = Percentile(durations, 0.95);
 		double p99 = Percentile(durations, 0.99);
-
-		List<StatRow> rows = await range.Select(x => new StatRow { CreatedAt = x.CreatedAt, StatusCode = x.StatusCode, DurationMs = x.DurationMs, Path = x.Path }).ToListAsync(ct);
 
 		List<ApiLogBucketResponse> timeline = rows
 			.GroupBy(x => byDay ? new DateTime(x.CreatedAt.Year, x.CreatedAt.Month, x.CreatedAt.Day) : new DateTime(x.CreatedAt.Year, x.CreatedAt.Month, x.CreatedAt.Day, x.CreatedAt.Hour, 0, 0))

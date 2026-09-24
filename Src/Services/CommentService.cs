@@ -67,14 +67,14 @@ public class CommentService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		CommentEntity? e = await db.Set<CommentEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		CommentEntity? e = await db.Set<CommentEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("commentNotFound"));
 		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Score.IsNotNull()) e.Score = p.Score.Value;
 		if (p.Description.IsNotNullOrEmpty()) e.Description = p.Description;
 
-		db.Set<CommentEntity>().Update(e.ApplyUpdateParam<CommentEntity, TagComment, CommentJson>(p));
+		e.ApplyUpdateParam<CommentEntity, TagComment, CommentJson>(p);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();

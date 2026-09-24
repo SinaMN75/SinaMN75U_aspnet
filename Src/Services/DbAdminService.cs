@@ -298,9 +298,9 @@ public class DbAdminService(DbContext db, ITokenService ts, ILocalizationService
 	}
 	
 	private async Task<NpgsqlConnection> OpenConnection(CancellationToken ct) {
-		NpgsqlConnection conn = (NpgsqlConnection)db.Database.GetDbConnection();
-		if (conn.State != System.Data.ConnectionState.Open) await conn.OpenAsync(ct);
-		return conn;
+		// Opened through EF so it is closed when the (pooled) context is reset, instead of staying checked out in the pool.
+		await db.Database.OpenConnectionAsync(ct);
+		return (NpgsqlConnection)db.Database.GetDbConnection();
 	}
 
 	private static async Task<DbAdminQueryResultResponse> ReadReader(NpgsqlDataReader reader, int maxRows, CancellationToken ct) {

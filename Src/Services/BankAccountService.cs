@@ -57,7 +57,7 @@ public class BankAccountService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		BankAccountEntity? e = await db.Set<BankAccountEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		BankAccountEntity? e = await db.Set<BankAccountEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("bankAccountNotFound"));
 		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
@@ -67,7 +67,7 @@ public class BankAccountService(
 		if (p.OwnerName.IsNotNullOrEmpty()) e.OwnerName = p.OwnerName;
 		if (p.BankName.IsNotNullOrEmpty()) e.BankName = p.BankName;
 
-		db.Set<BankAccountEntity>().Update(e.ApplyUpdateParam<BankAccountEntity, TagBankAccount, BankAccountJson>(p));
+		e.ApplyUpdateParam<BankAccountEntity, TagBankAccount, BankAccountJson>(p);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}

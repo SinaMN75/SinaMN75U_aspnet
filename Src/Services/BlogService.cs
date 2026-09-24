@@ -13,8 +13,7 @@ public interface IBlogService {
 public class BlogService(
 	DbContext db,
 	ITokenService ts,
-	ILocalizationService ls,
-	IMediaService mediaService
+	ILocalizationService ls
 ) : IBlogService {
 	public async Task<UResponse> BulkCreate(List<BlogCreateParams> p, CancellationToken ct) {
 		foreach (BlogCreateParams param in p) await Create(param, ct);
@@ -102,7 +101,7 @@ public class BlogService(
 			else e.Categories = await db.Set<CategoryEntity>().AsTracking().Where(x => p.Categories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct);
 		}
 
-		db.Set<BlogEntity>().Update(e.ApplyUpdateParam<BlogEntity, TagBlog, BlogJson>(p));
+		e.ApplyUpdateParam<BlogEntity, TagBlog, BlogJson>(p);
 		await db.SaveChangesAsync(ct);
 		await AddMedia(p.Id, p.Media ?? [], ct);
 
@@ -195,12 +194,7 @@ public class BlogService(
 
 	private async Task AddMedia(Guid blogId, ICollection<Guid> ids, CancellationToken ct) {
 		if (ids.IsNullOrEmpty()) return;
-		List<MediaEntity> media = await mediaService.ReadEntity(new BaseReadParams<TagMedia> { Ids = ids }, ct) ?? [];
-		if (media.Count == 0) return;
-		foreach (MediaEntity i in media)
-			await db.Set<MediaEntity>().Where(x => x.Id == i.Id).ExecuteUpdateAsync(
-				u => u.SetProperty(y => y.BlogId, blogId),
-				ct
-			);
+		// One set-based UPDATE instead of loading the media and updating them one by one.
+		await db.Set<MediaEntity>().Where(x => ids.Contains(x.Id)).ExecuteUpdateAsync(u => u.SetProperty(y => y.BlogId, blogId), ct);
 	}
 }

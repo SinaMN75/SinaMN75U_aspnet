@@ -415,8 +415,9 @@ public class PnService(
 
 		ULog.Debug($"Agreement generated for terminal {terminal.Id}");
 
-		ULog.Info($"Starting transaction for Avreen integration for terminal {terminal.Id}");
-		await using IDbContextTransaction transaction = await db.Database.BeginTransactionAsync(ct);
+		// No explicit DB transaction: the configured retrying execution strategy rejects user-initiated transactions,
+		// external Avreen calls can't be rolled back anyway, and the single SaveChanges below is already atomic.
+		ULog.Info($"Starting Avreen integration for terminal {terminal.Id}");
 		try {
 			terminal.MerchantId = p.MerchantId;
 			ULog.Debug("Calling Avreen API to add merchant...");
@@ -443,8 +444,6 @@ public class PnService(
 
 			if (response is null or { IsSuccessStatusCode: false }) {
 				ULog.Error($"Avreen addMerchant API call failed. Response null or unsuccessful");
-				await transaction.RollbackAsync(ct);
-				ULog.Warning($"Transaction rolled back for terminal {terminal.Id}");
 				return new UResponse<Guid?>(null, Usc.InternalServerError, ls.Get("failedToRegisterMerchantInAvreen"));
 			}
 
@@ -458,8 +457,6 @@ public class PnService(
 
 			if (merchant.MerchantId.IsNullOrEmpty()) {
 				ULog.Error($"Avreen addMerchant response missing merchantId. Response: {responseContent}");
-				await transaction.RollbackAsync(ct);
-				ULog.Warning($"Transaction rolled back for terminal {terminal.Id}");
 				return new UResponse<Guid?>(null, Usc.InternalServerError, ls.Get("merchantRegistrationSucceededButMerchantIdentifierWasNotReturnedByAvreen"));
 			}
 
@@ -478,8 +475,6 @@ public class PnService(
 
 			if (terminalResponse is null or { IsSuccessStatusCode: false }) {
 				ULog.Error($"Avreen defineAndBindTerminal API call failed");
-				await transaction.RollbackAsync(ct);
-				ULog.Warning($"Transaction rolled back for terminal {terminal.Id}");
 				return new UResponse<Guid?>(null, Usc.InternalServerError, ls.Get("failedToBindTerminalToMerchantInAvreen"));
 			}
 
@@ -492,9 +487,7 @@ public class PnService(
 			terminal.InsId = terminalData.GetStringOrNull("insId");
 			ULog.Debug($"Terminal updated - TerminalId: {terminal.TerminalId}, InsId: {terminal.InsId}, Tags: Verified added, AwaitingVerification removed");
 
-			db.Set<TerminalEntity>().Update(terminal);
 			await db.SaveChangesAsync(ct);
-			await transaction.CommitAsync(ct);
 
 			ULog.Success($"Terminal {terminal.Id} successfully bound to merchant {merchant.Id} via Avreen");
 			return new UResponse<Guid?>(terminal.Id);
@@ -502,8 +495,6 @@ public class PnService(
 		catch (Exception ex) {
 			httpContext.CaptureForApiLog(ex);
 			ULog.Error(ex, $"Exception during Avreen integration for terminal {terminal.Id}");
-			await transaction.RollbackAsync(ct);
-			ULog.Warning($"Transaction rolled back for terminal {terminal.Id} due to exception");
 			return new UResponse<Guid?>(null, Usc.InternalServerError, ls.Get("anUnexpectedErrorOccurredPleaseTryAgainLater"));
 		}
 	}

@@ -106,9 +106,7 @@ public class TerminalService(
 		if (pdf == null) return new UResponse<TerminalAvailabilityResponse?>(null, Usc.InternalServerError, ls.Get("generatingTheAgreementFailed"));
 		string agreement = UserFileStore.SaveBytes(env.WebRootPath, userData.Id, $"terminal-{terminal.Serial}.pdf", pdf);
 		terminal.Agreement = agreement;
-		db.Update(terminal);
 		await db.SaveChangesAsync(ct);
-		
 
 		return new UResponse<TerminalAvailabilityResponse?>(new TerminalAvailabilityResponse {
 			Id = terminal.Id,
@@ -419,10 +417,12 @@ public class TerminalService(
 			return new UResponse<TerminalImportResponse?>(null, Usc.BadRequest, ls.Get("InvalidFileFormat"));
 		}
 
-		HashSet<string> serials = (await db.Set<TerminalEntity>().Select(x => x.Serial).ToListAsync(ct)).ToHashSet(StringComparer.OrdinalIgnoreCase);
-		HashSet<string> imeis = (await db.Set<TerminalEntity>().Where(x => x.Imei != null).Select(x => x.Imei!).ToListAsync(ct)).ToHashSet(StringComparer.OrdinalIgnoreCase);
-		HashSet<string> simSerials = (await db.Set<TerminalEntity>().Where(x => x.SimCardSerial != null).Select(x => x.SimCardSerial!).ToListAsync(ct)).ToHashSet(StringComparer.OrdinalIgnoreCase);
-		HashSet<string> terminalIds = (await db.Set<TerminalEntity>().Where(x => x.TerminalId != null).Select(x => x.TerminalId!).ToListAsync(ct)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+		// One scan of the terminals table instead of four.
+		var existing = await db.Set<TerminalEntity>().Select(x => new { x.Serial, x.Imei, x.SimCardSerial, x.TerminalId }).ToListAsync(ct);
+		HashSet<string> serials = existing.Select(x => x.Serial).ToHashSet(StringComparer.OrdinalIgnoreCase);
+		HashSet<string> imeis = existing.Where(x => x.Imei != null).Select(x => x.Imei!).ToHashSet(StringComparer.OrdinalIgnoreCase);
+		HashSet<string> simSerials = existing.Where(x => x.SimCardSerial != null).Select(x => x.SimCardSerial!).ToHashSet(StringComparer.OrdinalIgnoreCase);
+		HashSet<string> terminalIds = existing.Where(x => x.TerminalId != null).Select(x => x.TerminalId!).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
 		HashSet<Guid> brands = (await db.Set<TerminalBrandEntity>().Select(x => x.Id).ToListAsync(ct)).ToHashSet();
 		HashSet<Guid> brokers = (await db.Set<TerminalBrokerEntity>().Select(x => x.Id).ToListAsync(ct)).ToHashSet();

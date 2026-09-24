@@ -15,6 +15,12 @@ public class HttpClientService(
 ) : IHttpClientService {
 	private static readonly Lazy<string> ServerIpAddress = new(ResolveServerIpAddress);
 
+	// ULog keeps its last 5000 lines in memory and queued API logs wait in memory before being written, so bodies are capped.
+	private const int MaxConsoleBody = 4_000;
+	private const int MaxLoggedBody = 20_000;
+
+	private static string Cap(string s, int max) => s.Length <= max ? s : s[..max] + "...<truncated>";
+
 	public async Task<HttpResponseMessage?> Get(string uri, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Get, uri, null, headers);
 	public async Task<HttpResponseMessage?> Post(string uri, object? body, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Post, uri, body, headers);
 	public async Task<HttpResponseMessage?> Put(string uri, object? body, Dictionary<string, string>? headers = null) => await Send(HttpMethod.Put, uri, body, headers);
@@ -69,11 +75,14 @@ public class HttpClientService(
 			using HttpRequestMessage request = new(method, uri);
 
 			request.Content = BuildContent(body, requestBody);
+			// Outbound bodies can carry third-party credentials (e.g. OAuth client_secret/password); redact before logging.
+			requestBody = ApiLogMiddleware.RedactBody(requestBody);
 			AddHeaders(request, headers);
 
 			HttpResponseMessage response = await httpClient.SendAsync(request);
-			string responseBody = await response.Content.ReadAsStringAsync();
-			string logMessage = $"{method} - {uri} - {(int)response.StatusCode} \nPARAMS: {(body != null ? requestBody : "null")} \nRESPONSE: {responseBody}";
+			// Only used for logging (callers read the response themselves), so it is redacted too.
+			string responseBody = ApiLogMiddleware.RedactBody(await response.Content.ReadAsStringAsync());
+			string logMessage = $"{method} - {uri} - {(int)response.StatusCode} \nPARAMS: {(body != null ? Cap(requestBody, MaxConsoleBody) : "null")} \nRESPONSE: {Cap(responseBody, MaxConsoleBody)}";
 			if ((int)response.StatusCode >= 400) ULog.Error(logMessage);
 			else ULog.Info(logMessage);
 
@@ -83,8 +92,8 @@ public class HttpClientService(
 				Path = uri,
 				StatusCode = (int)response.StatusCode,
 				DurationMs = sw.ElapsedMilliseconds,
-				RequestBody = requestBody,
-				ResponseBody = responseBody,
+				RequestBody = Cap(requestBody, MaxLoggedBody),
+				ResponseBody = Cap(responseBody, MaxLoggedBody),
 				RequestSizeBytes = body == null ? 0 : Encoding.UTF8.GetByteCount(requestBody),
 				ResponseSizeBytes = Encoding.UTF8.GetByteCount(responseBody),
 				IpAddress = ServerIpAddress.Value
@@ -99,7 +108,7 @@ public class HttpClientService(
 				Path = uri,
 				StatusCode = 500,
 				DurationMs = sw.ElapsedMilliseconds,
-				RequestBody = requestBody,
+				RequestBody = Cap(requestBody, MaxLoggedBody),
 				ResponseBody = "",
 				RequestSizeBytes = body == null ? 0 : Encoding.UTF8.GetByteCount(requestBody),
 				ResponseSizeBytes = 0,
@@ -109,7 +118,7 @@ public class HttpClientService(
 				IpAddress = ServerIpAddress.Value
 			});
 
-			ULog.Error($"{method} - {uri} - ERROR \nPARAMS: {(body != null ? requestBody : "null")} \nRESPONSE: {ex.Message}");
+			ULog.Error($"{method} - {uri} - ERROR \nPARAMS: {(body != null ? Cap(requestBody, MaxConsoleBody) : "null")} \nRESPONSE: {ex.Message}");
 			return null;
 		}
 	}

@@ -43,13 +43,13 @@ public class SimCardService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		SimCardEntity? e = await db.Set<SimCardEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		SimCardEntity? e = await db.Set<SimCardEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("simCardNotFound"));
 
 		if (p.Number != null) e.Number = p.Number;
 		if (p.Serial != null) e.Serial = p.Serial;
 
-		db.Set<SimCardEntity>().Update(e.ApplyUpdateParam<SimCardEntity,TagSimOperator, SimCardJson>(p));
+		e.ApplyUpdateParam<SimCardEntity,TagSimOperator, SimCardJson>(p);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}

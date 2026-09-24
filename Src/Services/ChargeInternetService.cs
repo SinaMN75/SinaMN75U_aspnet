@@ -69,7 +69,7 @@ public class ChargeInternetService(
 		if (approveResponse is null || approveResponse.Code != MobtakeranOk)
 			return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, approveResponse?.Message ?? ls.Get("thirdPartyServiceError"));
 
-		await walletService.Purchase(new WalletPurchaseParams {
+		await walletService.Purchase(new WalletPurchaseParams { AllowOverdraft = true,
 			ApiKey = p.ApiKey,
 			Token = p.Token,
 			Tag = TagWalletTxn.ChargeSimPin,
@@ -148,7 +148,7 @@ public class ChargeInternetService(
 		if (approveResponse is null || approveResponse.Code != MobtakeranOk)
 			return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, approveResponse?.Message ?? ls.Get("thirdPartyServiceError"));
 
-		await walletService.Purchase(new WalletPurchaseParams {
+		await walletService.Purchase(new WalletPurchaseParams { AllowOverdraft = true,
 			ApiKey = p.ApiKey, 
 			Token = p.Token,
 			Tag = TagWalletTxn.ChargeSimTopup,
@@ -210,7 +210,7 @@ public class ChargeInternetService(
 		if (approveResponse is null || approveResponse.Code != MobtakeranOk)
 			return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, approveResponse?.Message ?? ls.Get("thirdPartyServiceError"));
 
-		await walletService.Purchase(new WalletPurchaseParams {
+		await walletService.Purchase(new WalletPurchaseParams { AllowOverdraft = true,
 			ApiKey = p.ApiKey,
 			Token = p.Token,
 			Tag = TagWalletTxn.InternetSim,
@@ -485,7 +485,7 @@ public class ChargeInternetServiceFake(
 
 		string reference = Math.Abs(Guid.NewGuid().GetHashCode()).ToString();
 		await walletService.Purchase(
-			new WalletPurchaseParams {
+			new WalletPurchaseParams { AllowOverdraft = true,
 				ApiKey = p.ApiKey,
 				Token = p.Token,
 				Tag = TagWalletTxn.ChargeSimPin,
@@ -519,7 +519,7 @@ public class ChargeInternetServiceFake(
 		if (SimulateUpstreamFailure) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 
 		await walletService.Purchase(
-			new WalletPurchaseParams {
+			new WalletPurchaseParams { AllowOverdraft = true,
 				ApiKey = p.ApiKey, 
 				Token = p.Token, 
 				Tag = TagWalletTxn.ChargeSimTopup,
@@ -540,7 +540,7 @@ public class ChargeInternetServiceFake(
 		if (SimulateUpstreamFailure) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
 
 		await walletService.Purchase(
-			new WalletPurchaseParams {
+			new WalletPurchaseParams { AllowOverdraft = true,
 				ApiKey = p.ApiKey,
 				Token = p.Token,
 				Tag = TagWalletTxn.InternetSim,

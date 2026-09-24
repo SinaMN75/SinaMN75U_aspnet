@@ -351,7 +351,10 @@ public class GoldService(
 			}
 		};
 		await db.Set<GoldTxnEntity>().AddAsync(e, ct);
-		await ChangeGoldBalance(goldWallet, -reserve, ct);
+		if (!await ChangeGoldBalance(goldWallet, -reserve, ct)) {
+			db.Entry(e).State = EntityState.Detached;
+			return new UResponse<GoldTxnResponse?>(null, Usc.BalanceIsLow, ls.Get("yourGoldBalanceIsNotEnoughForThisOrder"));
+		}
 
 		UResponse<GoldOrderResponse?> order = await CreateOrder(new GoldCreateOrderParams {
 			ApiKey = p.ApiKey,
@@ -412,7 +415,6 @@ public class GoldService(
 		decimal dealtAmount = order.DealtQuoteAmount ?? 0;
 		if (dealtGold <= 0 || dealtAmount <= 0) {
 			e.JsonData.ProviderStatus = order.Status?.ToString();
-			db.Set<GoldTxnEntity>().Update(e);
 			await db.SaveChangesAsync(ct);
 			return new UResponse<GoldTxnResponse?>(MapTxn(e), Usc.Success, ls.Get("theGoldOrderIsBeingProcessedAndWillBeSettledShortly"));
 		}
@@ -450,7 +452,6 @@ public class GoldService(
 		decimal dealtAmount = order.DealtQuoteAmount ?? 0;
 		if (dealtGold <= 0 || dealtAmount <= 0) {
 			e.JsonData.ProviderStatus = order.Status?.ToString();
-			db.Set<GoldTxnEntity>().Update(e);
 			await db.SaveChangesAsync(ct);
 			return new UResponse<GoldTxnResponse?>(MapTxn(e), Usc.Success, ls.Get("theGoldOrderIsBeingProcessedAndWillBeSettledShortly"));
 		}
@@ -502,7 +503,6 @@ public class GoldService(
 		e.JsonData.FeeAsset = fee?.Asset;
 		e.JsonData.ProviderStatus = order.Status?.ToString();
 		e.Tags = [e.Tags.Contains(TagGoldTxn.Sell) ? TagGoldTxn.Sell : TagGoldTxn.Buy, TagGoldTxn.Filled];
-		db.Set<GoldTxnEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
 		return new UResponse<GoldTxnResponse?>(MapTxn(e), Usc.Created);
 	}
@@ -510,15 +510,22 @@ public class GoldService(
 	private async Task<UResponse<GoldTxnResponse?>> FailTxn(GoldTxnEntity e, Usc status, string message, CancellationToken ct, bool cancelled = false) {
 		e.JsonData.Error = message;
 		e.Tags = [e.Tags.Contains(TagGoldTxn.Sell) ? TagGoldTxn.Sell : TagGoldTxn.Buy, cancelled ? TagGoldTxn.Cancelled : TagGoldTxn.Failed];
-		db.Set<GoldTxnEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
 		return new UResponse<GoldTxnResponse?>(MapTxn(e), status == Usc.Success ? Usc.ThirdPartyError : status, message);
 	}
 
-	private async Task ChangeGoldBalance(GoldWalletEntity e, decimal amount, CancellationToken ct) {
+	// Atomic "Balance = Balance + amount" (a deduction only applies while the balance covers it) so concurrent orders
+	// can't oversell gold or lose a credit. The tracked entity is synced without marking Balance as modified.
+	private async Task<bool> ChangeGoldBalance(GoldWalletEntity e, decimal amount, CancellationToken ct) {
+		int rows = await db.Set<GoldWalletEntity>()
+			.Where(x => x.Id == e.Id && (amount >= 0 || x.Balance >= -amount))
+			.ExecuteUpdateAsync(u => u.SetProperty(x => x.Balance, x => x.Balance + amount), ct);
+		if (rows == 0) return false;
+
+		db.Entry(e).Property(x => x.Balance).OriginalValue = e.Balance + amount;
 		e.Balance += amount;
-		db.Set<GoldWalletEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
+		return true;
 	}
 
 	private async Task<GoldWalletEntity> ReadOrCreateWallet(Guid userId, CancellationToken ct) {

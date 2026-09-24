@@ -76,8 +76,7 @@ public class AuthService(
 		e.NationalCode = p.NationalCode;
 		if (p.FirstName.IsNotNullOrEmpty()) e.FirstName = p.FirstName;
 		if (p.LastName.IsNotNullOrEmpty()) e.LastName = p.LastName;
-		
-		db.Set<UserEntity>().Update(e);
+
 		await db.SaveChangesAsync(ct);
 		
 		return new UResponse<UserResponse?>(e.MapToResponse(), message: ls.Get("yourDetailSubmittedSuccessfully"));
@@ -89,7 +88,11 @@ public class AuthService(
 		string lockKey = "lockout_login_" + (p.UserName.IsNotNullOrEmpty() ? p.UserName : p.Email);
 		if (IsLockedOut(lockKey)) return new UResponse<LoginResponse?>(null, Usc.TooManyRequests, ls.Get("tooManyFailedAttemptsPleaseTryAgainLater"));
 
-		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => (p.UserName != null && x.UserName == p.UserName) || (p.Email != null && x.Email == p.Email), ct);
+		IQueryable<UserEntity> users = db.Set<UserEntity>().AsTracking();
+		if (p.UserName.IsNotNullOrEmpty() && p.Email.IsNotNullOrEmpty()) users = users.Where(x => x.UserName == p.UserName || x.Email == p.Email);
+		else if (p.UserName.IsNotNullOrEmpty()) users = users.Where(x => x.UserName == p.UserName);
+		else users = users.Where(x => x.Email == p.Email);
+		UserEntity? user = await users.FirstOrDefaultAsync(ct);
 		if (user == null || !UPasswordHasher.Verify(p.Password, user.Password)) {
 			RegisterFailedAttempt(lockKey);
 			return new UResponse<LoginResponse?>(null, Usc.NotFound, ls.Get("loginInformationIsWrong"));
@@ -98,7 +101,6 @@ public class AuthService(
 		ResetFailedAttempts(lockKey);
 		user.RefreshToken = ts.GenerateRefreshToken();
 		user.RefreshTokenExpiresAt = ts.RefreshTokenExpiry();
-		db.Set<UserEntity>().Update(user);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse<LoginResponse?>(new LoginResponse {
@@ -168,11 +170,11 @@ public class AuthService(
 	}
 
 	public async Task<UResponse<LoginResponse?>> VerifyCodeForLogin(VerifyMobileForLoginParams p, CancellationToken ct) {
-		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
-		if (user == null) return new UResponse<LoginResponse?>(null, Usc.UserNotFound, ls.Get("accountNotFound"));
-
 		string lockKey = "lockout_otp_" + p.PhoneNumber;
 		if (IsLockedOut(lockKey)) return new UResponse<LoginResponse?>(null, Usc.TooManyRequests, ls.Get("tooManyFailedAttemptsPleaseTryAgainLater"));
+
+		UserEntity? user = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
+		if (user == null) return new UResponse<LoginResponse?>(null, Usc.UserNotFound, ls.Get("accountNotFound"));
 
 		if (p.Otp != Core.App.BasicSettings.DefaultVerificationKey && p.Otp != cache.Get("otp_" + user.Id)) {
 			RegisterFailedAttempt(lockKey);
@@ -183,7 +185,6 @@ public class AuthService(
 		cache.Set("otp_" + user.Id, "", TimeSpan.FromSeconds(1));
 		user.RefreshToken = ts.GenerateRefreshToken();
 		user.RefreshTokenExpiresAt = ts.RefreshTokenExpiry();
-		db.Set<UserEntity>().Update(user);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse<LoginResponse?>(new LoginResponse {
@@ -195,12 +196,11 @@ public class AuthService(
 	}
 
 	public async Task<UResponse<LoginResponse?>> LoginOrRegister(RegisterParams p, CancellationToken ct) {
-		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber && x.NationalCode == p.NationalCode, ct);
+		UserEntity? user = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber && x.NationalCode == p.NationalCode, ct);
 		if (user == null) return await Register(p, ct);
 
 		user.RefreshToken = ts.GenerateRefreshToken();
 		user.RefreshTokenExpiresAt = ts.RefreshTokenExpiry();
-		db.Set<UserEntity>().Update(user);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse<LoginResponse?>(new LoginResponse {

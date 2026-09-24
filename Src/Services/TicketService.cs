@@ -49,7 +49,7 @@ public class TicketService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		TicketEntity? e = await db.Set<TicketEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		TicketEntity? e = await db.Set<TicketEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("TicketNotFound"));
 		if (p.Title.IsNotNullOrEmpty()) e.JsonData.Title = p.Title;
 		if (p.Description.IsNotNullOrEmpty()) e.JsonData.Description = p.Description;
@@ -58,7 +58,7 @@ public class TicketService(
 		if (p.Telegram.IsNotNullOrEmpty()) e.JsonData.Telegram = p.Telegram;
 		if (p.Whatsapp.IsNotNullOrEmpty()) e.JsonData.Whatsapp = p.Whatsapp;
 		
-		db.Set<TicketEntity>().Update(e.ApplyUpdateParam<TicketEntity,TagTicket, TicketJson>(p));
+		e.ApplyUpdateParam<TicketEntity,TagTicket, TicketJson>(p);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();

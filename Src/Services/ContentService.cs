@@ -13,8 +13,7 @@ public interface IContentService {
 public class ContentService(
 	DbContext db,
 	ILocalizationService ls,
-	ITokenService ts,
-	IMediaService mediaService
+	ITokenService ts
 ) : IContentService {
 	public async Task<UResponse> BulkCreate(List<ContentCreateParams> p, CancellationToken ct) {
 		foreach (ContentCreateParams param in p) await Create(param, ct);
@@ -104,7 +103,7 @@ public class ContentService(
 		if (p.Items.IsNotNull()) e.JsonData.Items = p.Items!;
 		if (p.CreatorId.IsNotNull()) e.CreatorId = p.CreatorId!.Value;
 
-		db.Set<ContentEntity>().Update(e.ApplyUpdateParam<ContentEntity, TagContent, ContentJson>(p));
+		e.ApplyUpdateParam<ContentEntity, TagContent, ContentJson>(p);
 		await db.SaveChangesAsync(ct);
 		await AddMedia(p.Id, p.Media ?? [], ct);
 		return new UResponse(Usc.Success, ls.Get("contentUpdatedSuccessfully"));
@@ -134,9 +133,7 @@ public class ContentService(
 
 	private async Task AddMedia(Guid contentId, ICollection<Guid> ids, CancellationToken ct) {
 		if (ids.IsNullOrEmpty()) return;
-		List<MediaEntity> media = await mediaService.ReadEntity(new BaseReadParams<TagMedia> { Ids = ids }, ct) ?? [];
-		if (media.Count == 0) return;
-		foreach (MediaEntity i in media)
-			await db.Set<MediaEntity>().Where(x => x.Id == i.Id).ExecuteUpdateAsync(u => u.SetProperty(y => y.ContentId, contentId), ct);
+		// One set-based UPDATE instead of loading the media and updating them one by one.
+		await db.Set<MediaEntity>().Where(x => ids.Contains(x.Id)).ExecuteUpdateAsync(u => u.SetProperty(y => y.ContentId, contentId), ct);
 	}
 }

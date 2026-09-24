@@ -384,7 +384,9 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "TitleMaxLength", "Title is too long." },
 		{ "TitleMinLength", "Title must be between 2 and 100 characters." },
 		{ "UsersRequired", "Users are Required." },
-		{ "passwordLengthMustBeBetween4And100Characters", "Password must be between 4 and 100 characters." }
+		{ "passwordLengthMustBeBetween4And100Characters", "Password must be between 4 and 100 characters." },
+		{ "amountIsNotValid", "Amount is not valid." },
+		{ "TicketNotFound", "Ticket not found." }
 	};
 
 	private static readonly Dictionary<string, string> Fa = new() {
@@ -765,7 +767,9 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "TitleMaxLength", "عنوان بیش از حد طولانی است." },
 		{ "TitleMinLength", "عنوان باید بین ۲ تا ۱۰۰ کاراکتر باشد." },
 		{ "UsersRequired", "کاربران الزامی هستند." },
-		{ "passwordLengthMustBeBetween4And100Characters", "رمز عبور باید بین ۴ تا ۱۰۰ کاراکتر باشد." }
+		{ "passwordLengthMustBeBetween4And100Characters", "رمز عبور باید بین ۴ تا ۱۰۰ کاراکتر باشد." },
+		{ "amountIsNotValid", "مبلغ نامعتبر است." },
+		{ "TicketNotFound", "تیکت یافت نشد." }
 	};
 
 	public string Get(string key, string? locale = null) {

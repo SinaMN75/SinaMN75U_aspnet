@@ -13,8 +13,7 @@ public interface IProductService {
 public class ProductService(
 	DbContext db,
 	ITokenService ts,
-	ILocalizationService ls,
-	IMediaService mediaService
+	ILocalizationService ls
 ) : IProductService {
 	public async Task<UResponse> BulkCreate(List<ProductCreateParams> p, CancellationToken ct) {
 		foreach (ProductCreateParams param in p) await Create(param, ct);
@@ -103,7 +102,7 @@ public class ProductService(
 			else e.Categories = await db.Set<CategoryEntity>().AsTracking().Where(x => p.Categories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct);
 		}
 
-		db.Set<ProductEntity>().Update(e.ApplyUpdateParam<ProductEntity,TagProduct, ProductJson>(p));
+		e.ApplyUpdateParam<ProductEntity,TagProduct, ProductJson>(p);
 		await db.SaveChangesAsync(ct);
 		await AddMedia(p.Id, p.Media ?? [], ct);
 
@@ -192,12 +191,7 @@ public class ProductService(
 
 	private async Task AddMedia(Guid productId, ICollection<Guid> ids, CancellationToken ct) {
 		if (ids.IsNullOrEmpty()) return;
-		List<MediaEntity> media = await mediaService.ReadEntity(new BaseReadParams<TagMedia> { Ids = ids }, ct) ?? [];
-		if (media.Count == 0) return;
-		foreach (MediaEntity i in media)
-			await db.Set<MediaEntity>().Where(x => x.Id == i.Id).ExecuteUpdateAsync(
-				u => u.SetProperty(y => y.ProductId, productId),
-				ct
-			);
+		// One set-based UPDATE instead of loading the media and updating them one by one.
+		await db.Set<MediaEntity>().Where(x => ids.Contains(x.Id)).ExecuteUpdateAsync(u => u.SetProperty(y => y.ProductId, productId), ct);
 	}
 }

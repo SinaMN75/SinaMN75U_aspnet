@@ -48,14 +48,14 @@ public class VehicleService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		VehicleEntity? e = await db.Set<VehicleEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		VehicleEntity? e = await db.Set<VehicleEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("vehicleNotFound"));
 		
 		if (p.LicencePlate.IsNotNull()) e.LicencePlate = p.LicencePlate;
 		if (p.Brand.IsNotNull()) e.Brand = p.Brand;
 		if (p.Color.IsNotNull()) e.Color = p.Color;
 		
-		db.Set<VehicleEntity>().Update(e.ApplyUpdateParam<VehicleEntity,TagVehicle, VehicleJson>(p));
+		e.ApplyUpdateParam<VehicleEntity,TagVehicle, VehicleJson>(p);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}

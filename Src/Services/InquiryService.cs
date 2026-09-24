@@ -76,7 +76,7 @@ public class InquiryService(
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<ZipCodeToAddressDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.ZipCodeToAddressDetail, Token = p.Token, KeyValues = [new KeyValue { Key = ULocalizedConstants.ZipCode, Value = p.ZipCode }] }, ct);
+			await walletService.Purchase(new WalletPurchaseParams { AllowOverdraft = true, Tag = TagWalletTxn.ZipCodeToAddressDetail, Token = p.Token, KeyValues = [new KeyValue { Key = ULocalizedConstants.ZipCode, Value = p.ZipCode }] }, ct);
 			await CreateZipCodeToAddressHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.ZipCodeToAddressDetail], "", p, ct);
 		}
 
@@ -134,7 +134,7 @@ public class InquiryService(
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<VehicleViolationDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.VehicleViolationsDetail, Token = p.Token, KeyValues = [new KeyValue { Key = ULocalizedConstants.LicencePlate, Value = p.LicencePlate }] }, ct);
+			await walletService.Purchase(new WalletPurchaseParams { AllowOverdraft = true, Tag = TagWalletTxn.VehicleViolationsDetail, Token = p.Token, KeyValues = [new KeyValue { Key = ULocalizedConstants.LicencePlate, Value = p.LicencePlate }] }, ct);
 			await CreateVehicleViolationsDetailHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.VehicleViolationsDetail], "", p, ct);
 		}
 
@@ -209,7 +209,7 @@ public class InquiryService(
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<DrivingLicenceDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceStatus, Token = p.Token, KeyValues = [new KeyValue { Key = ULocalizedConstants.NationalCode, Value = p.NationalCode }] }, ct);
+			await walletService.Purchase(new WalletPurchaseParams { AllowOverdraft = true, Tag = TagWalletTxn.DrivingLicenceStatus, Token = p.Token, KeyValues = [new KeyValue { Key = ULocalizedConstants.NationalCode, Value = p.NationalCode }] }, ct);
 			await CreateDrivingLicenceStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceDetail], "", p, ct);
 		}
 
@@ -263,7 +263,7 @@ public class InquiryService(
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<LicencePlateDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.LicencePlateDetail, Token = p.Token, KeyValues = [new KeyValue { Key = ULocalizedConstants.LicencePlate, Value = p.LicencePlate }] }, ct);
+			await walletService.Purchase(new WalletPurchaseParams { AllowOverdraft = true, Tag = TagWalletTxn.LicencePlateDetail, Token = p.Token, KeyValues = [new KeyValue { Key = ULocalizedConstants.LicencePlate, Value = p.LicencePlate }] }, ct);
 			await CreateLicencePlateStatusHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.LicencePlateDetail], "", p, ct);
 		}
 
@@ -315,7 +315,7 @@ public class InquiryService(
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<DrivingLicenceNegativePointResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.DrivingLicenceNegativePoint, Token = p.Token, KeyValues = [new KeyValue { Key = ULocalizedConstants.DrivingLicenceNumber, Value = p.DrivingLicenceNumber }] }, ct);
+			await walletService.Purchase(new WalletPurchaseParams { AllowOverdraft = true, Tag = TagWalletTxn.DrivingLicenceNegativePoint, Token = p.Token, KeyValues = [new KeyValue { Key = ULocalizedConstants.DrivingLicenceNumber, Value = p.DrivingLicenceNumber }] }, ct);
 			await CreateDrivingLicenceNegativePointHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.DrivingLicenceNegativePoint], "", p, ct);
 		}
 
@@ -360,7 +360,7 @@ public class InquiryService(
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<FreewayTollsResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.FreewayTolls, Token = p.Token, KeyValues = [new KeyValue { Key = ULocalizedConstants.LicencePlate, Value = p.LicencePlate }] }, ct);
+			await walletService.Purchase(new WalletPurchaseParams { AllowOverdraft = true, Tag = TagWalletTxn.FreewayTolls, Token = p.Token, KeyValues = [new KeyValue { Key = ULocalizedConstants.LicencePlate, Value = p.LicencePlate }] }, ct);
 			await CreateFreewayTollsHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.FreewayTolls], "", p, ct);
 		}
 
@@ -409,7 +409,7 @@ public class InquiryService(
 			}
 
 			if (!response.IsSuccessStatusCode) return new UResponse<IBanToBankAccountDetailResponse?>(null, Usc.ThirdPartyError, ls.Get("thirdPartyServiceError"));
-			await walletService.Purchase(new WalletPurchaseParams { Tag = TagWalletTxn.IBanToBankAccountDetail, Token = p.Token, KeyValues = [new KeyValue { Key = ULocalizedConstants.IBan, Value = p.IBan }] }, ct);
+			await walletService.Purchase(new WalletPurchaseParams { AllowOverdraft = true, Tag = TagWalletTxn.IBanToBankAccountDetail, Token = p.Token, KeyValues = [new KeyValue { Key = ULocalizedConstants.IBan, Value = p.IBan }] }, ct);
 			await CreateIBanToBankAccountDetailHistory(responseBody, [TagInquiryHistory.ItHub, TagInquiryHistory.IBanToBankAccountDetail], "", p, ct);
 		}
 
@@ -692,7 +692,29 @@ public class InquiryService(
 			new Dictionary<string, string> { { "Authorization", $"Bearer {accessToken}" }, { "Accept", "application/json" } }
 		);
 
+	// The ItHub token is valid for expires_in seconds; reuse it instead of a token round trip on every inquiry.
+	private static GetAccessTokenResponse? _cachedToken;
+	private static DateTime _cachedTokenExpiresAt;
+	private static readonly SemaphoreSlim TokenLock = new(1, 1);
+
 	protected virtual async Task<GetAccessTokenResponse?> GetAccessToken(CancellationToken ct) {
+		if (_cachedToken != null && DateTime.UtcNow < _cachedTokenExpiresAt) return _cachedToken;
+		await TokenLock.WaitAsync(ct);
+		try {
+			if (_cachedToken != null && DateTime.UtcNow < _cachedTokenExpiresAt) return _cachedToken;
+			GetAccessTokenResponse? fresh = await RequestAccessToken(ct);
+			if (fresh != null) {
+				_cachedTokenExpiresAt = DateTime.UtcNow.AddSeconds(Math.Max(0, (fresh.ExpiresIn ?? 300) - 60));
+				_cachedToken = fresh;
+			}
+			return fresh;
+		}
+		finally {
+			TokenLock.Release();
+		}
+	}
+
+	private async Task<GetAccessTokenResponse?> RequestAccessToken(CancellationToken ct) {
 		HttpResponseMessage? response = await httpClient.Post(
 			"https://gateway.itsaaz.ir/sts/connect/token",
 			new Dictionary<string, string> {

@@ -27,11 +27,12 @@ public class AccountingService(
 
 		IQueryable<WalletTxnEntity> wq = db.Set<WalletTxnEntity>().AsNoTracking().Where(x => x.CreatedAt >= from && x.CreatedAt <= to);
 		if (p.UserId != null) wq = wq.Where(x => x.SenderId == p.UserId || x.ReceiverId == p.UserId);
-		List<WalletTxnEntity> walletRows = await wq.ToListAsync(ct);
+		List<WalletRow> walletRows = await wq.Select(x => new WalletRow(x.Amount, x.Tags, x.SenderId, x.ReceiverId, x.CreatedAt)).ToListAsync(ct);
 
-		List<TxnEntity> txnRows = await db.Set<TxnEntity>().AsNoTracking()
+		List<TxnRow> txnRows = await db.Set<TxnEntity>().AsNoTracking()
 			.Where(x => x.CreatedAt >= from && x.CreatedAt <= to)
 			.Where(x => p.UserId == null || x.UserId == p.UserId)
+			.Select(x => new TxnRow(x.Amount, x.Tags))
 			.ToListAsync(ct);
 
 		AccountingReportResponse r = new() {
@@ -57,9 +58,9 @@ public class AccountingService(
 		return new UResponse<AccountingReportResponse?>(r);
 	}
 
-	private static void BuildPerUser(AccountingReportResponse r, List<WalletTxnEntity> rows, Guid userId) {
-		List<WalletTxnEntity> incoming = rows.Where(x => x.ReceiverId == userId).ToList();
-		List<WalletTxnEntity> outgoing = rows.Where(x => x.SenderId == userId).ToList();
+	private static void BuildPerUser(AccountingReportResponse r, List<WalletRow> rows, Guid userId) {
+		List<WalletRow> incoming = rows.Where(x => x.ReceiverId == userId).ToList();
+		List<WalletRow> outgoing = rows.Where(x => x.SenderId == userId).ToList();
 
 		r.TotalIn = incoming.Sum(x => x.Amount);
 		r.TotalOut = outgoing.Sum(x => x.Amount);
@@ -68,9 +69,9 @@ public class AccountingService(
 		r.SpendingByType = GroupByTag(outgoing);
 	}
 
-	private static void BuildSystemWide(AccountingReportResponse r, List<WalletTxnEntity> rows) {
-		List<WalletTxnEntity> incoming = rows.Where(x => x.Tags.Contains(TagWalletTxn.Charge)).ToList();
-		List<WalletTxnEntity> outgoing = rows.Where(x => x.Tags.Any(t => SpendingTags.Contains(t))).ToList();
+	private static void BuildSystemWide(AccountingReportResponse r, List<WalletRow> rows) {
+		List<WalletRow> incoming = rows.Where(x => x.Tags.Contains(TagWalletTxn.Charge)).ToList();
+		List<WalletRow> outgoing = rows.Where(x => x.Tags.Any(t => SpendingTags.Contains(t))).ToList();
 
 		r.TotalIn = incoming.Sum(x => x.Amount);
 		r.TotalOut = outgoing.Sum(x => x.Amount);
@@ -79,13 +80,13 @@ public class AccountingService(
 		r.SpendingByType = GroupByTag(outgoing);
 	}
 
-	private static List<AccountingBreakdownItem> GroupByTag(List<WalletTxnEntity> rows) => rows
+	private static List<AccountingBreakdownItem> GroupByTag(List<WalletRow> rows) => rows
 		.SelectMany(x => x.Tags.Select(t => (Tag: t, x.Amount)))
 		.GroupBy(x => x.Tag)
 		.Select(g => new AccountingBreakdownItem { Tag = (int)g.Key, TagName = g.Key.ToString(), Amount = g.Sum(i => i.Amount), Count = g.Count() })
 		.OrderByDescending(i => i.Amount).ToList();
 
-	private static void BuildTimeline(AccountingReportResponse r, List<WalletTxnEntity> rows, Guid? userId) {
+	private static void BuildTimeline(AccountingReportResponse r, List<WalletRow> rows, Guid? userId) {
 		r.Timeline = rows
 			.GroupBy(x => x.CreatedAt.Date)
 			.Select(g => new AccountingTimelineItem {
@@ -95,4 +96,8 @@ public class AccountingService(
 			})
 			.OrderBy(i => i.Date).ToList();
 	}
+
+	private sealed record WalletRow(decimal Amount, ICollection<TagWalletTxn> Tags, Guid SenderId, Guid ReceiverId, DateTime CreatedAt);
+
+	private sealed record TxnRow(decimal Amount, ICollection<TagTxn> Tags);
 }

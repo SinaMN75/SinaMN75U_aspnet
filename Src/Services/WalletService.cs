@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore.Storage;
+
 namespace SinaMN75U.Services;
 
 public interface IWalletService {
@@ -62,12 +64,13 @@ public class WalletService(
 			case TagWalletTxn.ChargeSimTopup:
 			case TagWalletTxn.InternetSim:
 				receiverId = Core.App.Users.Mobtakeran.Id;
-				amount = p.Amount!.Value;
+				if (p.Amount is not > 0) return new UResponse(Usc.BadRequest, ls.Get("amountIsNotValid"));
+				amount = p.Amount.Value;
 				break;
 			case TagWalletTxn.Transfer:
 			case TagWalletTxn.Charge:
 			default:
-				throw new Exception();
+				return new UResponse(Usc.BadRequest, ls.Get("amountIsNotValid"));
 		}
 
 		return await Transfer(new WalletTransferParams {
@@ -78,7 +81,8 @@ public class WalletService(
 			Amount = amount,
 			Detail1 = detail1,
 			KeyValues = p.KeyValues,
-			TagWalletTxn = [p.Tag]
+			TagWalletTxn = [p.Tag],
+			AllowOverdraft = p.AllowOverdraft
 		}, ct);
 	}
 
@@ -119,18 +123,14 @@ public class WalletService(
 	}
 
 	public async Task<UResponse<WalletTxnResponse?>> Transfer(WalletTransferParams p, CancellationToken ct) {
-		WalletEntity? senderWallet = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == p.SenderId, ct);
-		WalletEntity? receiverWallet = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == p.ReceiverId, ct);
+		if (p.Amount < 0) return new UResponse<WalletTxnResponse?>(null, Usc.BadRequest, ls.Get("amountIsNotValid"));
+
+		WalletEntity? senderWallet = await db.Set<WalletEntity>().FirstOrDefaultAsync(x => x.CreatorId == p.SenderId, ct);
+		WalletEntity? receiverWallet = await db.Set<WalletEntity>().FirstOrDefaultAsync(x => x.CreatorId == p.ReceiverId, ct);
 		if (senderWallet == null) return new UResponse<WalletTxnResponse?>(null, Usc.NotFound, ls.Get("senderWalletNotFound"));
 		if (receiverWallet == null) return new UResponse<WalletTxnResponse?>(null, Usc.NotFound, ls.Get("receiverWalletNotFound"));
-		if (!senderWallet.JsonData.AllowMinusBalance && senderWallet.Balance < p.Amount) return new UResponse<WalletTxnResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 
-		decimal senderBalance = senderWallet.Balance - p.Amount;
-		decimal receiverBalance = receiverWallet.Balance + p.Amount;
-
-		senderWallet.Balance = senderBalance;
-		receiverWallet.Balance = receiverBalance;
-
+		bool allowMinusBalance = senderWallet.JsonData.AllowMinusBalance || p.AllowOverdraft;
 		WalletTxnEntity e = new() {
 			Id = Guid.CreateVersion7(),
 			CreatorId = p.SenderId,
@@ -141,11 +141,26 @@ public class WalletService(
 			JsonData = new WalletTxnJson { Detail1 = p.Detail1 ?? "", KeyValues = p.KeyValues.ToList() },
 			Tags = p.TagWalletTxn.Count != 0 ? p.TagWalletTxn : [TagWalletTxn.Transfer]
 		};
-		await db.Set<WalletTxnEntity>().AddAsync(e, ct);
 
-		db.Set<WalletEntity>().Update(senderWallet);
-		db.Set<WalletEntity>().Update(receiverWallet);
-		await db.SaveChangesAsync(ct);
+		// Balances are changed with atomic "Balance = Balance ± amount" statements (the debit only succeeds if the balance
+		// is still sufficient), instead of read-modify-write in memory, so concurrent transfers can't double-spend or lose
+		// a credit. The transaction runs inside the execution strategy because the context uses retry-on-failure.
+		IExecutionStrategy strategy = db.Database.CreateExecutionStrategy();
+		bool transferred = await strategy.ExecuteAsync(async () => {
+			await using IDbContextTransaction transaction = await db.Database.BeginTransactionAsync(ct);
+			int debited = await db.Set<WalletEntity>()
+				.Where(x => x.Id == senderWallet.Id && (allowMinusBalance || x.Balance >= p.Amount))
+				.ExecuteUpdateAsync(u => u.SetProperty(x => x.Balance, x => x.Balance - p.Amount), ct);
+			if (debited == 0) return false;
+
+			await db.Set<WalletEntity>().Where(x => x.Id == receiverWallet.Id).ExecuteUpdateAsync(u => u.SetProperty(x => x.Balance, x => x.Balance + p.Amount), ct);
+			if (db.Entry(e).State == EntityState.Detached) await db.Set<WalletTxnEntity>().AddAsync(e, ct);
+			await db.SaveChangesAsync(ct);
+			await transaction.CommitAsync(ct);
+			return true;
+		});
+
+		if (!transferred) return new UResponse<WalletTxnResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 
 		return new UResponse<WalletTxnResponse?>(new WalletTxnResponse {
 			SenderId = e.SenderId,

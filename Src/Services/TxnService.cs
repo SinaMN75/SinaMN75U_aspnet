@@ -43,11 +43,11 @@ public class TxnService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		TxnEntity? e = await db.Set<TxnEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		TxnEntity? e = await db.Set<TxnEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("transactionNotFound"));
 
 		if (p.KeyValues != null) e.JsonData.KeyValues = p.KeyValues.ToList();
-		db.Set<TxnEntity>().Update(e.ApplyUpdateParam<TxnEntity,TagTxn, TxnJson>(p));
+		e.ApplyUpdateParam<TxnEntity,TagTxn, TxnJson>(p);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();

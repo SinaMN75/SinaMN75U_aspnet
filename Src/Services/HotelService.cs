@@ -481,7 +481,6 @@ public class HotelService(
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		e.Tags = [status];
-		db.Update(e);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
@@ -533,11 +532,11 @@ public class HotelService(
 		if (rooms.Count == 0) return new UResponse<IEnumerable<HotelRoomAvailabilityResponse>?>([]);
 
 		Dictionary<Guid, int> booked = await ReadBookedCounts(rooms.Select(x => x.Id).ToList(), p.CheckInDate, p.CheckOutDate, ct);
-		List<HotelRoomResponse> projected = await q.Select(Projections.HotelRoomSelector(p.SelectorArgs)).ToListAsync(ct);
+		Dictionary<Guid, HotelRoomResponse> projected = await q.Select(Projections.HotelRoomSelector(p.SelectorArgs)).ToDictionaryAsync(x => x.Id, ct);
 
 		List<HotelRoomAvailabilityResponse> result = [];
 		foreach (HotelRoomEntity room in rooms) {
-			HotelRoomResponse? dto = projected.FirstOrDefault(x => x.Id == room.Id);
+			HotelRoomResponse? dto = projected.GetValueOrDefault(room.Id);
 			if (dto == null) continue;
 			int maxGuests = room.Capacity + (room.JsonData.ExtraGuestCapacity ?? 0);
 			result.Add(new HotelRoomAvailabilityResponse {
@@ -660,6 +659,14 @@ public class HotelService(
 		decimal paid = e.Invoices.Sum(x => x.PaidAmount);
 		decimal refund = Math.Max(0, paid - penalty);
 
+		// Claim the cancellation atomically first so two concurrent cancel requests can't both refund.
+		List<TagHotelReservation> previousTags = e.Tags.ToList();
+		List<TagHotelReservation> cancelledTags = [TagHotelReservation.Cancelled];
+		int claimed = await db.Set<HotelReservationEntity>()
+			.Where(x => x.Id == e.Id && !x.Tags.Contains(TagHotelReservation.Cancelled) && !x.Tags.Contains(TagHotelReservation.CheckedIn) && !x.Tags.Contains(TagHotelReservation.CheckedOut))
+			.ExecuteUpdateAsync(u => u.SetProperty(x => x.Tags, cancelledTags), ct);
+		if (claimed == 0) return new UResponse(Usc.Conflict, ls.Get("thisReservationHasAlreadyBeenCancelled"));
+
 		if (refund > 0) {
 			UResponse<WalletTxnResponse?> transfer = await ws.Transfer(new WalletTransferParams {
 				SenderId = Core.App.Users.SystemAdmin.Id,
@@ -677,7 +684,10 @@ public class HotelService(
 				],
 				TagWalletTxn = [TagWalletTxn.HotelReservationRefund]
 			}, ct);
-			if (transfer.Result == null) return new UResponse(transfer.Status, transfer.Message);
+			if (transfer.Result == null) {
+				await db.Set<HotelReservationEntity>().Where(x => x.Id == e.Id).ExecuteUpdateAsync(u => u.SetProperty(x => x.Tags, previousTags), ct);
+				return new UResponse(transfer.Status, transfer.Message);
+			}
 		}
 
 		foreach (HotelInvoiceEntity invoice in e.Invoices) {
@@ -728,6 +738,12 @@ public class HotelService(
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
 		if (!e.Tags.Contains(TagHotelInvoice.NotPaid)) return new UResponse(Usc.Conflict, ls.Get("thisInvoiceHasAlreadyBeenPaid"));
 
+		// Claim NotPaid→PaidOnline atomically first so concurrent payments of the same invoice can't charge twice.
+		List<TagHotelInvoice> unpaidTags = e.Tags.ToList();
+		List<TagHotelInvoice> paidTags = [TagHotelInvoice.PaidOnline];
+		int claimed = await db.Set<HotelInvoiceEntity>().Where(x => x.Id == e.Id && x.Tags.Contains(TagHotelInvoice.NotPaid)).ExecuteUpdateAsync(u => u.SetProperty(x => x.Tags, paidTags), ct);
+		if (claimed == 0) return new UResponse(Usc.Conflict, ls.Get("thisInvoiceHasAlreadyBeenPaid"));
+
 		decimal amount = e.DebtAmount + e.PenaltyAmount - e.CreditorAmount;
 		if (amount > 0) {
 			UResponse<WalletTxnResponse?> transfer = await ws.Transfer(new WalletTransferParams {
@@ -738,7 +754,10 @@ public class HotelService(
 				KeyValues = HotelInvoiceKeyValues(e),
 				TagWalletTxn = [TagWalletTxn.HotelReservation]
 			}, ct);
-			if (transfer.Result == null) return new UResponse(transfer.Status, transfer.Message);
+			if (transfer.Result == null) {
+				await db.Set<HotelInvoiceEntity>().Where(x => x.Id == e.Id).ExecuteUpdateAsync(u => u.SetProperty(x => x.Tags, unpaidTags), ct);
+				return new UResponse(transfer.Status, transfer.Message);
+			}
 		}
 
 		e.PaidAmount = amount;
@@ -814,11 +833,11 @@ public class HotelService(
 
 		UResponse<IEnumerable<HotelInvoiceResponse>?> response = await q.Select(Projections.HotelInvoiceSelector(p.SelectorArgs)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 		List<Guid> ids = response.Result!.Select(x => x.Id).ToList();
-		List<HotelInvoiceEntity> entities = await db.Set<HotelInvoiceEntity>().Where(x => ids.Contains(x.Id)).ToListAsync(ct);
+		Dictionary<Guid, HotelInvoiceEntity> entities = await db.Set<HotelInvoiceEntity>().AsTracking().Where(x => ids.Contains(x.Id)).ToDictionaryAsync(x => x.Id, ct);
 
 		bool anyChanges = false;
 		foreach (HotelInvoiceResponse dto in response.Result!) {
-			HotelInvoiceEntity? entity = entities.FirstOrDefault(x => x.Id == dto.Id);
+			HotelInvoiceEntity? entity = entities.GetValueOrDefault(dto.Id);
 			if (entity == null || entity.JsonData.PenaltyPrecentEveryDate <= 0) continue;
 			int daysLate = Math.Max(0, (DateTime.UtcNow - entity.DueDate).Days);
 			decimal expectedPenalty = entity.DebtAmount * (entity.JsonData.PenaltyPrecentEveryDate / 100m) * daysLate;
@@ -831,7 +850,6 @@ public class HotelService(
 			if (needsPenaltyUpdate) {
 				entity.PenaltyAmount = expectedPenalty;
 				dto.PenaltyAmount = expectedPenalty;
-				db.Set<HotelInvoiceEntity>().Update(entity);
 				anyChanges = true;
 			}
 		}
@@ -1447,12 +1465,12 @@ public class HotelService(
 
 		UResponse<IEnumerable<DormBedInvoiceResponse>?> response = await q.Select(Projections.DormBedInvoiceSelector(p.SelectorArgs)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 		List<Guid> ids = response.Result!.Select(x => x.Id).ToList();
-		List<DormBedInvoiceEntity> entities = await db.Set<DormBedInvoiceEntity>().Where(x => ids.Contains(x.Id)).ToListAsync(ct);
+		Dictionary<Guid, DormBedInvoiceEntity> entities = await db.Set<DormBedInvoiceEntity>().AsTracking().Where(x => ids.Contains(x.Id)).ToDictionaryAsync(x => x.Id, ct);
 
 		bool anyChanges = false;
 
 		foreach (DormBedInvoiceResponse dto in response.Result!) {
-			DormBedInvoiceEntity? entity = entities.FirstOrDefault(x => x.Id == dto.Id);
+			DormBedInvoiceEntity? entity = entities.GetValueOrDefault(dto.Id);
 			if (entity == null || entity.JsonData.PenaltyPrecentEveryDate <= 0) continue;
 			int daysLate = Math.Max(0, (DateTime.UtcNow - entity.DueDate).Days);
 			decimal expectedPenalty = entity.DebtAmount * (entity.JsonData.PenaltyPrecentEveryDate / 100m) * daysLate;
@@ -1465,7 +1483,6 @@ public class HotelService(
 			if (needsPenaltyUpdate) {
 				entity.PenaltyAmount = expectedPenalty;
 				dto.PenaltyAmount = expectedPenalty;
-				db.Set<DormBedInvoiceEntity>().Update(entity);
 				anyChanges = true;
 			}
 		}
@@ -1518,6 +1535,12 @@ public class HotelService(
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
 		if (!e.Tags.Contains(TagDormBedInvoice.NotPaid)) return new UResponse(Usc.Conflict, ls.Get("thisInvoiceHasAlreadyBeenPaid"));
 
+		// Claim NotPaid→PaidOnline atomically first so concurrent payments of the same invoice can't charge twice.
+		List<TagDormBedInvoice> unpaidTags = e.Tags.ToList();
+		List<TagDormBedInvoice> paidTags = [TagDormBedInvoice.PaidOnline];
+		int claimed = await db.Set<DormBedInvoiceEntity>().Where(x => x.Id == e.Id && x.Tags.Contains(TagDormBedInvoice.NotPaid)).ExecuteUpdateAsync(u => u.SetProperty(x => x.Tags, paidTags), ct);
+		if (claimed == 0) return new UResponse(Usc.Conflict, ls.Get("thisInvoiceHasAlreadyBeenPaid"));
+
 		decimal amount = e.DebtAmount + e.PenaltyAmount - e.CreditorAmount;
 		if (amount > 0) {
 			UResponse<WalletTxnResponse?> transfer = await ws.Transfer(new WalletTransferParams {
@@ -1528,7 +1551,10 @@ public class HotelService(
 				KeyValues = DormBedInvoiceKeyValues(e),
 				TagWalletTxn = [TagWalletTxn.DormBedInvoice]
 			}, ct);
-			if (transfer.Result == null) return new UResponse(transfer.Status, transfer.Message);
+			if (transfer.Result == null) {
+				await db.Set<DormBedInvoiceEntity>().Where(x => x.Id == e.Id).ExecuteUpdateAsync(u => u.SetProperty(x => x.Tags, unpaidTags), ct);
+				return new UResponse(transfer.Status, transfer.Message);
+			}
 		}
 
 		e.PaidAmount = amount;

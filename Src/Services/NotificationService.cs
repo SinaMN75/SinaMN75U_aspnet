@@ -44,10 +44,10 @@ public class NotificationService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		NotificationEntity? e = await db.Set<NotificationEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		NotificationEntity? e = await db.Set<NotificationEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("notificationNotFound"));
 
-		db.Update(e.ApplyUpdateParam<NotificationEntity,TagNotification, NotificationJson>(p));
+		e.ApplyUpdateParam<NotificationEntity,TagNotification, NotificationJson>(p);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}

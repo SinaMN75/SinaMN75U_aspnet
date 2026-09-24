@@ -81,7 +81,7 @@ public class MediaService(
 	}
 
 	public async Task<UResponse> Update(MediaUpdateParams p, CancellationToken ct) {
-		MediaEntity? e = await db.Set<MediaEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		MediaEntity? e = await db.Set<MediaEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("mediaNotFound"));
 		if (p.Title != null) e.JsonData.Detail1 = p.Title;
 		if (p.Description != null) e.JsonData.Detail2 = p.Description;
@@ -99,7 +99,6 @@ public class MediaService(
 		if (p.AddTags != null) e.Tags.AddRangeIfNotExist(p.AddTags);
 		if (p.RemoveTags != null) e.Tags.RemoveAll(tag => p.RemoveTags.Contains(tag));
 
-		db.Update(e);
 		await db.SaveChangesAsync(ct);
 		return new UResponse<MediaResponse?>(new MediaResponse {
 			Id = e.Id,
@@ -147,7 +146,7 @@ public class MediaService(
 			Directory.CreateDirectory(directory);
 		}
 
-		await using FileStream stream = new(fullPath, FileMode.Create);
+		await using FileStream stream = new(fullPath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true);
 		await file.CopyToAsync(stream);
 	}
 }

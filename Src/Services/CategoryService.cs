@@ -12,8 +12,7 @@ public interface ICategoryService {
 public class CategoryService(
 	DbContext db,
 	ILocalizationService ls,
-	ITokenService ts,
-	IMediaService mediaService
+	ITokenService ts
 ) : ICategoryService {
 	public async Task<UResponse> BulkCreate(IEnumerable<CategoryCreateParams> p, CancellationToken ct) {
 		foreach (CategoryCreateParams param in p) await Create(param, ct);
@@ -84,7 +83,7 @@ public class CategoryService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		CategoryEntity? e = await db.Set<CategoryEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		CategoryEntity? e = await db.Set<CategoryEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("categoryNotFoundPleaseTryAnother"));
 
 		if (p.Title != null) e.Title = p.Title;
@@ -99,7 +98,7 @@ public class CategoryService(
 		if (p.ParentId != null) e.ParentId = p.ParentId;
 		if (p.RelatedProducts != null) e.JsonData.RelatedProducts = p.RelatedProducts;
 
-		db.Set<CategoryEntity>() .Update(e.ApplyUpdateParam<CategoryEntity,TagCategory, CategoryJson>(p));
+		e.ApplyUpdateParam<CategoryEntity,TagCategory, CategoryJson>(p);
 		await db.SaveChangesAsync(ct);
 		await AddMedia(e.Id, p.Media ?? [], ct);
 
@@ -151,10 +150,7 @@ public class CategoryService(
 
 	private async Task AddMedia(Guid id, ICollection<Guid> ids, CancellationToken ct) {
 		if (ids.IsNullOrEmpty()) return;
-		List<MediaEntity> media = await mediaService.ReadEntity(new BaseReadParams<TagMedia> { Ids = ids }, ct) ?? [];
-		if (media.Count == 0) return;
-		foreach (MediaEntity i in media)
-			await db.Set<MediaEntity>().Where(x => x.Id == i.Id)
-				.ExecuteUpdateAsync(u => u.SetProperty(y => y.CategoryId, id), ct);
+		// One set-based UPDATE instead of loading the media and updating them one by one.
+		await db.Set<MediaEntity>().Where(x => ids.Contains(x.Id)).ExecuteUpdateAsync(u => u.SetProperty(y => y.CategoryId, id), ct);
 	}
 }

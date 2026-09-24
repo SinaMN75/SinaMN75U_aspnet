@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore.Storage;
+
 namespace SinaMN75U.Services;
 
 public interface IIpgService {
@@ -54,7 +56,7 @@ public class IpgService(
 			case TagIpgPayment.NormalSale:
 				break;
 			default:
-				throw new Exception();
+				return new UResponse<IpgPayResponse?>(null, Usc.BadRequest, ls.Get("thisPaymentTypeIsNotSupportedByTheGateway"));
 		}
 
 		TxnEntity txn = new() {
@@ -84,7 +86,6 @@ public class IpgService(
 
 		if (Core.App.Test) {
 			txn.JsonData.Detail2 = "FAKE";
-			db.Set<TxnEntity>().Update(txn);
 			await db.SaveChangesAsync(ct);
 			return new UResponse<IpgPayResponse?>(new IpgPayResponse {
 				Url = $"{Core.App.BaseUrl}/{RouteTags.Ipg}Gateway?additionalData={additionalData.ToJson().ToBase58()}",
@@ -113,7 +114,6 @@ public class IpgService(
 			}
 
 			txn.JsonData.Detail2 = result.Token ?? "---";
-			db.Set<TxnEntity>().Update(txn);
 			await db.SaveChangesAsync(ct);
 			return new UResponse<IpgPayResponse?>(new IpgPayResponse {
 				Url = result.Url ?? "",
@@ -130,7 +130,12 @@ public class IpgService(
 	public async Task<bool> Verify(IpgAdditionalData additionalData, CancellationToken ct) {
 		TxnEntity? txn = await db.Set<TxnEntity>().AsTracking().FirstOrDefaultAsync(x => x.TrackingNumber == additionalData.TrackingNumber, ct);
 		if (txn == null) return false;
-		
+
+		if (txn.Tags.Contains(TagTxn.Paid)) {
+			additionalData.KeyValues = txn.JsonData.KeyValues.Select(x => new KeyValue { Key = x.Key, Value = x.Value }).ToList();
+			return true;
+		}
+
 		if (additionalData.Status != 0) {
 			await MarkFailed(txn, ct);
 			return false;
@@ -143,16 +148,13 @@ public class IpgService(
 		try {
 			if (!Core.App.Test && !await Provider.Confirm(additionalData.Token, ct)) return false;
 
-			if (additionalData.Rrn.IsNotNullOrEmpty()) txn.JsonData.KeyValues.Add(new KeyValue { Key = ULocalizedConstants.Reference, Value = additionalData.Rrn });
-			txn.Tags = [..txn.Tags.Where(x => x != TagTxn.Pending), TagTxn.Paid];
-			db.Set<TxnEntity>().Update(txn);
-			await db.SaveChangesAsync(ct);
+			List<TagTxn> paidTags = [..txn.Tags.Where(x => x != TagTxn.Pending), TagTxn.Paid];
+			WalletEntity? wallet = kind == TagIpgPayment.NormalSale ? await ReadOrCreateWallet(txn.UserId, ct) : null;
 
-			additionalData.KeyValues = txn.JsonData.KeyValues.Select(x => new KeyValue { Key = x.Key, Value = x.Value }).ToList();
+			if (additionalData.Rrn.IsNotNullOrEmpty() && txn.JsonData.KeyValues.All(x => x.Key != ULocalizedConstants.Reference))
+				txn.JsonData.KeyValues.Add(new KeyValue { Key = ULocalizedConstants.Reference, Value = additionalData.Rrn });
 
-			if (kind != TagIpgPayment.NormalSale) return true;
-
-			await db.Set<WalletTxnEntity>().AddAsync(new WalletTxnEntity {
+			WalletTxnEntity? walletTxn = wallet == null ? null : new WalletTxnEntity {
 				Id = Guid.CreateVersion7(),
 				CreatorId = Core.App.Users.SystemAdmin.Id,
 				CreatedAt = DateTime.UtcNow,
@@ -167,12 +169,35 @@ public class IpgService(
 				SenderId = Core.App.Users.AvaPlus.Id,
 				ReceiverId = txn.UserId,
 				Amount = txn.Amount
-			}, ct);
+			};
 
-			WalletEntity wallet = await ReadOrCreateWallet(txn.UserId, ct);
-			wallet.Balance += txn.Amount;
-			db.Update(wallet);
-			await db.SaveChangesAsync(ct);
+			// Claiming Pending→Paid, the wallet txn and the balance credit commit together, and only the request that wins
+			// the claim credits the wallet. Runs in the execution strategy because the context uses retry-on-failure.
+			IExecutionStrategy strategy = db.Database.CreateExecutionStrategy();
+			bool claimed = await strategy.ExecuteAsync(async () => {
+				await using IDbContextTransaction transaction = await db.Database.BeginTransactionAsync(ct);
+				int rows = await db.Set<TxnEntity>()
+					.Where(x => x.Id == txn.Id && !x.Tags.Contains(TagTxn.Paid))
+					.ExecuteUpdateAsync(u => u.SetProperty(x => x.Tags, paidTags), ct);
+				if (rows == 0) return false;
+
+				txn.Tags = paidTags;
+
+				if (wallet != null && walletTxn != null) {
+					if (db.Entry(walletTxn).State == EntityState.Detached) await db.Set<WalletTxnEntity>().AddAsync(walletTxn, ct);
+					await db.Set<WalletEntity>().Where(x => x.Id == wallet.Id).ExecuteUpdateAsync(u => u.SetProperty(x => x.Balance, x => x.Balance + txn.Amount), ct);
+				}
+
+				await db.SaveChangesAsync(ct);
+				await transaction.CommitAsync(ct);
+				return true;
+			});
+
+			additionalData.KeyValues = txn.JsonData.KeyValues.Select(x => new KeyValue { Key = x.Key, Value = x.Value }).ToList();
+
+			// Another request already completed this payment.
+			if (!claimed) return true;
+			if (kind != TagIpgPayment.NormalSale) return true;
 
 			if (additionalData is { InvoiceId: not null }) {
 				if (additionalData.Tag == TagTxn.HotelInvoice)
@@ -258,7 +283,6 @@ public class IpgService(
 	private async Task MarkFailed(TxnEntity txn, CancellationToken ct) {
 		if (txn.Tags.Contains(TagTxn.Paid)) return;
 		txn.Tags = [..txn.Tags.Where(x => x != TagTxn.Pending), TagTxn.Failed];
-		db.Set<TxnEntity>().Update(txn);
 		await db.SaveChangesAsync(ct);
 	}
 }

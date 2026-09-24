@@ -49,7 +49,7 @@ public class SmsNotificationService(
 		if (cache.Get($"otp_{user.Id}") != null) return false;
 		int length = Core.App.BasicSettings.VerificationCodeLenght;
 
-		string otp = Random.Shared.Next((int)Math.Pow(10, length - 1), (int)Math.Pow(10, length)).ToString();
+		string otp = RandomNumberGenerator.GetInt32((int)Math.Pow(10, length - 1), (int)Math.Pow(10, length)).ToString();
 		cache.Set("otp_" + user.Id, otp, TimeSpan.FromMinutes(1));
 
 		if (user.PhoneNumber.IsNull()) return false;
@@ -70,7 +70,7 @@ public class SmsNotificationServiceFake(ILocalStorageService cache) : ISmsNotifi
 		if (cache.Get($"otp_{user.Id}") != null) return false;
 		int length = Core.App.BasicSettings.VerificationCodeLenght;
 
-		string otp = Random.Shared.Next((int)Math.Pow(10, length - 1), (int)Math.Pow(10, length)).ToString();
+		string otp = RandomNumberGenerator.GetInt32((int)Math.Pow(10, length - 1), (int)Math.Pow(10, length)).ToString();
 		cache.Set("otp_" + user.Id, otp, TimeSpan.FromMinutes(1));
 
 		if (user.PhoneNumber.IsNull()) return false;

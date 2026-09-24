@@ -7,12 +7,13 @@ public sealed class ApiLogMiddleware(RequestDelegate next, ITokenService ts, IAp
 
 	private static readonly HashSet<string> SensitiveFields = new(StringComparer.OrdinalIgnoreCase) {
 		"password", "newPassword", "oldPassword", "currentPassword", "confirmPassword", "repeatPassword",
-		"token", "refreshToken", "accessToken", "apiKey", "apiToken", "otp", "verificationCode", "clientSecret", "secret"
+		"token", "refreshToken", "accessToken", "apiKey", "apiToken", "otp", "verificationCode", "clientSecret", "secret",
+		"client_secret", "access_token", "refresh_token", "api_key", "id_token"
 	};
 
 	private static readonly string[] SecretBodyPaths = ["/api/AppSettings/ReadAll", "/api/AppSettings/Update"];
-
 	private const string Redacted = "***REDACTED***";
+	private const int MaxBodyLength = 20_000;
 
 	public async Task InvokeAsync(HttpContext context) {
 		if (!ShouldHandle(context)) {
@@ -44,9 +45,11 @@ public sealed class ApiLogMiddleware(RequestDelegate next, ITokenService ts, IAp
 		finally {
 			sw.Stop();
 			exception ??= context.Items["ApiLogException"] as Exception;
+			
+			bool shouldLog = context.Response.StatusCode is not (>= 200 and <= 299) || Core.App.Middleware.LogSuccess;
 
 			string responseBody = "";
-			if (IsTextual(context.Response.ContentType))
+			if (shouldLog && IsTextual(context.Response.ContentType))
 				try {
 					captureStream.Seek(0, SeekOrigin.Begin);
 					using StreamReader reader = new(captureStream, leaveOpen: true);
@@ -60,51 +63,57 @@ public sealed class ApiLogMiddleware(RequestDelegate next, ITokenService ts, IAp
 			captureStream.Seek(0, SeekOrigin.Begin);
 			await captureStream.CopyToAsync(originalResponseStream);
 
-			(Guid? UserId, string? UserName, string? Email, string? Roles, string? FirstName, string? LastName, string? PhoneNumber) userData = TryExtractUserData(context, requestBody);
-			int requestSize = context.Request.ContentLength is { } reqLen ? (int)Math.Min(reqLen, int.MaxValue) : Encoding.UTF8.GetByteCount(requestBody);
-			int responseSize = (int)Math.Min(captureStream.Length, int.MaxValue);
-			bool secretBodies = SecretBodyPaths.Any(x => context.Request.Path.StartsWithSegments(x, StringComparison.OrdinalIgnoreCase));
-			string? requestHeaders = null;
-			string? responseHeaders = null;
-			if (Core.App.Middleware.LogHeaders) {
-				requestHeaders = SerializeHeaders(context.Request.Headers);
-				responseHeaders = SerializeHeaders(context.Response.Headers);
-			}
-
-			queue.Enqueue(new ApiLogCreateParams {
-				Method = context.Request.Method,
-				Path = context.Request.Path,
-				StatusCode = context.Response.StatusCode,
-				DurationMs = sw.ElapsedMilliseconds,
-				UserId = userData.UserId,
-				UserName = userData.UserName,
-				UserEmail = userData.Email,
-				UserRoles = userData.Roles,
-				UserFirstName = userData.FirstName,
-				UserLastName = userData.LastName,
-				UserPhoneNumber = userData.PhoneNumber,
-				IpAddress = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim() ?? context.Connection.RemoteIpAddress?.ToString(),
-				QueryString = context.Request.QueryString.HasValue ? context.Request.QueryString.Value : null,
-				RequestBody = secretBodies ? Redacted : RedactBody(requestBody),
-				ResponseBody = secretBodies ? Redacted : RedactBody(responseBody),
-				RequestHeaders = requestHeaders,
-				ResponseHeaders = responseHeaders,
-				UserAgent = context.Request.Headers.UserAgent.FirstOrDefault(),
-				Host = Environment.MachineName,
-				RequestSizeBytes = requestSize,
-				ResponseSizeBytes = responseSize,
-				ExceptionType = exception?.GetType().Name,
-				ExceptionMessage = exception?.Message,
-				StackTrace = exception?.StackTrace
-			});
+			if (shouldLog) EnqueueLog(context, requestBody, responseBody, captureStream.Length, sw.ElapsedMilliseconds, exception);
 		}
+	}
+
+	private void EnqueueLog(HttpContext context, string requestBody, string responseBody, long responseLength, long durationMs, Exception? exception) {
+		(Guid? UserId, string? UserName, string? Email, string? Roles, string? FirstName, string? LastName, string? PhoneNumber) userData = TryExtractUserData(context, requestBody);
+		int requestSize = context.Request.ContentLength is { } reqLen ? (int)Math.Min(reqLen, int.MaxValue) : Encoding.UTF8.GetByteCount(requestBody);
+		int responseSize = (int)Math.Min(responseLength, int.MaxValue);
+		bool secretBodies = SecretBodyPaths.Any(x => context.Request.Path.StartsWithSegments(x, StringComparison.OrdinalIgnoreCase));
+		string? requestHeaders = null;
+		string? responseHeaders = null;
+		if (Core.App.Middleware.LogHeaders) {
+			requestHeaders = SerializeHeaders(context.Request.Headers);
+			responseHeaders = SerializeHeaders(context.Response.Headers);
+		}
+
+		queue.Enqueue(new ApiLogCreateParams {
+			Method = context.Request.Method,
+			Path = context.Request.Path,
+			StatusCode = context.Response.StatusCode,
+			DurationMs = durationMs,
+			UserId = userData.UserId,
+			UserName = userData.UserName,
+			UserEmail = userData.Email,
+			UserRoles = userData.Roles,
+			UserFirstName = userData.FirstName,
+			UserLastName = userData.LastName,
+			UserPhoneNumber = userData.PhoneNumber,
+			IpAddress = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim() ?? context.Connection.RemoteIpAddress?.ToString(),
+			QueryString = context.Request.QueryString.HasValue ? context.Request.QueryString.Value : null,
+			RequestBody = secretBodies ? Redacted : Truncate(RedactBody(requestBody)),
+			ResponseBody = secretBodies ? Redacted : Truncate(RedactBody(responseBody)),
+			RequestHeaders = requestHeaders,
+			ResponseHeaders = responseHeaders,
+			UserAgent = context.Request.Headers.UserAgent.FirstOrDefault(),
+			Host = Environment.MachineName,
+			RequestSizeBytes = requestSize,
+			ResponseSizeBytes = responseSize,
+			ExceptionType = exception?.GetType().Name,
+			ExceptionMessage = exception?.Message,
+			StackTrace = exception?.StackTrace
+		});
 	}
 
 	private static bool ShouldHandle(HttpContext ctx) {
 		if (!Core.App.Middleware.Log) return false;
 		string? path = ctx.Request.Path.Value;
 		if (path == null || !ctx.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase)) return false;
-		return path.Contains("media", StringComparison.OrdinalIgnoreCase) != true && path.Contains("download", StringComparison.OrdinalIgnoreCase) != true;
+		if (ctx.Request.Path.StartsWithSegments("/" + RouteTags.Log.TrimEnd('/'), StringComparison.OrdinalIgnoreCase) ||
+		    ctx.Request.Path.StartsWithSegments("/" + RouteTags.Dashboard.TrimEnd('/'), StringComparison.OrdinalIgnoreCase)) return false;
+		return !path.Contains("media", StringComparison.OrdinalIgnoreCase) && !path.Contains("download", StringComparison.OrdinalIgnoreCase);
 	}
 
 	private static bool IsTextual(string? contentType) =>
@@ -114,7 +123,9 @@ public sealed class ApiLogMiddleware(RequestDelegate next, ITokenService ts, IAp
 		contentType.StartsWith("text/", StringComparison.OrdinalIgnoreCase) ||
 		contentType.StartsWith("application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase);
 
-	private static string RedactBody(string body) {
+	private static string Truncate(string body) => body.Length <= MaxBodyLength ? body : body[..MaxBodyLength] + "...<truncated>";
+
+	internal static string RedactBody(string body) {
 		if (string.IsNullOrWhiteSpace(body)) return body;
 		try {
 			JsonNode? node = JsonNode.Parse(body);

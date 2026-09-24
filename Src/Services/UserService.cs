@@ -42,7 +42,7 @@ public class UserService(
 		Guid userId = p.Id ?? Guid.CreateVersion7();
 		DateTime now = DateTime.UtcNow;
 		List<CategoryEntity>? categories = null;
-		if (p.Categories.IsNotNullOrEmpty()) categories = await db.Set<CategoryEntity>().Where(x => p.Categories!.Contains(x.Id)).ToListAsync(ct);
+		if (p.Categories.IsNotNullOrEmpty()) categories = await db.Set<CategoryEntity>().AsTracking().Where(x => p.Categories!.Contains(x.Id)).ToListAsync(ct);
 
 		UserEntity e = new() {
 			Id = userId,
@@ -89,7 +89,8 @@ public class UserService(
 
 		List<UserEntity> entities = [];
 		List<Guid> categoryIds = p.Users.SelectMany(u => u.Categories ?? []).Distinct().ToList();
-		List<CategoryEntity> categories = await db.Set<CategoryEntity>().Where(c => categoryIds.Contains(c.Id)).ToListAsync(ct);
+		// Tracked so EF links the existing categories instead of trying to INSERT them again.
+		List<CategoryEntity> categories = await db.Set<CategoryEntity>().AsTracking().Where(c => categoryIds.Contains(c.Id)).ToListAsync(ct);
 
 		DateTime now = DateTime.UtcNow;
 		entities.AddRange(p.Users.Select(userParam => {
@@ -211,6 +212,8 @@ public class UserService(
 		if (p.ESignatureRejectionReason != null) e.JsonData.ESignatureRejectionReason = p.ESignatureRejectionReason;
 
 		if (p.Categories.IsNotNullOrEmpty()) {
+			// Load current links first so AddRangeIfNotExist can skip ones that already exist (otherwise a duplicate join row is inserted).
+			await db.Entry(e).Collection(x => x.Categories).LoadAsync(ct);
 			List<CategoryEntity> list = await db.Set<CategoryEntity>().AsTracking().Where(x => p.Categories.Contains(x.Id)).OrderByDescending(x => x.Id).ToListAsync(ct);
 			e.Categories.AddRangeIfNotExist(list);
 		}
@@ -283,7 +286,8 @@ public class UserService(
 			ct
 		);
 
-		string downloadToken = $"{nationalCode} - {firstName} {lastName}";
+		// Unguessable: /api/download/{token} is unauthenticated, so the token itself is the access control.
+		string downloadToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
 		cache.Set(downloadToken, zipBytes, TimeSpan.FromMinutes(30));
 		string downloadUrl = $"{Core.App.BaseUrl}/api/download/{downloadToken}";
 

@@ -52,6 +52,9 @@ public class ParkingService(
 	ILocalizationService ls,
 	ITokenService ts
 ) : IParkingService {
+	private readonly Dictionary<(Guid ParkingId, TagVehicle VehicleType), ParkingTariffEntity?> _tariffs = new();
+	private readonly Dictionary<Guid, ParkingEntity?> _parkings = new();
+
 	public async Task<UResponse<Guid?>> CreateParking(ParkingCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
@@ -93,7 +96,7 @@ public class ParkingService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		ParkingEntity? e = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		ParkingEntity? e = await db.Set<ParkingEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("parkingNotFound"));
 		
 		if (!userData.IsAdmin && userData.Id != e.CreatorId) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
@@ -106,7 +109,7 @@ public class ParkingService(
 		if (p.EntrancePrice.IsNotNull()) e.EntrancePrice = p.EntrancePrice.Value;
 		if (p.HourlyPrice.IsNotNull()) e.HourlyPrice = p.HourlyPrice.Value;
 		if (p.DailyPrice.IsNotNull()) e.DailyPrice = p.DailyPrice.Value;
-		db.Set<ParkingEntity>().Update(e.ApplyUpdateParam<ParkingEntity,TagParking, ParkingJson>(p));
+		e.ApplyUpdateParam<ParkingEntity,TagParking, ParkingJson>(p);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
@@ -125,7 +128,7 @@ public class ParkingService(
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
-		ParkingEntity? parking = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == p.ParkingId, ct);
+		ParkingEntity? parking = await db.Set<ParkingEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.ParkingId, ct);
 		if (parking == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("parkingNotFound"));
 		if (!userData.CanManage(parking.CreatorId, parking.AdminUserIds)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
@@ -151,7 +154,6 @@ public class ParkingService(
 		await db.Set<UserEntity>().AddAsync(user, ct);
 
 		parking.AdminUserIds.Add(userId);
-		db.Set<ParkingEntity>().Update(parking);
 
 		await db.SaveChangesAsync(ct);
 		return new UResponse<Guid?>(userId, Usc.Created);
@@ -177,12 +179,11 @@ public class ParkingService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		ParkingEntity? parking = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == p.ParkingId, ct);
+		ParkingEntity? parking = await db.Set<ParkingEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.ParkingId, ct);
 		if (parking == null) return new UResponse(Usc.NotFound, ls.Get("parkingNotFound"));
 		if (!userData.CanManage(parking.CreatorId, parking.AdminUserIds)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		parking.AdminUserIds.Remove(p.UserId);
-		db.Set<ParkingEntity>().Update(parking);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
@@ -237,7 +238,7 @@ public class ParkingService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		ParkingReportEntity? e = await db.Set<ParkingReportEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		ParkingReportEntity? e = await db.Set<ParkingReportEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("parkingReportNotFound"));
 		
 		if (p.CreatorId.IsNotNull()) e.CreatorId = p.CreatorId.Value;
@@ -246,7 +247,7 @@ public class ParkingService(
 		if (p.StartDate != null) e.StartDate = p.StartDate.Value;
 		if (p.EndDate != null) e.EndDate = p.EndDate;
 		if (p.Amount.IsNotNull()) e.Amount = p.Amount.Value;
-		db.Set<ParkingReportEntity>().Update(e.ApplyUpdateParam<ParkingReportEntity,TagParkingReport, ParkingReportJson>(p));
+		e.ApplyUpdateParam<ParkingReportEntity,TagParkingReport, ParkingReportJson>(p);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
@@ -268,10 +269,9 @@ public class ParkingService(
 		if (parking == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("parkingNotFound"));
 		if (!userData.CanManage(parking.CreatorId, parking.AdminUserIds)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
-		ParkingTariffEntity? existing = await db.Set<ParkingTariffEntity>().FirstOrDefaultAsync(x => x.ParkingId == p.ParkingId && x.VehicleType == p.VehicleType, ct);
+		ParkingTariffEntity? existing = await db.Set<ParkingTariffEntity>().AsTracking().FirstOrDefaultAsync(x => x.ParkingId == p.ParkingId && x.VehicleType == p.VehicleType, ct);
 		if (existing != null) {
 			ApplyTariff(existing, p);
-			db.Set<ParkingTariffEntity>().Update(existing);
 			await db.SaveChangesAsync(ct);
 			return new UResponse<Guid?>(existing.Id);
 		}
@@ -321,7 +321,7 @@ public class ParkingService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		ParkingTariffEntity? e = await db.Set<ParkingTariffEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		ParkingTariffEntity? e = await db.Set<ParkingTariffEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("parkingTariffNotFound"));
 
 		if (p.VehicleType.IsNotNull()) e.VehicleType = p.VehicleType.Value;
@@ -342,7 +342,7 @@ public class ParkingService(
 		if (p.SubscriptionOfficeHoursOnly.IsNotNull()) e.SubscriptionOfficeHoursOnly = p.SubscriptionOfficeHoursOnly.Value;
 		if (p.SubscriptionExpiryReminderDays.IsNotNull()) e.SubscriptionExpiryReminderDays = p.SubscriptionExpiryReminderDays.Value;
 
-		db.Set<ParkingTariffEntity>().Update(e.ApplyUpdateParam<ParkingTariffEntity, TagParkingTariff, ParkingTariffJson>(p));
+		e.ApplyUpdateParam<ParkingTariffEntity, TagParkingTariff, ParkingTariffJson>(p);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
@@ -431,7 +431,7 @@ public class ParkingService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		ParkingSubscriptionEntity? e = await db.Set<ParkingSubscriptionEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		ParkingSubscriptionEntity? e = await db.Set<ParkingSubscriptionEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("parkingSubscriptionNotFound"));
 
 		if (p.CustomerName.IsNotNull()) e.CustomerName = p.CustomerName;
@@ -442,7 +442,7 @@ public class ParkingService(
 		if (p.DailyEntryLimit.IsNotNull()) e.DailyEntryLimit = p.DailyEntryLimit.Value;
 		if (p.OfficeHoursOnly.IsNotNull()) e.OfficeHoursOnly = p.OfficeHoursOnly.Value;
 
-		db.Set<ParkingSubscriptionEntity>().Update(e.ApplyUpdateParam<ParkingSubscriptionEntity, TagParkingSubscription, ParkingSubscriptionJson>(p));
+		e.ApplyUpdateParam<ParkingSubscriptionEntity, TagParkingSubscription, ParkingSubscriptionJson>(p);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
@@ -491,7 +491,7 @@ public class ParkingService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		ParkingPlateFlagEntity? e = await db.Set<ParkingPlateFlagEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		ParkingPlateFlagEntity? e = await db.Set<ParkingPlateFlagEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("plateRecordNotFound"));
 
 		if (p.Reason.IsNotNull()) e.Reason = p.Reason;
@@ -500,7 +500,7 @@ public class ParkingService(
 		if (p.ToDate.IsNotNull()) e.ToDate = p.ToDate;
 		if (p.SpotNumber.IsNotNull()) e.SpotNumber = p.SpotNumber;
 
-		db.Set<ParkingPlateFlagEntity>().Update(e.ApplyUpdateParam<ParkingPlateFlagEntity, TagParkingPlateFlag, ParkingPlateFlagJson>(p));
+		e.ApplyUpdateParam<ParkingPlateFlagEntity, TagParkingPlateFlag, ParkingPlateFlagJson>(p);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
@@ -516,7 +516,7 @@ public class ParkingService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		ParkingEntity? parking = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == p.ParkingId, ct);
+		ParkingEntity? parking = await db.Set<ParkingEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.ParkingId, ct);
 		if (parking == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("parkingNotFound"));
 		if (!userData.CanManage(parking.CreatorId, parking.AdminUserIds)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
@@ -554,7 +554,6 @@ public class ParkingService(
 		await db.Set<ParkingStaffEntity>().AddAsync(staff, ct);
 
 		parking.AdminUserIds.Add(userId);
-		db.Set<ParkingEntity>().Update(parking);
 
 		await db.SaveChangesAsync(ct);
 		return new UResponse<Guid?>(staff.Id, Usc.Created);
@@ -570,21 +569,23 @@ public class ParkingService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		ParkingStaffEntity? e = await db.Set<ParkingStaffEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		ParkingStaffEntity? e = await db.Set<ParkingStaffEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("parkingStaffMemberNotFound"));
+		// Same rule as CreateParkingStaff; without it any signed-in user could reset any staff member's password.
+		ParkingEntity? parking = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == e.ParkingId, ct);
+		if (parking != null && !userData.CanManage(parking.CreatorId, parking.AdminUserIds)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.ShiftTitle.IsNotNull()) e.ShiftTitle = p.ShiftTitle;
 		if (p.MaxDiscountPercent.IsNotNull()) e.MaxDiscountPercent = p.MaxDiscountPercent.Value;
 
 		if (p.Password.IsNotNullOrEmpty()) {
-			UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == e.UserId, ct);
+			UserEntity? user = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == e.UserId, ct);
 			if (user != null) {
 				user.Password = UPasswordHasher.Hash(p.Password);
-				db.Set<UserEntity>().Update(user);
 			}
 		}
 
-		db.Set<ParkingStaffEntity>().Update(e.ApplyUpdateParam<ParkingStaffEntity, TagParkingStaff, ParkingStaffJson>(p));
+		e.ApplyUpdateParam<ParkingStaffEntity, TagParkingStaff, ParkingStaffJson>(p);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
@@ -596,10 +597,10 @@ public class ParkingService(
 		ParkingStaffEntity? e = await db.Set<ParkingStaffEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("parkingStaffMemberNotFound"));
 
-		ParkingEntity? parking = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == e.ParkingId, ct);
+		ParkingEntity? parking = await db.Set<ParkingEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == e.ParkingId, ct);
+		if (parking != null && !userData.CanManage(parking.CreatorId, parking.AdminUserIds)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		if (parking != null) {
 			parking.AdminUserIds.Remove(e.UserId);
-			db.Set<ParkingEntity>().Update(parking);
 		}
 
 		db.Set<ParkingStaffEntity>().Remove(e);
@@ -642,13 +643,12 @@ public class ParkingService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ParkingShiftResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		ParkingShiftEntity? e = await db.Set<ParkingShiftEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		ParkingShiftEntity? e = await db.Set<ParkingShiftEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse<ParkingShiftResponse?>(null, Usc.NotFound, ls.Get("parkingShiftNotFound"));
 
 		e.EndDate = DateTime.UtcNow;
 		e.CountedCash = p.CountedCash;
 		e.Tags = [TagParkingShift.Closed];
-		db.Set<ParkingShiftEntity>().Update(e);
 		await db.SaveChangesAsync(ct);
 
 		ParkingShiftResponse? result = await db.Set<ParkingShiftEntity>().Where(x => x.Id == e.Id).Select(Projections.ParkingShiftSelector(new ParkingShiftSelectorArgs())).FirstOrDefaultAsync(ct);
@@ -703,8 +703,7 @@ public class ParkingService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ParkingReportResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		ParkingEntity? parking = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == p.ParkingId, ct);
-		if (parking == null) return new UResponse<ParkingReportResponse?>(null, Usc.NotFound, ls.Get("parkingNotFound"));
+		if (!await db.Set<ParkingEntity>().AnyAsync(x => x.Id == p.ParkingId, ct)) return new UResponse<ParkingReportResponse?>(null, Usc.NotFound, ls.Get("parkingNotFound"));
 
 		DateTime now = DateTime.UtcNow;
 		DateTime start = p.StartDate ?? now;
@@ -717,10 +716,9 @@ public class ParkingService(
 		ParkingSubscriptionEntity? subscription = await db.Set<ParkingSubscriptionEntity>()
 			.FirstOrDefaultAsync(x => x.ParkingId == p.ParkingId && x.VehicleId == vehicle.Id && x.ExpiryDate > now && !x.Tags.Contains(TagParkingSubscription.Cancelled), ct);
 
-		ParkingShiftEntity? shift = await db.Set<ParkingShiftEntity>().FirstOrDefaultAsync(x => x.ParkingId == p.ParkingId && x.CreatorId == userData.Id && x.EndDate == null, ct);
+		ParkingShiftEntity? shift = await db.Set<ParkingShiftEntity>().AsTracking().FirstOrDefaultAsync(x => x.ParkingId == p.ParkingId && x.CreatorId == userData.Id && x.EndDate == null, ct);
 		if (shift != null) {
 			shift.EntryCount++;
-			db.Set<ParkingShiftEntity>().Update(shift);
 		}
 
 		ParkingPlateFlagEntity? reservation = await db.Set<ParkingPlateFlagEntity>()
@@ -783,8 +781,16 @@ public class ParkingService(
 
 		TagVehicle vehicleType = report.Vehicle.Tags.FirstOrDefault();
 
-		ParkingTariffEntity? tariff = await db.Set<ParkingTariffEntity>().FirstOrDefaultAsync(x => x.ParkingId == report.ParkingId && x.VehicleType == vehicleType, ct);
-		ParkingEntity? parking = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == report.ParkingId, ct);
+		// Memoized per request (the service is scoped): listing inside vehicles builds a bill per row with the same parking/tariffs.
+		if (!_tariffs.TryGetValue((report.ParkingId, vehicleType), out ParkingTariffEntity? tariff)) {
+			tariff = await db.Set<ParkingTariffEntity>().FirstOrDefaultAsync(x => x.ParkingId == report.ParkingId && x.VehicleType == vehicleType, ct);
+			_tariffs[(report.ParkingId, vehicleType)] = tariff;
+		}
+
+		if (!_parkings.TryGetValue(report.ParkingId, out ParkingEntity? parking)) {
+			parking = await db.Set<ParkingEntity>().FirstOrDefaultAsync(x => x.Id == report.ParkingId, ct);
+			_parkings[report.ParkingId] = parking;
+		}
 
 		int totalMinutes = (int)(finish - start).TotalMinutes;
 		ParkingBillResponse bill = new() {
@@ -908,7 +914,7 @@ public class ParkingService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<ParkingReportResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		ParkingReportEntity? report = await db.Set<ParkingReportEntity>().Include(x => x.Vehicle).FirstOrDefaultAsync(x => x.Id == p.ReportId, ct);
+		ParkingReportEntity? report = await db.Set<ParkingReportEntity>().AsTracking().Include(x => x.Vehicle).FirstOrDefaultAsync(x => x.Id == p.ReportId, ct);
 		if (report == null) return new UResponse<ParkingReportResponse?>(null, Usc.NotFound, ls.Get("parkingReportNotFound"));
 		if (report.EndDate.IsNotNull()) return new UResponse<ParkingReportResponse?>(null, Usc.Conflict, ls.Get("thisEntryHasAlreadyBeenClosed"));
 
@@ -923,9 +929,8 @@ public class ParkingService(
 		report.PaymentMethod = method;
 		report.TrackingCode = p.TrackingCode;
 		report.Tags = p.IsOffline ? [TagParkingReport.Closed, TagParkingReport.Offline] : [TagParkingReport.Closed];
-		db.Set<ParkingReportEntity>().Update(report);
 
-		ParkingShiftEntity? shift = await db.Set<ParkingShiftEntity>().FirstOrDefaultAsync(x => x.ParkingId == report.ParkingId && x.CreatorId == userData.Id && x.EndDate == null, ct);
+		ParkingShiftEntity? shift = await db.Set<ParkingShiftEntity>().AsTracking().FirstOrDefaultAsync(x => x.ParkingId == report.ParkingId && x.CreatorId == userData.Id && x.EndDate == null, ct);
 		if (shift != null) {
 			shift.ExitCount++;
 			switch (method) {
@@ -943,7 +948,6 @@ public class ParkingService(
 				default:
 					break;
 			}
-			db.Set<ParkingShiftEntity>().Update(shift);
 		}
 
 		await db.SaveChangesAsync(ct);
@@ -997,11 +1001,12 @@ public class ParkingService(
 		if (p.LongerThanADay == true) q = q.Where(x => x.StartDate <= now.AddDays(-1));
 		if (p.HasSubscription == true) q = q.Where(x => x.SubscriptionId != null);
 
+		int pageSize = Math.Max(1, p.PageSize);
 		int totalCount = await q.CountAsync(ct);
 		List<ParkingReportEntity> reports = await q
 			.OrderBy(x => x.StartDate)
-			.Skip((Math.Max(1, p.PageNumber) - 1) * p.PageSize)
-			.Take(p.PageSize)
+			.Skip((Math.Max(1, p.PageNumber) - 1) * pageSize)
+			.Take(pageSize)
 			.ToListAsync(ct);
 
 		List<ParkingInsideVehicleResponse> items = [];
@@ -1022,8 +1027,8 @@ public class ParkingService(
 
 		return new UResponse<IEnumerable<ParkingInsideVehicleResponse>?>(items) {
 			TotalCount = totalCount,
-			PageSize = p.PageSize,
-			PageCount = (int)Math.Ceiling(totalCount / (decimal)p.PageSize)
+			PageSize = pageSize,
+			PageCount = (int)Math.Ceiling(totalCount / (decimal)pageSize)
 		};
 	}
 }

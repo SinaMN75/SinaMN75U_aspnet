@@ -3,8 +3,8 @@ namespace SinaMN75U.Services;
 public interface IFollowService {
 	Task<UResponse> Follow(FollowParams p, CancellationToken ct);
 	Task<UResponse> Unfollow(FollowParams p, CancellationToken ct);
-	Task<UResponse<IEnumerable<UserEntity>>> ReadFollowers(IdParams p, CancellationToken ct);
-	Task<UResponse<IEnumerable<UserEntity>>> ReadFollowedUsers(IdParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<UserResponse>>> ReadFollowers(IdParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<UserResponse>>> ReadFollowedUsers(IdParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<ProductEntity>>> ReadFollowedProducts(IdParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<CategoryEntity>>> ReadFollowedCategories(IdParams p, CancellationToken ct);
 	Task<UResponse<FollowerFollowingCountResponse>> ReadFollowerFollowingCount(IdParams p, CancellationToken ct);
@@ -93,29 +93,32 @@ public class FollowService(
 		return new UResponse(Usc.Success, ls.Get("youAreNoLongerFollowing"));
 	}
 
-	public async Task<UResponse<IEnumerable<UserEntity>>> ReadFollowers(IdParams p, CancellationToken ct) {
+	// Projected to UserResponse: returning UserEntity serialized every follower's password hash and refresh token.
+	public async Task<UResponse<IEnumerable<UserResponse>>> ReadFollowers(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<IEnumerable<UserEntity>>([], Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
-		if (userData.IsExpired) return new UResponse<IEnumerable<UserEntity>>([], Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (userData == null) return new UResponse<IEnumerable<UserResponse>>([], Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<UserResponse>>([], Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
-		List<UserEntity> followers = await db.Set<FollowEntity>()
+		List<UserResponse> followers = await db.Set<FollowEntity>().AsNoTracking()
 			.Where(x => x.UserId == p.Id)
 			.Select(x => x.Creator)
+			.Select(Projections.UserSelector(new UserSelectorArgs()))
 			.ToListAsync(ct);
 
-		return new UResponse<IEnumerable<UserEntity>>(followers);
+		return new UResponse<IEnumerable<UserResponse>>(followers);
 	}
 
-	public async Task<UResponse<IEnumerable<UserEntity>>> ReadFollowedUsers(IdParams p, CancellationToken ct) {
+	public async Task<UResponse<IEnumerable<UserResponse>>> ReadFollowedUsers(IdParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
-		if (userData == null) return new UResponse<IEnumerable<UserEntity>>([], Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
-		if (userData.IsExpired) return new UResponse<IEnumerable<UserEntity>>([], Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
-		List<UserEntity> following = (await db.Set<FollowEntity>()
-			.Where(x => x.CreatorId == p.Id)
-			.Select(x => x.User)
-			.ToListAsync(ct))!;
+		if (userData == null) return new UResponse<IEnumerable<UserResponse>>([], Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<UserResponse>>([], Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		List<UserResponse> following = await db.Set<FollowEntity>().AsNoTracking()
+			.Where(x => x.CreatorId == p.Id && x.UserId != null)
+			.Select(x => x.User!)
+			.Select(Projections.UserSelector(new UserSelectorArgs()))
+			.ToListAsync(ct);
 
-		return new UResponse<IEnumerable<UserEntity>>(following);
+		return new UResponse<IEnumerable<UserResponse>>(following);
 	}
 
 	public async Task<UResponse<IEnumerable<ProductEntity>>> ReadFollowedProducts(IdParams p, CancellationToken ct) {
@@ -123,7 +126,7 @@ public class FollowService(
 		if (userData == null) return new UResponse<IEnumerable<ProductEntity>>([], Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<IEnumerable<ProductEntity>>([], Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		List<ProductEntity> following = (await db.Set<FollowEntity>()
-			.Where(x => x.CreatorId == p.Id)
+			.Where(x => x.CreatorId == p.Id && x.ProductId != null)
 			.Select(x => x.Product)
 			.ToListAsync(ct))!;
 
@@ -135,20 +138,27 @@ public class FollowService(
 		if (userData == null) return new UResponse<IEnumerable<CategoryEntity>>([], Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<IEnumerable<CategoryEntity>>([], Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		List<CategoryEntity> following = (await db.Set<FollowEntity>()
-			.Where(x => x.CreatorId == p.Id)
+			.Where(x => x.CreatorId == p.Id && x.CategoryId != null)
 			.Select(x => x.Category)
 			.ToListAsync(ct))!;
 
 		return new UResponse<IEnumerable<CategoryEntity>>(following);
 	}
 
-	public async Task<UResponse<FollowerFollowingCountResponse>> ReadFollowerFollowingCount(IdParams p, CancellationToken ct) => new(
-		new FollowerFollowingCountResponse {
-			Followers = await db.Set<FollowEntity>().CountAsync(x => x.UserId == p.Id, ct),
-			FollowedUsers = await db.Set<FollowEntity>().CountAsync(x => x.CreatorId == p.Id, ct),
-			FollowedProducts = await db.Set<FollowEntity>().CountAsync(x => x.CreatorId == p.Id && x.ProductId != null, ct),
-			FollowedCategories = await db.Set<FollowEntity>().CountAsync(x => x.CreatorId == p.Id && x.CategoryId != null, ct)
-		});
+	// One round trip instead of four; FollowedUsers now counts only user follows (it used to include product/category follows).
+	public async Task<UResponse<FollowerFollowingCountResponse>> ReadFollowerFollowingCount(IdParams p, CancellationToken ct) {
+		FollowerFollowingCountResponse? counts = await db.Set<FollowEntity>()
+			.Where(x => x.UserId == p.Id || x.CreatorId == p.Id)
+			.GroupBy(_ => 1)
+			.Select(g => new FollowerFollowingCountResponse {
+				Followers = g.Count(x => x.UserId == p.Id),
+				FollowedUsers = g.Count(x => x.CreatorId == p.Id && x.UserId != null),
+				FollowedProducts = g.Count(x => x.CreatorId == p.Id && x.ProductId != null),
+				FollowedCategories = g.Count(x => x.CreatorId == p.Id && x.CategoryId != null)
+			})
+			.FirstOrDefaultAsync(ct);
+		return new UResponse<FollowerFollowingCountResponse>(counts ?? new FollowerFollowingCountResponse());
+	}
 
 	public async Task<UResponse<bool?>> IsFollowingUser(FollowParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
