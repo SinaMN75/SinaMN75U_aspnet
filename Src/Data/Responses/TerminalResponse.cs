@@ -11,10 +11,10 @@ public class TerminalResponse : BaseResponse<TagTerminal, TerminalJson> {
 	public Guid? MerchantId { get; set; }
 	public MerchantResponse? Merchant { get; set; }
 	
-	public Guid? TerminalBrandId { get; set; }
+	public required Guid TerminalBrandId { get; set; }
 	public TerminalBrandResponse? TerminalBrand { get; set; }
 
-	public Guid? TerminalBrokerId { get; set; }
+	public required Guid TerminalBrokerId { get; set; }
 	public TerminalBrokerResponse? TerminalBroker { get; set; }
 }
 
@@ -36,12 +36,13 @@ public class TerminalImportResponse {
 }
 
 public sealed class TerminalBrandResponse : BaseResponse<TagTerminalBrand, TerminalBrandJson> {
+	public required string Code { get; set; }
 	public required string Title { get; set; }
 	public required string Model { get; set; }
 }
 
 public sealed class TerminalBrokerResponse : BaseResponse<TagTerminalBroker, TerminalBrokerJson> {
+	public required string Code { get; set; }
 	public required string Title { get; set; }
-	
 }
 

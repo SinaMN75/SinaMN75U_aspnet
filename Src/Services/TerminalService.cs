@@ -38,6 +38,8 @@ public class TerminalService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!await db.Set<TerminalBrandEntity>().AnyAsync(x => x.Id == p.TerminalBrandId, ct)) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("terminalBrandNotFound"));
+		if (!await db.Set<TerminalBrokerEntity>().AnyAsync(x => x.Id == p.TerminalBrokerId, ct)) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("terminalBrokerNotFound"));
 
 		TerminalEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -80,12 +82,12 @@ public class TerminalService(
 
 		if (p.TerminalBrandId.IsNotNullOrEmpty()) {
 			if (!await db.Set<TerminalBrandEntity>().AnyAsync(x => x.Id == p.TerminalBrandId, ct)) return new UResponse(Usc.NotFound, ls.Get("terminalBrandNotFound"));
-			e.TerminalBrandId = p.TerminalBrandId;
+			e.TerminalBrandId = p.TerminalBrandId!.Value;
 		}
 
 		if (p.TerminalBrokerId.IsNotNullOrEmpty()) {
 			if (!await db.Set<TerminalBrokerEntity>().AnyAsync(x => x.Id == p.TerminalBrokerId, ct)) return new UResponse(Usc.NotFound, ls.Get("terminalBrokerNotFound"));
-			e.TerminalBrokerId = p.TerminalBrokerId;
+			e.TerminalBrokerId = p.TerminalBrokerId!.Value;
 		}
 
 		e.ApplyUpdateParam<TerminalEntity, TagTerminal, TerminalJson>(p);
@@ -240,7 +242,9 @@ public class TerminalService(
 			Imei = terminal.Imei,
 			TerminalId = terminal.TerminalId,
 			Agreement = terminal.Agreement,
-			MerchantId = terminal.MerchantId
+			MerchantId = terminal.MerchantId,
+			TerminalBrandId = terminal.TerminalBrandId,
+			TerminalBrokerId = terminal.TerminalBrokerId
 		});
 	}
 
@@ -275,7 +279,7 @@ public class TerminalService(
 			.Include(x => x.TerminalBroker)
 			.FirstOrDefaultAsync(x => x.Serial == p.Serial && x.TerminalBrandId == p.TerminalBrandId && x.TerminalBrokerId == p.TerminalBrokerId, ct);
 
-		if (terminal?.TerminalBrand == null || terminal.TerminalBroker == null || terminal.TerminalBrand.Tags.Contains(TagTerminalBrand.SimCard) && terminal.SimCardSerial != p.SimCardSerial) 
+		if (terminal == null || terminal.TerminalBrand.Tags.Contains(TagTerminalBrand.SimCard) && terminal.SimCardSerial != p.SimCardSerial) 
 			return (null, null, null, null, Usc.NotFound, ls.Get("terminalNotFoundCheckYourDetails"));
 
 		MerchantEntity? merchant = await db.Set<MerchantEntity>().AsTracking().Include(x => x.User).FirstOrDefaultAsync(x => x.Id == p.MerchantId, ct);
@@ -292,6 +296,12 @@ public class TerminalService(
 	public async Task<UResponse> BulkCreate(TerminalBulkCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
+		List<Guid> brandIds = p.List.Select(x => x.TerminalBrandId).Distinct().ToList();
+		List<Guid> brokerIds = p.List.Select(x => x.TerminalBrokerId).Distinct().ToList();
+		if (await db.Set<TerminalBrandEntity>().CountAsync(x => brandIds.Contains(x.Id), ct) != brandIds.Count) return new UResponse(Usc.NotFound, ls.Get("terminalBrandNotFound"));
+		if (await db.Set<TerminalBrokerEntity>().CountAsync(x => brokerIds.Contains(x.Id), ct) != brokerIds.Count) return new UResponse(Usc.NotFound, ls.Get("terminalBrokerNotFound"));
 
 		List<TerminalEntity> entities = [];
 
@@ -321,6 +331,8 @@ public class TerminalService(
 		if (p.Imei.IsNotNullOrEmpty()) q = q.Where(x => x.Imei == p.Imei);
 		if (p.SimCardNumber.IsNotNullOrEmpty()) q = q.Where(x => x.SimCardNumber == p.SimCardNumber);
 		if (p.SimCardSerial.IsNotNullOrEmpty()) q = q.Where(x => x.SimCardSerial == p.SimCardSerial);
+		if (p.TerminalBrandId.IsNotNullOrEmpty()) q = q.Where(x => x.TerminalBrandId == p.TerminalBrandId);
+		if (p.TerminalBrokerId.IsNotNullOrEmpty()) q = q.Where(x => x.TerminalBrokerId == p.TerminalBrokerId);
 
 		IQueryable<TerminalResponse> projected = q.Select(Projections.TerminalSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
@@ -417,15 +429,14 @@ public class TerminalService(
 			return new UResponse<TerminalImportResponse?>(null, Usc.BadRequest, ls.Get("InvalidFileFormat"));
 		}
 
-		// One scan of the terminals table instead of four.
 		var existing = await db.Set<TerminalEntity>().Select(x => new { x.Serial, x.Imei, x.SimCardSerial, x.TerminalId }).ToListAsync(ct);
 		HashSet<string> serials = existing.Select(x => x.Serial).ToHashSet(StringComparer.OrdinalIgnoreCase);
 		HashSet<string> imeis = existing.Where(x => x.Imei != null).Select(x => x.Imei!).ToHashSet(StringComparer.OrdinalIgnoreCase);
 		HashSet<string> simSerials = existing.Where(x => x.SimCardSerial != null).Select(x => x.SimCardSerial!).ToHashSet(StringComparer.OrdinalIgnoreCase);
 		HashSet<string> terminalIds = existing.Where(x => x.TerminalId != null).Select(x => x.TerminalId!).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-		HashSet<Guid> brands = (await db.Set<TerminalBrandEntity>().Select(x => x.Id).ToListAsync(ct)).ToHashSet();
-		HashSet<Guid> brokers = (await db.Set<TerminalBrokerEntity>().Select(x => x.Id).ToListAsync(ct)).ToHashSet();
+		Dictionary<string, Guid> brands = await db.Set<TerminalBrandEntity>().ToDictionaryAsync(x => x.Code, x => x.Id, StringComparer.OrdinalIgnoreCase, ct);
+		Dictionary<string, Guid> brokers = await db.Set<TerminalBrokerEntity>().ToDictionaryAsync(x => x.Code, x => x.Id, StringComparer.OrdinalIgnoreCase, ct);
 
 		TerminalImportResponse result = new() { TotalRows = rows.Count };
 		List<TerminalEntity> toAdd = [];
@@ -440,16 +451,16 @@ public class TerminalService(
 			string? imei = Val(row, "Imei").NullIfEmpty();
 			string? simSerial = Val(row, "SimCardSerial").NullIfEmpty();
 			string? terminalId = Val(row, "TerminalId").NullIfEmpty();
-			string? brandId = Val(row, "BrandId").NullIfEmpty();
-			string? brokerId = Val(row, "BrokerId").NullIfEmpty();
+			string brandCode = Val(row, "BrandCode");
+			string brokerCode = Val(row, "BrokerCode");
 
-			if (!Guid.TryParse(brandId, out Guid brand) || !brands.Contains(brand)) {
-				result.SkippedSerials.Add($"{serial} (missing/invalid BrandId)");
+			if (brandCode.IsNullOrEmpty() || !brands.TryGetValue(brandCode, out Guid brand)) {
+				result.SkippedSerials.Add(brandCode.IsNullOrEmpty() ? $"{serial} (missing BrandCode)" : $"{serial} (unknown BrandCode '{brandCode}')");
 				continue;
 			}
 
-			if (!Guid.TryParse(brokerId, out Guid broker) || !brokers.Contains(broker)) {
-				result.SkippedSerials.Add($"{serial} (missing/invalid BrokerId)");
+			if (brokerCode.IsNullOrEmpty() || !brokers.TryGetValue(brokerCode, out Guid broker)) {
+				result.SkippedSerials.Add(brokerCode.IsNullOrEmpty() ? $"{serial} (missing BrokerCode)" : $"{serial} (unknown BrokerCode '{brokerCode}')");
 				continue;
 			}
 
@@ -461,7 +472,6 @@ public class TerminalService(
 				continue;
 			}
 
-			// The device type lives on the brand now, so an imported row only carries its status.
 			List<TagTerminal> tags = TryParseTag(Val(row, "Tag1"), out TagTerminal tag1) ? [tag1] : [TagTerminal.NoAssigned];
 			if (TryParseTag(Val(row, "Tag2"), out TagTerminal tag2) && !tags.Contains(tag2)) tags.Add(tag2);
 
@@ -502,12 +512,16 @@ public class TerminalService(
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
+		string code = p.Code.Trim();
+		if (await db.Set<TerminalBrandEntity>().AnyAsync(x => x.Code == code, ct)) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("thisCodeAlreadyExists"));
+
 		TerminalBrandEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
 			JsonData = new TerminalBrandJson(),
 			Tags = p.Tags,
 			CreatorId = p.CreatorId ?? userData.Id,
+			Code = code,
 			Title = p.Title,
 			Model = p.Model
 		};
@@ -521,6 +535,8 @@ public class TerminalService(
 		IQueryable<TerminalBrandEntity> q = db.Set<TerminalBrandEntity>().ApplyReadParams(p);
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title == p.Title);
+		if (p.Model.IsNotNullOrEmpty()) q = q.Where(x => x.Model == p.Model);
+		if (p.Code.IsNotNullOrEmpty()) q = q.Where(x => x.Code == p.Code);
 
 		IQueryable<TerminalBrandResponse> projected = q.Select(Projections.TerminalBrandSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
@@ -533,9 +549,16 @@ public class TerminalService(
 		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		TerminalBrandEntity? e = await db.Set<TerminalBrandEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("terminalNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("terminalBrandNotFound"));
+
+		if (p.Code.IsNotNullOrEmpty()) {
+			string code = p.Code!.Trim();
+			if (await db.Set<TerminalBrandEntity>().AnyAsync(x => x.Code == code && x.Id != e.Id, ct)) return new UResponse(Usc.Conflict, ls.Get("thisCodeAlreadyExists"));
+			e.Code = code;
+		}
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
+		if (p.Model.IsNotNullOrEmpty()) e.Model = p.Model;
 
 		e.ApplyUpdateParam<TerminalBrandEntity, TagTerminalBrand, TerminalBrandJson>(p);
 
@@ -548,9 +571,8 @@ public class TerminalService(
 		if (userData == null) return new UResponse<TerminalResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		if (!userData.IsAdmin) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
-
+		if (await db.Set<TerminalEntity>().AnyAsync(x => x.TerminalBrandId == p.Id, ct)) return new UResponse(Usc.Conflict, ls.Get("thisBrandHasTerminalsAndCannotBeDeleted"));
 		await db.Set<TerminalBrandEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
-
 		return new UResponse();
 	}
 
@@ -558,6 +580,9 @@ public class TerminalService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
+		string code = p.Code.Trim();
+		if (await db.Set<TerminalBrokerEntity>().AnyAsync(x => x.Code == code, ct)) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("thisCodeAlreadyExists"));
 
 		TerminalBrokerEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -579,6 +604,7 @@ public class TerminalService(
 			},
 			Tags = p.Tags,
 			CreatorId = p.CreatorId ?? userData.Id,
+			Code = code,
 			Title = p.Title,
 		};
 
@@ -591,6 +617,7 @@ public class TerminalService(
 		IQueryable<TerminalBrokerEntity> q = db.Set<TerminalBrokerEntity>().ApplyReadParams(p);
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title == p.Title);
+		if (p.Code.IsNotNullOrEmpty()) q = q.Where(x => x.Code == p.Code);
 
 		IQueryable<TerminalBrokerResponse> projected = q.Select(Projections.TerminalBrokerSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
@@ -603,7 +630,15 @@ public class TerminalService(
 		if (!userData.IsAdmin) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		TerminalBrokerEntity? e = await db.Set<TerminalBrokerEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
-		if (e == null) return new UResponse(Usc.NotFound, ls.Get("terminalNotFound"));
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("terminalBrokerNotFound"));
+
+		if (p.Code.IsNotNullOrEmpty()) {
+			string code = p.Code!.Trim();
+			if (await db.Set<TerminalBrokerEntity>().AnyAsync(x => x.Code == code && x.Id != e.Id, ct)) return new UResponse(Usc.Conflict, ls.Get("thisCodeAlreadyExists"));
+			e.Code = code;
+		}
+
+		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
 
 		if (p.RegistrationNumber.IsNotNullOrEmpty()) e.JsonData.RegistrationNumber = p.RegistrationNumber;
 		if (p.NationalCode.IsNotNullOrEmpty()) e.JsonData.NationalCode = p.NationalCode;
@@ -629,6 +664,8 @@ public class TerminalService(
 		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		if (!userData.IsAdmin) return new UResponse<TerminalSupportPasswordResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
+		if (await db.Set<TerminalEntity>().AnyAsync(x => x.TerminalBrokerId == p.Id, ct)) return new UResponse(Usc.Conflict, ls.Get("thisBrokerHasTerminalsAndCannotBeDeleted"));
+
 		await db.Set<TerminalBrokerEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
 		return new UResponse();
@@ -638,7 +675,8 @@ public class TerminalService(
 		List<Dictionary<string, string>> rows = [];
 		using SpreadsheetDocument doc = SpreadsheetDocument.Open(stream, false);
 		WorkbookPart wb = doc.WorkbookPart!;
-		WorksheetPart wsPart = wb.WorksheetParts.First();
+		Sheet firstSheet = wb.Workbook!.Sheets!.Elements<Sheet>().First();
+		WorksheetPart wsPart = (WorksheetPart)wb.GetPartById(firstSheet.Id!.Value!);
 		SharedStringTablePart? sst = wb.SharedStringTablePart;
 
 		Row[] sheetRows = wsPart.Worksheet!.GetFirstChild<SheetData>()!.Elements<Row>().ToArray();
@@ -708,13 +746,11 @@ public class TerminalService(
 			template.RemoveUnmatchedTokens = true;
 
 			template
-				// ---- Header ----
 				.Set("broker_day", PersianDateTime.Now.Day.ToString())
 				.Set("broker_month", PersianDateTime.Now.Month.ToString())
 				.SetLtr("broker_contract_number", terminal.Serial)
 				.SetImageBase64("broker_logo", broker.JsonData.LogoBase64, attributes: "alt=\"\"")
 
-				// Broker side
 				.Set("broker_company_name", broker.Title)
 				.SetLtr("broker_registration_number", broker.JsonData.RegistrationNumber ?? "---")
 				.SetLtr("broker_national_id", broker.JsonData.NationalCode ?? "---")
@@ -724,7 +760,6 @@ public class TerminalService(
 				.SetLtr("broker_phone", broker.JsonData.PhoneNumber ?? "---")
 				.SetLtr("broker_support_phone", broker.JsonData.PhoneNumber ?? "---")
 
-				// User / acceptor side
 				.Set("user_full_name", $"{user.FirstName ?? "---"} {user.LastName ?? "---"}")
 				.Set("user_father_name", user.JsonData.FatherName ?? "---")
 				.Set("user_id_number", user.NationalCode ?? "---")
@@ -735,11 +770,9 @@ public class TerminalService(
 				.SetLtr("user_mobile", user.PhoneNumber ?? "---")
 				.SetLtr("user_landline", user.LandLine ?? "---")
 
-				// Property plaque
 				.Set("user_plaque_number", "---")
 				.Set("user_main_plaque", "---")
 
-				// signature box
 				.Set("broker_name1", broker.JsonData.Sign1Owner ?? "---")
 				.Set("broker_name2", broker.JsonData.Sign2Owner ?? "---")
 				.SetImageBase64("broker_signatures1", broker.JsonData.Sign1Base64)

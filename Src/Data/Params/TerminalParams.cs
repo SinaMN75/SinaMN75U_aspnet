@@ -62,11 +62,16 @@ public class TerminalReadParams : BaseReadParams<TagTerminal> {
 	public string? TerminalId { get; set; }
 	public string? InsId { get; set; }
 	public Guid? MerchantId { get; set; }
+	public Guid? TerminalBrandId { get; set; }
+	public Guid? TerminalBrokerId { get; set; }
 
 	public TerminalSelectorArgs SelectorArgs { get; set; } = new();
 }
 
 public class TerminalBrandCreateParams : BaseCreateParams<TagTerminalBrand> {
+	[UValidationRequired("codeIsRequired")]
+	public string Code { get; set; } = null!;
+
 	[UValidationRequired("TitleRequired")]
 	public string Title { get; set; } = null!;
 
@@ -75,17 +80,22 @@ public class TerminalBrandCreateParams : BaseCreateParams<TagTerminalBrand> {
 }
 
 public class TerminalBrandReadParams : BaseReadParams<TagTerminalBrand> {
+	public string? Code { get; set; }
 	public string? Title { get; set; }
 	public string? Model { get; set; }
 	public TerminalBrandSelectorArgs SelectorArgs { get; set; } = new();
 }
 
 public class TerminalBrandUpdateParams : BaseUpdateParams<TagTerminalBrand> {
+	public string? Code { get; set; }
 	public string? Title { get; set; }
 	public string? Model { get; set; }
 }
 
 public class TerminalBrokerCreateParams : BaseCreateParams<TagTerminalBroker> {
+	[UValidationRequired("codeIsRequired")]
+	public string Code { get; set; } = null!;
+
 	[UValidationRequired("TitleRequired")]
 	public string Title { get; set; } = null!;
 
@@ -121,12 +131,14 @@ public class TerminalBrokerCreateParams : BaseCreateParams<TagTerminalBroker> {
 }
 
 public class TerminalBrokerReadParams : BaseReadParams<TagTerminalBroker> {
+	public string? Code { get; set; }
 	public string? Title { get; set; }
 
 	public TerminalBrokerSelectorArgs SelectorArgs { get; set; } = new();
 }
 
 public class TerminalBrokerUpdateParams : BaseUpdateParams<TagTerminalBroker> {
+	public string? Code { get; set; }
 	public string? Title { get; set; }
 
 	public string? RegistrationNumber { get; set; }

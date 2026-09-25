@@ -719,8 +719,9 @@ public static class Projections {
 		Expression<Func<TerminalBrandEntity, TerminalBrandResponse>> selector = x => new TerminalBrandResponse {
 			Id = x.Id,
 			Tags = x.Tags,
+			Code = x.Code,
 			Title = x.Title,
-			Model =  x.Model,
+			Model = x.Model,
 			JsonData = x.JsonData,
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,
@@ -735,6 +736,7 @@ public static class Projections {
 			JsonData = x.JsonData,
 			CreatorId = x.CreatorId,
 			CreatedAt = x.CreatedAt,
+			Code = x.Code,
 			Title = x.Title,
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator),
 		};

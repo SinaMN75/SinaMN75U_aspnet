@@ -54,6 +54,7 @@ public class DbExceptionMiddleware(RequestDelegate next, ILocalizationService ls
 		"IX_Terminal_Imei" => ls.Get("thisIMEIAlreadyExists"),
 		"IX_Txn_TrackingNumber" => ls.Get("thisTrackingNumberAlreadyExists"),
 		"IX_Vehicles_NumberPlate" => ls.Get("thisNumberPlateAlreadyExists"),
+		"IX_TerminalBrands_Code" or "IX_TerminalBroker_Code" => ls.Get("thisCodeAlreadyExists"),
 		_ when constraint?.StartsWith("PK_", StringComparison.Ordinal) == true => ls.Get("thisIdAlreadyExists"),
 		_ => ls.Get("thisRecordAlreadyExists")
 	};
@@ -66,6 +67,8 @@ public class DbExceptionMiddleware(RequestDelegate next, ILocalizationService ls
 		if (constraint.Contains("ContentId")) return ls.Get("contentNotFound");
 		if (constraint.Contains("MerchantId")) return ls.Get("merchantNotFound");
 		if (constraint.Contains("TerminalId")) return ls.Get("terminalNotFound");
+		if (constraint.Contains("TerminalBrandId")) return ls.Get("terminalBrandNotFound");
+		if (constraint.Contains("TerminalBrokerId")) return ls.Get("terminalBrokerNotFound");
 		if (constraint.Contains("BankAccountId")) return ls.Get("bankAccountNotFound");
 		if (constraint.Contains("AddressId")) return ls.Get("addressNotFound");
 		if (constraint.Contains("WalletId") || constraint.Contains("WalletTxnId")) return ls.Get("walletNotFound");
