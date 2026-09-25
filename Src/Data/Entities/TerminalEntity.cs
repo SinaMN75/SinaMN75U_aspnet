@@ -38,10 +38,9 @@ public sealed class TerminalEntity : BaseEntity<TagTerminal, TerminalJson> {
 public sealed class TerminalJson : BaseJson;
 
 [Table("TerminalBrands")]
-[Microsoft.EntityFrameworkCore.Index(nameof(Code), IsUnique = true, Name = "IX_TerminalBrands_Code")]
 public sealed class TerminalBrandEntity : BaseEntity<TagTerminalBrand, TerminalBrandJson> {
 	[Required, MaxLength(40)]
-	public required string Code { get; set; }
+	public string Code { get; set; } = "mm";
 
 	[Required, MaxLength(40)]
 	public required string Title { get; set; }
@@ -56,10 +55,9 @@ public sealed class TerminalBrandJson : BaseJson;
 
 
 [Table("TerminalBroker")]
-[Microsoft.EntityFrameworkCore.Index(nameof(Code), IsUnique = true, Name = "IX_TerminalBroker_Code")]
 public sealed class TerminalBrokerEntity : BaseEntity<TagTerminalBroker, TerminalBrokerJson> {
 	[Required, MaxLength(40)]
-	public required string Code { get; set; }
+	public string Code { get; set; } = "mm";
 
 	[Required, MaxLength(40)]
 	public required string Title { get; set; }
