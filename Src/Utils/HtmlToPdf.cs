@@ -357,19 +357,40 @@ namespace SinaMN75U.Utils.HtmlToPdfEngine {
 			foreach (var path in o.FontFiles) {
 				try { foreach (var f in FontCache.ReadFaces(path)) Fonts.AddUserFace(f); } catch { }
 			}
-			foreach (var (data, family) in o.FontBlobs) {
-				try {
-					int n = FontFile.FaceCount(data);
-					for (int i = 0; i < n; i++) {
-						var ff = FontFile.Load(data, i);
-						var info = FontCache.InfoFrom(ff, null, i);
-						info.Data = data;
-						if (family != null) info.Families = new List<string> { family }.Concat(ff.Families).ToList();
-						Fonts.AddUserFace(info);
-					}
-				}
-				catch { }
+			foreach (var (data, family) in o.FontBlobs) AddFontBlob(data, family);
+			foreach (var data in EmbeddedFonts.Value) AddFontBlob(data, null);
+		}
+
+		static readonly Lazy<List<byte[]>> EmbeddedFonts = new(() => {
+			var list = new List<byte[]>();
+			var asm = typeof(HtmlToPdf).Assembly;
+			string[] ext = { ".ttf", ".otf", ".ttc", ".woff", ".woff2" };
+			foreach (var name in asm.GetManifestResourceNames()) {
+				if (!ext.Any(e => name.EndsWith(e, StringComparison.OrdinalIgnoreCase))) continue;
+				using var st = asm.GetManifestResourceStream(name);
+				if (st == null) continue;
+				using var ms = new MemoryStream();
+				st.CopyTo(ms);
+				var data = ms.ToArray();
+				if (name.EndsWith(".woff", StringComparison.OrdinalIgnoreCase)) data = Woff.Decode(data) ?? data;
+				else if (name.EndsWith(".woff2", StringComparison.OrdinalIgnoreCase)) data = Woff2.Decode(data) ?? data;
+				list.Add(data);
 			}
+			return list;
+		});
+
+		void AddFontBlob(byte[] data, string family) {
+			try {
+				int n = FontFile.FaceCount(data);
+				for (int i = 0; i < n; i++) {
+					var ff = FontFile.Load(data, i);
+					var info = FontCache.InfoFrom(ff, null, i);
+					info.Data = data;
+					if (family != null) info.Families = new List<string> { family }.Concat(ff.Families).ToList();
+					Fonts.AddUserFace(info);
+				}
+			}
+			catch { }
 		}
 
 		public byte[] LoadBytes(string url) {

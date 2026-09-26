@@ -15,4 +15,8 @@
         <PackageReference Include="LinqKit" Version="1.3.11" />
     </ItemGroup>
 
+    <ItemGroup>
+        <EmbeddedResource Include="Src\Fonts\**\*.ttf;Src\Fonts\**\*.otf;Src\Fonts\**\*.ttc;Src\Fonts\**\*.woff;Src\Fonts\**\*.woff2" />
+    </ItemGroup>
+
 </Project>
