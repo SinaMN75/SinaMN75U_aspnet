@@ -11,6 +11,8 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "amountRequired", "Amount Required." },
 		{ "bankAccountIsRequired", "Bank Account is Required." },
 		{ "businessTitleIsRequired", "Business Title is Required." },
+		{ "brandIsRequired", "Brand is Required." },
+		{ "brokerIsRequired", "Broker is Required." },
 		{ "cityCodeIsRequired", "City Code is Required." },
 		{ "commentIsRequired", "Comment is required." },
 		{ "dailyPriceRequired", "Daily Price Required." },
@@ -39,7 +41,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "priceIsRequired", "Price is Required" },
 		{ "productIsRequired", "Product Is Required." },
 		{ "required", "Required" },
-		{ "serialRequired", "Serial Required." },
+		{ "serialIsRequired", "Serial Required." },
 		{ "startDateIsRequired", "Start Date is Required" },
 		{ "subtitleIsRequired", "Subtitle is Required" },
 		{ "tagsIsRequired", "Tags is Required" },
@@ -58,8 +60,8 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "signatureRequired", "Signature Required." },
 		{ "billIdRequired", "Bill Id Required." },
 		{ "paymentIdRequired", "Payment Id Required." },
-		{ "modelIsRequired", "Model Required." },
-		
+		{ "modelIsRequired", "Model is Required." },
+		{ "merchantIsRequired", "Merchant is Required." },
 
 		// ===== Invalid =====
 		{ "addressIsNotValid", "Address is Not Valid." },
@@ -398,6 +400,8 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "amountRequired", "مبلغ الزامی است" },
 		{ "bankAccountIsRequired", "شماره حساب الزامی است" },
 		{ "businessTitleIsRequired", "عنوان کسب و کار الزامی است." },
+		{ "brandIsRequired", "برند الزامی است." },
+		{ "brokerIsRequired", "کارگزار الزامی است." },
 		{ "cityCodeIsRequired", "کد شهر الزامی است" },
 		{ "commentIsRequired", "نظر الزامی است." },
 		{ "dailyPriceRequired", "مبلغ روزانه الزامی است" },
@@ -426,7 +430,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "priceIsRequired", "قیمت الزامی است" },
 		{ "productIsRequired", "محصول الزامی است." },
 		{ "required", "مورد نیاز" },
-		{ "serialRequired", "سریال الزامی است" },
+		{ "serialIsRequired", "سریال الزامی است" },
 		{ "startDateIsRequired", "تاریخ شروع الزامی است" },
 		{ "subtitleIsRequired", "عنوان فرعی الزامی است" },
 		{ "tagsIsRequired", "برچسب‌ها الزامی است" },
@@ -446,6 +450,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "billIdRequired",  "شناسه قبض الزامی است." },
 		{ "paymentIdRequired",  "شناسه پرداخت الزامی است." },
 		{ "modelIsRequired",  "مدل الزامی است." },
+		{ "merchantIsRequired", "پذیرنده الزامی است." },
 
 		// ===== Invalid =====
 		{ "addressIsNotValid", "آدرس صحیح نیست." },

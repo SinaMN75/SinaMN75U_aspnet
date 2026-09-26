@@ -1,11 +1,14 @@
 namespace SinaMN75U.Data.Params;
 
 public class TerminalCreateParams : BaseCreateParams<TagTerminal> {
-	[UValidationRequired("serialRequired")]
+	[UValidationRequired("serialIsRequired")]
 	public string Serial { get; set; } = null!;
 
-	public required Guid TerminalBrandId { get; set; }
-	public required Guid TerminalBrokerId { get; set; }
+	[UValidationRequired("brandIsRequired")]
+	public Guid TerminalBrandId { get; set; }
+
+	[UValidationRequired("brokerIsRequired")]
+	public Guid TerminalBrokerId { get; set; }
 
 	public string? SimCardNumber { get; set; }
 	public string? SimCardSerial { get; set; }
@@ -29,13 +32,23 @@ public class TerminalUpdateParams : BaseUpdateParams<TagTerminal> {
 }
 
 public class TerminalAssignParams : BaseParams {
-	public string? Title { get; set; }
+	[UValidationRequired("titleIsRequired")]
+	public string Title { get; set; } = null!;
+
+	[UValidationRequired("serialIsRequired")]
 	public string Serial { get; set; } = null!;
-	public string? SimCardSerial { get; set; }
+
+	[UValidationRequired("merchantIsRequired")]
 	public Guid MerchantId { get; set; }
+
+	[UValidationRequired("brandIsRequired")]
+	public Guid TerminalBrandId { get; set; }
+
+	[UValidationRequired("brokerIsRequired")]
+	public Guid TerminalBrokerId { get; set; }
+	
+	public string? SimCardSerial { get; set; }
 	public bool AcceptedAgreement { get; set; }
-	public Guid? TerminalBrandId { get; set; }
-	public Guid? TerminalBrokerId { get; set; }
 }
 
 public class TerminalRejectParams : BaseParams {
