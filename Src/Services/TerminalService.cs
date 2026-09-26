@@ -130,7 +130,7 @@ public class TerminalService(
 		if (pdf == null) return new UResponse<TerminalResponse?>(null, Usc.InternalServerError, ls.Get("generatingTheAgreementFailed"));
 		string agreement = UserFileStore.SaveBytes(env.WebRootPath, userData.Id, $"terminal-{terminal.Serial}.pdf", pdf);
 
-		terminal.JsonData.Detail1 = p.Title ?? "";
+		terminal.JsonData.Detail1 = p.Title;
 		terminal.JsonData.Detail2 = "";
 		terminal.MerchantId = merchant.Id;
 		terminal.Agreement = agreement;
@@ -271,15 +271,12 @@ public class TerminalService(
 		TerminalAssignParams p,
 		CancellationToken ct
 	) {
-		if (p.TerminalBrandId == null) return (null, null, null, null, Usc.BadRequest, ls.Get("terminalBrandIsRequired"));
-		if (p.TerminalBrokerId == null) return (null, null, null, null, Usc.BadRequest, ls.Get("terminalBrokerIsRequired"));
-
 		TerminalEntity? terminal = await db.Set<TerminalEntity>().AsTracking()
 			.Include(x => x.TerminalBrand)
 			.Include(x => x.TerminalBroker)
 			.FirstOrDefaultAsync(x => x.Serial == p.Serial && x.TerminalBrandId == p.TerminalBrandId && x.TerminalBrokerId == p.TerminalBrokerId, ct);
 
-		if (terminal == null || terminal.TerminalBrand.Tags.Contains(TagTerminalBrand.SimCard) && terminal.SimCardSerial != p.SimCardSerial) 
+		if (terminal is not { MerchantId: null, TerminalId: null } || terminal.TerminalBrand.Tags.Contains(TagTerminalBrand.SimCard) && terminal.SimCardSerial != p.SimCardSerial) 
 			return (null, null, null, null, Usc.NotFound, ls.Get("terminalNotFoundCheckYourDetails"));
 
 		MerchantEntity? merchant = await db.Set<MerchantEntity>().AsTracking().Include(x => x.User).FirstOrDefaultAsync(x => x.Id == p.MerchantId, ct);
