@@ -37,6 +37,9 @@ public static class IpgRoutes {
 
 			if (done != true) {
 				data.Paid = await s.Verify(data, c);
+				// Web clients left the app for the gateway in the same tab; send the browser back with the result.
+				string? returnUrl = await s.ReturnUrl(data.TrackingNumber, c);
+				if (returnUrl != null) return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, "ipgResult", data.ToJson().ToBase58()));
 				return Results.Redirect($"{Core.App.BaseUrl}/{RouteTags.Ipg}Verify?additionalData={data.ToJson().ToBase58()}&done=true");
 			}
 
