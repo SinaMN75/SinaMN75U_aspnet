@@ -16,5 +16,4 @@ public sealed class TxnEntity : BaseEntity<TagTxn, TxnJson> {
 
 public class TxnJson : BaseJson {
 	public List<KeyValue> KeyValues { get; set; } = [];
-	public string? ReturnUrl { get; set; }
 }

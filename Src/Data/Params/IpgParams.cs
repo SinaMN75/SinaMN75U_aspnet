@@ -9,9 +9,6 @@ public sealed class IpgPayParams : BaseParams {
 	public string? ChargeMobileNumber { get; set; }
 	public TagSimOperator? TopUpType { get; set; }
 	public IEnumerable<IpgMultiplexedAccountParams>? MultiplexedAccounts { get; set; }
-
-	// Web clients: the app URL the browser returns to after Verify, with the result in `ipgResult`.
-	public string? ReturnUrl { get; set; }
 }
 
 public sealed class IpgMultiplexedAccountParams {

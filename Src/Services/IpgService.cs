@@ -5,7 +5,6 @@ namespace SinaMN75U.Services;
 public interface IIpgService {
 	Task<UResponse<IpgPayResponse?>> Pay(IpgPayParams p, CancellationToken ct);
 	Task<bool> Verify(IpgAdditionalData additionalData, CancellationToken ct);
-	Task<string?> ReturnUrl(string? trackingNumber, CancellationToken ct);
 }
 
 public class IpgService(
@@ -68,7 +67,7 @@ public class IpgService(
 			Amount = p.Amount,
 			TrackingNumber = trackingNumber,
 			Tags = TxnTags(kind, p.Tag),
-			JsonData = new TxnJson { Detail1 = Detail(kind, p, bill), KeyValues = TxnKeyValues(kind, p, bill), ReturnUrl = ValidReturnUrl(p.ReturnUrl) }
+			JsonData = new TxnJson { Detail1 = Detail(kind, p, bill), KeyValues = TxnKeyValues(kind, p, bill) }
 		};
 
 		IpgAdditionalData additionalData = new() {
@@ -220,15 +219,6 @@ public class IpgService(
 			return txn.Tags.Contains(TagTxn.Paid);
 		}
 	}
-
-	// Read from the stored txn, never from the query string, so Verify cannot be turned into an open redirect.
-	public async Task<string?> ReturnUrl(string? trackingNumber, CancellationToken ct) {
-		if (trackingNumber.IsNullOrEmpty()) return null;
-		return await db.Set<TxnEntity>().Where(x => x.TrackingNumber == trackingNumber).Select(x => x.JsonData.ReturnUrl).FirstOrDefaultAsync(ct);
-	}
-
-	private static string? ValidReturnUrl(string? url) =>
-		Uri.TryCreate(url, UriKind.Absolute, out Uri? uri) && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp) ? uri.AbsoluteUri : null;
 
 	private static TagIpgPayment Kind(IpgPayParams p) {
 		if (p.BillId.IsNotNullOrEmpty() && p.PaymentId.IsNotNullOrEmpty()) return TagIpgPayment.Bill;
