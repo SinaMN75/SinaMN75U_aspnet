@@ -40,6 +40,8 @@ public static class IpgRoutes {
 				return Results.Redirect($"{Core.App.BaseUrl}/{RouteTags.Ipg}Verify?additionalData={data.ToJson().ToBase58()}&done=true");
 			}
 
+			string? returnUrl = Core.App.Ipg.ReturnUrl.IsNullOrEmpty() ? null : Core.App.Ipg.ReturnUrl;
+
 			return Results.Content(
 				$$"""
 				  <!DOCTYPE html>
@@ -55,18 +57,26 @@ public static class IpgRoutes {
 				          .success { color: #4CAF50; }
 				          .error { color: #f44336; }
 				          h2 { color: #333; }
+				          .back { display: inline-block; margin-top: 16px; padding: 12px 28px; border-radius: 14px; background: #667eea; color: white; text-decoration: none; }
 				      </style>
 				  </head>
 				  <body>
 				      <div class='container'>
 				          <div class='icon {{(data.Paid ? "success" : "error")}}'>{{(data.Paid ? "✅" : "❌")}}</div>
 				          <h2>{{(data.Paid ? "پرداخت موفق" : "پرداخت ناموفق")}}</h2>
+				          {{(returnUrl == null ? "" : $"<a class='back' href='{WebUtility.HtmlEncode(returnUrl)}'>بازگشت به برنامه</a>")}}
 				      </div>
 				      <script>
 				          (function() {
 				              try {
 				                  window.parent.postMessage({ source: 'u_ipg', additionalData: '{{additionalData}}' }, '*');
 				              } catch (e) {}
+				              // In an iframe the app reads the message above. Opened in a browser instead: send the user back.
+				              if (window.parent !== window) return;
+				              try { window.close(); } catch (e) {} // web: the tab the app opened closes itself
+				              var returnUrl = {{JsonSerializer.Serialize(returnUrl)}};
+				              // Native app: reopen it. The delay lets an in-app webview close itself first.
+				              if (returnUrl) setTimeout(function() { location.href = returnUrl; }, 1000);
 				          })();
 				      </script>
 				  </body>
