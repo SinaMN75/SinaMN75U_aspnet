@@ -1,5 +1,3 @@
-using Microsoft.EntityFrameworkCore.Storage;
-
 namespace SinaMN75U.Services;
 
 public interface IGoldService {
