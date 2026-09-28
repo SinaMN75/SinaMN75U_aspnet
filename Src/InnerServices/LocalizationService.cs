@@ -353,6 +353,13 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "theGoldTransactionWasNotFound", "The gold transaction was not found." },
 		{ "theGoldOrderWasNotCompletedAnyReservedAmountHasBeenReturned", "The gold order was not completed. Any reserved amount has been returned." },
 		{ "theGoldOrderIsBeingProcessedAndWillBeSettledShortly", "The gold order is being processed and will be settled shortly." },
+		{ "theGoldServiceIsTemporarilyUnavailablePleaseTryAgainLater", "The gold service is temporarily unavailable. Please try again later." },
+		{ "buyingGoldIsClosedRightNow", "Buying gold is not possible right now. Please try again later." },
+		{ "sellingGoldIsClosedRightNow", "Selling gold is not possible right now. Please try again later." },
+		{ "goldTradingIsClosedOnThisSideRightNow", "Trading on this side is not possible right now." },
+		{ "aRequestedGoldScopeIsNotEnabledForThisAccount", "At least one requested gold scope is not enabled for this account." },
+		{ "theGoldProviderWalletIsLocked", "The gold provider wallet is locked." },
+		{ "theGoldProviderAccountBalanceIsNotEnough", "The gold provider business account balance is not enough." },
 
 		// ===== Bill =====
 		{ "billIdLengthMustBeBetween6And13Digits", "Bill Id length must be between 6 and 13 digits." },
@@ -742,6 +749,13 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "theGoldTransactionWasNotFound", "تراکنش طلا یافت نشد." },
 		{ "theGoldOrderWasNotCompletedAnyReservedAmountHasBeenReturned", "سفارش طلا انجام نشد. مبلغ رزروشده به کیف پول شما بازگشت." },
 		{ "theGoldOrderIsBeingProcessedAndWillBeSettledShortly", "سفارش طلا در حال پردازش است و به‌زودی تسویه می‌شود." },
+		{ "theGoldServiceIsTemporarilyUnavailablePleaseTryAgainLater", "سرویس طلا موقتاً در دسترس نیست. لطفاً بعداً تلاش کنید." },
+		{ "buyingGoldIsClosedRightNow", "در حال حاضر امکان خرید طلا وجود ندارد. لطفاً بعداً تلاش کنید." },
+		{ "sellingGoldIsClosedRightNow", "در حال حاضر امکان فروش طلا وجود ندارد. لطفاً بعداً تلاش کنید." },
+		{ "goldTradingIsClosedOnThisSideRightNow", "معامله در این سمت در حال حاضر امکان‌پذیر نیست." },
+		{ "aRequestedGoldScopeIsNotEnabledForThisAccount", "دست‌کم یکی از دسترسی‌های درخواستی طلا برای این حساب فعال نیست." },
+		{ "theGoldProviderWalletIsLocked", "کیف پول سرویس‌دهنده طلا قفل است." },
+		{ "theGoldProviderAccountBalanceIsNotEnough", "موجودی حساب کسب‌وکار نزد سرویس‌دهنده طلا کافی نیست." },
 
 		// ===== Bill =====
 		{ "billIdLengthMustBeBetween6And13Digits", "طول شناسه قبض باید بین ۶ تا ۱۳ رقم باشد." },

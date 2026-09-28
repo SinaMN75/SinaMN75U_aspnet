@@ -22,6 +22,7 @@ public sealed class GoldCreateOrderParams : BaseParams {
 public sealed class GoldReadOrdersParams : BaseParams {
 	public string? Cursor { get; set; }
 	public int Limit { get; set; } = 20;
+	public string? IdempotencyKey { get; set; }
 }
 
 public sealed class GoldReadOrderParams : BaseParams {

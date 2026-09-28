@@ -7,7 +7,7 @@ public sealed class ApiLogMiddleware(RequestDelegate next, ITokenService ts, IAp
 
 	private static readonly HashSet<string> SensitiveFields = new(StringComparer.OrdinalIgnoreCase) {
 		"password", "newPassword", "oldPassword", "currentPassword", "confirmPassword", "repeatPassword",
-		"token", "refreshToken", "accessToken", "apiKey", "apiToken", "otp", "verificationCode", "clientSecret", "secret",
+		"token", "refreshToken", "accessToken", "apiKey", "apiToken", "rawToken", "otp", "verificationCode", "clientSecret", "secret",
 		"client_secret", "access_token", "refresh_token", "api_key", "id_token"
 	};
 

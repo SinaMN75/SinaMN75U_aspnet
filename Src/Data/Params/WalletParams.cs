@@ -33,6 +33,9 @@ public sealed class WalletTransferParams : BaseParams {
 
 	/// <summary>Internal only (not bindable from JSON). See <see cref="WalletPurchaseParams.AllowOverdraft"/>.</summary>
 	[JsonIgnore] public bool AllowOverdraft { get; set; }
+
+	/// <summary>Internal only (not bindable from JSON). A caller-defined key (e.g. a gold settlement step) used to make a transfer happen at most once.</summary>
+	[JsonIgnore] public string? Detail2 { get; set; }
 }
 
 public sealed class WalletTxnReadParams : BaseReadParams<TagWalletTxn> {

@@ -13,6 +13,8 @@ public sealed class GoldQuoteResponse {
 	public decimal? BaseUnitPrice { get; set; }
 	public decimal? BuyUnitPrice { get; set; }
 	public decimal? SellUnitPrice { get; set; }
+	public bool CanBuy { get; set; }
+	public bool CanSell { get; set; }
 	public DateTime? UpdatedAt { get; set; }
 }
 
@@ -140,10 +142,18 @@ public sealed class GoldApiTokenResponse {
 
 public sealed class GoldUserBalanceResponse {
 	public required decimal Balance { get; set; }
+	public decimal? BaseUnitPrice { get; set; }
 	public decimal? BuyUnitPrice { get; set; }
 	public decimal? SellUnitPrice { get; set; }
+	public bool CanBuy { get; set; }
+	public bool CanSell { get; set; }
+
+	// Null when no price is available; the client must show "unknown", never 0.
 	public decimal? Value { get; set; }
 	public string? Unit { get; set; }
+
+	// Why the price is missing (already localized); null when the quote loaded.
+	public string? PriceError { get; set; }
 	public DateTime? UpdatedAt { get; set; }
 }
 
