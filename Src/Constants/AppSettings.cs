@@ -57,6 +57,7 @@ public sealed class SmsPanel {
 	public required string LoginOtpPattern { get; init; }
 	public required string SupportPasswordOtp { get; init; }
 	public required string ApiKey { get; init; }
+	public required string BaseUrl { get; init; }
 }
 
 public sealed class ItHub {
@@ -64,6 +65,8 @@ public sealed class ItHub {
 	public required string ClientSecret { get; init; }
 	public required string UserName { get; init; }
 	public required string Password { get; set; }
+	public required string GatewayBaseUrl { get; set; }
+	public required string ApiBaseUrl { get; set; }
 }
 
 public sealed class Mobtakeran {
@@ -107,6 +110,7 @@ public sealed class Ipg {
 	public required string Token { get; set; }
 	public required string CallBackUrl { get; set; }
 	public required string ReturnUrl { get; set; }
+	public required string BaseUrl { get; set; }
 }
 
 public sealed class DefaultUsers {

@@ -20,7 +20,7 @@ public class SmsNotificationService(
 			SmsPanel sms = Core.App.SmsPanel;
 			switch (sms.Tag) {
 				case TagSmsPanel.Ghasedak: {
-					await http.Post("https://api.ghasedak.me/v2/verification/send/simple", new {
+					await http.Post($"{sms.BaseUrl}v2/verification/send/simple", new {
 							receptor = mobileNumber,
 							type = 1,
 							template = sms.LoginOtpPattern,
@@ -33,7 +33,7 @@ public class SmsNotificationService(
 					break;
 				}
 				case TagSmsPanel.Kavenegar: {
-					await http.Post($"https://api.kavenegar.com/v1/{sms.ApiKey}/verify/lookup.json?receptor={mobileNumber}&token={param1}&template={template}", new { });
+					await http.Post($"{sms.BaseUrl}v1/{sms.ApiKey}/verify/lookup.json?receptor={mobileNumber}&token={param1}&template={template}", new { });
 					break;
 				}
 				case TagSmsPanel.NikSms:

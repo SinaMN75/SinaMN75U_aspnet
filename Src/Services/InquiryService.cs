@@ -619,21 +619,21 @@ public class InquiryService(
 
 	protected virtual Task<HttpResponseMessage?> SendMobileAndNationalCodeVerification(VerifyNationalCodeAndPhoneNumber p, string accessToken, CancellationToken ct) =>
 		httpClient.Post(
-			"https://gateway.itsaaz.ir/hub/api/v1/Shahkar/MixVerifyMobile",
+			$"{_itHub.GatewayBaseUrl}hub/api/v1/Shahkar/MixVerifyMobile",
 			new { nationalCode = p.NationalCode, mobile = p.PhoneNumber },
 			new Dictionary<string, string> { { "Authorization", $"Bearer {accessToken}" } }
 		);
 
 	protected virtual Task<HttpResponseMessage?> SendZipCodeToAddressDetail(ZipCodeToAddressDetailParams p, string accessToken, CancellationToken ct) =>
 		httpClient.Post(
-			"https://gateway.itsaaz.ir/hub/api/v1/Address/DetailsTypeA",
+			$"{_itHub.GatewayBaseUrl}hub/api/v1/Address/DetailsTypeA",
 			new { postcode = p.ZipCode, orderId = 1 },
 			new Dictionary<string, string> { { "Authorization", $"Bearer {accessToken}" }, { "Accept", "application/json" } }
 		);
 
 	protected virtual Task<HttpResponseMessage?> SendVehicleViolationsDetail(VehicleViolationDetailParams p, string accessToken, CancellationToken ct) =>
 		httpClient.Post(
-			"https://api-ithub.itsaaz.ir/api/v1/CarServices/VehicleviolationsDetails",
+			$"{_itHub.ApiBaseUrl}api/v1/CarServices/VehicleviolationsDetails",
 			new {
 				nationalCode = p.NationalCode,
 				cellPhone = p.PhoneNumber,
@@ -647,14 +647,14 @@ public class InquiryService(
 
 	protected virtual Task<HttpResponseMessage?> SendDrivingLicenceDetail(DrivingLicenceDetailParams p, string accessToken, CancellationToken ct) =>
 		httpClient.Post(
-			"https://gateway.itsaaz.ir/hub/api/v1/CarServices/GavahinameStatusInquiry",
+			$"{_itHub.GatewayBaseUrl}hub/api/v1/CarServices/GavahinameStatusInquiry",
 			new { nationalCode = p.NationalCode, cellphone = p.PhoneNumber },
 			new Dictionary<string, string> { { "Authorization", $"Bearer {accessToken}" }, { "Accept", "application/json" } }
 		);
 
 	protected virtual Task<HttpResponseMessage?> SendLicencePlateDetail(LicencePlateDetailParams p, string accessToken, CancellationToken ct) =>
 		httpClient.Post(
-			"https://api-ithub.itsaaz.ir/api/v1/CarServices/PlateHistoryInquiry",
+			$"{_itHub.ApiBaseUrl}api/v1/CarServices/PlateHistoryInquiry",
 			new {
 				nationalCode = p.NationalCode,
 				plk1 = p.LicencePlate[..2],
@@ -667,14 +667,14 @@ public class InquiryService(
 
 	protected virtual Task<HttpResponseMessage?> SendDrivingLicenceNegativePoint(DrivingLicenceNegativePointParams p, string accessToken, CancellationToken ct) =>
 		httpClient.Post(
-			"https://api-ithub.itsaaz.ir/api/v1/CarServices/DriversLicensePointsInquiry",
+			$"{_itHub.ApiBaseUrl}api/v1/CarServices/DriversLicensePointsInquiry",
 			new { licenseNo = p.DrivingLicenceNumber, nationalCode = p.NationalCode, cellphone = p.PhoneNumber },
 			new Dictionary<string, string> { { "Authorization", $"Bearer {accessToken}" }, { "Accept", "application/json" } }
 		);
 
 	protected virtual Task<HttpResponseMessage?> SendFreewayTolls(FreewayTollsParams p, string accessToken, CancellationToken ct) =>
 		httpClient.Post(
-			"https://api-ithub.itsaaz.ir/api/v1/CarServices/GetFreewayTollsQuery",
+			$"{_itHub.ApiBaseUrl}api/v1/CarServices/GetFreewayTollsQuery",
 			new {
 				requestId = "1",
 				plk1 = p.LicencePlate[..2],
@@ -687,7 +687,7 @@ public class InquiryService(
 
 	protected virtual Task<HttpResponseMessage?> SendIBanToBankAccountDetail(IBanToBankAccountDetailParams p, string accessToken, CancellationToken ct) =>
 		httpClient.Post(
-			"https://api-ithub.itsaaz.ir/api/v1/CarServices/DriversLicensePointsInquiry",
+			$"{_itHub.ApiBaseUrl}api/v1/CarServices/DriversLicensePointsInquiry",
 			new { iban = p.IBan },
 			new Dictionary<string, string> { { "Authorization", $"Bearer {accessToken}" }, { "Accept", "application/json" } }
 		);
@@ -716,7 +716,7 @@ public class InquiryService(
 
 	private async Task<GetAccessTokenResponse?> RequestAccessToken(CancellationToken ct) {
 		HttpResponseMessage? response = await httpClient.Post(
-			"https://gateway.itsaaz.ir/sts/connect/token",
+			$"{_itHub.GatewayBaseUrl}sts/connect/token",
 			new Dictionary<string, string> {
 				{ "grant_type", "password" },
 				{ "client_id", _itHub.ClientId },
@@ -726,7 +726,7 @@ public class InquiryService(
 			}
 		);
 		if (response == null) {
-			ULog.Error("ItHub token request failed: no response from gateway.itsaaz.ir/sts/connect/token");
+			ULog.Error($"ItHub token request failed: no response from {_itHub.GatewayBaseUrl}sts/connect/token");
 			return null;
 		}
 

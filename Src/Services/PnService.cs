@@ -640,7 +640,7 @@ public class PnService(
 		}
 
 		HttpResponseMessage? response = await http.Post(
-			"https://gateway.itsaaz.ir/hub/api/v1/Address/DetailsTypeA",
+			$"{Core.App.ItHub.GatewayBaseUrl}hub/api/v1/Address/DetailsTypeA",
 			new { postcode = p.ZipCode, orderId = 1 },
 			new Dictionary<string, string> { { "Authorization", $"Bearer {tokenResponse.AccessToken}" }, { "Accept", "application/json" } }
 		);
@@ -678,7 +678,7 @@ public class PnService(
 	private async Task<GetAccessTokenResponse?> GetAccessToken(CancellationToken ct) {
 		ItHub itHub = Core.App.ItHub;
 		HttpResponseMessage? response = await http.Post(
-			"https://gateway.itsaaz.ir/sts/connect/token",
+			$"{itHub.GatewayBaseUrl}sts/connect/token",
 			new Dictionary<string, string> {
 				{ "grant_type", "password" },
 				{ "client_id", itHub.ClientId },
