@@ -69,13 +69,24 @@ public class ChargeInternetService(
 
 	private static long _reserveCounter;
 
+	// States kept in VasEntity.JsonData.Detail2 for a Mobtakeran purchase.
+	private const string VasDone = "mobtakeran:done";
+	private const string VasPending = "mobtakeran:pending";
+	private const string VasRefunded = "mobtakeran:refunded";
+	private const string VasUnknown = "mobtakeran:unknown";
+
 	private enum TxnState { Success, Failed, Unknown }
 
-	public static decimal? PayableAmount(string operatorId, decimal nominalAmount, bool isPin) {
+	// What the user pays for a predefined amount (amount + ChargeInternetTaxPercent), or null when the amount is not one of the
+	// operator's predefined amounts for that type. The amount itself is what is sent to Mobtakeran.
+	public static decimal? PayableAmount(string operatorId, decimal amount, bool isPin, string type = "0") {
 		ChargeInternet? op = Core.App.ChargeInternet.FirstOrDefault(x => ((int)x.Operator).ToString() == operatorId);
-		List<ChargeInternetPreDefinedAmounts>? amounts = isPin ? op?.PinAmountsList : op?.TopupAmountsList;
-		if (amounts == null || amounts.All(x => x.Amount != nominalAmount)) return null;
-		return Math.Round(nominalAmount * (100 + Core.App.ChargeInternetTaxPercent) / 100, 0, MidpointRounding.AwayFromZero);
+		List<ChargeInternetPreDefinedAmounts> amounts = (isPin ? op?.PinAmountsList : op?.TopupAmountsList) ?? [];
+		int typeCode = int.TryParse(type, out int t) ? t : 0;
+		List<ChargeInternetPreDefinedAmounts> forType = amounts.Where(x => x.Type == typeCode).ToList();
+		if (forType.Count == 0) forType = amounts.Where(x => x.Type == 0).ToList();
+		if (forType.All(x => x.Amount != amount)) return null;
+		return Math.Round(amount * (100 + Core.App.ChargeInternetTaxPercent) / 100, 0, MidpointRounding.AwayFromZero);
 	}
 
 	public async Task<UResponse<ChargeInternetReserveResponse?>> Pin(ReserveChargeParams p, CancellationToken ct) {
@@ -88,7 +99,7 @@ public class ChargeInternetService(
 		return await Purchase(p, userData, new PurchaseRequest {
 			ReservePath = "api/v2/Pin/Reserve",
 			ReserveAttachments = new Dictionary<string, string> {
-				{ "amount", payableAmount.Value.ToIntString() },
+				{ "amount", p.Amount.ToIntString() },
 				{ "operator_id", p.SimType },
 				{ "device", Device }
 			},
@@ -107,17 +118,18 @@ public class ChargeInternetService(
 		if (userData.IsExpired) return Error<ChargeInternetReserveResponse>(Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		string? subscriber = NormalizeMobile(p.PhoneNumber);
 		if (subscriber == null) return Error<ChargeInternetReserveResponse>(Usc.BadRequest, ls.Get("theMobileNumberIsNotValid"));
-		decimal? payableAmount = PayableAmount(p.OperatorId, p.Amount, false);
+		string type = TopupType(p.OperatorId, p.ChargeType);
+		decimal? payableAmount = PayableAmount(p.OperatorId, p.Amount, false, type);
 		if (payableAmount == null) return Error<ChargeInternetReserveResponse>(Usc.BadRequest, ls.Get("theSelectedChargeAmountIsNotOfferedByThisOperator"));
 
 		return await Purchase(p, userData, new PurchaseRequest {
 			ReservePath = "api/v2/Topup/Reserve",
 			ReserveAttachments = new Dictionary<string, string> {
 				{ "subscriber", subscriber },
-				{ "amount", payableAmount.Value.ToIntString() },
+				{ "amount", p.Amount.ToIntString() },
 				{ "operator_id", p.OperatorId },
 				{ "device", Device },
-				{ "type", TopupType(p.OperatorId, p.ChargeType) }
+				{ "type", type }
 			},
 			OperatorId = p.OperatorId,
 			Amount = payableAmount.Value,
@@ -300,7 +312,7 @@ public class ChargeInternetService(
 			keyValues.Add(new KeyValue { Key = ULocalizedConstants.Reference, Value = reference! });
 
 			await Debit(p, userData.Id, r, reserve, keyValues);
-			await SaveVas(p, userData.Id, r, reference!, pin);
+			await SaveVas(p, userData.Id, r, reserve, reference!, pin, pending ? VasPending : VasDone);
 
 			if (pending) {
 				ULog.Error($"Mobtakeran reserve {reserve} / reference {reference}: result is unknown (code {finalReply?.Code}); wallet charged, watching it in the background.");
@@ -369,8 +381,10 @@ public class ChargeInternetService(
 		if (result.Status != Usc.Success) ULog.Error($"Mobtakeran reserve {reserve}: the charge was sent but the wallet debit of user {userId} failed: {result.Message}");
 	}
 
-	// Only a record for reports: a failure here must not turn a completed purchase into an error for the user.
-	private async Task SaveVas(BaseParams p, Guid userId, PurchaseRequest r, string reference, string? pin) {
+	// The purchase record: Detail1 keeps the reserve and Detail2 the Mobtakeran state, so a purchase that is still unknown
+	// when the server restarts is picked up again (see RecoverPending). A failure here must not turn a completed purchase
+	// into an error for the user.
+	private async Task SaveVas(BaseParams p, Guid userId, PurchaseRequest r, string reserve, string reference, string? pin, string state) {
 		try {
 			await vs.Create(new VasCreateParams {
 				Id = Guid.CreateVersion7(),
@@ -380,7 +394,9 @@ public class ChargeInternetService(
 				CreatorId = userId,
 				Amount = r.Amount,
 				AuthorizeCode = reference,
-				ChargePin = pin
+				ChargePin = pin,
+				Detail1 = reserve,
+				Detail2 = state
 			}, CancellationToken.None);
 		}
 		catch (Exception e) {
@@ -407,9 +423,11 @@ public class ChargeInternetService(
 			switch (StateOf(statusReply)) {
 				case TxnState.Success:
 					await CompleteDebit(charge, statusReply!);
+					await SetVasState(charge.Reserve, VasDone, statusReply!.Text("pin"));
 					return;
 				case TxnState.Failed:
 					await Refund(charge);
+					await SetVasState(charge.Reserve, VasRefunded, null);
 					return;
 				case TxnState.Unknown:
 				default:
@@ -417,8 +435,36 @@ public class ChargeInternetService(
 			}
 		}
 
+		await SetVasState(charge.Reserve, VasUnknown, null);
 		ULog.Error($"Mobtakeran reserve {charge.Reserve} / reference {charge.Reference} of user {charge.UserId} ({charge.Amount}) is still unknown; reconcile it manually.");
 	}
+
+	// Called once at startup (ChargeInternetRecoveryService): the in-process checks die with the server, so every purchase
+	// that was still unknown is watched again. Refunds are keyed by the reserve, so a purchase is never refunded twice.
+	private async Task RecoverPending(CancellationToken ct) {
+		DateTime since = DateTime.UtcNow.AddDays(-7);
+		List<VasEntity> pending = await db.Set<VasEntity>().Where(x => x.JsonData.Detail2 == VasPending && x.CreatedAt > since).ToListAsync(ct);
+		foreach (VasEntity e in pending) {
+			TagWalletTxn tag = e.Tags.Contains(TagVas.ChargePin) ? TagWalletTxn.ChargeSimPin
+				: e.Tags.Contains(TagVas.InternetPackage) ? TagWalletTxn.InternetSim
+				: TagWalletTxn.ChargeSimTopup;
+			List<KeyValue> keyValues = [new KeyValue { Key = ULocalizedConstants.Reference, Value = e.AuthorizeCode }];
+			Watch(new PendingCharge(e.CreatorId, e.JsonData.Detail1, e.AuthorizeCode, e.Amount, tag, keyValues));
+		}
+
+		if (pending.Count > 0) ULog.Info($"Mobtakeran: watching {pending.Count} purchase(s) that were still unknown before the restart.");
+	}
+
+	private async Task SetVasState(string reserve, string state, string? pin) {
+		VasEntity? e = await db.Set<VasEntity>().AsTracking().FirstOrDefaultAsync(x => x.JsonData.Detail1 == reserve && x.JsonData.Detail2 == VasPending);
+		if (e == null) return;
+		e.JsonData.Detail2 = state;
+		if (pin.IsNotNullOrEmpty()) e.JsonData.ChargePin = pin;
+		await db.SaveChangesAsync();
+	}
+
+	public static Task RecoverPendingOnStartup(IServiceProvider services, CancellationToken ct) =>
+		ActivatorUtilities.CreateInstance<ChargeInternetService>(services).RecoverPending(ct);
 
 	// A PIN bought while the result was unknown only arrives now, so it is written into the user's wallet transaction.
 	private async Task CompleteDebit(PendingCharge charge, MobtakeranReply statusReply) {
@@ -600,7 +646,11 @@ public class ChargeInternetService(
 	// unique and it still fits in a long, which is how Mobtakeran returns it.
 	private static string NewReserve() => $"{DateTime.UtcNow:yyMMddHHmmssfff}{Interlocked.Increment(ref _reserveCounter) % 1000:D3}";
 
-	private static string LocalDateTime() => DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ");
+	// Mobtakeran refuses a request whose date is not its (Iran) working day, so the time is sent in Iran time with its offset
+	// (Iran has no daylight saving since 2022). Before, server-local time was sent with a "Z", which on a UTC server gave
+	// yesterday's date between 00:00 and 03:30 in Iran. InvariantCulture keeps the Gregorian calendar on a fa-IR server.
+	private static string LocalDateTime() =>
+		DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromMinutes(210)).ToString("yyyy-MM-ddTHH:mm:sszzz", CultureInfo.InvariantCulture);
 
 	// Accepts 0912..., 912..., +98912..., 0098912... and Persian / Arabic digits; returns 09XXXXXXXXX or null.
 	private static string? NormalizeMobile(string? number) {
@@ -680,6 +730,24 @@ public class ChargeInternetService(
 	}
 }
 
+// Resumes the checks of purchases that were still unknown when the server stopped. Waits a minute so startup (migrations,
+// seeding) is finished first.
+public class ChargeInternetRecoveryService(IServiceScopeFactory scopeFactory) : BackgroundService {
+	protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+		try {
+			await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+			using IServiceScope scope = scopeFactory.CreateScope();
+			await ChargeInternetService.RecoverPendingOnStartup(scope.ServiceProvider, stoppingToken);
+		}
+		catch (OperationCanceledException) {
+			// The server is stopping.
+		}
+		catch (Exception e) {
+			ULog.Error($"Mobtakeran: could not resume the unknown purchases, reconcile them manually. {e.Message}");
+		}
+	}
+}
+
 public class ChargeInternetServiceFake(
 	ILocalizationService ls,
 	ITokenService ts,
@@ -732,7 +800,7 @@ public class ChargeInternetServiceFake(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null || SimulateUnauthorized) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
-		decimal? payableAmount = ChargeInternetService.PayableAmount(p.OperatorId, p.Amount, false);
+		decimal? payableAmount = ChargeInternetService.PayableAmount(p.OperatorId, p.Amount, false, p.ChargeType);
 		if (payableAmount == null) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BadRequest, ls.Get("theSelectedChargeAmountIsNotOfferedByThisOperator"));
 		if (SimulateLowBalance || !await walletService.HasEnoughBalance(userData.Id, payableAmount.Value, ct)) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.BalanceIsLow, ls.Get("yourBalanceIsNotEnough"));
 		if (SimulateUpstreamFailure) return new UResponse<ChargeInternetReserveResponse?>(null, Usc.ThirdPartyError, ls.Get("chargeServiceIsNotAvailable"));

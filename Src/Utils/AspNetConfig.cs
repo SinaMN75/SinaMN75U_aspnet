@@ -117,6 +117,7 @@ public static partial class AspNetConfig {
 			builder.Services.AddScoped<IInquiryService, InquiryService>();
 			builder.Services.AddScoped<ISmsNotificationService, SmsNotificationService>();
 			builder.Services.AddScoped<IChargeInternetService, ChargeInternetService>();
+			builder.Services.AddHostedService<ChargeInternetRecoveryService>();
 			builder.Services.AddScoped<IGoldService, GoldService>();
 		}
 	}
