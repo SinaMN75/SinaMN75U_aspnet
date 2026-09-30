@@ -736,3 +736,12 @@ public enum TagGoldTxn {
 	Failed = 203,
 	Cancelled = 204
 }
+
+public enum TagAppVersion {
+	Android = 101,
+	Ios = 102,
+	Windows = 103,
+	MacOs = 104,
+	Linux = 105,
+	Web = 106
+}

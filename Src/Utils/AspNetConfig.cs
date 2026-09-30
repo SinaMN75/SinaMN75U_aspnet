@@ -125,6 +125,7 @@ public static partial class AspNetConfig {
 	public static void UseUServices(this WebApplication app) {
 		app.MigrateDatabase();
 		app.SeedDefaultUsers();
+		app.SeedDefaultAppVersions();
 		app.UseCors();
 		app.UseStaticFiles();
 		app.UseUSwagger();
@@ -203,6 +204,16 @@ public static partial class AspNetConfig {
 		}
 		catch (Exception ex) {
 			ULog.Error(ex, "Seed users failed");
+		}
+	}
+
+	private static void SeedDefaultAppVersions(this WebApplication app) {
+		using IServiceScope scope = app.Services.CreateScope();
+		try {
+			scope.ServiceProvider.GetRequiredService<IDataSeedService>().SeedAppVersions().GetAwaiter().GetResult();
+		}
+		catch (Exception ex) {
+			ULog.Error(ex, "Seed app versions failed");
 		}
 	}
 

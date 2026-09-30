@@ -2,6 +2,7 @@ namespace SinaMN75U.Services;
 
 public interface IDataSeedService {
 	Task<UResponse> SeedUsers();
+	Task<UResponse> SeedAppVersions();
 	Task<UResponse> SeedCategories();
 	Task<UResponse> SeedContents();
 	Task<UResponse<List<KeyValue>?>> SeedHotelsAndDorms(CancellationToken ct = default);
@@ -47,6 +48,33 @@ public class DataSeedService(DbContext db) : IDataSeedService {
 		await db.Set<UserEntity>().AddRangeAsync(toAdd);
 		await db.SaveChangesAsync();
 		ULog.Success($"Seed users: inserted {string.Join(", ", toAdd.Select(x => x.UserName))}.");
+		return new UResponse();
+	}
+
+	public async Task<UResponse> SeedAppVersions() {
+		List<TagAppVersion> existing = await db.Set<AppVersionEntity>().SelectMany(x => x.Tags).ToListAsync();
+		List<AppVersionEntity> toAdd = new List<(TagAppVersion Platform, string[] Stores)> {
+				(TagAppVersion.Android, ["Google Play", "کافه بازار", "مایکت", "Amazon Appstore", "دانلود مستقیم"]),
+				(TagAppVersion.Ios, ["App Store", "سیب‌اپ", "سیبچه", "اناردونی"]),
+				(TagAppVersion.Windows, ["Microsoft Store", "دانلود مستقیم"]),
+				(TagAppVersion.MacOs, ["App Store", "دانلود مستقیم"])
+			}
+			.Where(x => !existing.Contains(x.Platform))
+			.Select(x => new AppVersionEntity {
+				Id = Guid.CreateVersion7(),
+				CreatedAt = DateTime.UtcNow,
+				CreatorId = Core.App.Users.SystemAdmin.Id,
+				Tags = [x.Platform],
+				LatestBuildNumber = 0,
+				MinBuildNumber = 0,
+				JsonData = new AppVersionJson { Links = x.Stores.Select(t => new AppVersionLink { Title = t, Url = "" }).ToList() }
+			})
+			.ToList();
+		if (toAdd.Count == 0) return new UResponse();
+
+		await db.Set<AppVersionEntity>().AddRangeAsync(toAdd);
+		await db.SaveChangesAsync();
+		ULog.Success($"Seed app versions: inserted {string.Join(", ", toAdd.Select(x => x.Tags.First()))}.");
 		return new UResponse();
 	}
 

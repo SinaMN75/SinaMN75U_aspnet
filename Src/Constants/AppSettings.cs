@@ -4,6 +4,15 @@ public sealed class AppSettingsUpdateParams : BaseParams {
 	public required AppSettings Settings { get; set; }
 }
 
+public sealed class AppVersionUpdateParams : BaseParams {
+	public required TagAppVersion Platform { get; set; }
+	public int LatestBuildNumber { get; set; }
+	public int MinBuildNumber { get; set; }
+	public string? LatestVersionName { get; set; }
+	public string? Description { get; set; }
+	public List<AppVersionLink> Links { get; set; } = [];
+}
+
 public sealed class AppSettings {
 	public required string BaseUrl { get; set; }
 	public required string ApiKey { get; set; }
