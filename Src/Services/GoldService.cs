@@ -29,7 +29,7 @@ public class GoldService(
 	IWalletService wallet,
 	DbContext db
 ) : IGoldService {
-	private const string ClientPath = "api/v1/client/";
+	protected const string ClientPath = "api/v1/client/";
 	private const int MinPageLimit = 1;
 	private const int MaxPageLimit = 100;
 	private const int OrderAttempts = 3;
@@ -734,7 +734,7 @@ public class GoldService(
 	}
 
 	private async Task<GoldResult> CallWithBasic(HttpMethod method, string path, object? body, CancellationToken ct) {
-		if (!Core.App.Gold.ClientKey.IsNotNullOrEmpty() || !Core.App.Gold.ClientSecret.IsNotNullOrEmpty())
+		if (!HasClientCredentials)
 			return GoldResult.Fail(Usc.InternalServerError, ls.Get("theGoldProviderIsNotConfigured"));
 
 		string basic = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{Core.App.Gold.ClientKey}:{Core.App.Gold.ClientSecret}"));
@@ -813,19 +813,26 @@ public class GoldService(
 		return revoked;
 	}
 
-	private async Task<GoldResult> Send(HttpMethod method, string path, object? body, string authorization, CancellationToken ct) {
+	protected virtual bool HasClientCredentials => Core.App.Gold.ClientKey.IsNotNullOrEmpty() && Core.App.Gold.ClientSecret.IsNotNullOrEmpty();
+
+	// The only place that talks to Taline; everything else (parsing, errors, settlement) runs on what this returns.
+	protected virtual async Task<HttpResponseMessage?> SendRequest(HttpMethod method, string path, object? body, Dictionary<string, string> headers, CancellationToken ct) {
 		string uri = $"{Core.App.Gold.BaseUrl.TrimEnd('/')}/{path}";
+		return method.Method switch {
+			"GET" => await httpClient.Get(uri, headers),
+			"DELETE" => await httpClient.Delete(uri, headers),
+			_ => await httpClient.Post(uri, body, headers)
+		};
+	}
+
+	private async Task<GoldResult> Send(HttpMethod method, string path, object? body, string authorization, CancellationToken ct) {
 		Dictionary<string, string> headers = new() {
 			{ "Authorization", authorization },
 			{ "Accept", "application/json" },
 			{ "Accept-Language", httpContext.HttpContext?.Request.Headers["Locale"].FirstOrDefault() == "fa" ? "fa" : "en" }
 		};
 
-		HttpResponseMessage? response = method.Method switch {
-			"GET" => await httpClient.Get(uri, headers),
-			"DELETE" => await httpClient.Delete(uri, headers),
-			_ => await httpClient.Post(uri, body, headers)
-		};
+		HttpResponseMessage? response = await SendRequest(method, path, body, headers, ct);
 
 		if (response == null) return GoldResult.Fail(Usc.ThirdPartyError, ls.Get("theGoldProviderIsNotReachableRightNow"), networkError: true);
 
@@ -1059,5 +1066,192 @@ public class GoldService(
 
 		public static GoldResult Fail(Usc status, string message, int httpCode = 0, string? errorCode = null, bool networkError = false) =>
 			new() { Ok = false, Status = status, Message = message, HttpCode = httpCode, ErrorCode = errorCode, NetworkError = networkError };
+	}
+}
+
+// Used when Core.App.Test is on: Taline is never called, but everything on our side (wallet transfers, the gold ledger,
+// settlement, idempotency) runs for real against in-memory orders and tokens that always fill at fixed prices.
+public class GoldServiceFake(
+	IHttpClientService httpClient,
+	ILocalizationService ls,
+	ITokenService ts,
+	IHttpContextAccessor httpContext,
+	IWalletService wallet,
+	DbContext db
+) : GoldService(httpClient, ls, ts, httpContext, wallet, db) {
+	private const decimal BaseUnitPrice = 100_000_000m;
+	private const decimal BuyUnitPrice = 101_000_000m;
+	private const decimal SellUnitPrice = 99_000_000m;
+	private const decimal StartingGold = 1_000m;
+	private const decimal StartingIrr = 100_000_000_000m;
+
+	private static readonly ConcurrentDictionary<string, FakeOrder> Orders = new();
+	private static readonly ConcurrentDictionary<string, string> OrderIdsByKey = new();
+	private static readonly ConcurrentDictionary<string, FakeApiToken> ApiTokens = new();
+
+	protected override bool HasClientCredentials => true;
+
+	protected override Task<HttpResponseMessage?> SendRequest(HttpMethod method, string path, object? body, Dictionary<string, string> headers, CancellationToken ct) {
+		string[] parts = path[ClientPath.Length..].Split('?', 2);
+		string[] segments = parts[0].Split('/').Select(Uri.UnescapeDataString).ToArray();
+		Dictionary<string, string> query = parts.Length > 1
+			? parts[1].Split('&', StringSplitOptions.RemoveEmptyEntries).Select(x => x.Split('=', 2)).ToDictionary(x => x[0], x => x.Length > 1 ? Uri.UnescapeDataString(x[1]) : "")
+			: [];
+		Dictionary<string, object> fields = body as Dictionary<string, object> ?? [];
+
+		HttpResponseMessage response = (method.Method, segments) switch {
+			("GET", ["account"]) => Ok(new { item = new { name = "Fake Gold Account", status = "ACTIVE", ipWhitelist = Array.Empty<string>() } }),
+			("GET", ["assets", var asset, "price"]) => Quote(asset, query.GetValueOrDefault("quoteAsset")),
+			("POST", ["orders"]) => CreateOrder(fields),
+			("GET", ["orders"]) => ListOrders(query),
+			("GET", ["orders", var id]) => Orders.TryGetValue(id, out FakeOrder? order) ? Ok(new { item = order.ToJson() }) : Error(HttpStatusCode.NotFound, "ORDER_NOT_FOUND"),
+			("GET", ["wallets", "main", "balances"]) => Ok(new { items = Balances() }),
+			("GET", ["wallets", "main", "balances", var asset]) => Balances().FirstOrDefault(x => x.Asset == asset.ToUpperInvariant()) is { } b ? Ok(new { item = b }) : Error(HttpStatusCode.NotFound, "ASSET_NOT_FOUND"),
+			("GET", ["wallets", "main", "transactions"]) => Ok(new { items = Orders.Values.OrderByDescending(x => x.CreatedAt).Take(Limit(query)).Select(x => x.ToTransactionJson()) }),
+			("GET", ["trade-limits"]) => Ok(new { timezone = "Asia/Tehran", currentTime = DateTime.UtcNow, items = Array.Empty<object>(), currentLimits = Array.Empty<object>() }),
+			("GET", ["credit-facilities"]) => Ok(new { timezone = "Asia/Tehran", currentTime = DateTime.UtcNow, items = Array.Empty<object>(), balances = Array.Empty<object>() }),
+			("POST", ["auth", "api-tokens"]) => CreateApiToken(fields),
+			("GET", ["auth", "api-tokens"]) => Ok(new { items = ApiTokens.Values.OrderByDescending(x => x.CreatedAt).Select(x => x.ToJson(false)) }),
+			("DELETE", ["auth", "api-tokens", var id]) => ApiTokens.TryRemove(id, out _) ? Ok(new { }) : Error(HttpStatusCode.NotFound, "TOKEN_NOT_FOUND"),
+			_ => Error(HttpStatusCode.NotFound, "NOT_FOUND")
+		};
+		return Task.FromResult<HttpResponseMessage?>(response);
+	}
+
+	private static HttpResponseMessage Quote(string asset, string? quoteAsset) {
+		if (asset.ToUpperInvariant() != "GOLD18" || quoteAsset?.ToUpperInvariant() != "IRR") return Error(HttpStatusCode.BadRequest, "UNSUPPORTED_TRADE_PAIR");
+		return Ok(new {
+			item = new {
+				baseAsset = "GOLD18",
+				quoteAsset = "IRR",
+				unit = "GRAM",
+				baseUnitPrice = BaseUnitPrice,
+				buyUnitPrice = BuyUnitPrice,
+				sellUnitPrice = SellUnitPrice,
+				canBuy = true,
+				canSell = true,
+				updatedAt = DateTime.UtcNow
+			}
+		});
+	}
+
+	// Fills immediately the way Taline does: by grams at the side's unit price, or by rial rounded down to 3 decimals of gold.
+	private static HttpResponseMessage CreateOrder(Dictionary<string, object> fields) {
+		string key = fields.GetValueOrDefault("idempotencyKey")?.ToString() ?? "";
+		string side = fields.GetValueOrDefault("side")?.ToString() ?? "BUY";
+		decimal? baseAmount = ParseAmount(fields, "baseAmount");
+		decimal? quoteAmount = ParseAmount(fields, "quoteAmount");
+		if (!key.IsNotNullOrEmpty() || baseAmount is > 0 == quoteAmount is > 0) return Error(HttpStatusCode.BadRequest, "VALIDATION_ERROR");
+
+		decimal price = side == "SELL" ? SellUnitPrice : BuyUnitPrice;
+		decimal dealtBase = baseAmount ?? Math.Round(quoteAmount!.Value / price, 3, MidpointRounding.ToZero);
+		decimal dealtQuote = quoteAmount ?? Math.Floor(baseAmount!.Value * price);
+		if (dealtBase <= 0 || dealtQuote <= 0) return Error(HttpStatusCode.BadRequest, "INSUFFICIENT_QUOTE_AMOUNT");
+
+		FakeOrder order = new(Guid.CreateVersion7().ToString(), key, side, baseAmount, quoteAmount, dealtBase, dealtQuote, price, DateTime.UtcNow);
+		if (!OrderIdsByKey.TryAdd(key, order.Id)) return Error(HttpStatusCode.Conflict, "DUPLICATE_IDEMPOTENCY_KEY");
+		Orders[order.Id] = order;
+		return Ok(new { item = order.ToJson() }, HttpStatusCode.Created);
+	}
+
+	private static HttpResponseMessage ListOrders(Dictionary<string, string> query) {
+		string? key = query.GetValueOrDefault("idempotencyKey");
+		IEnumerable<FakeOrder> orders = key.IsNotNullOrEmpty()
+			? OrderIdsByKey.TryGetValue(key, out string? id) && Orders.TryGetValue(id, out FakeOrder? found) ? [found] : []
+			: Orders.Values.OrderByDescending(x => x.CreatedAt).Take(Limit(query));
+		return Ok(new { items = orders.Select(x => x.ToJson()) });
+	}
+
+	private static HttpResponseMessage CreateApiToken(Dictionary<string, object> fields) {
+		FakeApiToken token = new(
+			Guid.CreateVersion7().ToString(),
+			$"fake_{Guid.NewGuid():N}",
+			fields.GetValueOrDefault("label")?.ToString(),
+			fields.GetValueOrDefault("scopes") as IEnumerable<string> ?? [],
+			fields.GetValueOrDefault("ipWhitelist") as IEnumerable<string> ?? [],
+			DateTime.UtcNow
+		);
+		ApiTokens[token.Id] = token;
+		return Ok(new { item = token.ToJson(true) }, HttpStatusCode.Created);
+	}
+
+	// The business wallet moves with every fake order, so admin balance screens reflect the trades made in test.
+	private static List<FakeBalance> Balances() {
+		decimal gold = StartingGold, irr = StartingIrr;
+		foreach (FakeOrder o in Orders.Values) {
+			int sign = o.Side == "SELL" ? -1 : 1;
+			gold += sign * o.DealtBase;
+			irr -= sign * o.DealtQuote;
+		}
+		return [new FakeBalance("GOLD18", gold, false), new FakeBalance("IRR", irr, false)];
+	}
+
+	private static int Limit(Dictionary<string, string> query) => int.TryParse(query.GetValueOrDefault("limit"), out int limit) ? limit : 20;
+
+	private static decimal? ParseAmount(Dictionary<string, object> fields, string name) =>
+		decimal.TryParse(fields.GetValueOrDefault(name)?.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal value) ? value : null;
+
+	private static HttpResponseMessage Ok(object data, HttpStatusCode code = HttpStatusCode.OK) =>
+		new(code) { Content = new StringContent(JsonSerializer.Serialize(new { data })) };
+
+	private static HttpResponseMessage Error(HttpStatusCode code, string error) =>
+		new(code) { Content = new StringContent(JsonSerializer.Serialize(new { error, message = error })) };
+
+	private sealed record FakeBalance(string Asset, decimal Balance, bool Locked);
+
+	private sealed record FakeOrder(
+		string Id,
+		string IdempotencyKey,
+		string Side,
+		decimal? RequestedBase,
+		decimal? RequestedQuote,
+		decimal DealtBase,
+		decimal DealtQuote,
+		decimal Price,
+		DateTime CreatedAt
+	) {
+		private object[] Entries => Side == "SELL"
+			? [new { asset = "GOLD18", amount = -DealtBase }, new { asset = "IRR", amount = DealtQuote }]
+			: [new { asset = "GOLD18", amount = DealtBase }, new { asset = "IRR", amount = -DealtQuote }];
+
+		public object ToJson() => new {
+			id = Id,
+			idempotencyKey = IdempotencyKey,
+			status = "FILLED",
+			side = Side,
+			baseAsset = "GOLD18",
+			quoteAsset = "IRR",
+			requestedBaseAmount = RequestedBase,
+			requestedQuoteAmount = RequestedQuote,
+			dealtBaseAmount = DealtBase,
+			dealtQuoteAmount = DealtQuote,
+			effectivePrice = Price,
+			baseUnitPrice = BaseUnitPrice,
+			createdAt = CreatedAt,
+			fees = Array.Empty<object>(),
+			transactions = new[] { new { id = $"{Id}-txn", createdAt = CreatedAt, entries = Entries } }
+		};
+
+		public object ToTransactionJson() => new {
+			id = $"{Id}-txn",
+			idempotencyKey = IdempotencyKey,
+			createdAt = CreatedAt,
+			entries = Entries,
+			detail = new { orderId = Id }
+		};
+	}
+
+	private sealed record FakeApiToken(string Id, string RawToken, string? Label, IEnumerable<string> Scopes, IEnumerable<string> IpWhitelist, DateTime CreatedAt) {
+		public object ToJson(bool withRawToken) => new {
+			id = Id,
+			tokenPrefix = RawToken[..9],
+			label = Label,
+			scopes = Scopes,
+			ipWhitelist = IpWhitelist,
+			active = true,
+			expiresAt = CreatedAt.AddYears(1),
+			createdAt = CreatedAt,
+			rawToken = withRawToken ? RawToken : null
+		};
 	}
 }

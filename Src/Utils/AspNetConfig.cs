@@ -106,17 +106,18 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IBlogService, BlogService>();
 		builder.Services.AddScoped<IFileManagerService, FileManagerService>();
 		builder.Services.AddScoped<IDbAdminService, DbAdminService>();
-		builder.Services.AddScoped<IGoldService, GoldService>();
 
 		if (Core.App.Test) {
 			builder.Services.AddScoped<IInquiryService, InquiryServiceFake>();
 			builder.Services.AddScoped<ISmsNotificationService, SmsNotificationServiceFake>();
 			builder.Services.AddScoped<IChargeInternetService, ChargeInternetServiceFake>();
+			builder.Services.AddScoped<IGoldService, GoldServiceFake>();
 		}
 		else {
 			builder.Services.AddScoped<IInquiryService, InquiryService>();
 			builder.Services.AddScoped<ISmsNotificationService, SmsNotificationService>();
 			builder.Services.AddScoped<IChargeInternetService, ChargeInternetService>();
+			builder.Services.AddScoped<IGoldService, GoldService>();
 		}
 	}
 
