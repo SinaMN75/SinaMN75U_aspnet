@@ -2,7 +2,7 @@ namespace SinaMN75U.Data.Entities;
 
 [Table("Vas")]
 public sealed class VasEntity : BaseEntity<TagVas, VasJson> {
-	[Column(TypeName = "decimal(4,2)")]
+	[Column(TypeName = "decimal(18,2)")]
 	public required decimal Amount { get; set; }
 
 	[Required, MaxLength(100)]

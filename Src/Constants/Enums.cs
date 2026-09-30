@@ -372,7 +372,8 @@ public enum TagWalletTxn {
 
 	ChargeSimPin = 301,
 	ChargeSimTopup = 302,
-	InternetSim = 303
+	InternetSim = 303,
+	ChargeInternetRefund = 304
 }
 
 public enum TagTerminal {

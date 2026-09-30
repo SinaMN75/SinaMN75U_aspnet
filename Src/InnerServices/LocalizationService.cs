@@ -398,7 +398,18 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "UsersRequired", "Users are Required." },
 		{ "passwordLengthMustBeBetween4And100Characters", "Password must be between 4 and 100 characters." },
 		{ "amountIsNotValid", "Amount is not valid." },
-		{ "TicketNotFound", "Ticket not found." }
+		{ "TicketNotFound", "Ticket not found." },
+
+		// ===== Charge / Internet package =====
+		{ "chargeServiceIsNotAvailable", "The charge and internet package service is not available right now. Please try again in a few minutes." },
+		{ "yourPreviousPurchaseIsStillInProgress", "Your previous purchase is still in progress. Please wait a moment." },
+		{ "theMobileNumberIsNotValid", "The mobile number is not valid." },
+		{ "theSelectedInternetPackageIsNoLongerAvailable", "The selected internet package is no longer available. Please open the package list again." },
+		{ "thePriceOfThisItemHasChangedPleaseTryAgain", "The price of this item has changed. Please try again." },
+		{ "chargePinPurchasedSuccessfully", "The charge PIN was purchased successfully." },
+		{ "simCardChargedSuccessfully", "The SIM card was charged successfully." },
+		{ "internetPackageActivatedSuccessfully", "The internet package was activated successfully." },
+		{ "yourTransactionIsBeingProcessed", "Your transaction is being processed. The result will be known in a few minutes; if it fails, the amount is returned to your wallet." }
 	};
 
 	private static readonly Dictionary<string, string> Fa = new() {
@@ -794,7 +805,18 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "UsersRequired", "کاربران الزامی هستند." },
 		{ "passwordLengthMustBeBetween4And100Characters", "رمز عبور باید بین ۴ تا ۱۰۰ کاراکتر باشد." },
 		{ "amountIsNotValid", "مبلغ نامعتبر است." },
-		{ "TicketNotFound", "تیکت یافت نشد." }
+		{ "TicketNotFound", "تیکت یافت نشد." },
+
+		// ===== Charge / Internet package =====
+		{ "chargeServiceIsNotAvailable", "سرویس خرید شارژ و بسته اینترنت موقتاً در دسترس نیست. لطفاً چند دقیقه دیگر دوباره تلاش کنید." },
+		{ "yourPreviousPurchaseIsStillInProgress", "خرید قبلی شما هنوز در حال انجام است. لطفاً چند لحظه صبر کنید." },
+		{ "theMobileNumberIsNotValid", "شماره موبایل وارد شده معتبر نیست." },
+		{ "theSelectedInternetPackageIsNoLongerAvailable", "بسته اینترنت انتخاب‌شده دیگر موجود نیست. لطفاً فهرست بسته‌ها را دوباره باز کنید." },
+		{ "thePriceOfThisItemHasChangedPleaseTryAgain", "قیمت این مورد تغییر کرده است. لطفاً دوباره تلاش کنید." },
+		{ "chargePinPurchasedSuccessfully", "رمز شارژ با موفقیت خریداری شد." },
+		{ "simCardChargedSuccessfully", "سیم‌کارت با موفقیت شارژ شد." },
+		{ "internetPackageActivatedSuccessfully", "بسته اینترنت با موفقیت فعال شد." },
+		{ "yourTransactionIsBeingProcessed", "تراکنش شما در حال پردازش است. نتیجه تا چند دقیقه دیگر مشخص می‌شود و در صورت ناموفق بودن، مبلغ به کیف پول شما بازمی‌گردد." }
 	};
 
 	public string Get(string key, string? locale = null) {

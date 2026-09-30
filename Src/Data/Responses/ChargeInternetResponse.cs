@@ -12,6 +12,7 @@ public sealed class ChargeInternetReserveResponse {
 	public string? Help { get; set; }
 	public string? MessageSource { get; set; }
 	public string? Pin { get; set; }
+	public string? Serial { get; set; }      // PIN serial, or the operator's reference for top-up / internet
 }
 
 public sealed class InternetPackageResponse {
@@ -23,7 +24,8 @@ public sealed class InternetPackageResponse {
 public class InternetPackageItem {
 	public string Id { get; set; } = "";
 	public string Title { get; set; } = "";
-	public long Amount { get; set; }
+	public long Amount { get; set; }         // Price including VAT (this is what is charged)
+	public long Price { get; set; }          // Nominal price without VAT
 	public int SimType { get; set; }
 	public string Duration { get; set; } = "";
 	public string OfferCode { get; set; } = "";
