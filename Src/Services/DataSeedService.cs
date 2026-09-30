@@ -9,8 +9,44 @@ public interface IDataSeedService {
 
 public class DataSeedService(DbContext db) : IDataSeedService {
 	public async Task<UResponse> SeedUsers() {
-		await db.Set<UserEntity>().AddRangeAsync(Core.App.Users.SystemAdmin, Core.App.Users.ITHub, Core.App.Users.AvaPlus, Core.App.Users.Mobtakeran);
+		List<UserEntity> defaults = [Core.App.Users.SystemAdmin, Core.App.Users.ITHub, Core.App.Users.AvaPlus, Core.App.Users.Mobtakeran];
+		List<Guid> ids = defaults.Select(x => x.Id).ToList();
+		List<string> userNames = defaults.Select(x => x.UserName).ToList();
+		List<string> emails = defaults.Where(x => x.Email != null).Select(x => x.Email!).ToList();
+		List<string> phones = defaults.Where(x => x.PhoneNumber != null).Select(x => x.PhoneNumber!).ToList();
+		List<string> nationalCodes = defaults.Where(x => x.NationalCode != null).Select(x => x.NationalCode!).ToList();
+
+		var existing = await db.Set<UserEntity>()
+			.Where(x => ids.Contains(x.Id) ||
+			            userNames.Contains(x.UserName) ||
+			            (x.Email != null && emails.Contains(x.Email)) ||
+			            (x.PhoneNumber != null && phones.Contains(x.PhoneNumber)) ||
+			            (x.NationalCode != null && nationalCodes.Contains(x.NationalCode)))
+			.Select(x => new { x.Id, x.UserName, x.Email, x.PhoneNumber, x.NationalCode })
+			.ToListAsync();
+
+		List<UserEntity> toAdd = [];
+		foreach (UserEntity u in defaults.DistinctBy(x => x.Id)) {
+			if (existing.Any(e => e.Id == u.Id)) continue;
+
+			var conflict = existing.FirstOrDefault(e =>
+				e.UserName == u.UserName ||
+				(u.Email != null && e.Email == u.Email) ||
+				(u.PhoneNumber != null && e.PhoneNumber == u.PhoneNumber) ||
+				(u.NationalCode != null && e.NationalCode == u.NationalCode));
+			if (conflict != null) {
+				ULog.Warning($"Seed users: skipped '{u.UserName}' ({u.Id}), its UserName/Email/PhoneNumber/NationalCode is already used by user {conflict.Id}.");
+				continue;
+			}
+
+			toAdd.Add(u);
+		}
+
+		if (toAdd.Count == 0) return new UResponse();
+
+		await db.Set<UserEntity>().AddRangeAsync(toAdd);
 		await db.SaveChangesAsync();
+		ULog.Success($"Seed users: inserted {string.Join(", ", toAdd.Select(x => x.UserName))}.");
 		return new UResponse();
 	}
 

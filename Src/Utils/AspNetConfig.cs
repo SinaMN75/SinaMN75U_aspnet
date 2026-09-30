@@ -123,6 +123,7 @@ public static partial class AspNetConfig {
 
 	public static void UseUServices(this WebApplication app) {
 		app.MigrateDatabase();
+		app.SeedDefaultUsers();
 		app.UseCors();
 		app.UseStaticFiles();
 		app.UseUSwagger();
@@ -191,6 +192,16 @@ public static partial class AspNetConfig {
 		}
 		catch (Exception ex) {
 			ULog.Error(ex, "Database migration failed");
+		}
+	}
+
+	private static void SeedDefaultUsers(this WebApplication app) {
+		using IServiceScope scope = app.Services.CreateScope();
+		try {
+			scope.ServiceProvider.GetRequiredService<IDataSeedService>().SeedUsers().GetAwaiter().GetResult();
+		}
+		catch (Exception ex) {
+			ULog.Error(ex, "Seed users failed");
 		}
 	}
 
