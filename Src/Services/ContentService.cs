@@ -24,6 +24,7 @@ public class ContentService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.HasPermission(TagUser.PermissionManageContents)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		ContentEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -84,7 +85,7 @@ public class ContentService(
 
 		ContentEntity? e = await db.Set<ContentEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("contentNotFound"));
-		if (!userData.CanManage(e.CreatorId, e.AdminUserIds)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!userData.CanManage(e.CreatorId, e.AdminUserIds) && !userData.HasPermission(TagUser.PermissionManageContents)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Title.IsNotNull()) e.JsonData.Title = p.Title;
 		if (p.SubTitle.IsNotNull()) e.JsonData.SubTitle = p.SubTitle;
@@ -115,7 +116,7 @@ public class ContentService(
 
 		ContentEntity? e = await db.Set<ContentEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("contentNotFound"));
-		if (!userData.CanManage(e.CreatorId, e.AdminUserIds)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!userData.CanManage(e.CreatorId, e.AdminUserIds) && !userData.HasPermission(TagUser.PermissionManageContents)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<ContentEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
@@ -125,7 +126,7 @@ public class ContentService(
 	public async Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
-		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!userData.HasPermission(TagUser.PermissionManageContents)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		int count = await db.Set<ContentEntity>().WhereIn(u => u.Id, p.Ids).ExecuteDeleteAsync(ct);
 		return count > 0 ? new UResponse(Usc.Deleted, ls.Get("contentRemovedSuccessfully")) : new UResponse(Usc.NotFound, ls.Get("contentNotFound"));
@@ -133,7 +134,6 @@ public class ContentService(
 
 	private async Task AddMedia(Guid contentId, ICollection<Guid> ids, CancellationToken ct) {
 		if (ids.IsNullOrEmpty()) return;
-		// One set-based UPDATE instead of loading the media and updating them one by one.
 		await db.Set<MediaEntity>().Where(x => ids.Contains(x.Id)).ExecuteUpdateAsync(u => u.SetProperty(y => y.ContentId, contentId), ct);
 	}
 }

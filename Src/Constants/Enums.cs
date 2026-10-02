@@ -124,7 +124,7 @@ public enum TagUser {
 	VisualAuthenticationAwaitingVerification = 508,
 	ESignatureAwaitingVerification = 509,
 
-	// ---- Granular admin-panel permissions (only enforced for non-full-admins, e.g. SubAdmin) ----
+	// ---- SubAdmin permissions (6xx). Super/System admins have all of them; only a SuperAdmin or SystemAdmin can give them ----
 	PermissionManageHotels = 601, // create/update Hotel + HotelRoom
 	PermissionDeleteHotels = 602, // delete Hotel + HotelRoom
 	PermissionManageDorms = 603, // create/update Dorm + DormRoom + DormBed
@@ -138,6 +138,15 @@ public enum TagUser {
 	PermissionDeleteUsers = 611,
 	PermissionManageReservations = 612, // create/update HotelReservation + HotelInvoice
 	PermissionDeleteReservations = 613, // delete HotelReservation
+	PermissionManageMerchants = 614, // create/update Merchant
+	PermissionDeleteMerchants = 615,
+	PermissionManageTerminals = 616, // create/update/approve/reject/import Terminal + TerminalBrand + TerminalBroker
+	PermissionDeleteTerminals = 617,
+	PermissionManageMoadis = 618, // approve/reject Moadi
+	PermissionDeleteMoadis = 619,
+	PermissionManageWallets = 620, // charge wallets + all-users accounting report
+	PermissionManageContents = 621, // create/update/delete Content + Blog
+	PermissionViewDashboard = 622, // admin dashboards (financial ops, property)
 }
 
 public enum TagCategory {

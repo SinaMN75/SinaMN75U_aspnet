@@ -34,7 +34,7 @@ public class AuthService(
 			Password = UPasswordHasher.Hash(p.Password),
 			RefreshToken = ts.GenerateRefreshToken(),
 			RefreshTokenExpiresAt = ts.RefreshTokenExpiry(),
-			Tags = p.Tags,
+			Tags = p.Tags.Where(t => !JwtClaimData.IsRoleTag(t)).ToList(),
 			FirstName = p.FirstName,
 			LastName = p.LastName,
 			NationalCode = p.NationalCode,
@@ -196,8 +196,10 @@ public class AuthService(
 	}
 
 	public async Task<UResponse<LoginResponse?>> LoginOrRegister(RegisterParams p, CancellationToken ct) {
+		if (p.PhoneNumber.IsNullOrEmpty() || p.NationalCode.IsNullOrEmpty()) return new UResponse<LoginResponse?>(null, Usc.BadRequest, ls.Get("loginInformationIsWrong"));
 		UserEntity? user = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber && x.NationalCode == p.NationalCode, ct);
 		if (user == null) return await Register(p, ct);
+		if (JwtClaimData.Rank(user.Tags) > 0) return new UResponse<LoginResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		user.RefreshToken = ts.GenerateRefreshToken();
 		user.RefreshTokenExpiresAt = ts.RefreshTokenExpiry();

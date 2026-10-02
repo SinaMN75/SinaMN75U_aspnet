@@ -81,7 +81,7 @@ public class MoadiService(
 
 		MoadiEntity? e = await db.Set<MoadiEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("taxpayerRequestNotFound"));
-		if (!userData.CanManage(e.CreatorId, e.AdminUserIds)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!userData.CanManage(e.CreatorId, e.AdminUserIds) && !userData.HasPermission(TagUser.PermissionManageMoadis)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Name.IsNotNullOrEmpty()) e.Name = p.Name;
 		if (p.EconomicCode.IsNotNullOrEmpty()) e.EconomicCode = p.EconomicCode;
@@ -112,7 +112,7 @@ public class MoadiService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<MoadiResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<MoadiResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
-		if (!userData.IsAdmin) return new UResponse<MoadiResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!userData.HasPermission(TagUser.PermissionManageMoadis)) return new UResponse<MoadiResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		MoadiEntity? e = await db.Set<MoadiEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse<MoadiResponse?>(null, Usc.NotFound, ls.Get("taxpayerRequestNotFound"));
@@ -155,7 +155,7 @@ public class MoadiService(
 	public async Task<UResponse> Reject(MoadiRejectParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
-		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!userData.HasPermission(TagUser.PermissionManageMoadis)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		MoadiEntity? e = await db.Set<MoadiEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("taxpayerRequestNotFound"));
@@ -170,7 +170,8 @@ public class MoadiService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		await db.Set<MoadiEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
+		bool canDeleteAll = userData.HasPermission(TagUser.PermissionDeleteMoadis);
+		await db.Set<MoadiEntity>().Where(x => x.Id == p.Id && (canDeleteAll || x.CreatorId == userData.Id || x.UserId == userData.Id)).ExecuteDeleteAsync(ct);
 		return new UResponse();
 	}
 

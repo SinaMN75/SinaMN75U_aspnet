@@ -20,7 +20,7 @@ public class AccountingService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<AccountingReportResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<AccountingReportResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
-		if (p.UserId == null && !userData.IsAdmin) return new UResponse<AccountingReportResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (p.UserId == null && !userData.HasPermission(TagUser.PermissionManageWallets)) return new UResponse<AccountingReportResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		DateTime from = p.FromDate ?? DateTime.UtcNow.AddMonths(-1);
 		DateTime to = p.ToDate ?? DateTime.UtcNow;

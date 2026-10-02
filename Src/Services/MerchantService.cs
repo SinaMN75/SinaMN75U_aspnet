@@ -16,6 +16,7 @@ public class MerchantService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (p.UserId != null && p.UserId != userData.Id && !userData.HasPermission(TagUser.PermissionManageMerchants)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		
 		MerchantEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -74,7 +75,8 @@ public class MerchantService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 
-		await db.Set<MerchantEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
+		bool canDeleteAll = userData.HasPermission(TagUser.PermissionDeleteMerchants);
+		await db.Set<MerchantEntity>().Where(x => x.Id == p.Id && (canDeleteAll || x.CreatorId == userData.Id || x.UserId == userData.Id)).ExecuteDeleteAsync(ct);
 
 		return new UResponse();
 	}

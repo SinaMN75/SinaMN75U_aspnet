@@ -98,7 +98,7 @@ public class WalletService(
 		WalletEntity? e = await db.Set<WalletEntity>().AsTracking().FirstOrDefaultAsync(x => x.CreatorId == p.UserId, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("walletNotFound"));
 
-		if (!userData.IsAdmin) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!userData.HasPermission(TagUser.PermissionManageWallets)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		return await Transfer(new WalletTransferParams {
 			ApiKey = p.ApiKey,
