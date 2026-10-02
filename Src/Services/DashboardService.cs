@@ -273,7 +273,8 @@ public class DashboardService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<PropertyDashboardResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<PropertyDashboardResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
-		if (!userData.HasPermission(TagUser.PermissionViewDashboard)) return new UResponse<PropertyDashboardResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		// System-wide numbers (all places, recent users): not split per place, so full admins only.
+		if (!userData.IsSuperAdmin) return new UResponse<PropertyDashboardResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		DateTime now = DateTime.UtcNow;
 		DateTime to = p.ToDate ?? now;

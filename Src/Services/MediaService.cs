@@ -16,11 +16,21 @@ public class MediaService(
 	ITokenService ts,
 	ILocalizationService ls
 ) : IMediaService {
+	private async Task<bool> CanChange(JwtClaimData u, Guid creatorId, Guid? hotelId, Guid? hotelRoomId, Guid? dormId, Guid? dormRoomId, Guid? dormBedId, Guid? contentId, Guid? blogId, CancellationToken ct) {
+		if (u.IsSuperAdmin) return true;
+		(ICollection<Guid> AdminUserIds, TagUser Permission)? place = await db.PlaceOf(hotelId, hotelRoomId, dormId, dormRoomId, dormBedId, ct);
+		if (place != null) return u.CanActOnPlace(place.Value.AdminUserIds, place.Value.Permission);
+		if (contentId != null) return u.HasPermission(TagUser.PermissionManageContents);
+		if (blogId != null) return u.HasPermission(TagUser.PermissionManageContents) || await db.Set<BlogEntity>().AnyAsync(x => x.Id == blogId && x.CreatorId == u.Id, ct);
+		return u.Id == creatorId;
+	}
+
 	public async Task<UResponse<Guid?>> Create(MediaCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!await CanChange(userData, userData.Id, p.HotelId, p.HotelRoomId, p.DormId, p.DormRoomId, p.DormBedId, p.ContentId, p.BlogId, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		
 		IEnumerable<string> allowedExtensions = [".png", ".gif", ".jpg", ".jpeg", ".svg", ".webp", ".mp4", ".mov", ".mp3", ".pdf", ".aac", ".apk", ".zip", ".rar", ".mkv"];
 		if (!allowedExtensions.Contains(Path.GetExtension(p.File.FileName.ToLower()))) return new UResponse<Guid?>(null, Usc.MediaTypeNotSupported, ls.Get("thisFileTypeIsNotSupported"));
@@ -46,7 +56,7 @@ public class MediaService(
 		if (p.Tag3 != null) tags.Add(p.Tag3.Value);
 		MediaEntity e = new() {
 			Id = Guid.CreateVersion7(),
-			CreatorId = p.CreatorId ?? userData.Id,
+			CreatorId = userData.IsSuperAdmin ? p.CreatorId ?? userData.Id : userData.Id,
 			CreatedAt = DateTime.UtcNow,
 			Path = name,
 			UserId = p.UserId,
@@ -81,8 +91,13 @@ public class MediaService(
 	}
 
 	public async Task<UResponse> Update(MediaUpdateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+
 		MediaEntity? e = await db.Set<MediaEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("mediaNotFound"));
+		if (!await CanChange(userData, e.CreatorId, e.HotelId, e.HotelRoomId, e.DormId, e.DormRoomId, e.DormBedId, e.ContentId, e.BlogId, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await CanChange(userData, e.CreatorId, p.HotelId ?? e.HotelId, p.HotelRoomId ?? e.HotelRoomId, p.DormId ?? e.DormId, p.DormRoomId ?? e.DormRoomId, p.DormBedId ?? e.DormBedId, p.ContentId ?? e.ContentId, p.BlogId ?? e.BlogId, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		if (p.Title != null) e.JsonData.Detail1 = p.Title;
 		if (p.Description != null) e.JsonData.Detail2 = p.Description;
 		if (p.CategoryId != null) e.CategoryId = p.CategoryId;
@@ -109,8 +124,12 @@ public class MediaService(
 	}
 
 	public async Task<UResponse> Delete(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+
 		MediaEntity? media = await db.Set<MediaEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (media == null) return new UResponse(Usc.NotFound, ls.Get("mediaNotFound"));
+		if (!await CanChange(userData, media.CreatorId, media.HotelId, media.HotelRoomId, media.DormId, media.DormRoomId, media.DormBedId, media.ContentId, media.BlogId, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		try {
 			File.Delete(Path.Combine(env.WebRootPath, "Media", media.Path));
@@ -125,6 +144,11 @@ public class MediaService(
 	}
 
 	public async Task<UResponse> DeleteRange(IdListParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		foreach (MediaEntity m in await db.Set<MediaEntity>().Where(x => p.Ids.Contains(x.Id)).ToListAsync(ct))
+			if (!await CanChange(userData, m.CreatorId, m.HotelId, m.HotelRoomId, m.DormId, m.DormRoomId, m.DormBedId, m.ContentId, m.BlogId, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
 		await db.Set<MediaEntity>().Where(x => p.Ids.Contains(x.Id)).ExecuteDeleteAsync(ct);
 		return new UResponse();
 	}

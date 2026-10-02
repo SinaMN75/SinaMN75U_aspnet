@@ -71,12 +71,72 @@ public class HotelService(
 	ITokenService ts,
 	IWalletService ws
 ) : IHotelService {
-	private static bool IsHotelManager(JwtClaimData? u) => u != null && (u.IsSuperAdmin || u.HasPermission(TagUser.PermissionManageHotels));
+	// ---- Who sees and changes what ----
+	// SuperAdmin/SystemAdmin: everything.
+	// SubAdmin: only the hotels/dorms whose AdminUserIds holds his id (a SuperAdmin puts it there) and everything under them;
+	//           what he may change there is decided by his Permission tags.
+	// Everybody else: the public view (active places, no people data) and his own reservations/contracts/invoices.
+	private static bool IsFull(JwtClaimData? u) => u is { IsSuperAdmin: true };
 
-	private static bool IsDormManager(JwtClaimData? u) => u != null && (u.IsSuperAdmin || u.HasPermission(TagUser.PermissionManageDorms));
+	private static bool IsScopedAdmin(JwtClaimData? u) => u is { IsSuperAdmin: false, IsSubAdmin: true };
+
+	private static bool CanAct(JwtClaimData u, ICollection<Guid> placeAdminUserIds, TagUser permission) => u.CanActOnPlace(placeAdminUserIds, permission);
 
 	private static Guid UserIdOf(JwtClaimData? u) => u?.Id ?? Guid.Empty;
-	
+
+	private static bool TouchesAdminUserIds<T>(BaseUpdateParams<T> p) => p.AdminUserIds.IsNotNullOrEmpty() || p.AddAdminUserIds.IsNotNullOrEmpty() || p.RemoveAdminUserIds.IsNotNullOrEmpty();
+
+	// Selector args are cleaned for everyone but full admins: never Creator (admin accounts), users only with their own fields,
+	// and reservations/contracts only for a place admin (people = true) whose rows are already limited to his places.
+	private static HotelSelectorArgs Safe(HotelSelectorArgs a, bool people) => new() {
+		Rooms = a.Rooms == null ? null : Safe(a.Rooms, people),
+		Reservations = people && a.Reservations != null ? Safe(a.Reservations) : null,
+		Comments = a.Comments,
+		Media = a.Media
+	};
+
+	private static HotelRoomSelectorArgs Safe(HotelRoomSelectorArgs a, bool people) => new() {
+		Hotel = a.Hotel == null ? null : Safe(a.Hotel, people),
+		Reservations = people && a.Reservations != null ? Safe(a.Reservations) : null,
+		Media = a.Media
+	};
+
+	private static HotelReservationSelectorArgs Safe(HotelReservationSelectorArgs a) => new() {
+		User = a.User == null ? null : new UserSelectorArgs(),
+		Room = a.Room == null ? null : Safe(a.Room, false),
+		Hotel = a.Hotel == null ? null : Safe(a.Hotel, false),
+		Invoice = a.Invoice == null ? null : new HotelInvoiceSelectorArgs()
+	};
+
+	private static HotelInvoiceSelectorArgs Safe(HotelInvoiceSelectorArgs a) => new() { Reservation = a.Reservation == null ? null : Safe(a.Reservation) };
+
+	private static DormSelectorArgs Safe(DormSelectorArgs a, bool people) => new() {
+		Rooms = a.Rooms == null ? null : Safe(a.Rooms, people),
+		Beds = a.Beds == null ? null : Safe(a.Beds, people),
+		Comments = a.Comments,
+		Media = a.Media
+	};
+
+	private static DormRoomSelectorArgs Safe(DormRoomSelectorArgs a, bool people) => new() {
+		Dorm = a.Dorm == null ? null : Safe(a.Dorm, people),
+		Beds = a.Beds == null ? null : Safe(a.Beds, people),
+		Media = a.Media
+	};
+
+	private static DormBedSelectorArgs Safe(DormBedSelectorArgs a, bool people) => new() {
+		Room = a.Room == null ? null : Safe(a.Room, people),
+		Contract = people && a.Contract != null ? Safe(a.Contract) : null,
+		Media = a.Media
+	};
+
+	private static DormBedContractSelectorArgs Safe(DormBedContractSelectorArgs a) => new() {
+		User = a.User == null ? null : new UserSelectorArgs(),
+		Bed = a.Bed == null ? null : Safe(a.Bed, false),
+		Invoice = a.Invoice == null ? null : new DormBedInvoiceSelectorArgs()
+	};
+
+	private static DormBedInvoiceSelectorArgs Safe(DormBedInvoiceSelectorArgs a) => new() { Contract = a.Contract == null ? null : Safe(a.Contract) };
+
 	public async Task<UResponse<Guid?>> CreateHotel(HotelCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
@@ -85,7 +145,7 @@ public class HotelService(
 
 		HotelEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
-			CreatorId = p.CreatorId ?? userData.Id,
+			CreatorId = IsFull(userData) ? p.CreatorId ?? userData.Id : userData.Id,
 			CreatedAt = DateTime.UtcNow,
 			JsonData = new HotelJson {
 				Description = p.Description,
@@ -113,7 +173,7 @@ public class HotelService(
 			Address = p.Address,
 			PhoneNumber = p.PhoneNumber,
 			Email = p.Email,
-			AdminUserIds = p.AdminUserIds ?? []
+			AdminUserIds = IsFull(userData) ? p.AdminUserIds ?? [] : [userData.Id]
 		};
 
 		await db.Set<HotelEntity>().AddAsync(e, ct);
@@ -124,7 +184,10 @@ public class HotelService(
 	public async Task<UResponse<IEnumerable<HotelResponse>?>> ReadHotels(HotelReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		IQueryable<HotelEntity> q = db.Set<HotelEntity>().ApplyReadParams(p);
-		q = IsHotelManager(userData) ? q.ApplyOwnerScope<HotelEntity, TagHotel>(userData) : q.Where(x => x.Tags.Contains(TagHotel.Active));
+		Guid uid = UserIdOf(userData);
+		if (IsScopedAdmin(userData)) q = q.Where(x => x.AdminUserIds.Contains(uid));
+		else if (!IsFull(userData)) q = q.Where(x => x.Tags.Contains(TagHotel.Active));
+		if (!IsFull(userData)) p.SelectorArgs = Safe(p.SelectorArgs, IsScopedAdmin(userData));
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.CityCode.IsNotNullOrEmpty()) q = q.Where(x => x.CityCode == p.CityCode);
@@ -139,7 +202,10 @@ public class HotelService(
 	public async Task<UResponse<HotelResponse?>> ReadHotelById(IdParams<HotelSelectorArgs> p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		IQueryable<HotelEntity> hotels = db.Set<HotelEntity>();
-		hotels = IsHotelManager(userData) ? hotels.ApplyOwnerScope<HotelEntity, TagHotel>(userData) : hotels.Where(x => x.Tags.Contains(TagHotel.Active));
+		Guid uid = UserIdOf(userData);
+		if (IsScopedAdmin(userData)) hotels = hotels.Where(x => x.AdminUserIds.Contains(uid));
+		else if (!IsFull(userData)) hotels = hotels.Where(x => x.Tags.Contains(TagHotel.Active));
+		if (!IsFull(userData)) p.SelectorArgs = Safe(p.SelectorArgs, IsScopedAdmin(userData));
 		HotelResponse? e = await hotels.Select(Projections.HotelSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<HotelResponse?>(null, Usc.NotFound, ls.Get("hotelNotFound")) : new UResponse<HotelResponse?>(e);
 	}
@@ -151,7 +217,8 @@ public class HotelService(
 		HotelEntity? e = await db.Set<HotelEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("hotelNotFound"));
 
-		if (!userData.CanManage(e.CreatorId, e.AdminUserIds) || !userData.HasPermission(TagUser.PermissionManageHotels)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!CanAct(userData, e.AdminUserIds, TagUser.PermissionManageHotels)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (TouchesAdminUserIds(p) && !IsFull(userData)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
 		if (p.CityCode.IsNotNullOrEmpty()) e.CityCode = p.CityCode;
@@ -189,7 +256,7 @@ public class HotelService(
 		HotelEntity? e = await db.Set<HotelEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("hotelNotFound"));
 
-		if (!userData.CanManage(e.CreatorId, e.AdminUserIds) || !userData.HasPermission(TagUser.PermissionDeleteHotels)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!CanAct(userData, e.AdminUserIds, TagUser.PermissionDeleteHotels)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<HotelEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
@@ -203,7 +270,7 @@ public class HotelService(
 
 		HotelEntity? hotel = await db.Set<HotelEntity>().FirstOrDefaultAsync(x => x.Id == p.HotelId, ct);
 		if (hotel == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("hotelNotFound"));
-		if (!userData.CanManage(hotel.CreatorId, hotel.AdminUserIds) || !userData.HasPermission(TagUser.PermissionManageHotels)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!CanAct(userData, hotel.AdminUserIds, TagUser.PermissionManageHotels)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		HotelRoomEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -235,14 +302,10 @@ public class HotelService(
 	public async Task<UResponse<IEnumerable<HotelRoomResponse>?>> ReadHotelRooms(HotelRoomReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		IQueryable<HotelRoomEntity> q = db.Set<HotelRoomEntity>().ApplyReadParams(p);
-		if (IsHotelManager(userData)) {
-			if (userData is not { IsSuperAdmin: true }) {
-				Guid uid = UserIdOf(userData);
-				q = q.Where(x => x.Hotel.CreatorId == uid || x.Hotel.AdminUserIds.Contains(uid));
-			}
-		}
-		else
-			q = q.Where(x => x.Hotel.Tags.Contains(TagHotel.Active) && x.IsAvailable);
+		Guid uid = UserIdOf(userData);
+		if (IsScopedAdmin(userData)) q = q.Where(x => x.Hotel.AdminUserIds.Contains(uid));
+		else if (!IsFull(userData)) q = q.Where(x => x.Hotel.Tags.Contains(TagHotel.Active) && x.IsAvailable);
+		if (!IsFull(userData)) p.SelectorArgs = Safe(p.SelectorArgs, IsScopedAdmin(userData));
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.HotelId.HasValue) q = q.Where(x => x.HotelId == p.HotelId);
@@ -259,14 +322,10 @@ public class HotelService(
 	public async Task<UResponse<HotelRoomResponse?>> ReadHotelRoomById(IdParams<HotelRoomSelectorArgs> p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		IQueryable<HotelRoomEntity> q = db.Set<HotelRoomEntity>();
-		if (IsHotelManager(userData)) {
-			if (userData is not { IsSuperAdmin: true }) {
-				Guid uid = UserIdOf(userData);
-				q = q.Where(x => x.Hotel.CreatorId == uid || x.Hotel.AdminUserIds.Contains(uid));
-			}
-		}
-		else
-			q = q.Where(x => x.Hotel.Tags.Contains(TagHotel.Active));
+		Guid uid = UserIdOf(userData);
+		if (IsScopedAdmin(userData)) q = q.Where(x => x.Hotel.AdminUserIds.Contains(uid));
+		else if (!IsFull(userData)) q = q.Where(x => x.Hotel.Tags.Contains(TagHotel.Active));
+		if (!IsFull(userData)) p.SelectorArgs = Safe(p.SelectorArgs, IsScopedAdmin(userData));
 
 		HotelRoomResponse? e = await q.Select(Projections.HotelRoomSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<HotelRoomResponse?>(null, Usc.NotFound, ls.Get("hotelRoomNotFound")) : new UResponse<HotelRoomResponse?>(e);
@@ -279,7 +338,12 @@ public class HotelService(
 		HotelRoomEntity? e = await db.Set<HotelRoomEntity>().AsTracking().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("hotelRoomNotFound"));
 
-		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Hotel.CreatorId, e.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageHotels)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!CanAct(userData, e.Hotel.AdminUserIds, TagUser.PermissionManageHotels)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		// Moving it under another hotel/dorm needs the same right there.
+		if (p.HotelId.HasValue && p.HotelId != e.HotelId) {
+			HotelEntity? to = await db.Set<HotelEntity>().FirstOrDefaultAsync(x => x.Id == p.HotelId, ct);
+			if (to == null || !CanAct(userData, to.AdminUserIds, TagUser.PermissionManageHotels)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		}
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
 		if (p.Capacity.HasValue) e.Capacity = p.Capacity.Value;
@@ -307,7 +371,7 @@ public class HotelService(
 		HotelRoomEntity? e = await db.Set<HotelRoomEntity>().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("hotelRoomNotFound"));
 
-		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Hotel.CreatorId, e.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionDeleteHotels)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!CanAct(userData, e.Hotel.AdminUserIds, TagUser.PermissionDeleteHotels)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<HotelRoomEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
@@ -321,7 +385,7 @@ public class HotelService(
 
 		HotelRoomEntity? room = await db.Set<HotelRoomEntity>().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.RoomId, ct);
 		if (room == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("hotelRoomNotFound"));
-		if ((!userData.CanManage(room.CreatorId, []) && !userData.CanManage(room.Hotel.CreatorId, room.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageReservations))
+		if (!CanAct(userData, room.Hotel.AdminUserIds, TagUser.PermissionManageReservations))
 			return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (!room.IsAvailable) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("thisRoomIsNotAvailableForBooking"));
@@ -393,12 +457,11 @@ public class HotelService(
 	public async Task<UResponse<IEnumerable<HotelReservationResponse>?>> ReadHotelReservations(HotelReservationReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		IQueryable<HotelReservationEntity> q = db.Set<HotelReservationEntity>().ApplyReadParams(p);
-		if (userData is not { IsSuperAdmin: true }) {
-			Guid uid = userData?.Id ?? Guid.Empty;
-			q = q.Where(x =>
-				x.UserId == uid ||
-				x.Hotel.CreatorId == uid ||
-				x.Hotel.AdminUserIds.Contains(uid));
+		if (!IsFull(userData)) {
+			Guid uid = UserIdOf(userData);
+			bool scoped = IsScopedAdmin(userData);
+			q = q.Where(x => x.UserId == uid || scoped && x.Hotel.AdminUserIds.Contains(uid));
+			p.SelectorArgs = Safe(p.SelectorArgs);
 		}
 
 		if (p.UserId.IsNotNull()) q = q.Where(x => x.UserId == p.UserId);
@@ -420,9 +483,11 @@ public class HotelService(
 	public async Task<UResponse<HotelReservationResponse?>> ReadHotelReservationById(IdParams<HotelReservationSelectorArgs> p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		IQueryable<HotelReservationEntity> q = db.Set<HotelReservationEntity>();
-		if (userData is not { IsSuperAdmin: true }) {
-			Guid uid = userData?.Id ?? Guid.Empty;
-			q = q.Where(x => x.UserId == uid || x.Hotel.CreatorId == uid || x.Hotel.AdminUserIds.Contains(uid));
+		if (!IsFull(userData)) {
+			Guid uid = UserIdOf(userData);
+			bool scoped = IsScopedAdmin(userData);
+			q = q.Where(x => x.UserId == uid || scoped && x.Hotel.AdminUserIds.Contains(uid));
+			p.SelectorArgs = Safe(p.SelectorArgs);
 		}
 
 		HotelReservationResponse? e = await q.Select(Projections.HotelReservationSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
@@ -435,7 +500,7 @@ public class HotelService(
 
 		HotelReservationEntity? e = await db.Set<HotelReservationEntity>().AsTracking().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("reservationNotFound"));
-		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Hotel.CreatorId, e.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageReservations))
+		if (!CanAct(userData, e.Hotel.AdminUserIds, TagUser.PermissionManageReservations))
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.CheckInDate.HasValue) e.CheckInDate = p.CheckInDate.Value;
@@ -464,7 +529,7 @@ public class HotelService(
 
 		HotelReservationEntity? e = await db.Set<HotelReservationEntity>().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("reservationNotFound"));
-		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Hotel.CreatorId, e.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionDeleteReservations))
+		if (!CanAct(userData, e.Hotel.AdminUserIds, TagUser.PermissionDeleteReservations))
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		await db.Set<HotelReservationEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
@@ -477,7 +542,7 @@ public class HotelService(
 
 		HotelReservationEntity? e = await db.Set<HotelReservationEntity>().AsTracking().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("reservationNotFound"));
-		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Hotel.CreatorId, e.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageReservations))
+		if (!CanAct(userData, e.Hotel.AdminUserIds, TagUser.PermissionManageReservations))
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		e.Tags = [status];
@@ -523,6 +588,7 @@ public class HotelService(
 		int nights = (p.CheckOutDate.Date - p.CheckInDate.Date).Days;
 		if (nights < 1) return new UResponse<IEnumerable<HotelRoomAvailabilityResponse>?>(null, Usc.BadRequest, ls.Get("checkOutDateMustBeAfterTheCheckInDate"));
 
+		p.SelectorArgs = Safe(p.SelectorArgs, false);
 		IQueryable<HotelRoomEntity> q = db.Set<HotelRoomEntity>()
 			.Where(x => x.IsAvailable && x.Hotel.Tags.Contains(TagHotel.Active));
 		if (p.HotelId.HasValue) q = q.Where(x => x.HotelId == p.HotelId);
@@ -647,7 +713,7 @@ public class HotelService(
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("reservationNotFound"));
 
 		bool isOwner = e.UserId == userData.Id;
-		if (!isOwner && !userData.CanManage(e.Hotel.CreatorId, e.Hotel.AdminUserIds)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!isOwner && !CanAct(userData, e.Hotel.AdminUserIds, TagUser.PermissionManageReservations)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		if (e.Tags.Contains(TagHotelReservation.Cancelled)) return new UResponse(Usc.Conflict, ls.Get("thisReservationHasAlreadyBeenCancelled"));
 		if (e.Tags.Contains(TagHotelReservation.CheckedIn) || e.Tags.Contains(TagHotelReservation.CheckedOut)) return new UResponse(Usc.Conflict, ls.Get("aReservationThatHasAlreadyBeenCheckedInCannotBeCancelled"));
 
@@ -782,7 +848,7 @@ public class HotelService(
 
 		HotelReservationEntity? reservation = await db.Set<HotelReservationEntity>().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.ReservationId, ct);
 		if (reservation == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("reservationNotFound"));
-		if ((!userData.CanManage(reservation.CreatorId, []) && !userData.CanManage(reservation.Hotel.CreatorId, reservation.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageInvoices))
+		if (!CanAct(userData, reservation.Hotel.AdminUserIds, TagUser.PermissionManageInvoices))
 			return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		EntityEntry<HotelInvoiceEntity> e = await db.AddAsync(new HotelInvoiceEntity {
@@ -809,13 +875,11 @@ public class HotelService(
 	public async Task<UResponse<IEnumerable<HotelInvoiceResponse>?>> ReadHotelInvoices(HotelInvoiceReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		IQueryable<HotelInvoiceEntity> q = db.Set<HotelInvoiceEntity>().Include(x => x.Reservation).ApplyReadParams(p);
-		if (userData is not { IsSuperAdmin: true }) {
-			Guid uid = userData?.Id ?? Guid.Empty;
-			q = q.Where(x =>
-				x.Reservation != null && (
-					x.Reservation.UserId == uid ||
-					x.Reservation.Hotel.CreatorId == uid ||
-					x.Reservation.Hotel.AdminUserIds.Contains(uid)));
+		if (!IsFull(userData)) {
+			Guid uid = UserIdOf(userData);
+			bool scoped = IsScopedAdmin(userData);
+			q = q.Where(x => x.Reservation != null && (x.Reservation.UserId == uid || scoped && x.Reservation.Hotel.AdminUserIds.Contains(uid)));
+			p.SelectorArgs = Safe(p.SelectorArgs);
 		}
 
 		if (p.UserId.IsNotNull()) q = q.Where(x => x.Reservation!.UserId == p.UserId);
@@ -864,8 +928,12 @@ public class HotelService(
 
 		HotelInvoiceEntity? e = await db.Set<HotelInvoiceEntity>().AsTracking().Include(x => x.Reservation).ThenInclude(x => x!.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
-		if (e.Reservation != null && (!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Reservation.Hotel.CreatorId, e.Reservation.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageInvoices))
+		if (!(e.Reservation == null ? IsFull(userData) : CanAct(userData, e.Reservation.Hotel.AdminUserIds, TagUser.PermissionManageInvoices)))
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (p.ReservationId.HasValue && p.ReservationId != e.ReservationId) {
+			HotelReservationEntity? to = await db.Set<HotelReservationEntity>().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.ReservationId, ct);
+			if (to == null || !CanAct(userData, to.Hotel.AdminUserIds, TagUser.PermissionManageInvoices)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		}
 
 		if (p.DebtAmount.IsNotNull()) e.DebtAmount = p.DebtAmount.Value;
 		if (p.CreditorAmount.IsNotNull()) e.CreditorAmount = p.CreditorAmount.Value;
@@ -886,7 +954,7 @@ public class HotelService(
 
 		HotelInvoiceEntity? e = await db.Set<HotelInvoiceEntity>().Include(x => x.Reservation).ThenInclude(x => x!.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
-		if (e.Reservation != null && (!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Reservation.Hotel.CreatorId, e.Reservation.Hotel.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionDeleteInvoices))
+		if (!(e.Reservation == null ? IsFull(userData) : CanAct(userData, e.Reservation.Hotel.AdminUserIds, TagUser.PermissionDeleteInvoices)))
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		await db.Set<HotelInvoiceEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
@@ -902,7 +970,7 @@ public class HotelService(
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
 
 		bool isOwner = e.Reservation != null && e.Reservation.UserId == userData.Id;
-		bool isManager = e.Reservation != null && userData.CanManage(e.Reservation.Hotel.CreatorId, e.Reservation.Hotel.AdminUserIds) && userData.HasPermission(TagUser.PermissionPayInvoices);
+		bool isManager = e.Reservation != null && CanAct(userData, e.Reservation.Hotel.AdminUserIds, TagUser.PermissionPayInvoices);
 		if (!isOwner && !isManager) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		return await PayHotelInvoiceInternal(new HotelInvoicePayParams { InvoiceId = e.Id, UserId = e.Reservation!.UserId }, ct);
@@ -916,7 +984,7 @@ public class HotelService(
 
 		DormEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
-			CreatorId = p.CreatorId ?? userData.Id,
+			CreatorId = IsFull(userData) ? p.CreatorId ?? userData.Id : userData.Id,
 			CreatedAt = DateTime.UtcNow,
 			JsonData = new DormJson {
 				Description = p.Description,
@@ -944,7 +1012,7 @@ public class HotelService(
 			CityCode = p.CityCode,
 			Address = p.Address,
 			PhoneNumber = p.PhoneNumber,
-			AdminUserIds = p.AdminUserIds ?? []
+			AdminUserIds = IsFull(userData) ? p.AdminUserIds ?? [] : [userData.Id]
 		};
 
 		await db.Set<DormEntity>().AddAsync(e, ct);
@@ -955,7 +1023,10 @@ public class HotelService(
 	public async Task<UResponse<IEnumerable<DormResponse>?>> ReadDorms(DormReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		IQueryable<DormEntity> q = db.Set<DormEntity>().ApplyReadParams(p);
-		q = IsDormManager(userData) ? q.ApplyOwnerScope<DormEntity, TagDorm>(userData) : q.Where(x => x.Tags.Contains(TagDorm.Active));
+		Guid uid = UserIdOf(userData);
+		if (IsScopedAdmin(userData)) q = q.Where(x => x.AdminUserIds.Contains(uid));
+		else if (!IsFull(userData)) q = q.Where(x => x.Tags.Contains(TagDorm.Active));
+		if (!IsFull(userData)) p.SelectorArgs = Safe(p.SelectorArgs, IsScopedAdmin(userData));
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.CityCode.IsNotNullOrEmpty()) q = q.Where(x => x.CityCode.Contains(p.CityCode!));
@@ -970,7 +1041,10 @@ public class HotelService(
 	public async Task<UResponse<DormResponse?>> ReadDormById(IdParams<DormSelectorArgs> p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		IQueryable<DormEntity> dorms = db.Set<DormEntity>();
-		dorms = IsDormManager(userData) ? dorms.ApplyOwnerScope<DormEntity, TagDorm>(userData) : dorms.Where(x => x.Tags.Contains(TagDorm.Active));
+		Guid uid = UserIdOf(userData);
+		if (IsScopedAdmin(userData)) dorms = dorms.Where(x => x.AdminUserIds.Contains(uid));
+		else if (!IsFull(userData)) dorms = dorms.Where(x => x.Tags.Contains(TagDorm.Active));
+		if (!IsFull(userData)) p.SelectorArgs = Safe(p.SelectorArgs, IsScopedAdmin(userData));
 		DormResponse? e = await dorms.Select(Projections.DormSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<DormResponse?>(null, Usc.NotFound, ls.Get("dormNotFound")) : new UResponse<DormResponse?>(e);
 	}
@@ -982,7 +1056,8 @@ public class HotelService(
 		DormEntity? e = await db.Set<DormEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("dormNotFound"));
 
-		if (!userData.CanManage(e.CreatorId, e.AdminUserIds) || !userData.HasPermission(TagUser.PermissionManageDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!CanAct(userData, e.AdminUserIds, TagUser.PermissionManageDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (TouchesAdminUserIds(p) && !IsFull(userData)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
 		if (p.CityCode.IsNotNullOrEmpty()) e.CityCode = p.CityCode;
@@ -1020,7 +1095,7 @@ public class HotelService(
 		DormEntity? e = await db.Set<DormEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("dormNotFound"));
 
-		if (!userData.CanManage(e.CreatorId, e.AdminUserIds) || !userData.HasPermission(TagUser.PermissionDeleteDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!CanAct(userData, e.AdminUserIds, TagUser.PermissionDeleteDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<DormEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
@@ -1034,7 +1109,7 @@ public class HotelService(
 
 		DormEntity? dorm = await db.Set<DormEntity>().FirstOrDefaultAsync(x => x.Id == p.DormId, ct);
 		if (dorm == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("dormNotFound"));
-		if (!userData.CanManage(dorm.CreatorId, dorm.AdminUserIds) || !userData.HasPermission(TagUser.PermissionManageDorms)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!CanAct(userData, dorm.AdminUserIds, TagUser.PermissionManageDorms)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		DormRoomEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -1059,10 +1134,10 @@ public class HotelService(
 	public async Task<UResponse<IEnumerable<DormRoomResponse>?>> ReadDormRooms(DormRoomReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		IQueryable<DormRoomEntity> q = db.Set<DormRoomEntity>().ApplyReadParams(p);
-		if (IsDormManager(userData) && userData is not { IsSuperAdmin: true }) {
-			Guid uid = UserIdOf(userData);
-			q = q.Where(x => x.Dorm.CreatorId == uid || x.Dorm.AdminUserIds.Contains(uid));
-		}
+		Guid uid = UserIdOf(userData);
+		if (IsScopedAdmin(userData)) q = q.Where(x => x.Dorm.AdminUserIds.Contains(uid));
+		else if (!IsFull(userData)) q = q.Where(x => x.Dorm.Tags.Contains(TagDorm.Active));
+		if (!IsFull(userData)) p.SelectorArgs = Safe(p.SelectorArgs, IsScopedAdmin(userData));
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.DormId.HasValue) q = q.Where(x => x.DormId == p.DormId);
@@ -1074,10 +1149,10 @@ public class HotelService(
 	public async Task<UResponse<DormRoomResponse?>> ReadDormRoomById(IdParams<DormRoomSelectorArgs> p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		IQueryable<DormRoomEntity> q = db.Set<DormRoomEntity>();
-		if (IsDormManager(userData) && userData is not { IsSuperAdmin: true }) {
-			Guid uid = UserIdOf(userData);
-			q = q.Where(x => x.Dorm.CreatorId == uid || x.Dorm.AdminUserIds.Contains(uid));
-		}
+		Guid uid = UserIdOf(userData);
+		if (IsScopedAdmin(userData)) q = q.Where(x => x.Dorm.AdminUserIds.Contains(uid));
+		else if (!IsFull(userData)) q = q.Where(x => x.Dorm.Tags.Contains(TagDorm.Active));
+		if (!IsFull(userData)) p.SelectorArgs = Safe(p.SelectorArgs, IsScopedAdmin(userData));
 
 		DormRoomResponse? e = await q.Select(Projections.DormRoomSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<DormRoomResponse?>(null, Usc.NotFound, ls.Get("dormRoomNotFound")) : new UResponse<DormRoomResponse?>(e);
@@ -1090,7 +1165,11 @@ public class HotelService(
 		DormRoomEntity? e = await db.Set<DormRoomEntity>().AsTracking().Include(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("dormRoomNotFound"));
 
-		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Dorm.CreatorId, e.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!CanAct(userData, e.Dorm.AdminUserIds, TagUser.PermissionManageDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (p.DormId.HasValue && p.DormId != e.DormId) {
+			DormEntity? to = await db.Set<DormEntity>().FirstOrDefaultAsync(x => x.Id == p.DormId, ct);
+			if (to == null || !CanAct(userData, to.AdminUserIds, TagUser.PermissionManageDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		}
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
 		if (p.DormId.HasValue) e.DormId = p.DormId.Value;
@@ -1111,7 +1190,7 @@ public class HotelService(
 		DormRoomEntity? e = await db.Set<DormRoomEntity>().Include(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("dormRoomNotFound"));
 
-		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Dorm.CreatorId, e.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionDeleteDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!CanAct(userData, e.Dorm.AdminUserIds, TagUser.PermissionDeleteDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<DormRoomEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
@@ -1125,7 +1204,7 @@ public class HotelService(
 
 		DormRoomEntity? room = await db.Set<DormRoomEntity>().Include(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.RoomId, ct);
 		if (room == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("dormRoomNotFound"));
-		if ((!userData.CanManage(room.CreatorId, []) && !userData.CanManage(room.Dorm.CreatorId, room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageDorms)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!CanAct(userData, room.Dorm.AdminUserIds, TagUser.PermissionManageDorms)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		DormBedEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -1149,10 +1228,10 @@ public class HotelService(
 	public async Task<UResponse<IEnumerable<DormBedResponse>?>> ReadDormBeds(DormBedReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		IQueryable<DormBedEntity> q = db.Set<DormBedEntity>().ApplyReadParams(p);
-		if (IsDormManager(userData) && userData is not { IsSuperAdmin: true }) {
-			Guid uid = UserIdOf(userData);
-			q = q.Where(x => x.Room.Dorm.CreatorId == uid || x.Room.Dorm.AdminUserIds.Contains(uid));
-		}
+		Guid uid = UserIdOf(userData);
+		if (IsScopedAdmin(userData)) q = q.Where(x => x.Room.Dorm.AdminUserIds.Contains(uid));
+		else if (!IsFull(userData)) q = q.Where(x => x.Room.Dorm.Tags.Contains(TagDorm.Active));
+		if (!IsFull(userData)) p.SelectorArgs = Safe(p.SelectorArgs, IsScopedAdmin(userData));
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.RoomId.HasValue) q = q.Where(x => x.RoomId == p.RoomId);
@@ -1169,10 +1248,10 @@ public class HotelService(
 	public async Task<UResponse<DormBedResponse?>> ReadDormBedById(IdParams<DormBedSelectorArgs> p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		IQueryable<DormBedEntity> q = db.Set<DormBedEntity>();
-		if (IsDormManager(userData) && userData is not { IsSuperAdmin: true }) {
-			Guid uid = UserIdOf(userData);
-			q = q.Where(x => x.Room.Dorm.CreatorId == uid || x.Room.Dorm.AdminUserIds.Contains(uid));
-		}
+		Guid uid = UserIdOf(userData);
+		if (IsScopedAdmin(userData)) q = q.Where(x => x.Room.Dorm.AdminUserIds.Contains(uid));
+		else if (!IsFull(userData)) q = q.Where(x => x.Room.Dorm.Tags.Contains(TagDorm.Active));
+		if (!IsFull(userData)) p.SelectorArgs = Safe(p.SelectorArgs, IsScopedAdmin(userData));
 
 		DormBedResponse? e = await q.Select(Projections.DormBedSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<DormBedResponse?>(null, Usc.NotFound, ls.Get("dormBedNotFound")) : new UResponse<DormBedResponse?>(e);
@@ -1185,7 +1264,11 @@ public class HotelService(
 		DormBedEntity? e = await db.Set<DormBedEntity>().AsTracking().Include(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("dormBedNotFound"));
 
-		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Room.Dorm.CreatorId, e.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!CanAct(userData, e.Room.Dorm.AdminUserIds, TagUser.PermissionManageDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (p.RoomId.HasValue && p.RoomId != e.RoomId) {
+			DormRoomEntity? to = await db.Set<DormRoomEntity>().Include(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.RoomId, ct);
+			if (to == null || !CanAct(userData, to.Dorm.AdminUserIds, TagUser.PermissionManageDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		}
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
 		if (p.Deposit.HasValue) e.Deposit = p.Deposit.Value;
@@ -1205,7 +1288,7 @@ public class HotelService(
 		DormBedEntity? e = await db.Set<DormBedEntity>().Include(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("dormBedNotFound"));
 
-		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Room.Dorm.CreatorId, e.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionDeleteDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!CanAct(userData, e.Room.Dorm.AdminUserIds, TagUser.PermissionDeleteDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<DormBedEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
@@ -1219,7 +1302,7 @@ public class HotelService(
 
 		DormBedEntity? bed = await db.Set<DormBedEntity>().Include(x => x.Contracts).Include(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.BedId, ct);
 		if (bed == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("dormBedNotFound"));
-		if ((!userData.CanManage(bed.CreatorId, []) && !userData.CanManage(bed.Room.Dorm.CreatorId, bed.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageContracts)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!CanAct(userData, bed.Room.Dorm.AdminUserIds, TagUser.PermissionManageContracts)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		if (bed.Contracts.Any(y => y.EndDate >= DateTime.UtcNow)) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("thisBedHasAnActiveContract"));
 
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
@@ -1343,12 +1426,11 @@ public class HotelService(
 	public async Task<UResponse<IEnumerable<DormBedContractResponse>?>> ReadDormBedContracts(DormBedContractReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		IQueryable<DormBedContractEntity> q = db.Set<DormBedContractEntity>().ApplyReadParams(p);
-		if (userData is not { IsSuperAdmin: true }) {
-			Guid uid = userData?.Id ?? Guid.Empty;
-			q = q.Where(x =>
-				x.UserId == uid ||
-				x.Bed.Room.Dorm.CreatorId == uid ||
-				x.Bed.Room.Dorm.AdminUserIds.Contains(uid));
+		if (!IsFull(userData)) {
+			Guid uid = UserIdOf(userData);
+			bool scoped = IsScopedAdmin(userData);
+			q = q.Where(x => x.UserId == uid || scoped && x.Bed.Room.Dorm.AdminUserIds.Contains(uid));
+			p.SelectorArgs = Safe(p.SelectorArgs);
 		}
 
 		if (p.UserId.IsNotNull()) q = q.Where(u => u.UserId == p.UserId);
@@ -1379,7 +1461,7 @@ public class HotelService(
 		DormBedContractEntity? e = await db.Set<DormBedContractEntity>().AsTracking().Include(x => x.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("contractNotFound"));
 
-		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Bed.Room.Dorm.CreatorId, e.Bed.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageContracts)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!CanAct(userData, e.Bed.Room.Dorm.AdminUserIds, TagUser.PermissionManageContracts)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Deposit.HasValue) e.Deposit = p.Deposit.Value;
 		if (p.Rent.HasValue) e.Rent = p.Rent.Value;
@@ -1399,7 +1481,7 @@ public class HotelService(
 		DormBedContractEntity? e = await db.Set<DormBedContractEntity>().Include(x => x.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("contractNotFound"));
 
-		if ((!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Bed.Room.Dorm.CreatorId, e.Bed.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionDeleteContracts)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!CanAct(userData, e.Bed.Room.Dorm.AdminUserIds, TagUser.PermissionDeleteContracts)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		await db.Set<DormBedContractEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
@@ -1413,7 +1495,7 @@ public class HotelService(
 
 		DormBedContractEntity? contract = await db.Set<DormBedContractEntity>().Include(x => x.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.ContractId, ct);
 		if (contract == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("contractNotFound"));
-		if ((!userData.CanManage(contract.CreatorId, []) && !userData.CanManage(contract.Bed.Room.Dorm.CreatorId, contract.Bed.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageInvoices))
+		if (!CanAct(userData, contract.Bed.Room.Dorm.AdminUserIds, TagUser.PermissionManageInvoices))
 			return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		EntityEntry<DormBedInvoiceEntity> e = await db.AddAsync(new DormBedInvoiceEntity {
@@ -1441,13 +1523,11 @@ public class HotelService(
 	public async Task<UResponse<IEnumerable<DormBedInvoiceResponse>?>> ReadDormBedInvoices(DormBedInvoiceReadParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		IQueryable<DormBedInvoiceEntity> q = db.Set<DormBedInvoiceEntity>().Include(x => x.Contract).ApplyReadParams(p);
-		if (userData is not { IsSuperAdmin: true }) {
-			Guid uid = userData?.Id ?? Guid.Empty;
-			q = q.Where(x =>
-				x.Contract != null && (
-					x.Contract.UserId == uid ||
-					x.Contract.Bed.Room.Dorm.CreatorId == uid ||
-					x.Contract.Bed.Room.Dorm.AdminUserIds.Contains(uid)));
+		if (!IsFull(userData)) {
+			Guid uid = UserIdOf(userData);
+			bool scoped = IsScopedAdmin(userData);
+			q = q.Where(x => x.Contract != null && (x.Contract.UserId == uid || scoped && x.Contract.Bed.Room.Dorm.AdminUserIds.Contains(uid)));
+			p.SelectorArgs = Safe(p.SelectorArgs);
 		}
 
 		if (p.UserId.IsNotNull()) q = q.Where(x => x.Contract!.UserId == p.UserId);
@@ -1498,8 +1578,12 @@ public class HotelService(
 
 		DormBedInvoiceEntity? e = await db.Set<DormBedInvoiceEntity>().AsTracking().Include(x => x.Contract).ThenInclude(x => x!.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
-		if (e.Contract != null && (!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Contract.Bed.Room.Dorm.CreatorId, e.Contract.Bed.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionManageInvoices))
+		if (!(e.Contract == null ? IsFull(userData) : CanAct(userData, e.Contract.Bed.Room.Dorm.AdminUserIds, TagUser.PermissionManageInvoices)))
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (p.ContractId.HasValue && p.ContractId != e.ContractId) {
+			DormBedContractEntity? to = await db.Set<DormBedContractEntity>().Include(x => x.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.ContractId, ct);
+			if (to == null || !CanAct(userData, to.Bed.Room.Dorm.AdminUserIds, TagUser.PermissionManageInvoices)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		}
 		if (p.CreditorAmount.IsNotNull()) e.CreditorAmount = p.CreditorAmount.Value;
 		if (p.DebtAmount.IsNotNull()) e.DebtAmount = p.DebtAmount.Value;
 		if (p.PenaltyAmount.IsNotNull()) e.PenaltyAmount = p.PenaltyAmount.Value;
@@ -1520,7 +1604,7 @@ public class HotelService(
 
 		DormBedInvoiceEntity? e = await db.Set<DormBedInvoiceEntity>().Include(x => x.Contract).ThenInclude(x => x!.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
-		if (e.Contract != null && (!userData.CanManage(e.CreatorId, []) && !userData.CanManage(e.Contract.Bed.Room.Dorm.CreatorId, e.Contract.Bed.Room.Dorm.AdminUserIds)) || !userData.HasPermission(TagUser.PermissionDeleteInvoices))
+		if (!(e.Contract == null ? IsFull(userData) : CanAct(userData, e.Contract.Bed.Room.Dorm.AdminUserIds, TagUser.PermissionDeleteInvoices)))
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		await db.Set<DormBedInvoiceEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
@@ -1576,7 +1660,7 @@ public class HotelService(
 		if (e?.Contract == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
 
 		bool isOwner = e.Contract.UserId == userData.Id;
-		bool isManager = userData.CanManage(e.Contract.Bed.Room.Dorm.CreatorId, e.Contract.Bed.Room.Dorm.AdminUserIds) && userData.HasPermission(TagUser.PermissionPayInvoices);
+		bool isManager = CanAct(userData, e.Contract.Bed.Room.Dorm.AdminUserIds, TagUser.PermissionPayInvoices);
 		if (!isOwner && !isManager) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		return await PayDormBedInvoice(new DormBedInvoicePayParams { InvoiceId = e.Id, UserId = e.Contract.UserId }, ct);
@@ -1588,13 +1672,10 @@ public class HotelService(
 		if (userData.IsExpired) return new UResponse<IEnumerable<DormBedInvoiceChartResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		IQueryable<DormBedInvoiceEntity> invoiceQuery = db.Set<DormBedInvoiceEntity>();
-		if (!userData.IsSuperAdmin) {
+		if (!IsFull(userData)) {
 			Guid uid = userData.Id;
-			invoiceQuery = invoiceQuery.Where(x =>
-				x.Contract != null && (
-					x.Contract.UserId == uid ||
-					x.Contract.Bed.Room.Dorm.CreatorId == uid ||
-					x.Contract.Bed.Room.Dorm.AdminUserIds.Contains(uid)));
+			bool scoped = IsScopedAdmin(userData);
+			invoiceQuery = invoiceQuery.Where(x => x.Contract != null && (x.Contract.UserId == uid || scoped && x.Contract.Bed.Room.Dorm.AdminUserIds.Contains(uid)));
 		}
 
 		var rawData = await invoiceQuery
