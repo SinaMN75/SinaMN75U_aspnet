@@ -9,6 +9,9 @@ public static class AuthRoutes {
 		r.MapPost("GetVerificationCodeForLogin", async (GetMobileVerificationCodeForLoginParams p, IAuthService s, CancellationToken c) => (await s.GetVerificationCodeForLogin(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("VerifyCodeForLogin", async (VerifyMobileForLoginParams p, IAuthService s, CancellationToken c) => (await s.VerifyCodeForLogin(p, c)).ToResult()).Produces<UResponse<LoginResponse>>();
 		r.MapPost("CompleteProfile", async (AuthCompleteProfileParams p, IAuthService s, CancellationToken c) => (await s.CompleteProfile(p, c)).ToResult()).Produces<UResponse<UserResponse>>();
+		r.MapPost("LoginWithGoogle", async (GoogleLoginParams p, IAuthService s, CancellationToken c) => (await s.LoginWithGoogle(p, c)).ToResult()).Produces<UResponse<LoginResponse>>();
+		r.MapPost("ForgotPassword", async (ForgotPasswordParams p, IAuthService s, CancellationToken c) => (await s.ForgotPassword(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("ResetPassword", async (ResetPasswordParams p, IAuthService s, CancellationToken c) => (await s.ResetPassword(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("LoginOrRegister", async (RegisterParams p, IAuthService s, CancellationToken c) => (await s.LoginOrRegister(p, c)).ToResult()).Produces<UResponse<LoginResponse>>();
 	}
 }

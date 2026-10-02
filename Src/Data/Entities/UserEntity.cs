@@ -111,6 +111,7 @@ public sealed class UserJson : BaseJson {
 	public string? FatherName { get; set; }
 	public decimal? Weight { get; set; }
 	public decimal? Height { get; set; }
+	public string? GoogleId { get; set; }
 
 	public string? NationalCardFrontRejectionReason { get; set; }
 	public string? NationalCardBackRejectionReason { get; set; }

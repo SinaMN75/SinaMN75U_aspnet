@@ -8,6 +8,9 @@ public interface IAuthService {
 	Task<UResponse> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> VerifyCodeForLogin(VerifyMobileForLoginParams p, CancellationToken ct);
 	Task<UResponse<LoginResponse?>> LoginOrRegister(RegisterParams p, CancellationToken ct);
+	Task<UResponse<LoginResponse?>> LoginWithGoogle(GoogleLoginParams p, CancellationToken ct);
+	Task<UResponse> ForgotPassword(ForgotPasswordParams p, CancellationToken ct);
+	Task<UResponse> ResetPassword(ResetPasswordParams p, CancellationToken ct);
 }
 
 public class AuthService(
@@ -16,7 +19,9 @@ public class AuthService(
 	ITokenService ts,
 	ISmsNotificationService smsNotificationService,
 	ILocalStorageService cache,
-	IInquiryService inquiryService
+	IInquiryService inquiryService,
+	IGoogleAuthService google,
+	IEmailService email
 ) : IAuthService {
 	public async Task<UResponse<LoginResponse?>> Register(RegisterParams p, CancellationToken ct) {
 		bool isUserExists = await db.Set<UserEntity>().AnyAsync(x => x.UserName == p.UserName, ct);
@@ -213,6 +218,99 @@ public class AuthService(
 		});
 	}
 
+	public async Task<UResponse<LoginResponse?>> LoginWithGoogle(GoogleLoginParams p, CancellationToken ct) {
+		if (!google.IsConfigured) return new UResponse<LoginResponse?>(null, Usc.BadRequest, ls.Get("googleSignInIsNotConfigured"));
+
+		GoogleUser? g = await google.Validate(p.IdToken, ct);
+		if (g == null) return new UResponse<LoginResponse?>(null, Usc.UnAuthorized, ls.Get("googleTokenIsInvalid"));
+		if (!g.EmailVerified) return new UResponse<LoginResponse?>(null, Usc.Forbidden, ls.Get("googleEmailIsNotVerified"));
+
+		UserEntity? user = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.JsonData.GoogleId == g.Id, ct)
+		                   ?? await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Email == g.Email, ct);
+
+		if (user == null) {
+			Guid userId = Guid.CreateVersion7();
+			DateTime now = DateTime.UtcNow;
+			bool userNameTaken = await db.Set<UserEntity>().AnyAsync(x => x.UserName == g.Email, ct);
+			user = new UserEntity {
+				Id = userId,
+				CreatorId = userId,
+				CreatedAt = now,
+				UserName = userNameTaken ? $"google_{g.Id}" : g.Email,
+				Email = g.Email,
+				FirstName = g.FirstName,
+				LastName = g.LastName,
+				Password = UPasswordHasher.Hash(ts.GenerateRefreshToken()),
+				RefreshToken = ts.GenerateRefreshToken(),
+				RefreshTokenExpiresAt = ts.RefreshTokenExpiry(),
+				Tags = [TagUser.Unspecified],
+				JsonData = new UserJson { GoogleId = g.Id },
+				Wallets = [new WalletEntity { Id = userId, CreatorId = userId, CreatedAt = now, JsonData = new WalletJson(), Tags = [TagWallet.Primary], Balance = 0 }]
+			};
+			await db.Set<UserEntity>().AddAsync(user, ct);
+		}
+		else {
+			user.JsonData.GoogleId ??= g.Id;
+			if (user.FirstName.IsNullOrEmpty()) user.FirstName = g.FirstName;
+			if (user.LastName.IsNullOrEmpty()) user.LastName = g.LastName;
+			user.RefreshToken = ts.GenerateRefreshToken();
+			user.RefreshTokenExpiresAt = ts.RefreshTokenExpiry();
+		}
+
+		await db.SaveChangesAsync(ct);
+
+		return new UResponse<LoginResponse?>(new LoginResponse {
+			Token = ts.GenerateJwt(user),
+			RefreshToken = user.RefreshToken,
+			RefreshTokenExpiresAt = user.RefreshTokenExpiresAt,
+			User = user.MapToResponse()
+		});
+	}
+
+	public async Task<UResponse> ForgotPassword(ForgotPasswordParams p, CancellationToken ct) {
+		// Same answer whether or not the email exists, so the endpoint can't be used to discover accounts.
+		UResponse sent = new(message: ls.Get("ifAnAccountExistsAResetCodeWasSent"));
+
+		UserEntity? user = await FindByEmail(p.Email, ct);
+		if (user == null || user.Email.IsNullOrEmpty()) return sent;
+		if (cache.Get("pwreset_sent_" + user.Id) != null) return sent;
+
+		string code = RandomNumberGenerator.GetInt32(100_000, 1_000_000).ToString();
+		cache.Set("pwreset_" + user.Id, code, PasswordResetCodeLifetime);
+		cache.Set("pwreset_sent_" + user.Id, "1", TimeSpan.FromMinutes(1));
+
+		await email.Send(user.Email, ls.Get("passwordResetEmailSubject"), string.Format(ls.Get("passwordResetEmailBody"), code, PasswordResetCodeLifetime.TotalMinutes), ct);
+		return sent;
+	}
+
+	public async Task<UResponse> ResetPassword(ResetPasswordParams p, CancellationToken ct) {
+		string lockKey = "lockout_pwreset_" + p.Email.Trim().ToLowerInvariant();
+		if (IsLockedOut(lockKey)) return new UResponse(Usc.TooManyRequests, ls.Get("tooManyFailedAttemptsPleaseTryAgainLater"));
+
+		UserEntity? user = await FindByEmail(p.Email, ct, tracking: true);
+		string? expected = user == null ? null : cache.Get("pwreset_" + user.Id);
+		if (user == null || expected.IsNullOrEmpty() || !CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(expected), Encoding.UTF8.GetBytes(p.Code.Trim()))) {
+			RegisterFailedAttempt(lockKey);
+			return new UResponse(Usc.WrongVerificationCode, ls.Get("passwordResetCodeIsInvalidOrExpired"));
+		}
+
+		ResetFailedAttempts(lockKey);
+		cache.Set("pwreset_" + user.Id, "", TimeSpan.FromSeconds(1));
+		user.Password = UPasswordHasher.Hash(p.NewPassword);
+		user.RefreshToken = ts.GenerateRefreshToken(); // signs out other sessions
+		user.RefreshTokenExpiresAt = ts.RefreshTokenExpiry();
+		await db.SaveChangesAsync(ct);
+		return new UResponse(message: ls.Get("passwordChangedSuccessfully"));
+	}
+
+	private async Task<UserEntity?> FindByEmail(string email, CancellationToken ct, bool tracking = false) {
+		string trimmed = email.Trim();
+		string lower = trimmed.ToLowerInvariant();
+		IQueryable<UserEntity> users = tracking ? db.Set<UserEntity>().AsTracking() : db.Set<UserEntity>();
+		return await users.FirstOrDefaultAsync(x => x.Email == trimmed || x.Email == lower, ct);
+	}
+
+	private static readonly TimeSpan PasswordResetCodeLifetime = TimeSpan.FromMinutes(15);
 	private const int MaxFailedAttempts = 5;
 	private static readonly TimeSpan LockoutWindow = TimeSpan.FromMinutes(15);
 

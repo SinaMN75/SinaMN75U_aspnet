@@ -53,3 +53,23 @@ public sealed class AuthCompleteProfileParams : BaseParams {
 	[UValidationRequired("nationalCodeIsRequired"), UValidationStringLength(10, 10, "nationalCodeIsInvalid")]
 	public string NationalCode { get; set; } = null!;
 }
+public sealed class GoogleLoginParams : BaseParams {
+	[UValidationRequired("googleTokenIsInvalid")]
+	public string IdToken { get; set; } = null!;
+}
+
+public sealed class ForgotPasswordParams : BaseParams {
+	[UValidationRequired("emailIsRequired"), UValidationEmail("pleaseEnterAValidEmail")]
+	public string Email { get; set; } = null!;
+}
+
+public sealed class ResetPasswordParams : BaseParams {
+	[UValidationRequired("emailIsRequired"), UValidationEmail("pleaseEnterAValidEmail")]
+	public string Email { get; set; } = null!;
+
+	[UValidationRequired("otpIsRequired")]
+	public string Code { get; set; } = null!;
+
+	[UValidationRequired("pleaseEnterAPassword"), UValidationStringLength(4, 100, "passwordLengthMustBeBetween4And100Characters")]
+	public string NewPassword { get; set; } = null!;
+}

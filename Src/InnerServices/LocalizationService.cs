@@ -409,7 +409,17 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "chargePinPurchasedSuccessfully", "The charge PIN was purchased successfully." },
 		{ "simCardChargedSuccessfully", "The SIM card was charged successfully." },
 		{ "internetPackageActivatedSuccessfully", "The internet package was activated successfully." },
-		{ "yourTransactionIsBeingProcessed", "Your transaction is being processed. The result will be known in a few minutes; if it fails, the amount is returned to your wallet." }
+		{ "yourTransactionIsBeingProcessed", "Your transaction is being processed. The result will be known in a few minutes; if it fails, the amount is returned to your wallet." },
+
+		// ===== Google login / password reset =====
+		{ "googleSignInIsNotConfigured", "Sign in with Google is not available." },
+		{ "googleTokenIsInvalid", "Google sign-in failed. Please try again." },
+		{ "googleEmailIsNotVerified", "Your Google email is not verified." },
+		{ "ifAnAccountExistsAResetCodeWasSent", "If an account exists for this email, a reset code has been sent to it." },
+		{ "passwordResetCodeIsInvalidOrExpired", "The reset code is invalid or has expired." },
+		{ "passwordChangedSuccessfully", "Your password has been changed." },
+		{ "passwordResetEmailSubject", "Your password reset code" },
+		{ "passwordResetEmailBody", "Your password reset code is {0}. It expires in {1} minutes. If you did not request it, ignore this email." }
 	};
 
 	private static readonly Dictionary<string, string> Fa = new() {
@@ -816,7 +826,17 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "chargePinPurchasedSuccessfully", "رمز شارژ با موفقیت خریداری شد." },
 		{ "simCardChargedSuccessfully", "سیم‌کارت با موفقیت شارژ شد." },
 		{ "internetPackageActivatedSuccessfully", "بسته اینترنت با موفقیت فعال شد." },
-		{ "yourTransactionIsBeingProcessed", "تراکنش شما در حال پردازش است. نتیجه تا چند دقیقه دیگر مشخص می‌شود و در صورت ناموفق بودن، مبلغ به کیف پول شما بازمی‌گردد." }
+		{ "yourTransactionIsBeingProcessed", "تراکنش شما در حال پردازش است. نتیجه تا چند دقیقه دیگر مشخص می‌شود و در صورت ناموفق بودن، مبلغ به کیف پول شما بازمی‌گردد." },
+
+		// ===== Google login / password reset =====
+		{ "googleSignInIsNotConfigured", "ورود با گوگل در دسترس نیست." },
+		{ "googleTokenIsInvalid", "ورود با گوگل ناموفق بود. لطفاً دوباره تلاش کنید." },
+		{ "googleEmailIsNotVerified", "ایمیل حساب گوگل شما تأیید نشده است." },
+		{ "ifAnAccountExistsAResetCodeWasSent", "اگر حسابی با این ایمیل وجود داشته باشد، کد بازیابی برای آن ارسال شد." },
+		{ "passwordResetCodeIsInvalidOrExpired", "کد بازیابی نامعتبر است یا منقضی شده است." },
+		{ "passwordChangedSuccessfully", "رمز عبور شما تغییر کرد." },
+		{ "passwordResetEmailSubject", "کد بازیابی رمز عبور" },
+		{ "passwordResetEmailBody", "کد بازیابی رمز عبور شما {0} است و تا {1} دقیقه معتبر است. اگر این درخواست را نداده‌اید، این ایمیل را نادیده بگیرید." }
 	};
 
 	public string Get(string key, string? locale = null) {

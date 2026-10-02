@@ -106,6 +106,8 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IBlogService, BlogService>();
 		builder.Services.AddScoped<IFileManagerService, FileManagerService>();
 		builder.Services.AddScoped<IDbAdminService, DbAdminService>();
+		builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
+		builder.Services.AddScoped<IEmailService, EmailService>();
 
 		if (Core.App.Test) {
 			builder.Services.AddScoped<IInquiryService, InquiryServiceFake>();
