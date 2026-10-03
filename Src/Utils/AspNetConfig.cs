@@ -5,17 +5,16 @@ public static partial class AspNetConfig {
 		builder.Services.Configure<KestrelServerOptions>(o => o.AllowSynchronousIO = false);
 		builder.Services.Configure<IISServerOptions>(o => o.AllowSynchronousIO = false);
 		builder.Services.AddCors(options => options.AddDefaultPolicy(policy => {
-			// if (builder.Environment.IsDevelopment() || Core.App.Test) 
+			// if (builder.IsDevOrTest()) 
 				policy.AllowAnyOrigin();
 			// else policy.WithOrigins(Core.App.Cors.AllowedOrigins);
 			policy.AllowAnyMethod().AllowAnyHeader();
 		}));
-		builder.Services.AddUSwagger();
+		if (builder.IsDevOrTest()) builder.Services.AddUSwagger();
 		builder.Services.AddHttpContextAccessor();
 		builder.Services.AddHttpClient<IHttpClientService, HttpClientService>().ConfigurePrimaryHttpMessageHandler(() => {
 			HttpClientHandler handler = new();
-			if (builder.Environment.IsDevelopment())
-				handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+			if (builder.IsDevOrTest()) handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
 			return handler;
 		});
 		builder.Services.AddURateLimiter();
@@ -36,7 +35,7 @@ public static partial class AspNetConfig {
 				o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
 				o.EnableRetryOnFailure(3, TimeSpan.FromSeconds(5), null);
 			});
-			if (builder.Environment.IsDevelopment())
+			if (builder.IsDevOrTest())
 				b.LogTo(x => {
 						if (x.Contains("Executed DbCommand")) {
 							Match timeMatch = MyRegex3().Match(x);
@@ -131,8 +130,6 @@ public static partial class AspNetConfig {
 		app.SeedDefaultAppVersions();
 		app.UseCors();
 		app.UseStaticFiles();
-		app.UseUSwagger();
-		app.MapUModelsPage();
 		app.UseHttpsRedirection();
 		app.UseRateLimiter();
 		app.UseMiddleware<TimezoneMiddleware>();
@@ -140,7 +137,11 @@ public static partial class AspNetConfig {
 		app.UseMiddleware<ApiLogMiddleware>();
 		app.UseMiddleware<ExceptionMiddleware>();
 		app.UseMiddleware<DbExceptionMiddleware>();
-		if (app.Environment.IsDevelopment()) app.UseDeveloperExceptionPage();
+		if (app.IsDevOrTest()) {
+			app.UseDeveloperExceptionPage();
+			app.UseUSwagger();
+			app.MapUModelsPage();
+		}
 
 		app.MapAuthRoutes(RouteTags.Auth);
 		app.MapUserRoutes(RouteTags.User);

@@ -25,6 +25,8 @@ public static class UExtensions {
 	public static IEnumerable<IdTitleParams> GetValues<T>() where T : Enum => Enum.GetValues(typeof(T)).Cast<int>().Select(item => new IdTitleParams { Title = Enum.GetName(typeof(T), item), Id = item }).ToList();
 	public static int GetNumber<T>(this T value) where T : Enum => Convert.ToInt32(value);
 	public static string GetString<T>(this T value) where T : Enum => value.ToString();
+	public static bool IsDevOrTest(this WebApplicationBuilder builder) => builder.Environment.IsDevelopment() || Core.App.Test;
+	public static bool IsDevOrTest(this WebApplication builder) => builder.Environment.IsDevelopment() || Core.App.Test;
 
 	public static bool ContainsAny<T>(this IEnumerable<T>? source, params T[]? values) {
 		if (source == null || values == null || values.Length == 0) return false;
