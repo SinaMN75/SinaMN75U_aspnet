@@ -429,7 +429,38 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "levelIsOutOfRange", "The level is out of the allowed range." },
 		{ "thisSportIsAlreadyInYourProfile", "This sport is already in your profile." },
 		{ "playerSportProfileNotFound", "Sport profile not found." },
-		{ "sportIsInUseDisableItInstead", "This sport is used by players; disable it instead of deleting." }
+		{ "sportIsInUseDisableItInstead", "This sport is used by players; disable it instead of deleting." },
+
+		// ===== Tournament =====
+		{ "tournamentNotFound", "Tournament not found." },
+		{ "formatIsRequired", "Choose one tournament format." },
+		{ "thisFormatIsNotAvailableYet", "This format is not available yet." },
+		{ "participantTypeIsRequired", "Choose singles or doubles." },
+		{ "capacityMustBeAtLeastTwo", "Capacity must be at least 2." },
+		{ "registrationIsClosed", "Registration for this tournament is closed." },
+		{ "tournamentIsFull", "This tournament is full." },
+		{ "partnerEmailIsRequired", "Enter your partner's email." },
+		{ "partnerNotFound", "No player was found with this email." },
+		{ "aPlayerIsAlreadyRegistered", "A player is already registered in this tournament." },
+		{ "addThisSportToYourProfileFirst", "Add this sport to your profile first." },
+		{ "levelIsNotInTheTournamentRange", "Your level is not in this tournament's range." },
+		{ "entryNotFound", "Entry not found." },
+		{ "atLeastTwoApprovedEntriesAreRequired", "At least two approved entries are required." },
+		{ "tournamentHasStarted", "The tournament has already started." },
+		{ "matchNotFound", "Match not found." },
+		{ "scoresAreInvalid", "The scores are invalid." },
+		{ "thisFormatIsForIndividualPlayers", "This format is for individual players." },
+		{ "teamNameIsRequired", "Enter the team name." },
+		{ "playersMustBeAMultipleOfFour", "The number of players must be a multiple of 4." },
+		{ "notEnoughEntriesForThisFormat", "There are not enough approved entries for this format." },
+		{ "tournamentHasNotStarted", "The tournament hasn't started yet." },
+		{ "matchIsNotReady", "Both sides of this match aren't known yet." },
+		{ "aLaterMatchIsAlreadyPlayed", "A later match already depends on this result." },
+		{ "scoresMustAddUpToPointsPerMatch", "The two scores must add up to the points per match." },
+		{ "matchIsNotComplete", "The match isn't complete." },
+		{ "invalidSetScore", "A set score isn't valid for this sport." },
+		{ "drawsAreNotAllowedInKnockout", "A knockout match needs a winner." },
+		{ "onlyAFinishedBoxLeagueCanContinue", "Only a finished box league can continue to a next period." }
 	};
 
 	private static readonly Dictionary<string, string> Fa = new() {
@@ -856,7 +887,38 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "levelIsOutOfRange", "سطح خارج از محدوده مجاز است." },
 		{ "thisSportIsAlreadyInYourProfile", "این ورزش قبلاً در پروفایل شما ثبت شده است." },
 		{ "playerSportProfileNotFound", "پروفایل ورزشی پیدا نشد." },
-		{ "sportIsInUseDisableItInstead", "این ورزش توسط بازیکنان استفاده شده است؛ به جای حذف، آن را غیرفعال کنید." }
+		{ "sportIsInUseDisableItInstead", "این ورزش توسط بازیکنان استفاده شده است؛ به جای حذف، آن را غیرفعال کنید." },
+
+		// ===== Tournament =====
+		{ "tournamentNotFound", "تورنمنت پیدا نشد." },
+		{ "formatIsRequired", "یک فرمت تورنمنت انتخاب کنید." },
+		{ "thisFormatIsNotAvailableYet", "این فرمت هنوز در دسترس نیست." },
+		{ "participantTypeIsRequired", "انفرادی یا دونفره را انتخاب کنید." },
+		{ "capacityMustBeAtLeastTwo", "ظرفیت باید حداقل ۲ باشد." },
+		{ "registrationIsClosed", "ثبت‌نام این تورنمنت بسته است." },
+		{ "tournamentIsFull", "ظرفیت این تورنمنت تکمیل است." },
+		{ "partnerEmailIsRequired", "ایمیل هم‌تیمی خود را وارد کنید." },
+		{ "partnerNotFound", "بازیکنی با این ایمیل پیدا نشد." },
+		{ "aPlayerIsAlreadyRegistered", "یکی از بازیکنان قبلاً در این تورنمنت ثبت‌نام کرده است." },
+		{ "addThisSportToYourProfileFirst", "ابتدا این ورزش را به پروفایل خود اضافه کنید." },
+		{ "levelIsNotInTheTournamentRange", "سطح شما در بازه این تورنمنت نیست." },
+		{ "entryNotFound", "ثبت‌نام پیدا نشد." },
+		{ "atLeastTwoApprovedEntriesAreRequired", "حداقل دو ثبت‌نام تأییدشده لازم است." },
+		{ "tournamentHasStarted", "تورنمنت شروع شده است." },
+		{ "matchNotFound", "بازی پیدا نشد." },
+		{ "scoresAreInvalid", "امتیازها معتبر نیستند." },
+		{ "thisFormatIsForIndividualPlayers", "این فرمت برای بازیکنان انفرادی است." },
+		{ "teamNameIsRequired", "نام تیم را وارد کنید." },
+		{ "playersMustBeAMultipleOfFour", "تعداد بازیکنان باید مضربی از ۴ باشد." },
+		{ "notEnoughEntriesForThisFormat", "تعداد ثبت‌نام‌های تأییدشده برای این فرمت کافی نیست." },
+		{ "tournamentHasNotStarted", "تورنمنت هنوز شروع نشده است." },
+		{ "matchIsNotReady", "هنوز هر دو طرف این بازی مشخص نیستند." },
+		{ "aLaterMatchIsAlreadyPlayed", "یک بازی بعدی به نتیجه این بازی وابسته است." },
+		{ "scoresMustAddUpToPointsPerMatch", "جمع دو امتیاز باید برابر امتیاز هر بازی باشد." },
+		{ "matchIsNotComplete", "بازی کامل نشده است." },
+		{ "invalidSetScore", "امتیاز یکی از ست‌ها برای این ورزش معتبر نیست." },
+		{ "drawsAreNotAllowedInKnockout", "بازی حذفی باید برنده داشته باشد." },
+		{ "onlyAFinishedBoxLeagueCanContinue", "فقط باکس‌لیگ تمام‌شده به دوره بعد می‌رود." }
 	};
 
 	public string Get(string key, string? locale = null) {

@@ -11,6 +11,19 @@ public sealed class PlayerSportProfileSelectorArgs : BaseSelectorArgs {
 	public SportSelectorArgs? Sport { get; set; }
 }
 
+public sealed class TournamentSelectorArgs : BaseSelectorArgs {
+	public SportSelectorArgs? Sport { get; set; }
+	public TournamentEntrySelectorArgs? Entries { get; set; }
+	public TournamentMatchSelectorArgs? Matches { get; set; }
+}
+
+public sealed class TournamentEntrySelectorArgs : BaseSelectorArgs {
+	public bool Users { get; set; }
+	public TournamentSelectorArgs? Tournament { get; set; }
+}
+
+public sealed class TournamentMatchSelectorArgs : BaseSelectorArgs;
+
 public sealed class HotelSelectorArgs : BaseSelectorArgs {
 	public HotelRoomSelectorArgs? Rooms { get; set; }
 	public HotelReservationSelectorArgs? Reservations { get; set; }
@@ -1112,6 +1125,82 @@ public static class Projections {
 			User = x.User == null ? null : (args.User != null ? UserSelector(args.User) : u => null!).Invoke(x.User),
 			Sport = x.Sport == null ? null : (args.Sport != null ? SportSelector(args.Sport) : s => null!).Invoke(x.Sport),
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
+
+	/// <summary>A user as other players may see them: id and names only.</summary>
+	public static Expression<Func<UserEntity, UserResponse>> PublicUserSelector() => x => new UserResponse {
+		Id = x.Id,
+		CreatedAt = x.CreatedAt,
+		Tags = new List<TagUser>(),
+		JsonData = new UserJson(),
+		FirstName = x.FirstName,
+		LastName = x.LastName
+	};
+
+	public static Expression<Func<TournamentEntity, TournamentResponse>> TournamentSelector(TournamentSelectorArgs args) {
+		Expression<Func<TournamentEntity, TournamentResponse>> selector = x => new TournamentResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			AdminUserIds = x.AdminUserIds,
+			Title = x.Title,
+			StartDate = x.StartDate,
+			Capacity = x.Capacity,
+			EntryFee = x.EntryFee,
+			MinLevel = x.MinLevel,
+			MaxLevel = x.MaxLevel,
+			SportId = x.SportId,
+			EntryCount = x.Entries.Count(e => !e.Tags.Contains(TagTournamentEntry.Rejected)),
+			Sport = x.Sport == null ? null : (args.Sport != null ? SportSelector(args.Sport) : s => null!).Invoke(x.Sport),
+			Entries = args.Entries == null ? null : x.Entries.AsQueryable().Select(TournamentEntrySelector(args.Entries)).ToList(),
+			Matches = args.Matches == null ? null : x.Matches.OrderBy(m => m.Round).ThenBy(m => m.Order).AsQueryable().Select(TournamentMatchSelector(args.Matches)).ToList(),
+			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<TournamentEntryEntity, TournamentEntryResponse>> TournamentEntrySelector(TournamentEntrySelectorArgs args) {
+		Expression<Func<TournamentEntryEntity, TournamentEntryResponse>> selector = x => new TournamentEntryResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Title = x.Title,
+			Seed = x.Seed,
+			GroupNumber = x.GroupNumber,
+			TournamentId = x.TournamentId,
+			Users = args.Users ? x.Users.AsQueryable().Select(PublicUserSelector()).ToList() : null,
+			Tournament = x.Tournament == null ? null : (args.Tournament != null ? TournamentSelector(args.Tournament) : t => null!).Invoke(x.Tournament)
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<TournamentMatchEntity, TournamentMatchResponse>> TournamentMatchSelector(TournamentMatchSelectorArgs args) {
+		Expression<Func<TournamentMatchEntity, TournamentMatchResponse>> selector = x => new TournamentMatchResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Round = x.Round,
+			Order = x.Order,
+			ScheduledAt = x.ScheduledAt,
+			TournamentId = x.TournamentId,
+			EntryAId = x.EntryAId,
+			EntryBId = x.EntryBId,
+			WinnerEntryId = x.WinnerEntryId,
+			GroupNumber = x.GroupNumber,
+			PartnerAId = x.PartnerAId,
+			PartnerBId = x.PartnerBId,
+			NextMatchId = x.NextMatchId,
+			NextMatchSlot = x.NextMatchSlot,
+			LoserNextMatchId = x.LoserNextMatchId,
+			LoserNextMatchSlot = x.LoserNextMatchSlot
 		};
 		return selector.Expand();
 	}

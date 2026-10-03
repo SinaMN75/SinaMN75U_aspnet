@@ -773,3 +773,55 @@ public enum TagPlayerSportProfile {
 	Active = 101,
 	Primary = 201 // the player's main sport
 }
+
+public enum TagTournament {
+	// Format
+	RoundRobin = 101,
+	SingleElimination = 102,
+	DoubleElimination = 103,
+	GroupsKnockout = 104,
+	Americano = 105,
+	Mexicano = 106,
+	Swiss = 107,
+	Ladder = 108,
+
+	// Participant type
+	Singles = 201,
+	Doubles = 202,
+	Team = 203,
+
+	// Status
+	Draft = 301,
+	Registration = 302,
+	InProgress = 303,
+	Finished = 304,
+	Cancelled = 305,
+
+	// Registrations are approved without the organizer
+	AutoApprove = 401
+}
+
+public enum TagTournamentEntry {
+	Pending = 101,
+	Approved = 102,
+	Rejected = 103
+}
+
+public enum TagTournamentMatch {
+	// Status
+	Scheduled = 101,
+	Live = 102,
+	Finished = 103,
+	Bye = 104,
+
+	// Bracket
+	Group = 201,
+	Winners = 202,
+	Losers = 203,
+	GrandFinal = 204,
+	ThirdPlace = 205
+}
+
+public enum TagPlayerRatingHistory {
+	Match = 101
+}

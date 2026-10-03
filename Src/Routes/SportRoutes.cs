@@ -14,5 +14,20 @@ public static class SportRoutes {
 		r.MapPost("PlayerSportProfile/Read", async (PlayerSportProfileReadParams p, ISportService s, CancellationToken c) => (await s.ReadPlayerSportProfiles(p, c)).ToResult()).Produces<UResponse<IEnumerable<PlayerSportProfileResponse>>>();
 		r.MapPost("PlayerSportProfile/Update", async (PlayerSportProfileUpdateParams p, ISportService s, CancellationToken c) => (await s.UpdatePlayerSportProfile(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("PlayerSportProfile/Delete", async (IdParams p, ISportService s, CancellationToken c) => (await s.DeletePlayerSportProfile(p, c)).ToResult()).Produces<UResponse>();
+
+		r.MapPost("Tournament/Create", async (TournamentCreateParams p, ISportService s, CancellationToken c) => (await s.CreateTournament(p, c)).ToResult()).Produces<UResponse<Guid?>>();
+		r.MapPost("Tournament/Read", async (TournamentReadParams p, ISportService s, CancellationToken c) => (await s.ReadTournaments(p, c)).ToResult()).Produces<UResponse<IEnumerable<TournamentResponse>>>();
+		r.MapPost("Tournament/ReadById", async (IdParams<TournamentSelectorArgs> p, ISportService s, CancellationToken c) => (await s.ReadTournamentById(p, c)).ToResult()).Produces<UResponse<TournamentResponse>>();
+		r.MapPost("Tournament/Update", async (TournamentUpdateParams p, ISportService s, CancellationToken c) => (await s.UpdateTournament(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("Tournament/Delete", async (IdParams p, ISportService s, CancellationToken c) => (await s.DeleteTournament(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("Tournament/Standings", async (IdParams p, ISportService s, CancellationToken c) => (await s.ReadTournamentStandings(p, c)).ToResult()).Produces<UResponse<IEnumerable<TournamentStandingResponse>>>();
+		r.MapPost("Tournament/GenerateMatches", async (IdParams p, ISportService s, CancellationToken c) => (await s.GenerateTournamentMatches(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("Tournament/NextSeason", async (IdParams p, ISportService s, CancellationToken c) => (await s.CreateNextTournamentSeason(p, c)).ToResult()).Produces<UResponse<Guid?>>();
+
+		r.MapPost("TournamentEntry/Register", async (TournamentRegisterParams p, ISportService s, CancellationToken c) => (await s.RegisterTournamentEntry(p, c)).ToResult()).Produces<UResponse<Guid?>>();
+		r.MapPost("TournamentEntry/Update", async (TournamentEntryUpdateParams p, ISportService s, CancellationToken c) => (await s.UpdateTournamentEntry(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("TournamentEntry/Delete", async (IdParams p, ISportService s, CancellationToken c) => (await s.DeleteTournamentEntry(p, c)).ToResult()).Produces<UResponse>();
+
+		r.MapPost("TournamentMatch/Update", async (TournamentMatchUpdateParams p, ISportService s, CancellationToken c) => (await s.UpdateTournamentMatch(p, c)).ToResult()).Produces<UResponse>();
 	}
 }
