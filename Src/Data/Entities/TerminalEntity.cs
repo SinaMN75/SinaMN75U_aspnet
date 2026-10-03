@@ -52,7 +52,9 @@ public sealed class TerminalBrandEntity : BaseEntity<TagTerminalBrand, TerminalB
 	public ICollection<TerminalEntity> Terminals { get; set; } = [];
 }
 
-public sealed class TerminalBrandJson : BaseJson;
+public sealed class TerminalBrandJson : BaseJson {
+	public string? Agreement { get; set; }
+}
 
 
 [Table("TerminalBroker")]

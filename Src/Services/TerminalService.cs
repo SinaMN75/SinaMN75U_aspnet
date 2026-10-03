@@ -105,6 +105,8 @@ public class TerminalService(
 		(TerminalEntity? terminal, MerchantEntity? merchant, TerminalBrandEntity? brand, TerminalBrokerEntity? broker, Usc status, string message) = await ResolveAssignable(userData, p, ct);
 		if (terminal == null || merchant == null || brand == null || broker == null) return new UResponse<TerminalAvailabilityResponse?>(null, status, message);
 
+		if (brand.JsonData.Agreement.IsNullOrEmpty()) return new UResponse<TerminalAvailabilityResponse?>(new TerminalAvailabilityResponse { Id = terminal.Id, Serial = terminal.Serial });
+
 		byte[]? pdf = await GenerateAgreement(merchant.User, merchant, terminal, brand, broker);
 		if (pdf == null) return new UResponse<TerminalAvailabilityResponse?>(null, Usc.InternalServerError, ls.Get("generatingTheAgreementFailed"));
 		string agreement = UserFileStore.SaveBytes(env.WebRootPath, userData.Id, $"terminal-{terminal.Serial}.pdf", pdf);
@@ -122,14 +124,17 @@ public class TerminalService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<TerminalResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<TerminalResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
-		if (!p.AcceptedAgreement) return new UResponse<TerminalResponse?>(null, Usc.BadRequest, ls.Get("youHaveToAcceptTheAgreementToContinue"));
 
 		(TerminalEntity? terminal, MerchantEntity? merchant, TerminalBrandEntity? brand, TerminalBrokerEntity? broker, Usc status, string message) = await ResolveAssignable(userData, p, ct);
 		if (terminal == null || merchant == null || brand == null || broker == null) return new UResponse<TerminalResponse?>(null, status, message);
 
-		byte[]? pdf = await GenerateAgreement(merchant.User, merchant, terminal, brand, broker);
-		if (pdf == null) return new UResponse<TerminalResponse?>(null, Usc.InternalServerError, ls.Get("generatingTheAgreementFailed"));
-		string agreement = UserFileStore.SaveBytes(env.WebRootPath, userData.Id, $"terminal-{terminal.Serial}.pdf", pdf);
+		string? agreement = null;
+		if (brand.JsonData.Agreement.IsNotNullOrEmpty()) {
+			if (!p.AcceptedAgreement) return new UResponse<TerminalResponse?>(null, Usc.BadRequest, ls.Get("youHaveToAcceptTheAgreementToContinue"));
+			byte[]? pdf = await GenerateAgreement(merchant.User, merchant, terminal, brand, broker);
+			if (pdf == null) return new UResponse<TerminalResponse?>(null, Usc.InternalServerError, ls.Get("generatingTheAgreementFailed"));
+			agreement = UserFileStore.SaveBytes(env.WebRootPath, userData.Id, $"terminal-{terminal.Serial}.pdf", pdf);
+		}
 
 		terminal.JsonData.Detail1 = p.Title;
 		terminal.JsonData.Detail2 = "";
@@ -151,7 +156,7 @@ public class TerminalService(
 			SimCardSerial = terminal.SimCardSerial,
 			Imei = terminal.Imei,
 			TerminalId = terminal.TerminalId,
-			Agreement = Core.App.BaseUrl + "/Media/" + agreement,
+			Agreement = agreement == null ? null : Core.App.BaseUrl + "/Media/" + agreement,
 			MerchantId = terminal.MerchantId,
 			TerminalBrandId = terminal.TerminalBrandId,
 			TerminalBrokerId = terminal.TerminalBrokerId,
@@ -518,7 +523,7 @@ public class TerminalService(
 		TerminalBrandEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
 			CreatedAt = DateTime.UtcNow,
-			JsonData = new TerminalBrandJson(),
+			JsonData = new TerminalBrandJson { Agreement = p.Agreement.NullIfEmpty() },
 			Tags = p.Tags,
 			CreatorId = p.CreatorId ?? userData.Id,
 			Code = code,
@@ -559,6 +564,7 @@ public class TerminalService(
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
 		if (p.Model.IsNotNullOrEmpty()) e.Model = p.Model;
+		if (p.Agreement != null) e.JsonData.Agreement = p.Agreement.NullIfEmpty();
 
 		e.ApplyUpdateParam<TerminalBrandEntity, TagTerminalBrand, TerminalBrandJson>(p);
 
@@ -737,7 +743,7 @@ public class TerminalService(
 		TerminalBrokerEntity broker
 	) {
 		try {
-			string htmlPath = Path.Combine(AppContext.BaseDirectory, "Templates", brand.Tags.Contains(TagTerminalBrand.Atm) ? "atmAgreemenlToPrint.html" : "atmAgreement.html");
+			string htmlPath = Path.Combine(AppContext.BaseDirectory, "Templates", brand.JsonData.Agreement!);
 			if (!File.Exists(htmlPath)) {
 				ULog.Error($"Agreement template not found at {htmlPath}");
 				return null;

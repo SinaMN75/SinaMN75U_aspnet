@@ -90,6 +90,8 @@ public class TerminalBrandCreateParams : BaseCreateParams<TagTerminalBrand> {
 
 	[UValidationRequired("ModelIsRequired")]
 	public string Model { get; set; } = null!;
+
+	public string? Agreement { get; set; }
 }
 
 public class TerminalBrandReadParams : BaseReadParams<TagTerminalBrand> {
@@ -103,6 +105,7 @@ public class TerminalBrandUpdateParams : BaseUpdateParams<TagTerminalBrand> {
 	public string? Code { get; set; }
 	public string? Title { get; set; }
 	public string? Model { get; set; }
+	public string? Agreement { get; set; }
 }
 
 public class TerminalBrokerCreateParams : BaseCreateParams<TagTerminalBroker> {
