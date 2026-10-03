@@ -4,6 +4,13 @@ public class BaseSelectorArgs {
 	public UserSelectorArgs? Creator { get; set; }
 }
 
+public sealed class SportSelectorArgs : BaseSelectorArgs;
+
+public sealed class PlayerSportProfileSelectorArgs : BaseSelectorArgs {
+	public UserSelectorArgs? User { get; set; }
+	public SportSelectorArgs? Sport { get; set; }
+}
+
 public sealed class HotelSelectorArgs : BaseSelectorArgs {
 	public HotelRoomSelectorArgs? Rooms { get; set; }
 	public HotelReservationSelectorArgs? Reservations { get; set; }
@@ -1071,6 +1078,39 @@ public static class Projections {
 			OrderId = x.OrderId,
 			IdempotencyKey = x.IdempotencyKey,
 			User = x.User == null ? null : (args.User != null ? UserSelector(args.User) : u => null!).Invoke(x.User),
+			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<SportEntity, SportResponse>> SportSelector(SportSelectorArgs args) {
+		Expression<Func<SportEntity, SportResponse>> selector = x => new SportResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Title = x.Title,
+			Order = x.Order,
+			MinLevel = x.MinLevel,
+			MaxLevel = x.MaxLevel,
+			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<PlayerSportProfileEntity, PlayerSportProfileResponse>> PlayerSportProfileSelector(PlayerSportProfileSelectorArgs args) {
+		Expression<Func<PlayerSportProfileEntity, PlayerSportProfileResponse>> selector = x => new PlayerSportProfileResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Level = x.Level,
+			UserId = x.UserId,
+			SportId = x.SportId,
+			User = x.User == null ? null : (args.User != null ? UserSelector(args.User) : u => null!).Invoke(x.User),
+			Sport = x.Sport == null ? null : (args.Sport != null ? SportSelector(args.Sport) : s => null!).Invoke(x.Sport),
 			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator)
 		};
 		return selector.Expand();

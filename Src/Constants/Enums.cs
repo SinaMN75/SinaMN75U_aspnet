@@ -754,3 +754,22 @@ public enum TagAppVersion {
 	Linux = 105,
 	Web = 106
 }
+
+public enum TagSport {
+	Padel = 101,
+	Tennis = 102,
+	Squash = 103,
+	Billiards = 104,
+	Snooker = 105,
+	Football = 106,
+	Karate = 107,
+
+	Active = 201,
+	ComingSoon = 202,
+	Disabled = 203
+}
+
+public enum TagPlayerSportProfile {
+	Active = 101,
+	Primary = 201 // the player's main sport
+}

@@ -108,6 +108,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IDbAdminService, DbAdminService>();
 		builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
 		builder.Services.AddScoped<IEmailService, EmailService>();
+		builder.Services.AddScoped<ISportService, SportService>();
 
 		if (Core.App.Test) {
 			builder.Services.AddScoped<IInquiryService, InquiryServiceFake>();
@@ -177,6 +178,7 @@ public static partial class AspNetConfig {
 		app.MapHealthRoutes(RouteTags.Health);
 		app.MapLogRoutes(RouteTags.Log);
 		app.MapGoldRoutes(RouteTags.Gold);
+		app.MapSportRoutes(RouteTags.Sport);
 		ULog.Info("App Started in " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
 	}
 	

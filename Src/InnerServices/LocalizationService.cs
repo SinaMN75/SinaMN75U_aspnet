@@ -419,7 +419,17 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "passwordResetCodeIsInvalidOrExpired", "The reset code is invalid or has expired." },
 		{ "passwordChangedSuccessfully", "Your password has been changed." },
 		{ "passwordResetEmailSubject", "Your password reset code" },
-		{ "passwordResetEmailBody", "Your password reset code is {0}. It expires in {1} minutes. If you did not request it, ignore this email." }
+		{ "passwordResetEmailBody", "Your password reset code is {0}. It expires in {1} minutes. If you did not request it, ignore this email." },
+
+		// ===== Sport =====
+		{ "sportNotFound", "Sport not found." },
+		{ "sportIsRequired", "Sport is required." },
+		{ "sportTypeIsRequired", "Exactly one sport type is required." },
+		{ "thisSportAlreadyExists", "This sport already exists." },
+		{ "levelIsOutOfRange", "The level is out of the allowed range." },
+		{ "thisSportIsAlreadyInYourProfile", "This sport is already in your profile." },
+		{ "playerSportProfileNotFound", "Sport profile not found." },
+		{ "sportIsInUseDisableItInstead", "This sport is used by players; disable it instead of deleting." }
 	};
 
 	private static readonly Dictionary<string, string> Fa = new() {
@@ -836,7 +846,17 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		{ "passwordResetCodeIsInvalidOrExpired", "کد بازیابی نامعتبر است یا منقضی شده است." },
 		{ "passwordChangedSuccessfully", "رمز عبور شما تغییر کرد." },
 		{ "passwordResetEmailSubject", "کد بازیابی رمز عبور" },
-		{ "passwordResetEmailBody", "کد بازیابی رمز عبور شما {0} است و تا {1} دقیقه معتبر است. اگر این درخواست را نداده‌اید، این ایمیل را نادیده بگیرید." }
+		{ "passwordResetEmailBody", "کد بازیابی رمز عبور شما {0} است و تا {1} دقیقه معتبر است. اگر این درخواست را نداده‌اید، این ایمیل را نادیده بگیرید." },
+
+		// ===== Sport =====
+		{ "sportNotFound", "ورزش پیدا نشد." },
+		{ "sportIsRequired", "انتخاب ورزش الزامی است." },
+		{ "sportTypeIsRequired", "انتخاب دقیقاً یک نوع ورزش الزامی است." },
+		{ "thisSportAlreadyExists", "این ورزش قبلاً ثبت شده است." },
+		{ "levelIsOutOfRange", "سطح خارج از محدوده مجاز است." },
+		{ "thisSportIsAlreadyInYourProfile", "این ورزش قبلاً در پروفایل شما ثبت شده است." },
+		{ "playerSportProfileNotFound", "پروفایل ورزشی پیدا نشد." },
+		{ "sportIsInUseDisableItInstead", "این ورزش توسط بازیکنان استفاده شده است؛ به جای حذف، آن را غیرفعال کنید." }
 	};
 
 	public string Get(string key, string? locale = null) {

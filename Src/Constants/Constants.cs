@@ -38,6 +38,7 @@ public static class RouteTags {
 	public const string Health = "api/Health/";
 	public const string Log = "api/Log/";
 	public const string Gold = "api/Gold/";
+	public const string Sport = "api/Sport/";
 }
 
 public static class UConstants {
@@ -175,6 +176,15 @@ public class UChargeAmounts {
 }
 
 public static class ULocalizedConstants {
+	// ---- Sports ----
+	public const string Padel = "padel";
+	public const string Tennis = "tennis";
+	public const string Squash = "squash";
+	public const string Billiards = "billiards";
+	public const string Snooker = "snooker";
+	public const string Football = "football";
+	public const string Karate = "karate";
+
 	public const string Bed = "bed";
 	public const string BillId = "billId";
 	public const string BillType = "billType";

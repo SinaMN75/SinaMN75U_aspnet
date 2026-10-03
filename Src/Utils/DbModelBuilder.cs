@@ -49,6 +49,8 @@ public static class DbModelBuilder {
 		builder.Entity<DormBedInvoiceEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<ApiLogEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<BlogEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<SportEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<PlayerSportProfileEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<HotelEntity>().OwnsOne(e => e.JsonData, b => {
 			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
 			b.OwnsMany(i => i.Nearby);
