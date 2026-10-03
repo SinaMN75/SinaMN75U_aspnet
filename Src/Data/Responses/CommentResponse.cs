@@ -12,6 +12,7 @@ public sealed class CommentResponse : BaseResponse<TagComment, CommentJson> {
 	public Guid? BlogId { get; set; }
 	public Guid? HotelId { get; set; }
 	public Guid? DormId { get; set; }
+	public Guid? VenueId { get; set; }
 
 	public IEnumerable<CommentResponse>? Children { get; set; }
 

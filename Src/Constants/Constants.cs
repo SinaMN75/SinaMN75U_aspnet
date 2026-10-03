@@ -39,6 +39,9 @@ public static class RouteTags {
 	public const string Log = "api/Log/";
 	public const string Gold = "api/Gold/";
 	public const string Sport = "api/Sport/";
+	public const string Venue = "api/Venue/";
+	public const string Social = "api/Social/";
+	public const string Chat = "api/Chat/";
 }
 
 public static class UConstants {
@@ -184,6 +187,12 @@ public static class ULocalizedConstants {
 	public const string Snooker = "snooker";
 	public const string Football = "football";
 	public const string Karate = "karate";
+
+	public const string Tournament = "tournament";
+	public const string Venue = "venue";
+	public const string Court = "court";
+	public const string BookingId = "bookingId";
+	public const string StartAt = "startAt";
 
 	public const string Bed = "bed";
 	public const string BillId = "billId";

@@ -29,5 +29,21 @@ public static class SportRoutes {
 		r.MapPost("TournamentEntry/Delete", async (IdParams p, ISportService s, CancellationToken c) => (await s.DeleteTournamentEntry(p, c)).ToResult()).Produces<UResponse>();
 
 		r.MapPost("TournamentMatch/Update", async (TournamentMatchUpdateParams p, ISportService s, CancellationToken c) => (await s.UpdateTournamentMatch(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("TournamentMatch/Read", async (TournamentMatchReadParams p, ISportService s, CancellationToken c) => (await s.ReadTournamentMatches(p, c)).ToResult()).Produces<UResponse<IEnumerable<TournamentMatchResponse>>>();
+
+		r.MapPost("PlayerRatingHistory/Read", async (PlayerRatingHistoryReadParams p, ISportService s, CancellationToken c) => (await s.ReadPlayerRatingHistory(p, c)).ToResult()).Produces<UResponse<IEnumerable<PlayerRatingHistoryResponse>>>();
+		r.MapPost("PlayerAchievement/Read", async (PlayerAchievementReadParams p, ISportService s, CancellationToken c) => (await s.ReadPlayerAchievements(p, c)).ToResult()).Produces<UResponse<IEnumerable<PlayerAchievementResponse>>>();
+		r.MapPost("PlayerAchievement/Update", async (PlayerAchievementUpdateParams p, ISportService s, CancellationToken c) => (await s.UpdatePlayerAchievement(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("Leaderboard/Read", async (LeaderboardParams p, ISportService s, CancellationToken c) => (await s.ReadLeaderboard(p, c)).ToResult()).Produces<UResponse<IEnumerable<LeaderboardRowResponse>>>();
+		r.MapPost("Player/Stats", async (PlayerStatsParams p, ISportService s, CancellationToken c) => (await s.ReadPlayerStats(p, c)).ToResult()).Produces<UResponse<PlayerStatsResponse>>();
+
+		r.MapPost("OpenMatch/Create", async (OpenMatchCreateParams p, ISportService s, CancellationToken c) => (await s.CreateOpenMatch(p, c)).ToResult()).Produces<UResponse<Guid?>>();
+		r.MapPost("OpenMatch/Read", async (OpenMatchReadParams p, ISportService s, CancellationToken c) => (await s.ReadOpenMatches(p, c)).ToResult()).Produces<UResponse<IEnumerable<OpenMatchResponse>>>();
+		r.MapPost("OpenMatch/ReadById", async (IdParams<OpenMatchSelectorArgs> p, ISportService s, CancellationToken c) => (await s.ReadOpenMatchById(p, c)).ToResult()).Produces<UResponse<OpenMatchResponse>>();
+		r.MapPost("OpenMatch/Update", async (OpenMatchUpdateParams p, ISportService s, CancellationToken c) => (await s.UpdateOpenMatch(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("OpenMatch/Delete", async (IdParams p, ISportService s, CancellationToken c) => (await s.DeleteOpenMatch(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("OpenMatch/Join", async (IdParams p, ISportService s, CancellationToken c) => (await s.JoinOpenMatch(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("OpenMatch/Leave", async (IdParams p, ISportService s, CancellationToken c) => (await s.LeaveOpenMatch(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("OpenMatch/Result", async (OpenMatchResultParams p, ISportService s, CancellationToken c) => (await s.SetOpenMatchResult(p, c)).ToResult()).Produces<UResponse>();
 	}
 }

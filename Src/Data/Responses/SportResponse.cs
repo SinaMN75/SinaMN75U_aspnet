@@ -59,6 +59,12 @@ public sealed class TournamentMatchResponse : BaseResponse<TagTournamentMatch, T
 	public int? NextMatchSlot { get; set; }
 	public Guid? LoserNextMatchId { get; set; }
 	public int? LoserNextMatchSlot { get; set; }
+
+	public TournamentResponse? Tournament { get; set; }
+	public TournamentEntryResponse? EntryA { get; set; }
+	public TournamentEntryResponse? EntryB { get; set; }
+	public TournamentEntryResponse? PartnerA { get; set; }
+	public TournamentEntryResponse? PartnerB { get; set; }
 }
 
 public sealed class TournamentStandingResponse {
@@ -77,4 +83,69 @@ public sealed class TournamentStandingResponse {
 	public int ScoreFor { get; set; }
 	public int ScoreAgainst { get; set; }
 	public int Points { get; set; }
+}
+
+public sealed class PlayerRatingHistoryResponse : BaseResponse<TagPlayerRatingHistory, PlayerRatingHistoryJson> {
+	public required Guid UserId { get; set; }
+	public required Guid SportId { get; set; }
+	public required Guid MatchId { get; set; }
+	public required decimal LevelBefore { get; set; }
+	public required decimal LevelAfter { get; set; }
+}
+
+public sealed class PlayerAchievementResponse : BaseResponse<TagPlayerAchievement, PlayerAchievementJson> {
+	public required Guid UserId { get; set; }
+	public Guid? SportId { get; set; }
+	public Guid? TournamentId { get; set; }
+	public int? Rank { get; set; }
+	public int Points { get; set; }
+
+	public UserResponse? User { get; set; }
+	public SportResponse? Sport { get; set; }
+}
+
+public sealed class LeaderboardRowResponse {
+	public required int Rank { get; set; }
+	public required UserResponse User { get; set; }
+	public decimal Level { get; set; }
+	public int Points { get; set; }
+	public int MatchesPlayed { get; set; }
+}
+
+public sealed class PlayerStatsResponse {
+	public UserResponse? User { get; set; } // public fields only
+	public int MatchesPlayed { get; set; }
+	public int Wins { get; set; }
+	public int Losses { get; set; }
+	public int Draws { get; set; }
+	public int WinRate { get; set; } // percent
+	public int CurrentWinStreak { get; set; }
+	public int BestWinStreak { get; set; }
+	public int WeeklyStreak { get; set; } // weeks in a row with at least one match
+	public int TournamentsPlayed { get; set; }
+	public int TournamentWins { get; set; }
+	public int Podiums { get; set; }
+	public int RankingPoints { get; set; }
+	public int Followers { get; set; }
+	public int Following { get; set; }
+	public string? ReferralCode { get; set; } // the signed-in user's own only
+	public int ReferralCount { get; set; }
+}
+
+public sealed class OpenMatchResponse : BaseResponse<TagOpenMatch, OpenMatchJson> {
+	public required DateTime StartAt { get; set; }
+	public int DurationMinutes { get; set; }
+	public required int Capacity { get; set; }
+	public decimal? MinLevel { get; set; }
+	public decimal? MaxLevel { get; set; }
+	public decimal PricePerPlayer { get; set; }
+	public required Guid SportId { get; set; }
+	public Guid? VenueId { get; set; }
+	public int PlayerCount { get; set; }
+
+	public SportResponse? Sport { get; set; }
+	public VenueResponse? Venue { get; set; }
+
+	/// <summary>Only public fields (id and names).</summary>
+	public ICollection<UserResponse>? Users { get; set; }
 }

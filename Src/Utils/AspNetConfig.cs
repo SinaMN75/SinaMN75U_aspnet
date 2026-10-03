@@ -108,6 +108,12 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
 		builder.Services.AddScoped<IEmailService, EmailService>();
 		builder.Services.AddScoped<ISportService, SportService>();
+		builder.Services.AddScoped<IVenueService, VenueService>();
+		builder.Services.AddScoped<ISocialService, SocialService>();
+		builder.Services.AddScoped<IChatService, ChatService>();
+		builder.Services.AddSignalR();
+		builder.Services.AddSingleton<IRealtimeService, RealtimeService>();
+		builder.Services.AddHostedService<SportReminderService>();
 
 		if (Core.App.Test) {
 			builder.Services.AddScoped<IInquiryService, InquiryServiceFake>();
@@ -180,6 +186,10 @@ public static partial class AspNetConfig {
 		app.MapLogRoutes(RouteTags.Log);
 		app.MapGoldRoutes(RouteTags.Gold);
 		app.MapSportRoutes(RouteTags.Sport);
+		app.MapVenueRoutes(RouteTags.Venue);
+		app.MapSocialRoutes(RouteTags.Social);
+		app.MapChatRoutes(RouteTags.Chat);
+		app.MapHub<UHub>("/hubs/u");
 		ULog.Info("App Started in " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
 	}
 	

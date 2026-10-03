@@ -60,6 +60,37 @@ public static class DbModelBuilder {
 			b.OwnsMany(i => i.History, h => h.OwnsMany(x => x.Sets));
 		});
 		builder.Entity<PlayerRatingHistoryEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<PlayerAchievementEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<OpenMatchEntity>().OwnsOne(e => e.JsonData, b => {
+			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
+			b.OwnsMany(i => i.Sets);
+		});
+		builder.Entity<OpenMatchEntity>().HasMany(e => e.Users).WithMany().UsingEntity("OpenMatchUsers");
+		builder.Entity<VenueEntity>().OwnsOne(e => e.JsonData, b => {
+			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
+			b.OwnsMany(i => i.OpeningHours);
+			b.OwnsMany(i => i.Closures);
+		});
+		builder.Entity<CourtEntity>().OwnsOne(e => e.JsonData, b => {
+			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
+			b.OwnsMany(i => i.PriceRules);
+		});
+		builder.Entity<BookingEntity>().OwnsOne(e => e.JsonData, b => {
+			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
+			b.OwnsMany(i => i.Participants);
+		});
+		builder.Entity<PostEntity>().OwnsOne(e => e.JsonData, b => {
+			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
+			b.OwnsMany(i => i.Reactions);
+		});
+		builder.Entity<ReportEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<BlockEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<ConversationEntity>().OwnsOne(e => e.JsonData, b => {
+			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
+			b.OwnsMany(i => i.Reads);
+		});
+		builder.Entity<ConversationEntity>().HasMany(e => e.Users).WithMany().UsingEntity("ConversationUsers");
+		builder.Entity<MessageEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<HotelEntity>().OwnsOne(e => e.JsonData, b => {
 			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
 			b.OwnsMany(i => i.Nearby);

@@ -33,6 +33,7 @@ public sealed class RegisterParams : BaseParams {
 	public string? FirstName { get; set; }
 	public string? LastName { get; set; }
 	public string? NationalCode { get; set; }
+	public string? ReferralCode { get; set; } // the code of the user who invited this one
 }
 
 public sealed class VerifyMobileForLoginParams : BaseParams {

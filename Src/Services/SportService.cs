@@ -26,12 +26,30 @@ public interface ISportService {
 	public Task<UResponse> DeleteTournamentEntry(IdParams p, CancellationToken ct);
 
 	public Task<UResponse> UpdateTournamentMatch(TournamentMatchUpdateParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<TournamentMatchResponse>?>> ReadTournamentMatches(TournamentMatchReadParams p, CancellationToken ct);
+
+	public Task<UResponse<IEnumerable<PlayerRatingHistoryResponse>?>> ReadPlayerRatingHistory(PlayerRatingHistoryReadParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<PlayerAchievementResponse>?>> ReadPlayerAchievements(PlayerAchievementReadParams p, CancellationToken ct);
+	public Task<UResponse> UpdatePlayerAchievement(PlayerAchievementUpdateParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<LeaderboardRowResponse>?>> ReadLeaderboard(LeaderboardParams p, CancellationToken ct);
+	public Task<UResponse<PlayerStatsResponse?>> ReadPlayerStats(PlayerStatsParams p, CancellationToken ct);
+
+	public Task<UResponse<Guid?>> CreateOpenMatch(OpenMatchCreateParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<OpenMatchResponse>?>> ReadOpenMatches(OpenMatchReadParams p, CancellationToken ct);
+	public Task<UResponse<OpenMatchResponse?>> ReadOpenMatchById(IdParams<OpenMatchSelectorArgs> p, CancellationToken ct);
+	public Task<UResponse> UpdateOpenMatch(OpenMatchUpdateParams p, CancellationToken ct);
+	public Task<UResponse> DeleteOpenMatch(IdParams p, CancellationToken ct);
+	public Task<UResponse> JoinOpenMatch(IdParams p, CancellationToken ct);
+	public Task<UResponse> LeaveOpenMatch(IdParams p, CancellationToken ct);
+	public Task<UResponse> SetOpenMatchResult(OpenMatchResultParams p, CancellationToken ct);
 }
 
 public class SportService(
 	DbContext db,
 	ILocalizationService ls,
-	ITokenService ts
+	ITokenService ts,
+	IWalletService ws,
+	IRealtimeService rt
 ) : ISportService {
 	// ---- Who sees and changes what ----
 	// Admins: manage the sports catalog and every profile.
@@ -284,6 +302,7 @@ public class SportService(
 
 		await db.Set<TournamentEntity>().AddAsync(e, ct);
 		await db.SaveChangesAsync(ct);
+		await AwardBadges([userData.Id], ct);
 		return new UResponse<Guid?>(e.Id, Usc.Created);
 	}
 
@@ -345,6 +364,14 @@ public class SportService(
 			return new UResponse(Usc.Conflict, ls.Get("tournamentHasStarted"));
 
 		await db.SaveChangesAsync(ct);
+		if (e.Tags.Contains(TagTournament.Cancelled)) {
+			List<TournamentEntryEntity> entries = await db.Set<TournamentEntryEntity>().AsTracking().Include(x => x.Users).Where(x => x.TournamentId == e.Id).ToListAsync(ct);
+			foreach (TournamentEntryEntity entry in entries) await RefundEntry(entry, e.Title, ct);
+			await db.AddNotifications(entries.SelectMany(x => x.Users.Select(u => u.Id)), userData.Id, "notifTournamentCancelled", e.Title, "tournament", e.Id, ct);
+			await db.SaveChangesAsync(ct);
+		}
+
+		await rt.ToGroup(RealtimeGroups.Tournament(e.Id), "tournament", e.Id);
 		return new UResponse();
 	}
 
@@ -357,6 +384,10 @@ public class SportService(
 		if (!CanManage(userData, e)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		// A tournament with results stays as history; only admins remove it.
 		if (!userData.IsAdmin && (e.Tags.Contains(TagTournament.InProgress) || e.Tags.Contains(TagTournament.Finished))) return new UResponse(Usc.Conflict, ls.Get("tournamentHasStarted"));
+
+		foreach (TournamentEntryEntity entry in await db.Set<TournamentEntryEntity>().AsTracking().Where(x => x.TournamentId == e.Id).ToListAsync(ct)) await RefundEntry(entry, e.Title, ct);
+		await db.SaveChangesAsync(ct);
+		await db.Set<PlayerAchievementEntity>().Where(x => x.TournamentId == p.Id).ExecuteDeleteAsync(ct);
 
 		await db.Set<TournamentMatchEntity>().Where(x => x.TournamentId == p.Id).ExecuteDeleteAsync(ct);
 		await db.Set<TournamentEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
@@ -506,7 +537,33 @@ public class SportService(
 		await db.Set<TournamentMatchEntity>().Where(x => x.TournamentId == t.Id).ExecuteDeleteAsync(ct);
 		await db.Set<TournamentMatchEntity>().AddRangeAsync(matches, ct);
 		SetStatus(t, TagTournament.InProgress);
+
+		// Entries still waiting are out (and refunded); the fees of the playing entries go to the organizer.
+		List<TournamentEntryEntity> pending = await db.Set<TournamentEntryEntity>().AsTracking().Where(x => x.TournamentId == t.Id && x.Tags.Contains(TagTournamentEntry.Pending)).ToListAsync(ct);
+		foreach (TournamentEntryEntity entry in pending) {
+			entry.Tags = [TagTournamentEntry.Rejected];
+			await RefundEntry(entry, t.Title, ct);
+		}
+
+		decimal fees = entries.Where(x => x.JsonData is { PaidAmount: > 0, Refunded: false, Settled: false }).Sum(x => x.JsonData.PaidAmount);
+		if (fees > 0) {
+			UResponse<WalletTxnResponse?> paid = await ws.Transfer(new WalletTransferParams {
+				SenderId = Core.App.Users.SystemAdmin.Id,
+				ReceiverId = t.CreatorId,
+				Amount = fees,
+				Detail1 = ls.Get("tournamentEntryFees"),
+				KeyValues = [new KeyValue { Key = ULocalizedConstants.Tournament, Value = t.Title }],
+				TagWalletTxn = [TagWalletTxn.TournamentEntrySettlement]
+			}, ct);
+			if (paid.Result != null)
+				foreach (TournamentEntryEntity entry in entries.Where(x => x.JsonData is { PaidAmount: > 0, Refunded: false })) entry.JsonData.Settled = true;
+		}
+
+		List<Guid> players = await db.Set<TournamentEntryEntity>().Where(x => x.TournamentId == t.Id && x.Tags.Contains(TagTournamentEntry.Approved)).SelectMany(x => x.Users.Select(u => u.Id)).ToListAsync(ct);
+		await db.AddNotifications(players, userData.Id, "notifTournamentStarted", t.Title, "tournament", t.Id, ct);
 		await db.SaveChangesAsync(ct);
+		await rt.ToUsers(players, "notification");
+		await rt.ToGroup(RealtimeGroups.Tournament(t.Id), "tournament", t.Id);
 		return new UResponse();
 	}
 
@@ -540,6 +597,20 @@ public class SportService(
 		if (profiles.Any(x => x.Level < (t.MinLevel ?? decimal.MinValue) || x.Level > (t.MaxLevel ?? decimal.MaxValue)))
 			return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("levelIsNotInTheTournamentRange"));
 
+		decimal paidAmount = 0;
+		if (t.EntryFee > 0 && p.PayFromWallet) {
+			UResponse<WalletTxnResponse?> paid = await ws.Transfer(new WalletTransferParams {
+				SenderId = userData.Id,
+				ReceiverId = Core.App.Users.SystemAdmin.Id,
+				Amount = t.EntryFee,
+				Detail1 = ls.Get("tournamentEntryFee"),
+				KeyValues = [new KeyValue { Key = ULocalizedConstants.Tournament, Value = t.Title }],
+				TagWalletTxn = [TagWalletTxn.TournamentEntryFee]
+			}, ct);
+			if (paid.Result == null) return new UResponse<Guid?>(null, paid.Status, paid.Message);
+			paidAmount = t.EntryFee;
+		}
+
 		List<UserEntity> users = await db.Set<UserEntity>().AsTracking().Where(x => playerIds.Contains(x.Id)).ToListAsync(ct);
 		TournamentEntryEntity e = new() {
 			Id = Guid.CreateVersion7(),
@@ -549,11 +620,13 @@ public class SportService(
 			Title = p.Title.IsNotNullOrEmpty() ? p.Title : null,
 			TournamentId = t.Id,
 			Users = users,
-			JsonData = new TournamentEntryJson()
+			JsonData = new TournamentEntryJson { PaidAmount = paidAmount }
 		};
 
 		await db.Set<TournamentEntryEntity>().AddAsync(e, ct);
+		await db.AddNotifications(playerIds.Where(x => x != userData.Id).Append(t.CreatorId), userData.Id, "notifNewEntry", t.Title, "tournament", t.Id, ct);
 		await db.SaveChangesAsync(ct);
+		await rt.ToUsers([t.CreatorId, ..playerIds], "notification");
 		return new UResponse<Guid?>(e.Id, Usc.Created);
 	}
 
@@ -565,11 +638,22 @@ public class SportService(
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("entryNotFound"));
 		if (!CanManage(userData, e.Tournament)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
+		bool wasApproved = e.Tags.Contains(TagTournamentEntry.Approved), wasRejected = e.Tags.Contains(TagTournamentEntry.Rejected);
 		if (p.Title.IsNotNull()) e.Title = p.Title.IsNotNullOrEmpty() ? p.Title : null;
 		if (p.Seed.HasValue) e.Seed = p.Seed;
 		if (p.GroupNumber.HasValue) e.GroupNumber = p.GroupNumber;
 		e.ApplyUpdateParam<TournamentEntryEntity, TagTournamentEntry, TournamentEntryJson>(p);
+
+		List<Guid> players = await db.Set<TournamentEntryEntity>().Where(x => x.Id == e.Id).SelectMany(x => x.Users.Select(u => u.Id)).ToListAsync(ct);
+		if (!wasRejected && e.Tags.Contains(TagTournamentEntry.Rejected)) {
+			await RefundEntry(e, e.Tournament.Title, ct);
+			await db.AddNotifications(players, userData.Id, "notifEntryRejected", e.Tournament.Title, "tournament", e.TournamentId, ct);
+		}
+		else if (!wasApproved && e.Tags.Contains(TagTournamentEntry.Approved))
+			await db.AddNotifications(players, userData.Id, "notifEntryApproved", e.Tournament.Title, "tournament", e.TournamentId, ct);
+
 		await db.SaveChangesAsync(ct);
+		await rt.ToUsers(players, "notification");
 		return new UResponse();
 	}
 
@@ -585,6 +669,7 @@ public class SportService(
 		if (await db.Set<TournamentMatchEntity>().AnyAsync(x => x.EntryAId == e.Id || x.EntryBId == e.Id || x.PartnerAId == e.Id || x.PartnerBId == e.Id, ct))
 			return new UResponse(Usc.Conflict, ls.Get("tournamentHasStarted"));
 
+		await RefundEntry(e, e.Tournament.Title, ct);
 		db.Set<TournamentEntryEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
@@ -639,10 +724,21 @@ public class SportService(
 
 		// Finished once every match is done and nothing more will be drawn; a cleared result reopens it.
 		bool allDone = created.Count == 0 && all.All(TournamentEngine.IsDone);
-		if (allDone && t.Tags.Contains(TagTournament.InProgress)) SetStatus(t, TagTournament.Finished);
-		if (!allDone && t.Tags.Contains(TagTournament.Finished)) SetStatus(t, TagTournament.InProgress);
+		bool finishing = allDone && t.Tags.Contains(TagTournament.InProgress), reopening = !allDone && t.Tags.Contains(TagTournament.Finished);
+		if (finishing) SetStatus(t, TagTournament.Finished);
+		if (reopening) SetStatus(t, TagTournament.InProgress);
 
+		List<Guid> sides = new[] { m.EntryAId, m.EntryBId, m.PartnerAId, m.PartnerBId }.OfType<Guid>().ToList();
+		List<Guid> players = await db.Set<TournamentEntryEntity>().Where(x => sides.Contains(x.Id)).SelectMany(x => x.Users.Select(u => u.Id)).ToListAsync(ct);
+		if (p.Sets is { Count: > 0 }) await db.AddNotifications(players, userData.Id, "notifMatchResult", t.Title, "tournament", t.Id, ct);
 		await db.SaveChangesAsync(ct);
+
+		if (finishing) await AwardPlacements(t, all, userData.Id, ct);
+		if (reopening) await db.Set<PlayerAchievementEntity>().Where(x => x.TournamentId == t.Id).ExecuteDeleteAsync(ct);
+		if (p.Sets != null) await AwardBadges(players, ct);
+
+		await rt.ToGroup(RealtimeGroups.Tournament(t.Id), "tournament", t.Id);
+		await rt.ToUsers(players, "notification");
 		return new UResponse();
 	}
 
@@ -766,17 +862,23 @@ public class SportService(
 		}
 	}
 
-	/// <summary>Glicko-2 update for every player in a finished match; a side's strength is its players' average.</summary>
+	/// <summary>Glicko-2 update for every player in a finished tournament match; a side's strength is its players' average.</summary>
 	private async Task ApplyRating(TournamentEntity t, TournamentMatchEntity m, CancellationToken ct) {
 		List<Guid> sideA = new[] { m.EntryAId, m.PartnerAId }.OfType<Guid>().ToList();
 		List<Guid> sideB = new[] { m.EntryBId, m.PartnerBId }.OfType<Guid>().ToList();
 		var entryUsers = await db.Set<TournamentEntryEntity>().Where(x => sideA.Contains(x.Id) || sideB.Contains(x.Id)).Select(x => new { x.Id, Users = x.Users.Select(u => u.Id).ToList() }).ToListAsync(ct);
 		List<Guid> usersA = entryUsers.Where(x => sideA.Contains(x.Id)).SelectMany(x => x.Users).ToList();
 		List<Guid> usersB = entryUsers.Where(x => sideB.Contains(x.Id)).SelectMany(x => x.Users).ToList();
-		List<PlayerSportProfileEntity> profiles = await db.Set<PlayerSportProfileEntity>().AsTracking().Where(x => x.SportId == t.SportId && (usersA.Contains(x.UserId) || usersB.Contains(x.UserId))).ToListAsync(ct);
+		double scoreA = m.WinnerEntryId == null ? 0.5 : m.WinnerEntryId == m.EntryAId ? 1 : 0;
+		await ApplyRating(t.Sport, m.Id, usersA, usersB, scoreA, ct);
+	}
+
+	/// <summary>Glicko-2 update for both sides of a match (tournament or open game); scoreA is 1 / 0.5 / 0.</summary>
+	private async Task ApplyRating(SportEntity sport, Guid matchId, List<Guid> usersA, List<Guid> usersB, double scoreA, CancellationToken ct) {
+		List<PlayerSportProfileEntity> profiles = await db.Set<PlayerSportProfileEntity>().AsTracking().Where(x => x.SportId == sport.Id && (usersA.Contains(x.UserId) || usersB.Contains(x.UserId))).ToListAsync(ct);
 		if (profiles.Count == 0) return;
 
-		decimal min = t.Sport.MinLevel, max = t.Sport.MaxLevel;
+		decimal min = sport.MinLevel, max = sport.MaxLevel;
 		(double r, double d, double v) State(PlayerSportProfileEntity x) => (
 			x.JsonData.Rating ?? TournamentEngine.LevelToRating(x.Level, min, max),
 			x.JsonData.Deviation ?? TournamentEngine.InitialDeviation,
@@ -787,7 +889,6 @@ public class SportService(
 		}
 
 		(double r, double d) strengthA = Side(usersA), strengthB = Side(usersB);
-		double scoreA = m.WinnerEntryId == null ? 0.5 : m.WinnerEntryId == m.EntryAId ? 1 : 0;
 		DateTime now = DateTime.UtcNow;
 		foreach (PlayerSportProfileEntity profile in profiles) {
 			bool onA = usersA.Contains(profile.UserId);
@@ -801,8 +902,8 @@ public class SportService(
 				CreatedAt = now,
 				Tags = [TagPlayerRatingHistory.Match],
 				UserId = profile.UserId,
-				SportId = t.SportId,
-				MatchId = m.Id,
+				SportId = sport.Id,
+				MatchId = matchId,
 				LevelBefore = profile.Level,
 				LevelAfter = newLevel,
 				JsonData = new PlayerRatingHistoryJson {
@@ -819,6 +920,620 @@ public class SportService(
 			profile.JsonData.Volatility = after.volatility;
 			profile.JsonData.MatchesPlayed++;
 		}
+	}
+
+	// ---------------- Entry fees ----------------
+
+	/// <summary>Gives a paid entry fee back (once), unless it was already paid out to the organizer.</summary>
+	private async Task RefundEntry(TournamentEntryEntity e, string title, CancellationToken ct) {
+		if (e.JsonData is not { PaidAmount: > 0, Refunded: false, Settled: false }) return;
+		UResponse<WalletTxnResponse?> refund = await ws.Transfer(new WalletTransferParams {
+			SenderId = Core.App.Users.SystemAdmin.Id,
+			ReceiverId = e.CreatorId,
+			Amount = e.JsonData.PaidAmount,
+			Detail1 = ls.Get("tournamentEntryRefund"),
+			KeyValues = [new KeyValue { Key = ULocalizedConstants.Tournament, Value = title }],
+			TagWalletTxn = [TagWalletTxn.TournamentEntryRefund]
+		}, ct);
+		if (refund.Result != null) e.JsonData.Refunded = true;
+	}
+
+	// ---------------- Match history ----------------
+
+	public async Task<UResponse<IEnumerable<TournamentMatchResponse>?>> ReadTournamentMatches(TournamentMatchReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		IQueryable<TournamentMatchEntity> q = db.Set<TournamentMatchEntity>().ApplyReadParams(p).Where(x => !x.Tags.Contains(TagTournamentMatch.Bye));
+		if (userData is not { IsAdmin: true }) {
+			p.SelectorArgs.Creator = null;
+			if (p.SelectorArgs.Tournament != null) p.SelectorArgs.Tournament.Creator = null;
+			q = q.Where(x => !x.Tournament.Tags.Contains(TagTournament.Draft));
+		}
+
+		if (p.TournamentId.HasValue) q = q.Where(x => x.TournamentId == p.TournamentId);
+		if (p.SportId.HasValue) q = q.Where(x => x.Tournament.SportId == p.SportId);
+		if (p.UserId.HasValue) {
+			Guid uid = p.UserId.Value;
+			q = q.Where(x => x.EntryA!.Users.Any(u => u.Id == uid) || x.EntryB!.Users.Any(u => u.Id == uid) || x.PartnerA!.Users.Any(u => u.Id == uid) || x.PartnerB!.Users.Any(u => u.Id == uid));
+		}
+
+		q = p.Upcoming switch {
+			true => q.Where(x => !x.Tags.Contains(TagTournamentMatch.Finished) && x.EntryAId != null && x.EntryBId != null).OrderBy(x => x.ScheduledAt ?? x.Tournament.StartDate).ThenBy(x => x.Round),
+			false => q.Where(x => x.Tags.Contains(TagTournamentMatch.Finished)).OrderByDescending(x => x.ScheduledAt ?? x.Tournament.StartDate).ThenByDescending(x => x.Round),
+			_ => q
+		};
+
+		return await q.Select(Projections.TournamentMatchSelector(p.SelectorArgs)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	}
+
+	public async Task<UResponse<IEnumerable<PlayerRatingHistoryResponse>?>> ReadPlayerRatingHistory(PlayerRatingHistoryReadParams p, CancellationToken ct) {
+		IQueryable<PlayerRatingHistoryEntity> q = db.Set<PlayerRatingHistoryEntity>().ApplyReadParams(p);
+		if (p.UserId.HasValue) q = q.Where(x => x.UserId == p.UserId);
+		if (p.SportId.HasValue) q = q.Where(x => x.SportId == p.SportId);
+		return await q.OrderBy(x => x.CreatedAt).Select(Projections.PlayerRatingHistorySelector()).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	}
+
+	// ---------------- Achievements, leaderboard, stats ----------------
+
+	public async Task<UResponse<IEnumerable<PlayerAchievementResponse>?>> ReadPlayerAchievements(PlayerAchievementReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		IQueryable<PlayerAchievementEntity> q = db.Set<PlayerAchievementEntity>().ApplyReadParams(p);
+		if (p.UserId.HasValue) q = q.Where(x => x.UserId == p.UserId);
+		if (p.SportId.HasValue) q = q.Where(x => x.SportId == p.SportId);
+		if (p.TournamentId.HasValue) q = q.Where(x => x.TournamentId == p.TournamentId);
+		// Hidden trophies are only for their owner.
+		Guid uid = userData?.Id ?? Guid.Empty;
+		if (userData is not { IsAdmin: true }) q = q.Where(x => !x.Tags.Contains(TagPlayerAchievement.Hidden) || x.UserId == uid);
+		p.SelectorArgs.Creator = null;
+
+		return await q.Select(Projections.PlayerAchievementSelector(p.SelectorArgs)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	}
+
+	public async Task<UResponse> UpdatePlayerAchievement(PlayerAchievementUpdateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+
+		PlayerAchievementEntity? e = await db.Set<PlayerAchievementEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("achievementNotFound"));
+		if (!userData.IsAdmin && e.UserId != userData.Id) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		// Only showing / hiding is up to the player.
+		bool hide = (p.Tags ?? e.Tags).Contains(TagPlayerAchievement.Hidden);
+		if (p.AddTags?.Contains(TagPlayerAchievement.Hidden) == true) hide = true;
+		if (p.RemoveTags?.Contains(TagPlayerAchievement.Hidden) == true) hide = false;
+		e.Tags = e.Tags.Where(x => x != TagPlayerAchievement.Hidden).Concat(hide ? [TagPlayerAchievement.Hidden] : []).ToList();
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse<IEnumerable<LeaderboardRowResponse>?>> ReadLeaderboard(LeaderboardParams p, CancellationToken ct) {
+		int pageSize = Math.Clamp(p.PageSize, 1, 200), pageNumber = Math.Max(1, p.PageNumber);
+		string? country = p.Country.IsNotNullOrEmpty() ? p.Country!.ToUpperInvariant() : null;
+		string? city = p.City.IsNotNullOrEmpty() ? p.City : null;
+
+		List<(Guid UserId, int Points)> ranked;
+		int total;
+		if (p.ByPoints) {
+			IQueryable<PlayerAchievementEntity> q = db.Set<PlayerAchievementEntity>().Where(x => x.SportId == p.SportId && x.Points > 0);
+			if (p.Year.HasValue) q = q.Where(x => x.CreatedAt.Year == p.Year);
+			if (country != null) q = q.Where(x => x.User.JsonData.Country == country);
+			if (city != null) q = q.Where(x => x.User.JsonData.City == city);
+			var grouped = q.GroupBy(x => x.UserId).Select(g => new { UserId = g.Key, Points = g.Sum(x => x.Points) });
+			total = await grouped.CountAsync(ct);
+			ranked = (await grouped.OrderByDescending(x => x.Points).ThenBy(x => x.UserId).Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync(ct)).Select(x => (x.UserId, x.Points)).ToList();
+		}
+		else {
+			IQueryable<PlayerSportProfileEntity> q = db.Set<PlayerSportProfileEntity>().Where(x => x.SportId == p.SportId);
+			if (country != null) q = q.Where(x => x.User.JsonData.Country == country);
+			if (city != null) q = q.Where(x => x.User.JsonData.City == city);
+			total = await q.CountAsync(ct);
+			ranked = (await q.OrderByDescending(x => x.Level).ThenBy(x => x.UserId).Skip((pageNumber - 1) * pageSize).Take(pageSize).Select(x => x.UserId).ToListAsync(ct)).Select(x => (x, 0)).ToList();
+		}
+
+		List<Guid> ids = ranked.Select(x => x.UserId).ToList();
+		Dictionary<Guid, UserResponse> users = await db.Set<UserEntity>().Where(x => ids.Contains(x.Id)).Select(Projections.PublicUserSelector()).ToDictionaryAsync(x => x.Id, ct);
+		Dictionary<Guid, PlayerSportProfileEntity> profiles = await db.Set<PlayerSportProfileEntity>().Where(x => x.SportId == p.SportId && ids.Contains(x.UserId)).ToDictionaryAsync(x => x.UserId, ct);
+		Dictionary<Guid, int> points = p.ByPoints
+			? ranked.ToDictionary(x => x.UserId, x => x.Points)
+			: await db.Set<PlayerAchievementEntity>().Where(x => x.SportId == p.SportId && ids.Contains(x.UserId) && (p.Year == null || x.CreatedAt.Year == p.Year)).GroupBy(x => x.UserId).Select(g => new { g.Key, Points = g.Sum(x => x.Points) }).ToDictionaryAsync(x => x.Key, x => x.Points, ct);
+
+		List<LeaderboardRowResponse> rows = ranked.Where(x => users.ContainsKey(x.UserId)).Select((x, i) => new LeaderboardRowResponse {
+			Rank = (pageNumber - 1) * pageSize + i + 1,
+			User = users[x.UserId],
+			Level = profiles.GetValueOrDefault(x.UserId)?.Level ?? 0,
+			Points = points.GetValueOrDefault(x.UserId),
+			MatchesPlayed = profiles.GetValueOrDefault(x.UserId)?.JsonData.MatchesPlayed ?? 0
+		}).ToList();
+
+		return new UResponse<IEnumerable<LeaderboardRowResponse>?>(rows) { TotalCount = total, PageSize = pageSize, PageCount = (int)Math.Ceiling(total / (decimal)pageSize) };
+	}
+
+	/// <summary>One finished match of a player: 1 won, 0 drawn, -1 lost.</summary>
+	private sealed record PlayedMatch(Guid SportId, DateTime At, int Result);
+
+	/// <summary>Every finished tournament match and open game of a player, oldest first.</summary>
+	private async Task<List<PlayedMatch>> PlayedMatches(Guid userId, Guid? sportId, CancellationToken ct) {
+		List<Guid> entryIds = await db.Set<TournamentEntryEntity>()
+			.Where(x => x.Users.Any(u => u.Id == userId) && (sportId == null || x.Tournament.SportId == sportId))
+			.Select(x => x.Id).ToListAsync(ct);
+		var tournamentMatches = await db.Set<TournamentMatchEntity>()
+			.Where(x => x.Tags.Contains(TagTournamentMatch.Finished) && x.EntryBId != null &&
+			            (entryIds.Contains(x.EntryAId ?? Guid.Empty) || entryIds.Contains(x.EntryBId ?? Guid.Empty) || entryIds.Contains(x.PartnerAId ?? Guid.Empty) || entryIds.Contains(x.PartnerBId ?? Guid.Empty)))
+			.Select(x => new { x.Tournament.SportId, At = x.ScheduledAt ?? x.Tournament.StartDate, x.EntryAId, x.PartnerAId, x.WinnerEntryId, x.JsonData })
+			.ToListAsync(ct);
+		List<PlayedMatch> result = tournamentMatches.Select(x => {
+			bool onA = entryIds.Contains(x.EntryAId ?? Guid.Empty) || entryIds.Contains(x.PartnerAId ?? Guid.Empty);
+			int scoreA = x.JsonData.Sets.Sum(s => s.A), scoreB = x.JsonData.Sets.Sum(s => s.B);
+			// Americano / Mexicano have no winner entry: the side that scored more won.
+			int resultA = x.WinnerEntryId != null ? (x.WinnerEntryId == x.EntryAId ? 1 : -1) : x.PartnerAId != null ? Math.Sign(scoreA - scoreB) : 0;
+			return new PlayedMatch(x.SportId, x.At, onA ? resultA : -resultA);
+		}).ToList();
+
+		var openMatches = await db.Set<OpenMatchEntity>()
+			.Where(x => x.Tags.Contains(TagOpenMatch.Finished) && x.Users.Any(u => u.Id == userId) && (sportId == null || x.SportId == sportId))
+			.Select(x => new { x.SportId, x.StartAt, x.JsonData })
+			.ToListAsync(ct);
+		foreach (var m in openMatches) {
+			bool onA = m.JsonData.TeamA.Contains(userId);
+			if (!onA && !m.JsonData.TeamB.Contains(userId)) continue;
+			int resultA = Math.Sign(m.JsonData.Sets.Count(s => s.A > s.B) - m.JsonData.Sets.Count(s => s.B > s.A));
+			result.Add(new PlayedMatch(m.SportId, m.StartAt, onA ? resultA : -resultA));
+		}
+
+		return result.OrderBy(x => x.At).ToList();
+	}
+
+	private static int WinStreak(IEnumerable<PlayedMatch> matches, bool best) {
+		int current = 0, max = 0;
+		foreach (PlayedMatch m in matches) {
+			current = m.Result == 1 ? current + 1 : 0;
+			max = Math.Max(max, current);
+		}
+
+		return best ? max : current;
+	}
+
+	/// <summary>Weeks in a row (counting back from this week, or last week if nothing yet this week) with a match.</summary>
+	private static int WeeklyStreak(List<PlayedMatch> matches) {
+		static int Week(DateTime d) => (int)Math.Floor((d.Date - new DateTime(2000, 1, 3)).TotalDays / 7);
+		HashSet<int> weeks = matches.Select(x => Week(x.At)).ToHashSet();
+		int week = Week(DateTime.UtcNow);
+		if (!weeks.Contains(week)) week--;
+		int streak = 0;
+		while (weeks.Contains(week)) {
+			streak++;
+			week--;
+		}
+
+		return streak;
+	}
+
+	public async Task<UResponse<PlayerStatsResponse?>> ReadPlayerStats(PlayerStatsParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		Guid? userId = p.UserId ?? userData?.Id;
+		if (userId == null) return new UResponse<PlayerStatsResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		UserEntity? user = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == userId, ct);
+		if (user == null) return new UResponse<PlayerStatsResponse?>(null, Usc.NotFound, ls.Get("userNotFound"));
+
+		List<PlayedMatch> played = await PlayedMatches(user.Id, p.SportId, ct);
+		List<PlayerAchievementEntity> placements = await db.Set<PlayerAchievementEntity>()
+			.Where(x => x.UserId == user.Id && x.Tags.Contains(TagPlayerAchievement.Placement) && (p.SportId == null || x.SportId == p.SportId)).ToListAsync(ct);
+
+		PlayerStatsResponse stats = new() {
+			User = await db.Set<UserEntity>().Where(x => x.Id == user.Id).Select(Projections.PublicUserSelector()).FirstOrDefaultAsync(ct),
+			MatchesPlayed = played.Count,
+			Wins = played.Count(x => x.Result == 1),
+			Losses = played.Count(x => x.Result == -1),
+			Draws = played.Count(x => x.Result == 0),
+			CurrentWinStreak = WinStreak(played, false),
+			BestWinStreak = WinStreak(played, true),
+			WeeklyStreak = WeeklyStreak(played),
+			TournamentsPlayed = await db.Set<TournamentEntryEntity>().CountAsync(x => x.Users.Any(u => u.Id == user.Id) && x.Tags.Contains(TagTournamentEntry.Approved) && (p.SportId == null || x.Tournament.SportId == p.SportId), ct),
+			TournamentWins = placements.Count(x => x.Rank == 1),
+			Podiums = placements.Count(x => x.Rank <= 3),
+			RankingPoints = placements.Sum(x => x.Points),
+			Followers = await db.Set<FollowEntity>().CountAsync(x => x.UserId == user.Id, ct),
+			Following = await db.Set<FollowEntity>().CountAsync(x => x.CreatorId == user.Id && x.UserId != null, ct),
+			ReferralCount = await db.Set<UserEntity>().CountAsync(x => x.JsonData.ReferrerId == user.Id, ct)
+		};
+		stats.WinRate = stats.MatchesPlayed == 0 ? 0 : (int)Math.Round(100.0 * stats.Wins / stats.MatchesPlayed);
+
+		// The invite code is private; it is made the first time its owner asks for it.
+		if (userData?.Id == user.Id) {
+			if (user.JsonData.ReferralCode.IsNullOrEmpty()) {
+				string code;
+				do code = Convert.ToHexString(RandomNumberGenerator.GetBytes(4));
+				while (await db.Set<UserEntity>().AnyAsync(x => x.JsonData.ReferralCode == code, ct));
+				user.JsonData.ReferralCode = code;
+				await db.SaveChangesAsync(ct);
+			}
+
+			stats.ReferralCode = user.JsonData.ReferralCode;
+			if (stats.ReferralCount >= 3) await AwardBadges([user.Id], ct);
+		}
+
+		return new UResponse<PlayerStatsResponse?>(stats);
+	}
+
+	/// <summary>Ranking points for a final rank.</summary>
+	private static int RankingPoints(int rank) => rank switch { 1 => 100, 2 => 70, 3 => 50, 4 => 40, <= 8 => 25, _ => 10 };
+
+	/// <summary>Final ranks of a finished tournament: knockout placings, the box order, or the table.</summary>
+	private static List<TournamentStandingResponse> FinalRanks(TournamentEntity t, List<TournamentStandingResponse> rows, List<TournamentMatchEntity> matches) {
+		switch (FormatOf(t)) {
+			case TagTournament.GroupsKnockout: {
+				List<TournamentMatchEntity> knockout = matches.Where(TournamentEngine.IsKnockout).ToList();
+				HashSet<Guid> inKnockout = knockout.SelectMany(x => new[] { x.EntryAId, x.EntryBId }).OfType<Guid>().ToHashSet();
+				List<TournamentStandingResponse> placed = TournamentEngine.Placements(rows.Where(x => inKnockout.Contains(x.EntryId)).ToList(), knockout);
+				List<TournamentStandingResponse> rest = rows.Where(x => !inKnockout.Contains(x.EntryId)).ToList();
+				foreach (TournamentStandingResponse r in rest) r.Rank = placed.Count + 1;
+				return placed.Concat(rest).ToList();
+			}
+			case TagTournament.Ladder: {
+				List<TournamentStandingResponse> boxes = ComputeStandings(t, rows, matches);
+				for (int i = 0; i < boxes.Count; i++) boxes[i].Rank = i + 1;
+				return boxes;
+			}
+			default:
+				return ComputeStandings(t, rows, matches);
+		}
+	}
+
+	/// <summary>Turns the final ranks into trophies and ranking points (again from scratch if the tournament is finished again).</summary>
+	private async Task AwardPlacements(TournamentEntity t, List<TournamentMatchEntity> matches, Guid creatorId, CancellationToken ct) {
+		await db.Set<PlayerAchievementEntity>().Where(x => x.TournamentId == t.Id).ExecuteDeleteAsync(ct);
+		List<TournamentStandingResponse> ranks = FinalRanks(t, await StandingRows(t.Id, ct), matches);
+		DateTime now = DateTime.UtcNow;
+		foreach (TournamentStandingResponse r in ranks)
+		foreach (UserResponse u in r.Users)
+			await db.Set<PlayerAchievementEntity>().AddAsync(new PlayerAchievementEntity {
+				Id = Guid.CreateVersion7(),
+				CreatorId = creatorId,
+				CreatedAt = now,
+				Tags = [TagPlayerAchievement.Placement],
+				UserId = u.Id,
+				SportId = t.SportId,
+				TournamentId = t.Id,
+				Rank = r.Rank,
+				Points = RankingPoints(r.Rank),
+				JsonData = new PlayerAchievementJson { Title = t.Title, EntryCount = ranks.Count }
+			}, ct);
+
+		List<Guid> players = ranks.SelectMany(x => x.Users.Select(u => u.Id)).ToList();
+		await db.AddNotifications(players, creatorId, "notifTournamentFinished", t.Title, "tournament", t.Id, ct);
+		await db.SaveChangesAsync(ct);
+		await AwardBadges(players, ct);
+	}
+
+	/// <summary>Badge keys; the apps translate them.</summary>
+	public static class Badges {
+		public const string FirstMatch = "firstMatch";
+		public const string TenMatches = "tenMatches";
+		public const string FiftyMatches = "fiftyMatches";
+		public const string FirstWin = "firstWin";
+		public const string WinStreak5 = "winStreak5";
+		public const string Champion = "champion";
+		public const string Podium = "podium";
+		public const string Organizer = "organizer";
+		public const string Recruiter = "recruiter";
+		public const string Regular = "regular"; // four weeks in a row
+	}
+
+	/// <summary>Gives the badges the players have earned and don't have yet.</summary>
+	private async Task AwardBadges(List<Guid> userIds, CancellationToken ct) {
+		DateTime now = DateTime.UtcNow;
+		foreach (Guid userId in userIds.Distinct()) {
+			HashSet<string?> owned = (await db.Set<PlayerAchievementEntity>().Where(x => x.UserId == userId && x.Tags.Contains(TagPlayerAchievement.Badge)).Select(x => x.JsonData.Badge).ToListAsync(ct)).ToHashSet();
+			List<PlayedMatch> played = await PlayedMatches(userId, null, ct);
+			List<int?> ranks = await db.Set<PlayerAchievementEntity>().Where(x => x.UserId == userId && x.Tags.Contains(TagPlayerAchievement.Placement)).Select(x => x.Rank).ToListAsync(ct);
+
+			Dictionary<string, bool> earned = new() {
+				[Badges.FirstMatch] = played.Count >= 1,
+				[Badges.TenMatches] = played.Count >= 10,
+				[Badges.FiftyMatches] = played.Count >= 50,
+				[Badges.FirstWin] = played.Any(x => x.Result == 1),
+				[Badges.WinStreak5] = WinStreak(played, true) >= 5,
+				[Badges.Champion] = ranks.Any(x => x == 1),
+				[Badges.Podium] = ranks.Any(x => x <= 3),
+				[Badges.Organizer] = await db.Set<TournamentEntity>().AnyAsync(x => x.CreatorId == userId, ct),
+				[Badges.Recruiter] = await db.Set<UserEntity>().CountAsync(x => x.JsonData.ReferrerId == userId, ct) >= 3,
+				[Badges.Regular] = WeeklyStreak(played) >= 4
+			};
+
+			List<string> fresh = earned.Where(x => x.Value && !owned.Contains(x.Key)).Select(x => x.Key).ToList();
+			foreach (string badge in fresh) {
+				await db.Set<PlayerAchievementEntity>().AddAsync(new PlayerAchievementEntity {
+					Id = Guid.CreateVersion7(),
+					CreatorId = userId,
+					CreatedAt = now,
+					Tags = [TagPlayerAchievement.Badge],
+					UserId = userId,
+					JsonData = new PlayerAchievementJson { Badge = badge }
+				}, ct);
+				await db.AddNotifications([userId], Core.App.Users.SystemAdmin.Id, "notifNewBadge", badge, "achievement", null, ct, TagNotification.Achievement);
+			}
+
+			if (fresh.Count > 0) {
+				await db.SaveChangesAsync(ct);
+				await rt.ToUsers([userId], "notification");
+			}
+		}
+	}
+
+	// ---------------- Open match ----------------
+	// The creator organizes; AdminUserIds help. Public games are joined directly, private ones after approval (invited players skip it).
+
+	private static bool CanManage(JwtClaimData u, OpenMatchEntity m) => u.IsAdmin || m.CreatorId == u.Id || m.AdminUserIds.Contains(u.Id);
+
+	private static void SetStatus(OpenMatchEntity m, TagOpenMatch status) => m.Tags = m.Tags.Where(x => (int)x / 100 != 1).Append(status).ToList();
+
+	/// <summary>Open or full, from the number of players (finished and cancelled games stay as they are).</summary>
+	private static void RefreshFull(OpenMatchEntity m) {
+		if (m.Tags.Contains(TagOpenMatch.Finished) || m.Tags.Contains(TagOpenMatch.Cancelled)) return;
+		SetStatus(m, m.Users.Count >= m.Capacity ? TagOpenMatch.Full : TagOpenMatch.Open);
+	}
+
+	public async Task<UResponse<Guid?>> CreateOpenMatch(OpenMatchCreateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
+		SportEntity? sport = await db.Set<SportEntity>().FirstOrDefaultAsync(x => x.Id == p.SportId, ct);
+		if (sport == null || !sport.Tags.Contains(TagSport.Active)) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("sportNotFound"));
+		if (p.Capacity < 2) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("capacityMustBeAtLeastTwo"));
+		if (p.MinLevel > p.MaxLevel) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("levelIsOutOfRange"));
+		if (p.StartAt < DateTime.UtcNow) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("theStartTimeIsInThePast"));
+		if (p.VenueId.HasValue && !await db.Set<VenueEntity>().AnyAsync(x => x.Id == p.VenueId && x.Tags.Contains(TagVenue.Approved), ct)) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("venueNotFound"));
+
+		UserEntity creator = await db.Set<UserEntity>().AsTracking().FirstAsync(x => x.Id == userData.Id, ct);
+		bool challenge = p.Tags.Contains(TagOpenMatch.Challenge);
+		OpenMatchEntity e = new() {
+			Id = p.Id ?? Guid.CreateVersion7(),
+			CreatorId = userData.Id,
+			CreatedAt = DateTime.UtcNow,
+			Tags = [
+				TagOpenMatch.Open,
+				challenge || p.Tags.Contains(TagOpenMatch.Private) ? TagOpenMatch.Private : TagOpenMatch.Public,
+				p.Tags.Contains(TagOpenMatch.Friendly) ? TagOpenMatch.Friendly : TagOpenMatch.Competitive,
+				..challenge ? [TagOpenMatch.Challenge] : Array.Empty<TagOpenMatch>()
+			],
+			StartAt = p.StartAt,
+			DurationMinutes = Math.Clamp(p.DurationMinutes, 15, 600),
+			Capacity = p.Capacity,
+			MinLevel = p.MinLevel,
+			MaxLevel = p.MaxLevel,
+			PricePerPlayer = p.PricePerPlayer,
+			SportId = p.SportId,
+			VenueId = p.VenueId,
+			AdminUserIds = p.AdminUserIds ?? [],
+			Users = [creator],
+			JsonData = new OpenMatchJson {
+				Detail1 = p.Detail1,
+				Detail2 = p.Detail2,
+				Title = p.Title,
+				Description = p.Description,
+				Place = p.Place,
+				Latitude = p.Latitude,
+				Longitude = p.Longitude,
+				BookingId = p.BookingId,
+				InvitedUserIds = p.InvitedUserIds.Where(x => x != userData.Id).Distinct().ToList()
+			}
+		};
+
+		await db.Set<OpenMatchEntity>().AddAsync(e, ct);
+		await db.AddNotifications(e.JsonData.InvitedUserIds, userData.Id, challenge ? "notifChallenge" : "notifGameInvite", userData.FullName, "openMatch", e.Id, ct);
+		await db.SaveChangesAsync(ct);
+		await rt.ToUsers(e.JsonData.InvitedUserIds, "notification");
+		return new UResponse<Guid?>(e.Id, Usc.Created);
+	}
+
+	public async Task<UResponse<IEnumerable<OpenMatchResponse>?>> ReadOpenMatches(OpenMatchReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		Guid uid = userData?.Id ?? Guid.Empty;
+		IQueryable<OpenMatchEntity> q = db.Set<OpenMatchEntity>().ApplyReadParams(p);
+		// Private games are listed only for their players, the invited and the organizers.
+		if (userData is not { IsAdmin: true })
+			q = q.Where(x => x.Tags.Contains(TagOpenMatch.Public) || x.CreatorId == uid || x.AdminUserIds.Contains(uid) || x.Users.Any(u => u.Id == uid));
+		if (p.SportId.HasValue) q = q.Where(x => x.SportId == p.SportId);
+		if (p.VenueId.HasValue) q = q.Where(x => x.VenueId == p.VenueId);
+		if (p.UserId.HasValue) q = q.Where(x => x.CreatorId == p.UserId || x.Users.Any(u => u.Id == p.UserId));
+		if (p.ForMyLevel && userData != null) {
+			// Games the player fits: their level in that sport is inside the game's range.
+			q = q.Where(x => db.Set<PlayerSportProfileEntity>().Any(pr => pr.UserId == uid && pr.SportId == x.SportId && (x.MinLevel == null || pr.Level >= x.MinLevel) && (x.MaxLevel == null || pr.Level <= x.MaxLevel)));
+		}
+
+		if (p is { Latitude: not null, Longitude: not null, RadiusKm: not null }) {
+			double dLat = p.RadiusKm.Value / 111.0, dLng = p.RadiusKm.Value / (111.0 * Math.Max(0.01, Math.Cos(p.Latitude.Value * Math.PI / 180)));
+			double lat = p.Latitude.Value, lng = p.Longitude.Value;
+			q = q.Where(x => (x.Venue != null ? x.Venue.Latitude : x.JsonData.Latitude) >= lat - dLat && (x.Venue != null ? x.Venue.Latitude : x.JsonData.Latitude) <= lat + dLat &&
+			                 (x.Venue != null ? x.Venue.Longitude : x.JsonData.Longitude) >= lng - dLng && (x.Venue != null ? x.Venue.Longitude : x.JsonData.Longitude) <= lng + dLng);
+		}
+
+		if (p.Upcoming == true) q = q.Where(x => x.StartAt >= DateTime.UtcNow && !x.Tags.Contains(TagOpenMatch.Cancelled) && !x.Tags.Contains(TagOpenMatch.Finished)).OrderBy(x => x.StartAt);
+		if (p.Upcoming == false) q = q.Where(x => x.StartAt < DateTime.UtcNow || x.Tags.Contains(TagOpenMatch.Finished)).OrderByDescending(x => x.StartAt);
+
+		return await q.Select(Projections.OpenMatchSelector(p.SelectorArgs)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	}
+
+	public async Task<UResponse<OpenMatchResponse?>> ReadOpenMatchById(IdParams<OpenMatchSelectorArgs> p, CancellationToken ct) {
+		OpenMatchResponse? e = await db.Set<OpenMatchEntity>().Select(Projections.OpenMatchSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		return e == null ? new UResponse<OpenMatchResponse?>(null, Usc.NotFound, ls.Get("gameNotFound")) : new UResponse<OpenMatchResponse?>(e);
+	}
+
+	public async Task<UResponse> UpdateOpenMatch(OpenMatchUpdateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+
+		OpenMatchEntity? e = await db.Set<OpenMatchEntity>().AsTracking().Include(x => x.Users).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("gameNotFound"));
+		if (!CanManage(userData, e)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if ((p.MinLevel ?? e.MinLevel) > (p.MaxLevel ?? e.MaxLevel)) return new UResponse(Usc.BadRequest, ls.Get("levelIsOutOfRange"));
+		if (p.Capacity.HasValue && (p.Capacity < 2 || p.Capacity < e.Users.Count)) return new UResponse(Usc.BadRequest, ls.Get("capacityMustBeAtLeastTwo"));
+		bool wasCancelled = e.Tags.Contains(TagOpenMatch.Cancelled);
+
+		if (p.StartAt.HasValue) e.StartAt = p.StartAt.Value;
+		if (p.DurationMinutes.HasValue) e.DurationMinutes = Math.Clamp(p.DurationMinutes.Value, 15, 600);
+		if (p.Capacity.HasValue) e.Capacity = p.Capacity.Value;
+		if (p.MinLevel.HasValue) e.MinLevel = p.MinLevel;
+		if (p.MaxLevel.HasValue) e.MaxLevel = p.MaxLevel;
+		if (p.PricePerPlayer.HasValue) e.PricePerPlayer = p.PricePerPlayer.Value;
+		if (p.VenueId.HasValue) e.VenueId = p.VenueId == Guid.Empty ? null : p.VenueId;
+		if (p.Title.IsNotNull()) e.JsonData.Title = p.Title;
+		if (p.Description.IsNotNull()) e.JsonData.Description = p.Description;
+		if (p.Place.IsNotNull()) e.JsonData.Place = p.Place;
+		if (p.Latitude.HasValue) e.JsonData.Latitude = p.Latitude;
+		if (p.Longitude.HasValue) e.JsonData.Longitude = p.Longitude;
+		e.ApplyUpdateParam<OpenMatchEntity, TagOpenMatch, OpenMatchJson>(p);
+
+		List<Guid> approved = [], notify = [];
+		if (p.ApproveUserIds != null) {
+			List<Guid> ids = p.ApproveUserIds.Where(x => e.JsonData.PendingUserIds.Contains(x) && e.Users.All(u => u.Id != x)).ToList();
+			if (e.Users.Count + ids.Count > e.Capacity) return new UResponse(Usc.Conflict, ls.Get("thisGameIsFull"));
+			e.Users = e.Users.Concat(await db.Set<UserEntity>().AsTracking().Where(x => ids.Contains(x.Id)).ToListAsync(ct)).ToList();
+			e.JsonData.PendingUserIds = e.JsonData.PendingUserIds.Except(ids).ToList();
+			approved.AddRange(ids);
+		}
+
+		if (p.RemoveUserIds != null) {
+			List<Guid> removed = p.RemoveUserIds.Where(x => x != e.CreatorId).ToList();
+			e.Users = e.Users.Where(u => !removed.Contains(u.Id)).ToList();
+			e.JsonData.PendingUserIds = e.JsonData.PendingUserIds.Except(removed).ToList();
+			e.JsonData.InvitedUserIds = e.JsonData.InvitedUserIds.Except(removed).ToList();
+		}
+
+		if (p.InviteUserIds != null) {
+			List<Guid> invited = p.InviteUserIds.Except(e.JsonData.InvitedUserIds).Where(x => e.Users.All(u => u.Id != x)).ToList();
+			e.JsonData.InvitedUserIds.AddRange(invited);
+			await db.AddNotifications(invited, userData.Id, "notifGameInvite", userData.FullName, "openMatch", e.Id, ct);
+			notify.AddRange(invited);
+		}
+
+		RefreshFull(e);
+		await db.AddNotifications(approved, userData.Id, "notifJoinApproved", e.JsonData.Title, "openMatch", e.Id, ct);
+		notify.AddRange(approved);
+		if (!wasCancelled && e.Tags.Contains(TagOpenMatch.Cancelled)) {
+			List<Guid> players = e.Users.Select(x => x.Id).ToList();
+			await db.AddNotifications(players, userData.Id, "notifGameCancelled", e.JsonData.Title, "openMatch", e.Id, ct);
+			notify.AddRange(players);
+		}
+
+		await db.SaveChangesAsync(ct);
+		await rt.ToUsers(notify, "notification");
+		return new UResponse();
+	}
+
+	public async Task<UResponse> DeleteOpenMatch(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+
+		OpenMatchEntity? e = await db.Set<OpenMatchEntity>().AsTracking().Include(x => x.Users).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("gameNotFound"));
+		if (!CanManage(userData, e)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		// A played competitive game is part of the players' history.
+		if (!userData.IsAdmin && e.Tags.Contains(TagOpenMatch.Finished)) return new UResponse(Usc.Conflict, ls.Get("aFinishedGameCannotBeDeleted"));
+
+		await RevertRating(e.Id, ct);
+		await db.AddNotifications(e.Users.Select(x => x.Id), userData.Id, "notifGameCancelled", e.JsonData.Title, null, null, ct);
+		db.Set<OpenMatchEntity>().Remove(e);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> JoinOpenMatch(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
+		OpenMatchEntity? e = await db.Set<OpenMatchEntity>().AsTracking().Include(x => x.Users).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("gameNotFound"));
+		if (!e.Tags.Contains(TagOpenMatch.Open) || e.StartAt < DateTime.UtcNow) return new UResponse(Usc.Conflict, ls.Get("thisGameIsFull"));
+		if (e.Users.Any(x => x.Id == userData.Id) || e.JsonData.PendingUserIds.Contains(userData.Id)) return new UResponse(Usc.Conflict, ls.Get("youHaveAlreadyJoined"));
+		if (await db.Set<BlockEntity>().AnyAsync(x => x.CreatorId == e.CreatorId && x.BlockedUserId == userData.Id, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		bool invited = e.JsonData.InvitedUserIds.Contains(userData.Id);
+		if (!invited) {
+			PlayerSportProfileEntity? profile = await db.Set<PlayerSportProfileEntity>().FirstOrDefaultAsync(x => x.UserId == userData.Id && x.SportId == e.SportId, ct);
+			if (profile == null) return new UResponse(Usc.BadRequest, ls.Get("addThisSportToYourProfileFirst"));
+			if (profile.Level < (e.MinLevel ?? decimal.MinValue) || profile.Level > (e.MaxLevel ?? decimal.MaxValue)) return new UResponse(Usc.BadRequest, ls.Get("levelIsNotInTheGameRange"));
+		}
+
+		List<Guid> organizers = [e.CreatorId, ..e.AdminUserIds];
+		if (e.Tags.Contains(TagOpenMatch.Private) && !invited) {
+			e.JsonData.PendingUserIds.Add(userData.Id);
+			await db.AddNotifications(organizers, userData.Id, "notifJoinRequest", userData.FullName, "openMatch", e.Id, ct);
+		}
+		else {
+			e.Users.Add(await db.Set<UserEntity>().AsTracking().FirstAsync(x => x.Id == userData.Id, ct));
+			e.JsonData.InvitedUserIds.Remove(userData.Id);
+			RefreshFull(e);
+			await db.AddNotifications(organizers, userData.Id, "notifPlayerJoined", userData.FullName, "openMatch", e.Id, ct);
+		}
+
+		await db.SaveChangesAsync(ct);
+		await rt.ToUsers(organizers, "notification");
+		return new UResponse();
+	}
+
+	public async Task<UResponse> LeaveOpenMatch(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+
+		OpenMatchEntity? e = await db.Set<OpenMatchEntity>().AsTracking().Include(x => x.Users).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("gameNotFound"));
+		if (e.CreatorId == userData.Id) return new UResponse(Usc.Conflict, ls.Get("theOrganizerCannotLeaveCancelInstead"));
+		if (e.Tags.Contains(TagOpenMatch.Finished)) return new UResponse(Usc.Conflict, ls.Get("aFinishedGameCannotBeDeleted"));
+
+		e.Users = e.Users.Where(x => x.Id != userData.Id).ToList();
+		e.JsonData.PendingUserIds.Remove(userData.Id);
+		e.JsonData.InvitedUserIds.Remove(userData.Id);
+		RefreshFull(e);
+		await db.AddNotifications([e.CreatorId], userData.Id, "notifPlayerLeft", userData.FullName, "openMatch", e.Id, ct);
+		await db.SaveChangesAsync(ct);
+		await rt.ToUsers([e.CreatorId], "notification");
+		return new UResponse();
+	}
+
+	public async Task<UResponse> SetOpenMatchResult(OpenMatchResultParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+
+		OpenMatchEntity? e = await db.Set<OpenMatchEntity>().AsTracking().Include(x => x.Users).Include(x => x.Sport).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("gameNotFound"));
+		if (!CanManage(userData, e)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (e.Tags.Contains(TagOpenMatch.Cancelled)) return new UResponse(Usc.Conflict, ls.Get("gameNotFound"));
+		if (e.StartAt > DateTime.UtcNow) return new UResponse(Usc.Conflict, ls.Get("theGameHasNotStartedYet"));
+
+		await RevertRating(e.Id, ct);
+		if (p.Sets.Count == 0) {
+			e.JsonData.Sets = [];
+			e.JsonData.TeamA = [];
+			e.JsonData.TeamB = [];
+			SetStatus(e, TagOpenMatch.Open);
+			RefreshFull(e);
+			await db.SaveChangesAsync(ct);
+			return new UResponse();
+		}
+
+		// Both teams are players of this game, nobody on both sides.
+		HashSet<Guid> players = e.Users.Select(x => x.Id).ToHashSet();
+		List<Guid> teamA = p.TeamA.Distinct().ToList(), teamB = p.TeamB.Distinct().ToList();
+		if (teamA.Count == 0 || teamB.Count == 0 || teamA.Intersect(teamB).Any() || !teamA.Concat(teamB).All(players.Contains)) return new UResponse(Usc.BadRequest, ls.Get("teamsAreNotValid"));
+		string? error = TournamentEngine.ValidateScore(SportTypeOf(e.Sport), false, false, p.Sets, new TournamentJson());
+		if (error != null) return new UResponse(Usc.BadRequest, ls.Get(error));
+
+		e.JsonData.TeamA = teamA;
+		e.JsonData.TeamB = teamB;
+		e.JsonData.Sets = p.Sets;
+		SetStatus(e, TagOpenMatch.Finished);
+		if (e.Tags.Contains(TagOpenMatch.Competitive)) {
+			int balance = p.Sets.Count(x => x.A > x.B) - p.Sets.Count(x => x.B > x.A);
+			await ApplyRating(e.Sport, e.Id, teamA, teamB, balance > 0 ? 1 : balance < 0 ? 0 : 0.5, ct);
+		}
+
+		await db.AddNotifications(players, userData.Id, "notifMatchResult", e.JsonData.Title, "openMatch", e.Id, ct);
+		await db.SaveChangesAsync(ct);
+		await AwardBadges(players.ToList(), ct);
+		await rt.ToUsers(players, "notification");
+		return new UResponse();
 	}
 }
 

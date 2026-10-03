@@ -8,4 +8,8 @@ public sealed class NotificationEntity : BaseEntity<TagNotification, Notificatio
 	public UserEntity User { get; set; } = null!;
 }
 
-public class NotificationJson : BaseJson;
+public class NotificationJson : BaseJson {
+	// What the notification opens, e.g. "tournament" + its id.
+	public string? LinkType { get; set; }
+	public Guid? LinkId { get; set; }
+}

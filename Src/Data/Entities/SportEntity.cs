@@ -148,7 +148,12 @@ public sealed class TournamentEntryEntity : BaseEntity<TagTournamentEntry, Tourn
 	public ICollection<UserEntity> Users { get; set; } = [];
 }
 
-public sealed class TournamentEntryJson : BaseJson;
+public sealed class TournamentEntryJson : BaseJson {
+	// The entry fee paid from the wallet: held by the platform, refunded if the entry leaves, paid to the organizer when the tournament starts.
+	public decimal PaidAmount { get; set; }
+	public bool Refunded { get; set; }
+	public bool Settled { get; set; }
+}
 
 // ---------------- TournamentMatch ----------------
 
@@ -191,6 +196,7 @@ public sealed class TournamentMatchJson : BaseJson {
 	public string? Court { get; set; }
 	public List<MatchSetScore> Sets { get; set; } = [];
 	public List<MatchScoreChange> History { get; set; } = [];
+	public bool Reminded { get; set; } // the players got the "starts soon" notification
 }
 
 /// <summary>Who changed a result and to what.</summary>
@@ -204,4 +210,77 @@ public sealed class MatchScoreChange {
 public sealed class MatchSetScore {
 	public required int A { get; set; }
 	public required int B { get; set; }
+}
+
+
+// ---------------- PlayerAchievement ----------------
+
+/// <summary>A trophy on a player's profile: a final tournament rank (with ranking points) or a badge.</summary>
+[Table("PlayerAchievements")]
+[Microsoft.EntityFrameworkCore.Index(nameof(UserId), Name = "IX_PlayerAchievements_UserId")]
+[Microsoft.EntityFrameworkCore.Index(nameof(TournamentId), Name = "IX_PlayerAchievements_TournamentId")]
+public sealed class PlayerAchievementEntity : BaseEntity<TagPlayerAchievement, PlayerAchievementJson> {
+	public required Guid UserId { get; set; }
+	public UserEntity User { get; set; } = null!;
+
+	public Guid? SportId { get; set; }
+	public SportEntity? Sport { get; set; }
+
+	public Guid? TournamentId { get; set; }
+	public TournamentEntity? Tournament { get; set; }
+
+	public int? Rank { get; set; }
+
+	public int Points { get; set; } // ranking points for the leaderboard
+}
+
+public sealed class PlayerAchievementJson : BaseJson {
+	public string? Title { get; set; } // the tournament's title when it was won
+	public string? Badge { get; set; } // a badge key, e.g. "firstWin"; clients translate it
+	public int EntryCount { get; set; }
+}
+
+// ---------------- OpenMatch ----------------
+
+/// <summary>A game a player opens for others to join; a finished competitive one changes the players' levels.</summary>
+[Table("OpenMatches")]
+[Microsoft.EntityFrameworkCore.Index(nameof(SportId), nameof(StartAt), Name = "IX_OpenMatches_SportId_StartAt")]
+public sealed class OpenMatchEntity : BaseEntity<TagOpenMatch, OpenMatchJson> {
+	public required DateTime StartAt { get; set; }
+
+	public int DurationMinutes { get; set; } = 90;
+
+	public required int Capacity { get; set; }
+
+	[Column(TypeName = "decimal(4,2)")]
+	public decimal? MinLevel { get; set; }
+
+	[Column(TypeName = "decimal(4,2)")]
+	public decimal? MaxLevel { get; set; }
+
+	[Column(TypeName = "decimal(18,2)")]
+	public decimal PricePerPlayer { get; set; } // paid at the venue
+
+	public required Guid SportId { get; set; }
+	public SportEntity Sport { get; set; } = null!;
+
+	public Guid? VenueId { get; set; }
+	public VenueEntity? Venue { get; set; }
+
+	public ICollection<UserEntity> Users { get; set; } = [];
+}
+
+public sealed class OpenMatchJson : BaseJson {
+	public string? Title { get; set; }
+	public string? Description { get; set; }
+	public string? Place { get; set; } // when it isn't at a listed venue
+	public double? Latitude { get; set; }
+	public double? Longitude { get; set; }
+	public Guid? BookingId { get; set; }
+	public List<Guid> PendingUserIds { get; set; } = []; // asked to join a private game
+	public List<Guid> InvitedUserIds { get; set; } = []; // may join without approval
+	public List<Guid> TeamA { get; set; } = [];
+	public List<Guid> TeamB { get; set; } = [];
+	public List<MatchSetScore> Sets { get; set; } = [];
+	public bool Reminded { get; set; }
 }

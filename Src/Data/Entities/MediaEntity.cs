@@ -48,6 +48,12 @@ public sealed class MediaEntity : BaseEntity<TagMedia, MediaJson> {
 
 	public Guid? BlogId { get; set; }
 	public BlogEntity? Blog { get; set; }
+
+	public Guid? VenueId { get; set; }
+	public VenueEntity? Venue { get; set; }
+
+	public Guid? PostId { get; set; }
+	public PostEntity? Post { get; set; }
 }
 
 public class MediaJson : BaseJson;

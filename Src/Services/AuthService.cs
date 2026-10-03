@@ -29,6 +29,8 @@ public class AuthService(
 
 		Guid userId = Guid.CreateVersion7();
 		DateTime now = DateTime.UtcNow;
+		string? referralCode = p.ReferralCode?.Trim().ToUpperInvariant();
+		Guid? referrerId = referralCode.IsNullOrEmpty() ? null : await db.Set<UserEntity>().Where(x => x.JsonData.ReferralCode == referralCode).Select(x => (Guid?)x.Id).FirstOrDefaultAsync(ct);
 		UserEntity e = new() {
 			Id = userId,
 			CreatorId = userId,
@@ -43,7 +45,7 @@ public class AuthService(
 			FirstName = p.FirstName,
 			LastName = p.LastName,
 			NationalCode = p.NationalCode,
-			JsonData = new UserJson(),
+			JsonData = new UserJson { ReferrerId = referrerId },
 			Wallets = [new WalletEntity { Id = userId, CreatorId = userId, CreatedAt = now, JsonData = new WalletJson(), Tags = [TagWallet.Primary], Balance = 0 }]
 		};
 

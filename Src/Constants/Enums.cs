@@ -379,6 +379,13 @@ public enum TagWalletTxn {
 	GoldSale = 214,
 	GoldPurchaseRefund = 215,
 
+	CourtBooking = 216,
+	CourtBookingRefund = 217,
+	CourtBookingSettlement = 218,
+	TournamentEntryFee = 219,
+	TournamentEntryRefund = 220,
+	TournamentEntrySettlement = 221,
+
 	ChargeSimPin = 301,
 	ChargeSimTopup = 302,
 	InternetSim = 303,
@@ -443,6 +450,12 @@ public enum TagNotification {
 	InvoiceDue = 106,
 	InvoiceOverdue = 107,
 	InvoicePaid = 108,
+	Sport = 109, // tournaments, matches, open matches
+	Booking = 110,
+	Social = 111, // followers, reactions, replies
+	Message = 112,
+	Achievement = 113,
+	Reminder = 114,
 	Unread = 201,
 	Read = 202,
 	Test = 999
@@ -824,4 +837,114 @@ public enum TagTournamentMatch {
 
 public enum TagPlayerRatingHistory {
 	Match = 101
+}
+
+public enum TagPlayerAchievement {
+	// Kind
+	Placement = 101, // a final rank in a tournament
+	Badge = 102, // JsonData.Badge names it
+
+	// The player hid it from their profile
+	Hidden = 201
+}
+
+public enum TagOpenMatch {
+	// Status
+	Open = 101,
+	Full = 102,
+	Finished = 103,
+	Cancelled = 104,
+
+	// Who can join: anyone, or after the organizer approves
+	Public = 201,
+	Private = 202,
+
+	// Competitive results change the players' levels
+	Competitive = 301,
+	Friendly = 302,
+
+	// A player challenged the invited players
+	Challenge = 401
+}
+
+public enum TagVenue {
+	// Kind
+	Club = 101,
+	Shop = 102,
+
+	// Status (set by admins)
+	Pending = 201,
+	Approved = 202,
+	Rejected = 203,
+	Suspended = 204,
+
+	// Players may book and pay at the venue
+	PayAtVenue = 301
+}
+
+public enum TagCourt {
+	Indoor = 101,
+	Outdoor = 102,
+
+	Active = 201,
+	Inactive = 202
+}
+
+public enum TagBooking {
+	// Status
+	Pending = 101,
+	Confirmed = 102,
+	Cancelled = 103,
+	Completed = 104,
+	NoShow = 105,
+
+	// Payment
+	PaidFromWallet = 201,
+	PayAtVenue = 202
+}
+
+public enum TagPost {
+	// Kind
+	Post = 101,
+	Story = 102,
+	Comment = 103,
+
+	// Who sees it
+	Public = 201,
+	Followers = 202,
+
+	// Hidden by a moderator
+	Hidden = 301
+}
+
+public enum TagReport {
+	// What is reported
+	Post = 101,
+	User = 102,
+	Message = 103,
+	Venue = 104,
+	Comment = 105,
+
+	// Status
+	Pending = 201,
+	Resolved = 202,
+	Dismissed = 203
+}
+
+public enum TagBlock {
+	User = 101
+}
+
+public enum TagConversation {
+	Direct = 101,
+	Group = 102
+}
+
+public enum TagMessage {
+	Text = 101,
+	System = 102,
+	Shared = 103, // links to a tournament, match, post...
+
+	Edited = 201,
+	Deleted = 202
 }

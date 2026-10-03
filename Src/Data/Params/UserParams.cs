@@ -53,6 +53,8 @@ public sealed class UserUpdateParams : BaseUpdateParams<TagUser> {
 	public string? BirthCertificateFifth { get; set; }
 	public string? VisualAuthentication { get; set; }
 	public string? ESignature { get; set; }
+	public string? Country { get; set; }
+	public string? City { get; set; }
 	public decimal? Weight { get; set; }
 	public decimal? Height { get; set; }
 	public DateTime? Birthdate { get; set; }

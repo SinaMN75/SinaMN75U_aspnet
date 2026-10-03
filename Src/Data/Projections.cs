@@ -22,7 +22,56 @@ public sealed class TournamentEntrySelectorArgs : BaseSelectorArgs {
 	public TournamentSelectorArgs? Tournament { get; set; }
 }
 
-public sealed class TournamentMatchSelectorArgs : BaseSelectorArgs;
+public sealed class TournamentMatchSelectorArgs : BaseSelectorArgs {
+	public TournamentSelectorArgs? Tournament { get; set; }
+
+	/// <summary>Both sides' entries with their players.</summary>
+	public bool Entries { get; set; }
+}
+
+public sealed class PlayerAchievementSelectorArgs : BaseSelectorArgs {
+	public bool User { get; set; }
+	public SportSelectorArgs? Sport { get; set; }
+}
+
+public sealed class OpenMatchSelectorArgs : BaseSelectorArgs {
+	public SportSelectorArgs? Sport { get; set; }
+	public VenueSelectorArgs? Venue { get; set; }
+	public bool Users { get; set; }
+}
+
+public sealed class VenueSelectorArgs : BaseSelectorArgs {
+	public CourtSelectorArgs? Courts { get; set; }
+	public MediaSelectorArgs? Media { get; set; }
+}
+
+public sealed class CourtSelectorArgs : BaseSelectorArgs {
+	public VenueSelectorArgs? Venue { get; set; }
+	public SportSelectorArgs? Sport { get; set; }
+}
+
+public sealed class BookingSelectorArgs : BaseSelectorArgs {
+	public bool User { get; set; }
+	public CourtSelectorArgs? Court { get; set; }
+	public VenueSelectorArgs? Venue { get; set; }
+}
+
+public sealed class PostSelectorArgs : BaseSelectorArgs {
+	public MediaSelectorArgs? Media { get; set; }
+
+	/// <summary>The latest replies.</summary>
+	public PostSelectorArgs? Children { get; set; }
+}
+
+public sealed class ReportSelectorArgs : BaseSelectorArgs;
+
+public sealed class ConversationSelectorArgs : BaseSelectorArgs {
+	public bool Users { get; set; }
+}
+
+public sealed class MessageSelectorArgs : BaseSelectorArgs {
+	public bool User { get; set; }
+}
 
 public sealed class HotelSelectorArgs : BaseSelectorArgs {
 	public HotelRoomSelectorArgs? Rooms { get; set; }
@@ -803,6 +852,7 @@ public static class Projections {
 			BlogId = x.BlogId,
 			HotelId = x.HotelId,
 			DormId = x.DormId,
+			VenueId = x.VenueId,
 			ParentId = x.ParentId,
 			Score = x.Score,
 			Description = x.Description,
@@ -1130,14 +1180,19 @@ public static class Projections {
 	}
 
 	/// <summary>A user as other players may see them: id and names only.</summary>
-	public static Expression<Func<UserEntity, UserResponse>> PublicUserSelector() => x => new UserResponse {
-		Id = x.Id,
-		CreatedAt = x.CreatedAt,
-		Tags = new List<TagUser>(),
-		JsonData = new UserJson(),
-		FirstName = x.FirstName,
-		LastName = x.LastName
-	};
+	public static Expression<Func<UserEntity, UserResponse>> PublicUserSelector() {
+		Expression<Func<UserEntity, UserResponse>> selector = x => new UserResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			Tags = new List<TagUser>(),
+			JsonData = new UserJson { Country = x.JsonData.Country, City = x.JsonData.City },
+			FirstName = x.FirstName,
+			LastName = x.LastName,
+			Bio = x.Bio,
+			Media = x.Media.Where(m => m.Tags.Contains(TagMedia.Profile)).AsQueryable().Select(MediaSelector()).ToList()
+		};
+		return selector.Expand();
+	}
 
 	public static Expression<Func<TournamentEntity, TournamentResponse>> TournamentSelector(TournamentSelectorArgs args) {
 		Expression<Func<TournamentEntity, TournamentResponse>> selector = x => new TournamentResponse {
@@ -1200,7 +1255,221 @@ public static class Projections {
 			NextMatchId = x.NextMatchId,
 			NextMatchSlot = x.NextMatchSlot,
 			LoserNextMatchId = x.LoserNextMatchId,
-			LoserNextMatchSlot = x.LoserNextMatchSlot
+			LoserNextMatchSlot = x.LoserNextMatchSlot,
+			Tournament = x.Tournament == null ? null : (args.Tournament != null ? TournamentSelector(args.Tournament) : t => null!).Invoke(x.Tournament),
+			EntryA = x.EntryA == null ? null : (args.Entries ? TournamentEntrySelector(new TournamentEntrySelectorArgs { Users = true }) : e => null!).Invoke(x.EntryA),
+			EntryB = x.EntryB == null ? null : (args.Entries ? TournamentEntrySelector(new TournamentEntrySelectorArgs { Users = true }) : e => null!).Invoke(x.EntryB),
+			PartnerA = x.PartnerA == null ? null : (args.Entries ? TournamentEntrySelector(new TournamentEntrySelectorArgs { Users = true }) : e => null!).Invoke(x.PartnerA),
+			PartnerB = x.PartnerB == null ? null : (args.Entries ? TournamentEntrySelector(new TournamentEntrySelectorArgs { Users = true }) : e => null!).Invoke(x.PartnerB)
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<PlayerRatingHistoryEntity, PlayerRatingHistoryResponse>> PlayerRatingHistorySelector() {
+		Expression<Func<PlayerRatingHistoryEntity, PlayerRatingHistoryResponse>> selector = x => new PlayerRatingHistoryResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatedAt = x.CreatedAt,
+			UserId = x.UserId,
+			SportId = x.SportId,
+			MatchId = x.MatchId,
+			LevelBefore = x.LevelBefore,
+			LevelAfter = x.LevelAfter
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<PlayerAchievementEntity, PlayerAchievementResponse>> PlayerAchievementSelector(PlayerAchievementSelectorArgs args) {
+		Expression<Func<PlayerAchievementEntity, PlayerAchievementResponse>> selector = x => new PlayerAchievementResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			UserId = x.UserId,
+			SportId = x.SportId,
+			TournamentId = x.TournamentId,
+			Rank = x.Rank,
+			Points = x.Points,
+			User = x.User == null ? null : (args.User ? PublicUserSelector() : u => null!).Invoke(x.User),
+			Sport = x.Sport == null ? null : (args.Sport != null ? SportSelector(args.Sport) : s => null!).Invoke(x.Sport)
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<OpenMatchEntity, OpenMatchResponse>> OpenMatchSelector(OpenMatchSelectorArgs args) {
+		Expression<Func<OpenMatchEntity, OpenMatchResponse>> selector = x => new OpenMatchResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			AdminUserIds = x.AdminUserIds,
+			StartAt = x.StartAt,
+			DurationMinutes = x.DurationMinutes,
+			Capacity = x.Capacity,
+			MinLevel = x.MinLevel,
+			MaxLevel = x.MaxLevel,
+			PricePerPlayer = x.PricePerPlayer,
+			SportId = x.SportId,
+			VenueId = x.VenueId,
+			PlayerCount = x.Users.Count,
+			Sport = x.Sport == null ? null : (args.Sport != null ? SportSelector(args.Sport) : s => null!).Invoke(x.Sport),
+			Venue = x.Venue == null ? null : (args.Venue != null ? VenueSelector(args.Venue) : v => null!).Invoke(x.Venue),
+			Users = args.Users ? x.Users.AsQueryable().Select(PublicUserSelector()).ToList() : null,
+			Creator = x.Creator == null ? null : (args.Creator != null ? PublicUserSelector() : u => null!).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<VenueEntity, VenueResponse>> VenueSelector(VenueSelectorArgs args) {
+		Expression<Func<VenueEntity, VenueResponse>> selector = x => new VenueResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			AdminUserIds = x.AdminUserIds,
+			Title = x.Title,
+			Latitude = x.Latitude,
+			Longitude = x.Longitude,
+			Address = x.Address,
+			PhoneNumber = x.PhoneNumber,
+			Country = x.Country,
+			City = x.City,
+			Rating = x.Comments.Select(c => (decimal?)c.Score).Average(),
+			ReviewCount = x.Comments.Count,
+			SportIds = x.Courts.Where(c => c.SportId != null && c.Tags.Contains(TagCourt.Active)).Select(c => c.SportId!.Value).Distinct().ToList(),
+			Courts = args.Courts == null ? null : x.Courts.OrderBy(c => c.Title).AsQueryable().Select(CourtSelector(args.Courts)).ToList(),
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
+			Creator = x.Creator == null ? null : (args.Creator != null ? PublicUserSelector() : u => null!).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<CourtEntity, CourtResponse>> CourtSelector(CourtSelectorArgs args) {
+		Expression<Func<CourtEntity, CourtResponse>> selector = x => new CourtResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Title = x.Title,
+			PricePerHour = x.PricePerHour,
+			SlotMinutes = x.SlotMinutes,
+			VenueId = x.VenueId,
+			SportId = x.SportId,
+			Venue = x.Venue == null ? null : (args.Venue != null ? VenueSelector(args.Venue) : v => null!).Invoke(x.Venue),
+			Sport = x.Sport == null ? null : (args.Sport != null ? SportSelector(args.Sport) : s => null!).Invoke(x.Sport)
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<BookingEntity, BookingResponse>> BookingSelector(BookingSelectorArgs args) {
+		Expression<Func<BookingEntity, BookingResponse>> selector = x => new BookingResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			StartAt = x.StartAt,
+			EndAt = x.EndAt,
+			Price = x.Price,
+			UserId = x.UserId,
+			ParticipantIds = x.ParticipantIds,
+			CourtId = x.CourtId,
+			VenueId = x.VenueId,
+			User = x.User == null ? null : (args.User ? PublicUserSelector() : u => null!).Invoke(x.User),
+			Court = x.Court == null ? null : (args.Court != null ? CourtSelector(args.Court) : c => null!).Invoke(x.Court),
+			Venue = x.Venue == null ? null : (args.Venue != null ? VenueSelector(args.Venue) : v => null!).Invoke(x.Venue)
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<PostEntity, PostResponse>> PostSelector(PostSelectorArgs args) {
+		Expression<Func<PostEntity, PostResponse>> selector = x => new PostResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Text = x.Text,
+			ExpiresAt = x.ExpiresAt,
+			ParentId = x.ParentId,
+			ReplyCount = x.Children.Count(c => !c.Tags.Contains(TagPost.Hidden)),
+			User = PublicUserSelector().Invoke(x.Creator),
+			Media = args.Media == null ? null : x.Media.AsQueryable().Select(MediaSelector()).ToList(),
+			Children = args.Children == null ? null : x.Children.Where(c => !c.Tags.Contains(TagPost.Hidden)).OrderByDescending(c => c.CreatedAt).Take(3).AsQueryable().Select(PostReplySelector()).ToList()
+		};
+		return selector.Expand();
+	}
+
+	private static Expression<Func<PostEntity, PostResponse>> PostReplySelector() {
+		Expression<Func<PostEntity, PostResponse>> selector = x => new PostResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Text = x.Text,
+			ParentId = x.ParentId,
+			User = PublicUserSelector().Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<ReportEntity, ReportResponse>> ReportSelector(ReportSelectorArgs args) {
+		Expression<Func<ReportEntity, ReportResponse>> selector = x => new ReportResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			TargetId = x.TargetId,
+			Reason = x.Reason,
+			Creator = x.Creator == null ? null : (args.Creator != null ? UserSelector(args.Creator) : u => null!).Invoke(x.Creator)
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<BlockEntity, BlockResponse>> BlockSelector() {
+		Expression<Func<BlockEntity, BlockResponse>> selector = x => new BlockResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			BlockedUserId = x.BlockedUserId,
+			BlockedUser = PublicUserSelector().Invoke(x.BlockedUser)
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<ConversationEntity, ConversationResponse>> ConversationSelector(ConversationSelectorArgs args) {
+		Expression<Func<ConversationEntity, ConversationResponse>> selector = x => new ConversationResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Title = x.Title,
+			LastMessageAt = x.LastMessageAt,
+			Users = args.Users ? x.Users.AsQueryable().Select(PublicUserSelector()).ToList() : null
+		};
+		return selector.Expand();
+	}
+
+	public static Expression<Func<MessageEntity, MessageResponse>> MessageSelector(MessageSelectorArgs args) {
+		Expression<Func<MessageEntity, MessageResponse>> selector = x => new MessageResponse {
+			Id = x.Id,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			CreatorId = x.CreatorId,
+			CreatedAt = x.CreatedAt,
+			Text = x.Tags.Contains(TagMessage.Deleted) ? "" : x.Text,
+			ConversationId = x.ConversationId,
+			User = x.Creator == null ? null : (args.User ? PublicUserSelector() : u => null!).Invoke(x.Creator)
 		};
 		return selector.Expand();
 	}

@@ -28,6 +28,7 @@ public sealed class ApiKeyMiddleware(RequestDelegate next, ILocalizationService 
 		!Core.App.Middleware.RequireApiKey ||
 		path.StartsWithSegments("/models", StringComparison.OrdinalIgnoreCase) ||
 		path.StartsWithSegments("/api/Health", StringComparison.OrdinalIgnoreCase) ||
+		path.StartsWithSegments("/hubs", StringComparison.OrdinalIgnoreCase) || // checks the key itself (query string)
 		path.StartsWithSegments("/api/Ipg/Verify", StringComparison.OrdinalIgnoreCase) ||
 		path.StartsWithSegments("/api/Ipg/Gateway", StringComparison.OrdinalIgnoreCase);
 	

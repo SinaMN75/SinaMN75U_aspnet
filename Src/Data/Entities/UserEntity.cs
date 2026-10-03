@@ -112,6 +112,10 @@ public sealed class UserJson : BaseJson {
 	public decimal? Weight { get; set; }
 	public decimal? Height { get; set; }
 	public string? GoogleId { get; set; }
+	public string? Country { get; set; } // ISO 3166-1 alpha-2
+	public string? City { get; set; }
+	public string? ReferralCode { get; set; } // others register with it
+	public Guid? ReferrerId { get; set; } // whose code this user registered with
 
 	public string? NationalCardFrontRejectionReason { get; set; }
 	public string? NationalCardBackRejectionReason { get; set; }

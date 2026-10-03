@@ -19,7 +19,8 @@ public class CommentService(
 	private async Task<bool> CanModerate(JwtClaimData u, CommentEntity e, CancellationToken ct) {
 		if (u.IsAdmin || u.Id == e.CreatorId) return true;
 		(ICollection<Guid> AdminUserIds, TagUser Permission)? place = await db.PlaceOf(e.HotelId, null, e.DormId, null, null, ct);
-		return place != null && u.CanActOnPlace(place.Value.AdminUserIds, place.Value.Permission);
+		if (place != null) return u.CanActOnPlace(place.Value.AdminUserIds, place.Value.Permission);
+		return e.VenueId != null && await db.Set<VenueEntity>().AnyAsync(x => x.Id == e.VenueId && (x.CreatorId == u.Id || x.AdminUserIds.Contains(u.Id)), ct);
 	}
 
 	public async Task<UResponse<Guid?>> Create(CommentCreateParams p, CancellationToken ct) {
@@ -43,6 +44,7 @@ public class CommentService(
 			BlogId = p.BlogId,
 			HotelId = p.HotelId,
 			DormId = p.DormId,
+			VenueId = p.VenueId,
 			ParentId = p.ParentId
 		};
 
@@ -59,6 +61,7 @@ public class CommentService(
 		if (p.BlogId.IsNotNull()) q = q.Where(x => x.BlogId == p.BlogId);
 		if (p.HotelId.IsNotNull()) q = q.Where(x => x.HotelId == p.HotelId);
 		if (p.DormId.IsNotNull()) q = q.Where(x => x.DormId == p.DormId);
+		if (p.VenueId.IsNotNull()) q = q.Where(x => x.VenueId == p.VenueId);
 		
 		IQueryable<CommentResponse> projected = q.Select(Projections.CommentSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);

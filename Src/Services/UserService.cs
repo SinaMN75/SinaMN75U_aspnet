@@ -179,6 +179,8 @@ public class UserService(
 		if (p.FatherName.IsNotNullOrEmpty()) e.JsonData.FatherName = p.FatherName;
 		if (p.Weight.IsNotNullOrZero()) e.JsonData.Weight = p.Weight;
 		if (p.Height.IsNotNullOrZero()) e.JsonData.Height = p.Height;
+		if (p.Country != null) e.JsonData.Country = p.Country.IsNotNullOrEmpty() ? p.Country.ToUpperInvariant() : null;
+		if (p.City != null) e.JsonData.City = p.City.IsNotNullOrEmpty() ? p.City : null;
 		if (p.NationalCardFront.IsNotNullOrEmpty()) e.NationalCardFront = UserFileStore.Save(env.WebRootPath, e.Id, "nationalCardFront", p.NationalCardFront, e.NationalCardFront, 70);
 		if (p.NationalCardBack.IsNotNullOrEmpty()) e.NationalCardBack = UserFileStore.Save(env.WebRootPath, e.Id, "nationalCardBack", p.NationalCardBack, e.NationalCardBack, 70);
 		if (p.BirthCertificateFirst.IsNotNullOrEmpty()) e.BirthCertificateFirst = UserFileStore.Save(env.WebRootPath, e.Id, "birthCertificateFirst", p.BirthCertificateFirst, e.BirthCertificateFirst, 70);

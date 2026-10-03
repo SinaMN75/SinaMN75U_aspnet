@@ -10,6 +10,7 @@ public sealed class CommentCreateParams : BaseCreateParams<TagComment> {
 	public Guid? BlogId { get; set; }
 	public Guid? HotelId { get; set; }
 	public Guid? DormId { get; set; }
+	public Guid? VenueId { get; set; }
 	public Guid? UserId { get; set; }
 }
 
@@ -23,6 +24,7 @@ public sealed class CommentReadParams : BaseReadParams<TagComment> {
 	public Guid? BlogId { get; set; }
 	public Guid? HotelId { get; set; }
 	public Guid? DormId { get; set; }
+	public Guid? VenueId { get; set; }
 	public Guid? UserId { get; set; }
 	public CommentSelectorArgs SelectorArgs { get; set; } = new();
 }
