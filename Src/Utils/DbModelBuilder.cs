@@ -2,9 +2,9 @@ namespace SinaMN75U.Utils;
 
 public static class DbModelBuilder {
 	public static void SetupModelBuilder(this ModelBuilder builder) {
+		foreach (Type type in typeof(BaseEntity<>).Assembly.GetTypes().Where(IsEntity)) builder.Entity(type);
 		foreach (IMutableEntityType entityType in builder.Model.GetEntityTypes())
-		foreach (IMutableForeignKey foreignKey in entityType.GetForeignKeys())
-			foreignKey.DeleteBehavior = DeleteBehavior.Cascade;
+		foreach (IMutableForeignKey foreignKey in entityType.GetForeignKeys()) foreignKey.DeleteBehavior = DeleteBehavior.Cascade;
 
 		foreach (IMutableEntityType entityType in builder.Model.GetEntityTypes()) {
 			if (entityType.IsOwned()) continue;
@@ -134,6 +134,13 @@ public static class DbModelBuilder {
 			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
 			b.OwnsMany(i => i.KeyValues);
 		});
+	}
+
+	private static bool IsEntity(Type type) {
+		if (!type.IsClass || type.IsAbstract || type.IsGenericType) return false;
+		for (Type? t = type.BaseType; t != null; t = t.BaseType)
+			if (t.IsGenericType && t.GetGenericTypeDefinition() == typeof(BaseEntity<>)) return true;
+		return false;
 	}
 
 	private static void AddIndexIfMissing(IMutableEntityType entityType, string propertyName) {
