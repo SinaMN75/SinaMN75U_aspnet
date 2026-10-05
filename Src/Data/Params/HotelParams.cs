@@ -33,6 +33,28 @@ public sealed class OrganizationMemberParams : BaseParams {
 	public string? Password { get; set; }
 }
 
+public sealed class OrganizationSettlementRequestParams : BaseParams {
+	[UValidationRequired("idIsRequired")]
+	public Guid OrganizationId { get; set; }
+
+	[UValidationRequired("amountRequired")]
+	public decimal Amount { get; set; }
+
+	[UValidationRequired("iBanIsRequired")]
+	public string Iban { get; set; } = "";
+}
+
+public sealed class OrganizationSettlementProcessParams : BaseParams {
+	[UValidationRequired("idIsRequired")]
+	public Guid OrganizationId { get; set; }
+
+	[UValidationRequired("idIsRequired")]
+	public Guid SettlementId { get; set; }
+
+	public bool Approve { get; set; }
+	public string? Note { get; set; }
+}
+
 public sealed class HotelCreateParams : BaseCreateParams<TagHotel> {
 	[UValidationRequired("titleIsRequired"), UValidationStringLength(2, 100, "TitleMinLength")]
 	public string Title { get; set; } = null!;
@@ -475,6 +497,43 @@ public sealed class DormBedContractReadParams : BaseReadParams<TagDormBedContrac
 	public bool? ExpiredOnly { get; set; }
 	public int? ExpiringWithinDays { get; set; }
 	public DormBedContractSelectorArgs SelectorArgs { get; set; } = new();
+}
+
+public sealed class DormBedContractSettleParams : BaseParams {
+	[UValidationRequired("idIsRequired")]
+	public Guid Id { get; set; }
+
+	public DateTime? EndDate { get; set; }
+	public decimal Deductions { get; set; }
+	public string? DeductionReason { get; set; }
+}
+
+public sealed class DormBedContractRenewParams : BaseParams {
+	[UValidationRequired("idIsRequired")]
+	public Guid Id { get; set; }
+
+	[UValidationRequired("endDateIsRequired")]
+	public DateTime EndDate { get; set; }
+
+	public decimal? Rent { get; set; }
+}
+
+public sealed class DormBedContractTransferParams : BaseParams {
+	[UValidationRequired("idIsRequired")]
+	public Guid Id { get; set; }
+
+	[UValidationRequired("BedIdRequired")]
+	public Guid BedId { get; set; }
+
+	public DateTime? Date { get; set; }
+	public decimal? Rent { get; set; }
+}
+
+public sealed class DormBedInvoiceSplitParams : BaseParams {
+	[UValidationRequired("idIsRequired")]
+	public Guid Id { get; set; }
+
+	public int Count { get; set; } = 2;
 }
 
 public sealed class DormBedInvoiceCreateParams : BaseCreateParams<TagDormBedInvoice> {

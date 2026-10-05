@@ -387,6 +387,9 @@ public enum TagWalletTxn {
 	TournamentEntryRefund = 220,
 	TournamentEntrySettlement = 221,
 	PlatformCommission = 222,
+	DormDepositRefund = 223,
+	OrganizationSettlement = 224,
+	OrganizationSettlementRefund = 225,
 
 	ChargeSimPin = 301,
 	ChargeSimTopup = 302,
@@ -534,12 +537,14 @@ public enum TagDormBedContract {
 	Weekly = 102,
 	Monthly = 103,
 	Yearly = 104,
-	SingleInvoice = 201
+	SingleInvoice = 201,
+	Settled = 301
 }
 
 public enum TagDormBedInvoice {
 	Deposit = 101,
 	Rent = 102,
+	Service = 103,
 	Paid = 201,
 	PaidOnline = 202,
 	PaidManual = 203,

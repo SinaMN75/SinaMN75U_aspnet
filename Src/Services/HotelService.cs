@@ -74,6 +74,13 @@ public interface IHotelService {
 	public Task<UResponse> PayDormBedInvoiceByUser(IdParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<DormBedInvoiceChartResponse>?>> ReadDormBedInvoiceChartData(BaseParams p, CancellationToken ct);
 	public Task<UResponse<PropertyDashboardResponse?>> ReadPropertyDashboard(DashboardRangeParams p, CancellationToken ct);
+	public Task<UResponse> SettleDormBedContract(DormBedContractSettleParams p, CancellationToken ct);
+	public Task<UResponse> RenewDormBedContract(DormBedContractRenewParams p, CancellationToken ct);
+	public Task<UResponse> TransferDormBedContract(DormBedContractTransferParams p, CancellationToken ct);
+	public Task<UResponse> SplitDormBedInvoice(DormBedInvoiceSplitParams p, CancellationToken ct);
+	public Task<UResponse> RequestOrganizationSettlement(OrganizationSettlementRequestParams p, CancellationToken ct);
+	public Task<UResponse> ProcessOrganizationSettlement(OrganizationSettlementProcessParams p, CancellationToken ct);
+	public Task ProcessDueInvoices(CancellationToken ct);
 }
 
 public class HotelService(
@@ -1114,8 +1121,7 @@ public class HotelService(
 		foreach (HotelInvoiceResponse dto in response.Result!) {
 			HotelInvoiceEntity? entity = entities.GetValueOrDefault(dto.Id);
 			if (entity == null || entity.JsonData.PenaltyPrecentEveryDate <= 0) continue;
-			int daysLate = Math.Max(0, (DateTime.UtcNow - entity.DueDate).Days);
-			decimal expectedPenalty = entity.DebtAmount * (entity.JsonData.PenaltyPrecentEveryDate / 100m) * daysLate;
+			decimal expectedPenalty = PenaltyOf(entity.DebtAmount, entity.JsonData.PenaltyPrecentEveryDate, entity.DueDate, DateTime.UtcNow);
 
 			bool needsPenaltyUpdate =
 				entity.PaidAmount < entity.DebtAmount + entity.PenaltyAmount &&
@@ -1770,8 +1776,7 @@ public class HotelService(
 		foreach (DormBedInvoiceResponse dto in response.Result!) {
 			DormBedInvoiceEntity? entity = entities.GetValueOrDefault(dto.Id);
 			if (entity == null || entity.JsonData.PenaltyPrecentEveryDate <= 0) continue;
-			int daysLate = Math.Max(0, (DateTime.UtcNow - entity.DueDate).Days);
-			decimal expectedPenalty = entity.DebtAmount * (entity.JsonData.PenaltyPrecentEveryDate / 100m) * daysLate;
+			decimal expectedPenalty = PenaltyOf(entity.DebtAmount, entity.JsonData.PenaltyPrecentEveryDate, entity.DueDate, DateTime.UtcNow);
 
 			bool needsPenaltyUpdate =
 				entity.PaidAmount < entity.DebtAmount + entity.PenaltyAmount &&
@@ -1857,7 +1862,8 @@ public class HotelService(
 				await db.Set<DormBedInvoiceEntity>().Where(x => x.Id == e.Id).ExecuteUpdateAsync(u => u.SetProperty(x => x.Tags, unpaidTags), ct);
 				return new UResponse(transfer.Status, transfer.Message);
 			}
-			await TakeCommission(e.Contract?.Bed.Room.Dorm.OrganizationId, amount, ls.Get("dormInvoicePayment"), DormBedInvoiceKeyValues(e), ct);
+			decimal commissionBase = e.Tags.Contains(TagDormBedInvoice.Deposit) ? 0 : e.Contract != null && e.Contract.Tags.Contains(TagDormBedContract.SingleInvoice) ? Math.Max(0, amount - e.Contract.Deposit) : amount;
+			await TakeCommission(e.Contract?.Bed.Room.Dorm.OrganizationId, commissionBase, ls.Get("dormInvoicePayment"), DormBedInvoiceKeyValues(e), ct);
 		}
 
 		e.PaidAmount = amount;
@@ -2561,5 +2567,298 @@ public class HotelService(
 			new KeyValue { Key = "reviews", Value = comments.Count.ToString() },
 			new KeyValue { Key = "demoUsersPassword", Value = "Demo1234 (usernames demo01 ... demo12)" }
 		], Usc.Created);
+	}
+
+	private static decimal PenaltyOf(decimal debt, int percentPerDay, DateTime dueDate, DateTime now) =>
+		percentPerDay <= 0 || dueDate > now ? 0 : debt * (percentPerDay / 100m) * Math.Max(0, (now - dueDate).Days);
+
+	private static decimal DueOf(DormBedInvoiceEntity i) => i.DebtAmount + i.PenaltyAmount - i.CreditorAmount - i.PaidAmount;
+
+	private static DormBedInvoiceEntity NewDormBedInvoice(DormBedContractEntity contract, Guid creatorId, ICollection<TagDormBedInvoice> tags, decimal amount, DateTime dueDate, int penaltyPercent) => new() {
+		Id = Guid.CreateVersion7(),
+		CreatorId = creatorId,
+		CreatedAt = DateTime.UtcNow,
+		Tags = tags,
+		DebtAmount = amount,
+		CreditorAmount = 0,
+		PaidAmount = 0,
+		PenaltyAmount = 0,
+		ContractId = contract.Id,
+		DueDate = dueDate,
+		JsonData = new DormBedInvoiceJson { PenaltyPrecentEveryDate = penaltyPercent }
+	};
+
+	private async Task<DormBedContractEntity?> ContractForChange(Guid id, CancellationToken ct) =>
+		await db.Set<DormBedContractEntity>().AsTracking()
+			.Include(x => x.Invoices)
+			.Include(x => x.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm)
+			.FirstOrDefaultAsync(x => x.Id == id, ct);
+
+	public async Task<UResponse> SettleDormBedContract(DormBedContractSettleParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
+		DormBedContractEntity? e = await ContractForChange(p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("contractNotFound"));
+		if (!await CanAct(userData, e.Bed.Room.Dorm, TagUser.PermissionManageContracts, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (e.Tags.Contains(TagDormBedContract.Settled)) return new UResponse(Usc.Conflict, ls.Get("thisContractIsAlreadySettled"));
+
+		DateTime end = p.EndDate ?? DateTime.UtcNow;
+		if (end > e.EndDate) end = e.EndDate;
+		if (end < e.StartDate) end = e.StartDate;
+
+		decimal unusedCredit = 0;
+		List<DormBedInvoiceEntity> rents = e.Invoices.Where(x => x.Tags.Contains(TagDormBedInvoice.Rent)).OrderBy(x => x.DueDate).ToList();
+		foreach (DormBedInvoiceEntity r in rents.Where(x => x.DueDate > end)) {
+			if (r.Tags.Contains(TagDormBedInvoice.NotPaid)) db.Set<DormBedInvoiceEntity>().Remove(r);
+			else unusedCredit += r.PaidAmount;
+		}
+
+		foreach (DormBedInvoiceEntity d in e.Invoices.Where(x => x.Tags.Contains(TagDormBedInvoice.Deposit) && x.Tags.Contains(TagDormBedInvoice.NotPaid) && x.PaidAmount == 0))
+			db.Set<DormBedInvoiceEntity>().Remove(d);
+
+		DormBedInvoiceEntity? current = rents.LastOrDefault(x => x.DueDate <= end);
+		if (current != null) {
+			PersianDateTime start = current.DueDate.ToPersian();
+			decimal fraction = Math.Min(1, ((end.Date - current.DueDate.Date).Days + 1) / (decimal)PersianDateTime.DaysInMonth(start.Year, start.Month));
+			if (current.Tags.Contains(TagDormBedInvoice.NotPaid)) current.DebtAmount = Math.Round(current.DebtAmount * fraction, 2);
+			else unusedCredit += current.PaidAmount * (1 - fraction);
+		}
+
+		decimal depositPaid = e.Tags.Contains(TagDormBedContract.SingleInvoice)
+			? e.Invoices.Any(x => !x.Tags.Contains(TagDormBedInvoice.NotPaid)) ? e.Deposit : 0
+			: e.Invoices.Where(x => x.Tags.Contains(TagDormBedInvoice.Deposit) && !x.Tags.Contains(TagDormBedInvoice.NotPaid)).Sum(x => x.PaidAmount);
+		decimal pool = depositPaid + Math.Round(unusedCredit, 2) - p.Deductions;
+
+		foreach (DormBedInvoiceEntity u in e.Invoices.Where(x => x.Tags.Contains(TagDormBedInvoice.NotPaid) && db.Entry(x).State != EntityState.Deleted).OrderBy(x => x.DueDate)) {
+			decimal due = DueOf(u);
+			if (due <= 0 || pool < due) continue;
+			u.PaidAmount += due;
+			u.Tags = [..u.Tags.Where(x => x != TagDormBedInvoice.NotPaid), TagDormBedInvoice.Paid];
+			pool -= due;
+		}
+
+		if (pool < 0) await db.Set<DormBedInvoiceEntity>().AddAsync(NewDormBedInvoice(e, userData.Id, [TagDormBedInvoice.NotPaid, TagDormBedInvoice.Service], -pool, DateTime.UtcNow, 0), ct);
+
+		decimal refund = Math.Max(0, pool);
+		if (refund > 0) {
+			UResponse<WalletTxnResponse?> transfer = await ws.Transfer(new WalletTransferParams {
+				SenderId = MoneyAccountOf(e.Bed.Room.Dorm.OrganizationId),
+				ReceiverId = e.UserId,
+				Amount = refund,
+				Detail1 = ls.Get("dormDepositRefund"),
+				KeyValues = [
+					new KeyValue { Key = ULocalizedConstants.Dorm, Value = e.Bed.Room.Dorm.Title },
+					new KeyValue { Key = ULocalizedConstants.Bed, Value = e.Bed.Title },
+					new KeyValue { Key = ULocalizedConstants.Contract, Value = e.Id.ToString() }
+				],
+				TagWalletTxn = [TagWalletTxn.DormDepositRefund]
+			}, ct);
+			if (transfer.Result == null) return new UResponse(transfer.Status, transfer.Message);
+		}
+
+		e.EndDate = end;
+		e.Tags = [..e.Tags, TagDormBedContract.Settled];
+		e.JsonData.SettledAt = DateTime.UtcNow;
+		e.JsonData.Deductions = p.Deductions;
+		e.JsonData.DeductionReason = p.DeductionReason;
+		e.JsonData.DepositRefund = refund;
+		await AddNotification(e.UserId, TagNotification.General, ls.Get("contractSettled"), e.Bed.Room.Dorm.Title, ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> RenewDormBedContract(DormBedContractRenewParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
+		DormBedContractEntity? e = await ContractForChange(p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("contractNotFound"));
+		if (!await CanAct(userData, e.Bed.Room.Dorm, TagUser.PermissionManageContracts, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (e.Tags.Contains(TagDormBedContract.Settled)) return new UResponse(Usc.Conflict, ls.Get("thisContractIsAlreadySettled"));
+		if (p.EndDate.Date <= e.EndDate.Date) return new UResponse(Usc.BadRequest, ls.Get("theNewEndDateMustBeAfterTheCurrentOne"));
+
+		decimal rent = p.Rent ?? e.Rent;
+		int penaltyPercent = e.Invoices.OrderBy(x => x.CreatedAt).LastOrDefault()?.JsonData.PenaltyPrecentEveryDate ?? 0;
+		PersianDateTime cursor = e.EndDate.Date.AddDays(1).ToPersian();
+		while (cursor.ToDateTime() <= p.EndDate.Date) {
+			PersianDateTime next = cursor.AddMonths(1).StartOfMonth;
+			DateTime periodEnd = next.ToDateTime().AddDays(-1) < p.EndDate.Date ? next.ToDateTime().AddDays(-1) : p.EndDate.Date;
+			int days = (periodEnd - cursor.ToDateTime()).Days + 1;
+			int monthDays = PersianDateTime.DaysInMonth(cursor.Year, cursor.Month);
+			decimal amount = days >= monthDays ? rent : Math.Round(rent * days / monthDays, 2);
+			await db.Set<DormBedInvoiceEntity>().AddAsync(NewDormBedInvoice(e, userData.Id, [TagDormBedInvoice.NotPaid, TagDormBedInvoice.Rent], amount, cursor.ToDateTime(), penaltyPercent), ct);
+			cursor = next;
+		}
+
+		e.EndDate = p.EndDate;
+		e.Rent = rent;
+		await AddNotification(e.UserId, TagNotification.InvoiceIssued, ls.Get("newInvoicesIssued"), e.Bed.Room.Dorm.Title, ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> TransferDormBedContract(DormBedContractTransferParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
+		DormBedContractEntity? e = await ContractForChange(p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("contractNotFound"));
+		if (!await CanAct(userData, e.Bed.Room.Dorm, TagUser.PermissionManageContracts, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (e.Tags.Contains(TagDormBedContract.Settled)) return new UResponse(Usc.Conflict, ls.Get("thisContractIsAlreadySettled"));
+
+		DateTime now = DateTime.UtcNow;
+		DormBedEntity? to = await db.Set<DormBedEntity>().Include(x => x.Contracts).Include(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.BedId, ct);
+		if (to == null) return new UResponse(Usc.NotFound, ls.Get("dormBedNotFound"));
+		if (!await CanAct(userData, to.Room.Dorm, TagUser.PermissionManageContracts, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (to.Room.Dorm.OrganizationId != e.Bed.Room.Dorm.OrganizationId) return new UResponse(Usc.Conflict, ls.Get("bedsOfAnotherOrganization"));
+		if (to.Contracts.Any(x => x.Id != e.Id && x.EndDate >= now && !x.Tags.Contains(TagDormBedContract.Settled))) return new UResponse(Usc.Conflict, ls.Get("thisBedHasAnActiveContract"));
+
+		DateTime date = p.Date ?? now;
+		e.JsonData.BedHistory = [..e.JsonData.BedHistory, new ContractBedChange { BedId = e.BedId, From = e.JsonData.BedHistory.LastOrDefault()?.To ?? e.StartDate, To = date }];
+		e.BedId = to.Id;
+		if (p.Rent.HasValue && p.Rent != e.Rent) {
+			foreach (DormBedInvoiceEntity i in e.Invoices.Where(x => x.Tags.Contains(TagDormBedInvoice.Rent) && x.Tags.Contains(TagDormBedInvoice.NotPaid) && x.DueDate >= date && x.DebtAmount == e.Rent))
+				i.DebtAmount = p.Rent.Value;
+			e.Rent = p.Rent.Value;
+		}
+
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> SplitDormBedInvoice(DormBedInvoiceSplitParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (p.Count is < 2 or > 12) return new UResponse(Usc.BadRequest, ls.Get("amountIsNotValid"));
+
+		DormBedInvoiceEntity? e = await db.Set<DormBedInvoiceEntity>().AsTracking().Include(x => x.Contract).ThenInclude(x => x!.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e?.Contract == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
+		if (!await CanAct(userData, e.Contract.Bed.Room.Dorm, TagUser.PermissionManageInvoices, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!e.Tags.Contains(TagDormBedInvoice.NotPaid) || e.PaidAmount > 0) return new UResponse(Usc.Conflict, ls.Get("onlyUnpaidInvoicesCanBeSplit"));
+
+		decimal total = DueOf(e);
+		decimal part = Math.Floor(total / p.Count);
+		PersianDateTime due = e.DueDate.ToPersian();
+		for (int i = 0; i < p.Count; i++) {
+			DormBedInvoiceEntity x = NewDormBedInvoice(e.Contract, userData.Id, e.Tags.ToList(), i == p.Count - 1 ? total - part * (p.Count - 1) : part, due.AddMonths(i).ToDateTime(), e.JsonData.PenaltyPrecentEveryDate);
+			x.JsonData.Detail1 = e.JsonData.Detail1;
+			await db.Set<DormBedInvoiceEntity>().AddAsync(x, ct);
+		}
+
+		db.Set<DormBedInvoiceEntity>().Remove(e);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> RequestOrganizationSettlement(OrganizationSettlementRequestParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!Core.App.MultiTenant) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (p.Amount <= 0) return new UResponse(Usc.BadRequest, ls.Get("amountIsNotValid"));
+
+		OrganizationEntity? e = await db.Set<OrganizationEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.OrganizationId, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("organizationNotFound"));
+		if (!userData.IsSystemAdmin && e.OwnerId != userData.Id) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		Guid id = Guid.CreateVersion7();
+		UResponse<WalletTxnResponse?> transfer = await ws.Transfer(new WalletTransferParams {
+			SenderId = e.Id,
+			ReceiverId = Core.App.Users.SystemAdmin.Id,
+			Amount = p.Amount,
+			Detail1 = ls.Get("organizationSettlement"),
+			KeyValues = [new KeyValue { Key = "iban", Value = p.Iban }, new KeyValue { Key = "settlementId", Value = id.ToString() }],
+			TagWalletTxn = [TagWalletTxn.OrganizationSettlement]
+		}, ct);
+		if (transfer.Result == null) return new UResponse(transfer.Status, transfer.Message);
+
+		e.JsonData.Settlements = [..e.JsonData.Settlements, new OrganizationSettlement { Id = id, Amount = p.Amount, Iban = p.Iban, CreatedAt = DateTime.UtcNow }];
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> ProcessOrganizationSettlement(OrganizationSettlementProcessParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (!Core.App.MultiTenant || !userData.IsSystemAdmin) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		OrganizationEntity? e = await db.Set<OrganizationEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.OrganizationId, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("organizationNotFound"));
+		OrganizationSettlement? s = e.JsonData.Settlements.FirstOrDefault(x => x.Id == p.SettlementId && x.Approved == null);
+		if (s == null) return new UResponse(Usc.NotFound, ls.Get("settlementNotFound"));
+
+		if (!p.Approve) {
+			UResponse<WalletTxnResponse?> transfer = await ws.Transfer(new WalletTransferParams {
+				SenderId = Core.App.Users.SystemAdmin.Id,
+				ReceiverId = e.Id,
+				Amount = s.Amount,
+				Detail1 = ls.Get("organizationSettlement"),
+				KeyValues = [new KeyValue { Key = "settlementId", Value = s.Id.ToString() }],
+				TagWalletTxn = [TagWalletTxn.OrganizationSettlementRefund],
+				AllowOverdraft = true
+			}, ct);
+			if (transfer.Result == null) return new UResponse(transfer.Status, transfer.Message);
+		}
+
+		e.JsonData.Settlements = e.JsonData.Settlements.Select(x => x.Id != s.Id ? x : new OrganizationSettlement {
+			Id = x.Id, Amount = x.Amount, Iban = x.Iban, CreatedAt = x.CreatedAt, ProcessedAt = DateTime.UtcNow, Approved = p.Approve, Note = p.Note
+		}).ToList();
+		await AddNotification(e.OwnerId, TagNotification.General, ls.Get("organizationSettlement"), p.Approve ? s.Amount.ToIntString() : p.Note ?? "", ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task ProcessDueInvoices(CancellationToken ct) {
+		DateTime now = DateTime.UtcNow, soon = now.AddDays(3);
+		List<DormBedInvoiceEntity> list = await db.Set<DormBedInvoiceEntity>().AsTracking()
+			.Include(x => x.Contract).ThenInclude(x => x!.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm)
+			.Where(x => x.Contract != null && x.Tags.Contains(TagDormBedInvoice.NotPaid) && x.DueDate <= soon)
+			.ToListAsync(ct);
+
+		foreach (DormBedInvoiceEntity e in list) {
+			decimal penalty = PenaltyOf(e.DebtAmount, e.JsonData.PenaltyPrecentEveryDate, e.DueDate, now);
+			if (penalty > e.PenaltyAmount) e.PenaltyAmount = penalty;
+			if (e.DueDate < now && !e.JsonData.OverdueReminded) {
+				await AddNotification(e.Contract!.UserId, TagNotification.InvoiceOverdue, ls.Get("invoiceIsOverdue", "fa"), e.Contract.Bed.Room.Dorm.Title, ct);
+				e.JsonData.OverdueReminded = true;
+				e.JsonData.DueReminded = true;
+			}
+			else if (e.DueDate >= now && !e.JsonData.DueReminded) {
+				await AddNotification(e.Contract!.UserId, TagNotification.InvoiceDue, ls.Get("invoiceDueSoon", "fa"), e.Contract.Bed.Room.Dorm.Title, ct);
+				e.JsonData.DueReminded = true;
+			}
+		}
+
+		await db.SaveChangesAsync(ct);
+	}
+}
+
+public sealed class HotelReminderService(IServiceScopeFactory scopeFactory) : BackgroundService {
+	private bool _failureLogged;
+
+	protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+		using PeriodicTimer timer = new(TimeSpan.FromHours(1));
+		try {
+			do {
+				try {
+					using IServiceScope scope = scopeFactory.CreateScope();
+					await scope.ServiceProvider.GetRequiredService<IHotelService>().ProcessDueInvoices(stoppingToken);
+				}
+				catch (OperationCanceledException) {
+					throw;
+				}
+				catch (Exception e) {
+					if (!_failureLogged) ULog.Error(e, "Dorm invoice reminders are off (are the hotel tables migrated?)");
+					_failureLogged = true;
+				}
+			} while (await timer.WaitForNextTickAsync(stoppingToken));
+		}
+		catch (OperationCanceledException) {
+		}
 	}
 }

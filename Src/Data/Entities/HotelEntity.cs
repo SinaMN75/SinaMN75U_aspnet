@@ -14,6 +14,17 @@ public sealed class OrganizationEntity : BaseEntity<TagOrganization, Organizatio
 public sealed class OrganizationJson : BaseJson {
 	public decimal CommissionPercent { get; set; }
 	public List<OrganizationMember> Members { get; set; } = [];
+	public List<OrganizationSettlement> Settlements { get; set; } = [];
+}
+
+public sealed class OrganizationSettlement {
+	public Guid Id { get; set; }
+	public decimal Amount { get; set; }
+	public string Iban { get; set; } = "";
+	public DateTime CreatedAt { get; set; }
+	public DateTime? ProcessedAt { get; set; }
+	public bool? Approved { get; set; }
+	public string? Note { get; set; }
 }
 
 public sealed class OrganizationMember {
@@ -287,7 +298,19 @@ public sealed class DormBedContractEntity : BaseEntity<TagDormBedContract, DormB
 	public ICollection<DormBedInvoiceEntity> Invoices { get; set; } = [];
 }
 
-public class DormBedContractJson : BaseJson;
+public class DormBedContractJson : BaseJson {
+	public DateTime? SettledAt { get; set; }
+	public decimal? Deductions { get; set; }
+	public string? DeductionReason { get; set; }
+	public decimal? DepositRefund { get; set; }
+	public List<ContractBedChange> BedHistory { get; set; } = [];
+}
+
+public sealed class ContractBedChange {
+	public Guid BedId { get; set; }
+	public DateTime From { get; set; }
+	public DateTime To { get; set; }
+}
 
 [Table("Invoices")]
 public sealed class DormBedInvoiceEntity : BaseEntity<TagDormBedInvoice, DormBedInvoiceJson> {
@@ -304,4 +327,6 @@ public sealed class DormBedInvoiceEntity : BaseEntity<TagDormBedInvoice, DormBed
 
 public sealed class DormBedInvoiceJson : BaseJson {
 	public int PenaltyPrecentEveryDate { get; set; }
+	public bool DueReminded { get; set; }
+	public bool OverdueReminded { get; set; }
 }

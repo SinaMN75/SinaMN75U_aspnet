@@ -112,6 +112,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddSignalR();
 		builder.Services.AddSingleton<IRealtimeService, RealtimeService>();
 		builder.Services.AddHostedService<SportReminderService>();
+		builder.Services.AddHostedService<HotelReminderService>();
 
 		if (Core.App.Test) {
 			builder.Services.AddScoped<IInquiryService, InquiryServiceFake>();
