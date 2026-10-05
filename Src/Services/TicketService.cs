@@ -39,6 +39,10 @@ public class TicketService(
 	}
 
 	public async Task<UResponse<IEnumerable<TicketResponse>?>> Read(TicketReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<TicketResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<TicketResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
 		IQueryable<TicketEntity> q = db.Set<TicketEntity>().ApplyReadParams(p);
 		
 		IQueryable<TicketResponse> projected = q.Select(Projections.TicketSelector(p.SelectorArgs));

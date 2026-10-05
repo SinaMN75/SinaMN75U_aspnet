@@ -32,6 +32,10 @@ public class NotificationService(
 	}
 
 	public async Task<UResponse<IEnumerable<NotificationResponse>?>> Read(NotificationReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<NotificationResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<NotificationResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
 		IQueryable<NotificationEntity> q = db.Set<NotificationEntity>().ApplyReadParams(p);
 		
 		if (p.UserId.IsNotNull()) q = q.Where(x => x.UserId == p.UserId);

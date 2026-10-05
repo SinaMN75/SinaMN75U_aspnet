@@ -223,6 +223,10 @@ public class ParkingService(
 	}
 
 	public async Task<UResponse<IEnumerable<ParkingReportResponse>?>> ReadParkingReport(ParkingReportReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<ParkingReportResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<ParkingReportResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
 		IQueryable<ParkingReportEntity> q = db.Set<ParkingReportEntity>().ApplyReadParams(p);
 		
 		if (p.EndDate.HasValue) q = q.Where(x => x.EndDate >= p.EndDate);
@@ -311,6 +315,10 @@ public class ParkingService(
 	}
 
 	public async Task<UResponse<IEnumerable<ParkingTariffResponse>?>> ReadParkingTariff(ParkingTariffReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<ParkingTariffResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<ParkingTariffResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
 		IQueryable<ParkingTariffEntity> q = db.Set<ParkingTariffEntity>().ApplyReadParams(p);
 		if (p.ParkingId.IsNotNull()) q = q.Where(x => x.ParkingId == p.ParkingId);
 		if (p.VehicleType.IsNotNull()) q = q.Where(x => x.VehicleType == p.VehicleType);
@@ -409,6 +417,10 @@ public class ParkingService(
 	}
 
 	public async Task<UResponse<IEnumerable<ParkingSubscriptionResponse>?>> ReadParkingSubscription(ParkingSubscriptionReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<ParkingSubscriptionResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<ParkingSubscriptionResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
 		DateTime now = DateTime.UtcNow;
 		IQueryable<ParkingSubscriptionEntity> q = db.Set<ParkingSubscriptionEntity>().ApplyReadParams(p);
 
@@ -481,6 +493,10 @@ public class ParkingService(
 	}
 
 	public async Task<UResponse<IEnumerable<ParkingPlateFlagResponse>?>> ReadParkingPlateFlag(ParkingPlateFlagReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<ParkingPlateFlagResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<ParkingPlateFlagResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
 		IQueryable<ParkingPlateFlagEntity> q = db.Set<ParkingPlateFlagEntity>().ApplyReadParams(p);
 		if (p.ParkingId.IsNotNull()) q = q.Where(x => x.ParkingId == p.ParkingId);
 		if (p.LicencePlate.IsNotNullOrEmpty()) q = q.Where(x => x.LicencePlate == p.LicencePlate);
@@ -560,6 +576,10 @@ public class ParkingService(
 	}
 
 	public async Task<UResponse<IEnumerable<ParkingStaffResponse>?>> ReadParkingStaff(ParkingStaffReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<ParkingStaffResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<ParkingStaffResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
 		IQueryable<ParkingStaffEntity> q = db.Set<ParkingStaffEntity>().ApplyReadParams(p);
 		if (p.ParkingId.IsNotNull()) q = q.Where(x => x.ParkingId == p.ParkingId);
 		return await q.Select(Projections.ParkingStaffSelector(p.SelectorArgs)).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
@@ -632,6 +652,10 @@ public class ParkingService(
 	}
 
 	public async Task<UResponse<IEnumerable<ParkingShiftResponse>?>> ReadParkingShift(ParkingShiftReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<ParkingShiftResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<ParkingShiftResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
 		IQueryable<ParkingShiftEntity> q = db.Set<ParkingShiftEntity>().ApplyReadParams(p);
 		if (p.ParkingId.IsNotNull()) q = q.Where(x => x.ParkingId == p.ParkingId);
 		if (p.IsOpen == true) q = q.Where(x => x.EndDate == null);

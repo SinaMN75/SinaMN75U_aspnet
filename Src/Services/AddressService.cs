@@ -47,6 +47,10 @@ public class AddressService(
 	}
 
 	public async Task<UResponse<IEnumerable<AddressResponse>?>> Read(AddressReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<AddressResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<AddressResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
 		IQueryable<AddressEntity> q = db.Set<AddressEntity>().ApplyReadParams(p);
 		
 		if (p.ZipCode.IsNotNullOrEmpty()) q = q.Where(x => x.ZipCode == p.ZipCode);

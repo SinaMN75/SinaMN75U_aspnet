@@ -48,6 +48,10 @@ public class MerchantService(
 	}
 	
 	public async Task<UResponse<IEnumerable<MerchantResponse>?>> Read(MerchantReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<MerchantResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<MerchantResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
 		IQueryable<MerchantEntity> q = db.Set<MerchantEntity>().ApplyReadParams(p);
 
 		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(x => x.UserId == p.UserId);
@@ -67,6 +71,10 @@ public class MerchantService(
 	}
 
 	public async Task<UResponse<MerchantResponse?>> ReadById(IdParams<MerchantSelectorArgs> p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<MerchantResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<MerchantResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
 		MerchantResponse? e = await db.Set<MerchantEntity>().Select(Projections.MerchantSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<MerchantResponse?>(null, Usc.NotFound, ls.Get("merchantNotFound")) : new UResponse<MerchantResponse?>(e);
 	}

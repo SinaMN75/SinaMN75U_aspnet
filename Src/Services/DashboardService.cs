@@ -2,7 +2,7 @@ namespace SinaMN75U.Services;
 
 public interface IDashboardService {
 	Task<SystemMetricsResponse> ReadSystemMetrics();
-	Task<DashboardResponse> ReadDashboardData(CancellationToken ct);
+	Task<DashboardResponse> ReadDashboardData(BaseParams p, CancellationToken ct);
 	Task<UResponse<FinancialOpsDashboardResponse?>> ReadFinancialOpsDashboard(DashboardRangeParams p, CancellationToken ct);
 	Task<UResponse<PropertyDashboardResponse?>> ReadPropertyDashboard(DashboardRangeParams p, CancellationToken ct);
 	Task<UResponse<OsMetricsResponse?>> ReadOsMetrics(BaseParams p, CancellationToken ct);
@@ -112,13 +112,13 @@ public class DashboardService(
 		);
 	}
 
-	public async Task<DashboardResponse> ReadDashboardData(CancellationToken ct) {
-		UResponse<IEnumerable<UserResponse>?> newUsers = await userService.Read(new UserReadParams { PageSize = 5 }, ct);
-		UResponse<IEnumerable<CategoryResponse>?> newCategories = await categoryService.Read(new CategoryReadParams { PageSize = 5 }, ct);
-		UResponse<IEnumerable<CommentResponse>?> newComments = await commentService.Read(new CommentReadParams { PageSize = 5 }, ct);
-		UResponse<IEnumerable<ContentResponse>?> newContents = await contentService.Read(new ContentReadParams { PageSize = 5 }, ct);
-		UResponse<IEnumerable<MediaResponse>?> newMedia = await mediaService.Read(new BaseReadParams<TagMedia> { PageSize = 5 }, ct);
-		UResponse<IEnumerable<ProductResponse>?> newProducts = await productService.Read(new ProductReadParams { PageSize = 5 }, ct);
+	public async Task<DashboardResponse> ReadDashboardData(BaseParams p, CancellationToken ct) {
+		UResponse<IEnumerable<UserResponse>?> newUsers = await userService.Read(new UserReadParams { Token = p.Token, PageSize = 5 }, ct);
+		UResponse<IEnumerable<CategoryResponse>?> newCategories = await categoryService.Read(new CategoryReadParams { Token = p.Token, PageSize = 5 }, ct);
+		UResponse<IEnumerable<CommentResponse>?> newComments = await commentService.Read(new CommentReadParams { Token = p.Token, PageSize = 5 }, ct);
+		UResponse<IEnumerable<ContentResponse>?> newContents = await contentService.Read(new ContentReadParams { Token = p.Token, PageSize = 5 }, ct);
+		UResponse<IEnumerable<MediaResponse>?> newMedia = await mediaService.Read(new BaseReadParams<TagMedia> { Token = p.Token, PageSize = 5 }, ct);
+		UResponse<IEnumerable<ProductResponse>?> newProducts = await productService.Read(new ProductReadParams { Token = p.Token, PageSize = 5 }, ct);
 
 		return new DashboardResponse {
 			Categories = await db.Set<CategoryEntity>().CountAsync(ct),
@@ -286,8 +286,11 @@ public class DashboardService(
 
 		int hotelsCount = await db.Set<HotelEntity>().CountAsync(ct);
 		int hotelRoomsCount = await db.Set<HotelRoomEntity>().CountAsync(ct);
-		int hotelRoomsAvailableCount = await db.Set<HotelRoomEntity>().CountAsync(ct);
-		int hotelRoomsOccupiedCount = hotelRoomsCount - hotelRoomsAvailableCount;
+		int hotelRoomsOccupiedCount = await db.Set<HotelReservationEntity>()
+			.Where(x => x.CheckInDate <= now && x.CheckOutDate > now)
+			.Where(x => !x.Tags.Contains(TagHotelReservation.Cancelled) && !x.Tags.Contains(TagHotelReservation.NoShow) && !x.Tags.Contains(TagHotelReservation.CheckedOut))
+			.Select(x => x.RoomId).Distinct().CountAsync(ct);
+		int hotelRoomsAvailableCount = hotelRoomsCount - hotelRoomsOccupiedCount;
 
 		int dormsCount = await db.Set<DormEntity>().CountAsync(ct);
 		int dormRoomsCount = await db.Set<DormRoomEntity>().CountAsync(ct);

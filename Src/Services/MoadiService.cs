@@ -56,6 +56,10 @@ public class MoadiService(
 	}
 
 	public async Task<UResponse<IEnumerable<MoadiResponse>?>> Read(MoadiReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<MoadiResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<MoadiResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
 		IQueryable<MoadiEntity> q = db.Set<MoadiEntity>().ApplyReadParams(p);
 
 		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(x => x.UserId == p.UserId);
@@ -71,6 +75,10 @@ public class MoadiService(
 	}
 
 	public async Task<UResponse<MoadiResponse?>> ReadById(IdParams<MoadiSelectorArgs> p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<MoadiResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<MoadiResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
 		MoadiResponse? e = await db.Set<MoadiEntity>().Select(Projections.MoadiSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<MoadiResponse?>(null, Usc.NotFound, ls.Get("taxpayerRequestNotFound")) : new UResponse<MoadiResponse?>(e);
 	}

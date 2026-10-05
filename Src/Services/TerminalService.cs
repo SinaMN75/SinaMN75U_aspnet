@@ -329,6 +329,10 @@ public class TerminalService(
 	}
 
 	public async Task<UResponse<IEnumerable<TerminalResponse>?>> Read(TerminalReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<TerminalResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<TerminalResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
 		IQueryable<TerminalEntity> q = db.Set<TerminalEntity>().ApplyReadParams(p);
 
 		if (p.Serial.IsNotNullOrEmpty()) q = q.Where(x => x.Serial == p.Serial);
@@ -539,6 +543,10 @@ public class TerminalService(
 	}
 
 	public async Task<UResponse<IEnumerable<TerminalBrandResponse>?>> ReadBrand(TerminalBrandReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<TerminalBrandResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<TerminalBrandResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
 		IQueryable<TerminalBrandEntity> q = db.Set<TerminalBrandEntity>().ApplyReadParams(p);
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title == p.Title);
@@ -623,6 +631,10 @@ public class TerminalService(
 	}
 
 	public async Task<UResponse<IEnumerable<TerminalBrokerResponse>?>> ReadBroker(TerminalBrokerReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<TerminalBrokerResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<TerminalBrokerResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
 		IQueryable<TerminalBrokerEntity> q = db.Set<TerminalBrokerEntity>().ApplyReadParams(p);
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title == p.Title);

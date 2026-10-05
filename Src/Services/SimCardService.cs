@@ -34,6 +34,10 @@ public class SimCardService(
 	}
 
 	public async Task<UResponse<IEnumerable<SimCardResponse>?>> Read(SimCardReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<SimCardResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<SimCardResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
 		IQueryable<SimCardEntity> q = db.Set<SimCardEntity>().ApplyReadParams(p);
 		IQueryable<SimCardResponse> projected = q.Select(Projections.SimCardSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);

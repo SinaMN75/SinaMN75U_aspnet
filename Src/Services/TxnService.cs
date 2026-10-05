@@ -34,6 +34,10 @@ public class TxnService(
 	}
 
 	public async Task<UResponse<IEnumerable<TxnResponse>?>> Read(TxnReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<TxnResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<TxnResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
 		IQueryable<TxnEntity> q = db.Set<TxnEntity>().ApplyReadParams(p);
 		IQueryable<TxnResponse> projected = q.Select(Projections.TxnSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);

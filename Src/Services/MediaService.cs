@@ -89,6 +89,10 @@ public class MediaService(
 	}
 
 	public async Task<UResponse<IEnumerable<MediaResponse>?>> Read(BaseReadParams<TagMedia> p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<MediaResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<MediaResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
 		IQueryable<MediaEntity> q = db.Set<MediaEntity>().ApplyReadParams(p);
 
 		if (p.Tags.IsNotNullOrEmpty()) q = q.Where(x => x.Tags.Any(tag => p.Tags!.Contains(tag)));
