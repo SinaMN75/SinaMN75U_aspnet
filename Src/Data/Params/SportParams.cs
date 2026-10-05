@@ -271,3 +271,8 @@ public sealed class OpenMatchResultParams : BaseParams {
 	/// <summary>An empty list clears the result.</summary>
 	public List<MatchSetScore> Sets { get; set; } = [];
 }
+
+public sealed class SportSeedParams : BaseParams {
+	/// Removes everything a previous run of this seed created (its users are kept and refreshed) before writing it again.
+	public bool Reset { get; set; } = true;
+}

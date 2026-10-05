@@ -4,6 +4,12 @@ public static class HotelRoutes {
 	public static void MapHotelRoutes(this IEndpointRouteBuilder app, string tag) {
 		RouteGroupBuilder r = app.MapGroup(tag).WithTags(tag).AddEndpointFilter<UValidationFilter>();
 
+		r.MapPost("Organization/Create", async (OrganizationCreateParams p, IHotelService s, CancellationToken c) => (await s.CreateOrganization(p, c)).ToResult()).Produces<UResponse<Guid?>>();
+		r.MapPost("Organization/Read", async (OrganizationReadParams p, IHotelService s, CancellationToken c) => (await s.ReadOrganizations(p, c)).ToResult()).Produces<UResponse<IEnumerable<OrganizationResponse>>>();
+		r.MapPost("Organization/Update", async (OrganizationUpdateParams p, IHotelService s, CancellationToken c) => (await s.UpdateOrganization(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("Organization/SetMember", async (OrganizationMemberParams p, IHotelService s, CancellationToken c) => (await s.SetOrganizationMember(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("Organization/RemoveMember", async (OrganizationMemberParams p, IHotelService s, CancellationToken c) => (await s.RemoveOrganizationMember(p, c)).ToResult()).Produces<UResponse>();
+
 		r.MapPost("Hotel/Create", async (HotelCreateParams p, IHotelService s, CancellationToken c) => (await s.CreateHotel(p, c)).ToResult()).Produces<UResponse<Guid?>>();
 		r.MapPost("Hotel/Read", async (HotelReadParams p, IHotelService s, CancellationToken c) => (await s.ReadHotels(p, c)).ToResult()).Produces<UResponse<IEnumerable<HotelResponse>>>();
 		r.MapPost("Hotel/ReadById", async (IdParams<HotelSelectorArgs> p, IHotelService s, CancellationToken c) => (await s.ReadHotelById(p, c)).ToResult()).Produces<UResponse<HotelResponse>>();
@@ -64,5 +70,8 @@ public static class HotelRoutes {
 		r.MapPost("DormBedInvoice/Delete", async (IdParams p, IHotelService s, CancellationToken c) => (await s.DeleteDormBedInvoice(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("DormBedInvoice/Pay", async (IdParams p, IHotelService s, CancellationToken c) => (await s.PayDormBedInvoiceByUser(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("DormBedInvoice/ChartData", async (BaseParams p, IHotelService s, CancellationToken c) => (await s.ReadDormBedInvoiceChartData(p, c)).ToResult()).Produces<UResponse>();
+
+		r.MapPost("Dashboard/Read", async (DashboardRangeParams p, IHotelService s, CancellationToken ct) => (await s.ReadPropertyDashboard(p, ct)).ToResult()).Produces<UResponse<PropertyDashboardResponse>>();
+		r.MapPost("Seed", async (IHotelService s, CancellationToken c) => (await s.SeedHotelsAndDorms(c)).ToResult()).Produces<UResponse<List<KeyValue>>>();
 	}
 }

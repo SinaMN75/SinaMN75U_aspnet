@@ -149,3 +149,28 @@ public sealed class OpenMatchResponse : BaseResponse<TagOpenMatch, OpenMatchJson
 	/// <summary>Only public fields (id and names).</summary>
 	public ICollection<UserResponse>? Users { get; set; }
 }
+
+public sealed class SportSeedAccountResponse {
+	public required string Email { get; set; }
+	public required string Password { get; set; }
+	public required string FullName { get; set; }
+	public required string Role { get; set; }
+}
+
+public sealed class SportSeedResponse {
+	public ICollection<SportSeedAccountResponse> Accounts { get; set; } = [];
+	public int Users { get; set; }
+	public int Venues { get; set; }
+	public int Courts { get; set; }
+	public int Bookings { get; set; }
+	public int Tournaments { get; set; }
+	public int TournamentMatches { get; set; }
+	public int OpenMatches { get; set; }
+	public int Posts { get; set; }
+	public int Conversations { get; set; }
+	public int Messages { get; set; }
+	public int Notifications { get; set; }
+
+	/// Steps a service refused; the rest of the seed still ran.
+	public ICollection<string> Warnings { get; set; } = [];
+}

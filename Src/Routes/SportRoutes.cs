@@ -45,5 +45,7 @@ public static class SportRoutes {
 		r.MapPost("OpenMatch/Join", async (IdParams p, ISportService s, CancellationToken c) => (await s.JoinOpenMatch(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("OpenMatch/Leave", async (IdParams p, ISportService s, CancellationToken c) => (await s.LeaveOpenMatch(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("OpenMatch/Result", async (OpenMatchResultParams p, ISportService s, CancellationToken c) => (await s.SetOpenMatchResult(p, c)).ToResult()).Produces<UResponse>();
+
+		r.MapPost("Seed", async (SportSeedParams d, ISportService s, CancellationToken c) => (await s.SeedSportopia(d, c)).ToResult()).Produces<UResponse<SportSeedResponse>>();
 	}
 }

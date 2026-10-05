@@ -35,6 +35,7 @@ public sealed class AppSettings {
 	public required InquiryCacheDurations InquiryCacheDurations { get; set; }
 	public required IEnumerable<ChargeInternet> ChargeInternet { get; set; }
 	public required decimal ChargeInternetTaxPercent { get; set; }
+	public bool MultiTenant { get; set; }
 	public ICollection<string> GoogleClientIds { get; set; } = [];
 	public string? SmtpConnection { get; set; } // smtp://user:password@host:587?from=no-reply@example.com
 }

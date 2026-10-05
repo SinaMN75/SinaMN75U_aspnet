@@ -47,5 +47,7 @@ public static class ParkingRoutes {
 		r.MapPost("RegisterParkingExit", async (ParkingExitParams d, IParkingService s, CancellationToken c) => (await s.RegisterParkingExit(d, c)).ToResult()).Produces<UResponse<ParkingReportResponse>>();
 		r.MapPost("ReadParkingDashboard", async (ParkingDashboardParams d, IParkingService s, CancellationToken c) => (await s.ReadParkingDashboard(d, c)).ToResult()).Produces<UResponse<ParkingDashboardResponse>>();
 		r.MapPost("ReadParkingInsideVehicles", async (ParkingInsideVehiclesParams d, IParkingService s, CancellationToken c) => (await s.ReadParkingInsideVehicles(d, c)).ToResult()).Produces<UResponse<IEnumerable<ParkingInsideVehicleResponse>>>();
+
+		r.MapPost("Seed", async (ParkingSeedParams d, IParkingService s, CancellationToken c) => (await s.SeedParking(d, c)).ToResult()).Produces<UResponse<ParkingSeedResponse>>();
 	}
 }

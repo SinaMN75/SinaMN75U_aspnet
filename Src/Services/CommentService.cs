@@ -13,13 +13,14 @@ public interface ICommentService {
 public class CommentService(
 	DbContext db,
 	ILocalizationService ls,
-	ITokenService ts
+	ITokenService ts,
+	IHotelService hs
 ) : ICommentService {
 	// A comment is changed by its writer, a full admin, or an admin of the hotel/dorm it reviews.
 	private async Task<bool> CanModerate(JwtClaimData u, CommentEntity e, CancellationToken ct) {
 		if (u.IsAdmin || u.Id == e.CreatorId) return true;
-		(ICollection<Guid> AdminUserIds, TagUser Permission)? place = await db.PlaceOf(e.HotelId, null, e.DormId, null, null, ct);
-		if (place != null) return u.CanActOnPlace(place.Value.AdminUserIds, place.Value.Permission);
+		bool? place = await hs.CanActOnPlaceOf(u, e.HotelId, null, e.DormId, null, null, ct);
+		if (place != null) return place.Value;
 		return e.VenueId != null && await db.Set<VenueEntity>().AnyAsync(x => x.Id == e.VenueId && (x.CreatorId == u.Id || x.AdminUserIds.Contains(u.Id)), ct);
 	}
 

@@ -124,13 +124,14 @@ public class WalletService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IEnumerable<WalletResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<IEnumerable<WalletResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
-		if (!CanReadWalletOf(userData, p.Id)) return new UResponse<IEnumerable<WalletResponse>?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await CanReadWalletOf(userData, p.Id, ct)) return new UResponse<IEnumerable<WalletResponse>?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		IQueryable<WalletResponse> q = db.Set<WalletEntity>().Where(x => x.CreatorId == p.Id).Select(Projections.WalletSelector(p.SelectorArgs));
 		return await q.ToPaginatedResponse(1, 10, ct);
 	}
 
-	private static bool CanReadWalletOf(JwtClaimData u, Guid userId) => u.Id == userId || u.HasPermission(TagUser.PermissionManageWallets);
+	private async Task<bool> CanReadWalletOf(JwtClaimData u, Guid userId, CancellationToken ct) =>
+		u.Id == userId || u.HasPermission(TagUser.PermissionManageWallets) || Core.App.MultiTenant && await db.Set<OrganizationEntity>().AnyAsync(x => x.Id == userId && x.OwnerId == u.Id, ct);
 
 	public async Task<UResponse<WalletTxnResponse?>> Transfer(WalletTransferParams p, CancellationToken ct) {
 		if (p.Amount < 0) return new UResponse<WalletTxnResponse?>(null, Usc.BadRequest, ls.Get("amountIsNotValid"));
@@ -185,7 +186,7 @@ public class WalletService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IEnumerable<WalletTxnResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<IEnumerable<WalletTxnResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
-		if (!CanReadWalletOf(userData, p.UserId)) return new UResponse<IEnumerable<WalletTxnResponse>?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await CanReadWalletOf(userData, p.UserId, ct)) return new UResponse<IEnumerable<WalletTxnResponse>?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		IQueryable<WalletTxnResponse> q = db.Set<WalletTxnEntity>().ApplyReadParams(p)
 			.Where(x => x.SenderId == p.UserId || x.ReceiverId == p.UserId)

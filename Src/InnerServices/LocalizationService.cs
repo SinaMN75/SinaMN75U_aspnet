@@ -221,6 +221,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		// ===== Not Found (additional) =====
 		{ "contractNotFound", "Contract Not Found." },
 		{ "dormNotFound", "Dorm Not Found." },
+		{ "organizationNotFound", "Organization Not Found." },
 		{ "dormRoomNotFound", "Dorm Room Not Found." },
 		{ "dormBedNotFound", "Dorm Bed Not Found." },
 		{ "hotelNotFound", "Hotel Not Found." },
@@ -720,6 +721,7 @@ public class LocalizationService(IHttpContextAccessor httpContext) : ILocalizati
 		// ===== Not Found (additional) =====
 		{ "contractNotFound", "قرارداد یافت نشد." },
 		{ "dormNotFound", "خوابگاه یافت نشد." },
+		{ "organizationNotFound", "مجموعه یافت نشد." },
 		{ "dormRoomNotFound", "اتاق خوابگاه یافت نشد." },
 		{ "dormBedNotFound", "تخت خوابگاه یافت نشد." },
 		{ "hotelNotFound", "هتل یافت نشد." },

@@ -16,13 +16,19 @@ public class UserService(
 	ILocalizationService ls,
 	ITokenService ts,
 	IMemoryCache cache,
-	IWebHostEnvironment env
+	IWebHostEnvironment env,
+	IHotelService hs
 ) : IUserService {
+	private static bool IsTenant(JwtClaimData u) => Core.App.MultiTenant && !u.IsSystemAdmin;
+
 	public async Task<UResponse<Guid?>> Create(UserCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
-		if (!userData.HasPermission(TagUser.PermissionManageUsers) || !p.Tags.All(userData.CanGrant)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		bool allowed = IsTenant(userData)
+			? await hs.HasOrganizationPermission(userData, null, TagUser.PermissionManageUsers, ct) && !p.Tags.Any(JwtClaimData.IsRoleTag)
+			: userData.HasPermission(TagUser.PermissionManageUsers) && p.Tags.All(userData.CanGrant);
+		if (!allowed) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		Guid userId = p.Id ?? Guid.CreateVersion7();
 		DateTime now = DateTime.UtcNow;
@@ -110,9 +116,14 @@ public class UserService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IEnumerable<UserResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<IEnumerable<UserResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
-		if (!userData.HasPermission(TagUser.PermissionManageUsers)) return new UResponse<IEnumerable<UserResponse>?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (IsTenant(userData) ? !await hs.HasOrganizationPermission(userData, null, TagUser.PermissionManageUsers, ct) : !userData.HasPermission(TagUser.PermissionManageUsers))
+			return new UResponse<IEnumerable<UserResponse>?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		IQueryable<UserEntity> q = db.Set<UserEntity>().ApplyReadParams(p);
+		if (IsTenant(userData)) {
+			if (p.PhoneNumber.IsNullOrEmpty() && p.NationalCode.IsNullOrEmpty()) q = hs.RelatedUsers(q, userData.Id);
+			else p.SelectorArgs = new UserSelectorArgs();
+		}
 
 		if (p.UserName.IsNotNullOrEmpty()) q = q.Where(u => u.UserName.Contains(p.UserName!));
 		if (p.FirstName.IsNotNullOrEmpty()) q = q.Where(u => (u.FirstName ?? "").Contains(p.FirstName!));
@@ -144,8 +155,10 @@ public class UserService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<UserResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<UserResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
-		if (userData.Id != p.Id && !userData.HasPermission(TagUser.PermissionManageUsers))
-			return new UResponse<UserResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		bool allowed = userData.Id == p.Id || (IsTenant(userData)
+			? await hs.HasOrganizationPermission(userData, null, TagUser.PermissionManageUsers, ct) && await hs.RelatedUsers(db.Set<UserEntity>().Where(x => x.Id == p.Id), userData.Id).AnyAsync(ct)
+			: userData.HasPermission(TagUser.PermissionManageUsers));
+		if (!allowed) return new UResponse<UserResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		UserResponse? e = await db.Set<UserEntity>().Select(Projections.UserSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<UserResponse?>(null, Usc.NotFound, ls.Get("accountNotFound")) : new UResponse<UserResponse?>(e);
@@ -158,12 +171,16 @@ public class UserService(
 		UserEntity? e = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("accountNotFound"));
 
-		if (userData.Id != e.Id && !userData.HasPermission(TagUser.PermissionManageUsers) || !userData.CanManageUser(e.Id, e.Tags)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		bool allowed = userData.Id == e.Id || (IsTenant(userData)
+			? await db.Set<OrganizationEntity>().AnyAsync(x => x.OwnerId == userData.Id && x.AdminUserIds.Contains(e.Id), ct)
+			: userData.HasPermission(TagUser.PermissionManageUsers));
+		if (!allowed || !userData.CanManageUser(e.Id, e.Tags)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		List<TagUser> newTags = p.Tags.IsNotNullOrEmpty() ? [..p.Tags] : [..e.Tags];
 		if (p.AddTags.IsNotNullOrEmpty()) newTags.AddRange(p.AddTags.Where(t => !newTags.Contains(t)));
 		if (p.RemoveTags.IsNotNullOrEmpty()) newTags.RemoveAll(p.RemoveTags.Contains);
-		if (!newTags.Except(e.Tags).Concat(e.Tags.Except(newTags)).All(userData.CanGrant)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		List<TagUser> changedTags = newTags.Except(e.Tags).Concat(e.Tags.Except(newTags)).ToList();
+		if (IsTenant(userData) ? changedTags.Any(JwtClaimData.IsRoleTag) : !changedTags.All(userData.CanGrant)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Password.IsNotNullOrEmpty()) e.Password = UPasswordHasher.Hash(p.Password);
 		if (p.FirstName.IsNotNullOrEmpty()) e.FirstName = p.FirstName;
@@ -221,6 +238,7 @@ public class UserService(
 		UserEntity? e = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("accountNotFound"));
 
+		if (IsTenant(userData) && userData.Id != e.Id) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		if (userData.Id != e.CreatorId && !userData.HasPermission(TagUser.PermissionDeleteUsers) || !userData.CanManageUser(e.Id, e.Tags) || e.Tags.Contains(TagUser.SystemAdmin)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<UserEntity>().Remove(e);

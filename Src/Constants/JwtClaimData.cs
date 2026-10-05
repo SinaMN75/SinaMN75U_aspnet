@@ -14,16 +14,14 @@ public class JwtClaimData {
 	public required IEnumerable<TagUser> Tags { get; set; }
 
 	public bool IsSystemAdmin => Tags.Contains(TagUser.SystemAdmin);
-	public bool IsSuperAdmin => IsSystemAdmin || Tags.Contains(TagUser.SuperAdmin);
+	public bool IsSuperAdmin => IsSystemAdmin || !Core.App.MultiTenant && Tags.Contains(TagUser.SuperAdmin);
 	public bool IsAdmin => IsSuperAdmin || Tags.Contains(TagUser.SystemUser);
 	public bool IsSubAdmin => Tags.Contains(TagUser.SubAdmin);
 	public int AdminRank => Rank(Tags);
 
 	public bool CanAccess(Guid creatorId, ICollection<Guid> adminUserIds) => IsSuperAdmin || Id == creatorId || adminUserIds.Count == 0 || adminUserIds.Contains(Id);
 	public bool CanManage(Guid creatorId, ICollection<Guid> adminUserIds) => IsAdmin || Id == creatorId || adminUserIds.Contains(Id);
-	public bool HasPermission(TagUser permission) => IsAdmin || IsSubAdmin && Tags.Contains(permission);
-
-	public bool CanActOnPlace(ICollection<Guid> placeAdminUserIds, TagUser permission) => HasPermission(permission) && (IsSuperAdmin || IsSubAdmin && placeAdminUserIds.Contains(Id));
+	public bool HasPermission(TagUser permission) => IsAdmin || !Core.App.MultiTenant && IsSubAdmin && Tags.Contains(permission);
 
 	public bool CanGrant(TagUser tag) => !IsRoleTag(tag) || AdminRank > RankOf(tag);
 

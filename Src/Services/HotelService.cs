@@ -1,6 +1,16 @@
 namespace SinaMN75U.Services;
 
 public interface IHotelService {
+	public Task<bool> HasOrganizationPermission(JwtClaimData u, Guid? organizationId, TagUser permission, CancellationToken ct);
+	public Task<bool?> CanActOnPlaceOf(JwtClaimData u, Guid? hotelId, Guid? hotelRoomId, Guid? dormId, Guid? dormRoomId, Guid? dormBedId, CancellationToken ct);
+	public IQueryable<UserEntity> RelatedUsers(IQueryable<UserEntity> q, Guid userId);
+	public Task<UResponse<List<KeyValue>?>> SeedHotelsAndDorms(CancellationToken ct = default);
+	public Task<UResponse<Guid?>> CreateOrganization(OrganizationCreateParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<OrganizationResponse>?>> ReadOrganizations(OrganizationReadParams p, CancellationToken ct);
+	public Task<UResponse> UpdateOrganization(OrganizationUpdateParams p, CancellationToken ct);
+	public Task<UResponse> SetOrganizationMember(OrganizationMemberParams p, CancellationToken ct);
+	public Task<UResponse> RemoveOrganizationMember(OrganizationMemberParams p, CancellationToken ct);
+
 	public Task<UResponse<Guid?>> CreateHotel(HotelCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<HotelResponse>?>> ReadHotels(HotelReadParams p, CancellationToken ct);
 	public Task<UResponse<HotelResponse?>> ReadHotelById(IdParams<HotelSelectorArgs> p, CancellationToken ct);
@@ -63,6 +73,7 @@ public interface IHotelService {
 	public Task<UResponse> PayDormBedInvoice(DormBedInvoicePayParams p, CancellationToken ct);
 	public Task<UResponse> PayDormBedInvoiceByUser(IdParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<DormBedInvoiceChartResponse>?>> ReadDormBedInvoiceChartData(BaseParams p, CancellationToken ct);
+	public Task<UResponse<PropertyDashboardResponse?>> ReadPropertyDashboard(DashboardRangeParams p, CancellationToken ct);
 }
 
 public class HotelService(
@@ -78,9 +89,41 @@ public class HotelService(
 	// Everybody else: the public view (active places, no people data) and his own reservations/contracts/invoices.
 	private static bool IsFull(JwtClaimData? u) => u is { IsSuperAdmin: true };
 
-	private static bool IsScopedAdmin(JwtClaimData? u) => u is { IsSuperAdmin: false, IsSubAdmin: true };
+	private static bool IsScopedAdmin(JwtClaimData? u) => !IsFull(u) && (u is { IsSubAdmin: true } || Core.App.MultiTenant && u?.Tags.Contains(TagUser.SuperAdmin) == true);
 
-	private static bool CanAct(JwtClaimData u, ICollection<Guid> placeAdminUserIds, TagUser permission) => u.CanActOnPlace(placeAdminUserIds, permission);
+	private Task<bool> CanAct(JwtClaimData u, HotelEntity place, TagUser permission, CancellationToken ct) => CanActOnPlace(u, place.OrganizationId, place.AdminUserIds, permission, ct);
+
+	private Task<bool> CanAct(JwtClaimData u, DormEntity place, TagUser permission, CancellationToken ct) => CanActOnPlace(u, place.OrganizationId, place.AdminUserIds, permission, ct);
+
+	private async Task<bool> CanCreatePlace(JwtClaimData u, Guid? organizationId, TagUser permission, CancellationToken ct) =>
+		Core.App.MultiTenant ? u.IsSystemAdmin || organizationId != null && await HasOrganizationPermission(u, organizationId, permission, ct) : u.HasPermission(permission);
+
+	private async Task<bool> IsOwner(JwtClaimData u, Guid? organizationId, CancellationToken ct) =>
+		organizationId != null && await db.Set<OrganizationEntity>().AnyAsync(x => x.Id == organizationId && x.OwnerId == u.Id, ct);
+
+	private async Task<List<Guid>> PlaceAdmins(Guid? organizationId, ICollection<Guid> ids, CancellationToken ct) {
+		if (!Core.App.MultiTenant || organizationId == null) return ids.ToList();
+		OrganizationEntity? o = await db.Set<OrganizationEntity>().FirstOrDefaultAsync(x => x.Id == organizationId, ct);
+		return o == null ? [] : ids.Where(o.AdminUserIds.Contains).Append(o.OwnerId).Distinct().ToList();
+	}
+
+	private static Guid MoneyAccountOf(Guid? organizationId) => Core.App.MultiTenant && organizationId != null ? organizationId.Value : Core.App.Users.SystemAdmin.Id;
+
+	private async Task TakeCommission(Guid? organizationId, decimal amount, string detail, List<KeyValue> keyValues, CancellationToken ct) {
+		if (!Core.App.MultiTenant || organizationId == null) return;
+		decimal percent = await db.Set<OrganizationEntity>().Where(x => x.Id == organizationId).Select(x => x.JsonData.CommissionPercent).FirstOrDefaultAsync(ct);
+		decimal commission = Math.Round(amount * percent / 100);
+		if (commission <= 0) return;
+		await ws.Transfer(new WalletTransferParams {
+			SenderId = organizationId.Value,
+			ReceiverId = Core.App.Users.SystemAdmin.Id,
+			Amount = commission,
+			Detail1 = detail,
+			KeyValues = keyValues,
+			TagWalletTxn = [TagWalletTxn.PlatformCommission],
+			AllowOverdraft = true
+		}, ct);
+	}
 
 	private static Guid UserIdOf(JwtClaimData? u) => u?.Id ?? Guid.Empty;
 
@@ -137,11 +180,171 @@ public class HotelService(
 
 	private static DormBedInvoiceSelectorArgs Safe(DormBedInvoiceSelectorArgs a) => new() { Contract = a.Contract == null ? null : Safe(a.Contract) };
 
+	public async Task<UResponse<Guid?>> CreateOrganization(OrganizationCreateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!Core.App.MultiTenant || !userData.IsSystemAdmin) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		UserEntity? owner = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.OwnerId, ct);
+		if (owner == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("accountNotFound"));
+		if (!SetFirstAdminPassword(owner, p.OwnerPassword)) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("pleaseEnterAPassword"));
+		if (!owner.Tags.Contains(TagUser.SuperAdmin)) owner.Tags = [..owner.Tags, TagUser.SuperAdmin];
+
+		Guid id = p.Id ?? Guid.CreateVersion7();
+		DateTime now = DateTime.UtcNow;
+		await db.Set<UserEntity>().AddAsync(new UserEntity {
+			Id = id,
+			CreatorId = userData.Id,
+			CreatedAt = now,
+			UserName = "organization_" + id.ToString("N"),
+			Password = UPasswordHasher.Hash(Guid.NewGuid().ToString()),
+			RefreshToken = "",
+			FirstName = p.Title,
+			JsonData = new UserJson(),
+			Tags = [TagUser.Organization],
+			Wallets = [new WalletEntity { Id = id, CreatorId = id, CreatedAt = now, JsonData = new WalletJson(), Tags = [TagWallet.Primary], Balance = 0 }]
+		}, ct);
+		await db.Set<OrganizationEntity>().AddAsync(new OrganizationEntity {
+			Id = id,
+			CreatorId = userData.Id,
+			CreatedAt = now,
+			Title = p.Title,
+			OwnerId = owner.Id,
+			Tags = p.Tags,
+			JsonData = new OrganizationJson { Detail1 = p.Detail1, Detail2 = p.Detail2, CommissionPercent = p.CommissionPercent }
+		}, ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse<Guid?>(id, Usc.Created);
+	}
+
+	public async Task<UResponse<IEnumerable<OrganizationResponse>?>> ReadOrganizations(OrganizationReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<OrganizationResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<OrganizationResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
+		Guid uid = userData.Id;
+		IQueryable<OrganizationEntity> q = db.Set<OrganizationEntity>().ApplyReadParams(p);
+		if (!IsFull(userData)) q = q.Where(x => x.OwnerId == uid || x.AdminUserIds.Contains(uid));
+		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
+
+		return await q.Select(x => new OrganizationResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			CreatorId = x.CreatorId,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			AdminUserIds = x.AdminUserIds,
+			Title = x.Title,
+			OwnerId = x.OwnerId,
+			Balance = db.Set<WalletEntity>().Where(w => w.CreatorId == x.Id).Sum(w => (decimal?)w.Balance) ?? 0
+		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	}
+
+	public async Task<UResponse> UpdateOrganization(OrganizationUpdateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (!Core.App.MultiTenant || TouchesAdminUserIds(p)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		OrganizationEntity? e = await db.Set<OrganizationEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("organizationNotFound"));
+
+		bool platformChange = p.OwnerId.HasValue && p.OwnerId != e.OwnerId || p.CommissionPercent.HasValue || p.Tags != null || p.AddTags != null || p.RemoveTags != null;
+		if (!userData.IsSystemAdmin && (e.OwnerId != userData.Id || platformChange)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		if (p.OwnerId.HasValue && p.OwnerId != e.OwnerId) {
+			UserEntity? owner = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.OwnerId, ct);
+			if (owner == null) return new UResponse(Usc.NotFound, ls.Get("accountNotFound"));
+			if (!SetFirstAdminPassword(owner, p.OwnerPassword)) return new UResponse(Usc.BadRequest, ls.Get("pleaseEnterAPassword"));
+			if (!owner.Tags.Contains(TagUser.SuperAdmin)) owner.Tags = [..owner.Tags, TagUser.SuperAdmin];
+
+			Guid oldOwnerId = e.OwnerId;
+			e.OwnerId = owner.Id;
+			await ReplacePlaceAdmin(e.Id, oldOwnerId, owner.Id, ct);
+			UserEntity? oldOwner = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == oldOwnerId, ct);
+			if (oldOwner != null && !await db.Set<OrganizationEntity>().AnyAsync(x => x.Id != e.Id && x.OwnerId == oldOwnerId, ct))
+				oldOwner.Tags = oldOwner.Tags.Where(x => x != TagUser.SuperAdmin).ToList();
+		}
+
+		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
+		if (p.CommissionPercent.HasValue) e.JsonData.CommissionPercent = p.CommissionPercent.Value;
+		e.ApplyUpdateParam<OrganizationEntity, TagOrganization, OrganizationJson>(p);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> SetOrganizationMember(OrganizationMemberParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!Core.App.MultiTenant) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		OrganizationEntity? e = await db.Set<OrganizationEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.OrganizationId, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("organizationNotFound"));
+		if (!userData.IsSystemAdmin && e.OwnerId != userData.Id || p.UserId == e.OwnerId) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		UserEntity? user = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
+		if (user == null) return new UResponse(Usc.NotFound, ls.Get("accountNotFound"));
+		if (user.Tags.Contains(TagUser.SystemAdmin) || user.Tags.Contains(TagUser.Organization)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!SetFirstAdminPassword(user, p.Password)) return new UResponse(Usc.BadRequest, ls.Get("pleaseEnterAPassword"));
+
+		OrganizationMember member = new() { UserId = user.Id, Permissions = p.Permissions.Where(x => (int)x is >= 600 and < 700).Distinct().ToList() };
+		e.JsonData.Members = e.JsonData.Members.Where(x => x.UserId != user.Id).Append(member).ToList();
+		if (!e.AdminUserIds.Contains(user.Id)) e.AdminUserIds = [..e.AdminUserIds, user.Id];
+		await SyncMemberTags(user, e, ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> RemoveOrganizationMember(OrganizationMemberParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (!Core.App.MultiTenant) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		OrganizationEntity? e = await db.Set<OrganizationEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.OrganizationId, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("organizationNotFound"));
+		if (!userData.IsSystemAdmin && e.OwnerId != userData.Id || p.UserId == e.OwnerId) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		e.JsonData.Members = e.JsonData.Members.Where(x => x.UserId != p.UserId).ToList();
+		e.AdminUserIds = e.AdminUserIds.Where(x => x != p.UserId).ToList();
+		await ReplacePlaceAdmin(e.Id, p.UserId, null, ct);
+		UserEntity? user = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
+		if (user != null) await SyncMemberTags(user, e, ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	private static bool SetFirstAdminPassword(UserEntity user, string? password) {
+		if (JwtClaimData.Rank(user.Tags) > 0) return true;
+		if (password.IsNullOrEmpty()) return false;
+		user.Password = UPasswordHasher.Hash(password);
+		return true;
+	}
+
+	private static List<Guid> SwapId(ICollection<Guid> ids, Guid oldId, Guid? newId) {
+		List<Guid> list = ids.Where(x => x != oldId).ToList();
+		if (newId != null && !list.Contains(newId.Value)) list.Add(newId.Value);
+		return list;
+	}
+
+	private async Task ReplacePlaceAdmin(Guid organizationId, Guid oldId, Guid? newId, CancellationToken ct) {
+		foreach (HotelEntity x in await db.Set<HotelEntity>().AsTracking().Where(x => x.OrganizationId == organizationId).ToListAsync(ct)) x.AdminUserIds = SwapId(x.AdminUserIds, oldId, newId);
+		foreach (DormEntity x in await db.Set<DormEntity>().AsTracking().Where(x => x.OrganizationId == organizationId).ToListAsync(ct)) x.AdminUserIds = SwapId(x.AdminUserIds, oldId, newId);
+	}
+
+	private async Task SyncMemberTags(UserEntity user, OrganizationEntity changed, CancellationToken ct) {
+		List<OrganizationEntity> organizations = await db.Set<OrganizationEntity>().Where(x => x.Id != changed.Id && x.AdminUserIds.Contains(user.Id)).ToListAsync(ct);
+		if (changed.AdminUserIds.Contains(user.Id)) organizations.Add(changed);
+		List<TagUser> tags = user.Tags.Where(x => x != TagUser.SubAdmin && (int)x is < 600 or >= 700).ToList();
+		if (organizations.Count > 0) tags = [..tags, TagUser.SubAdmin, ..organizations.SelectMany(x => x.JsonData.Members.Where(m => m.UserId == user.Id).SelectMany(m => m.Permissions)).Distinct()];
+		user.Tags = tags;
+	}
+
 	public async Task<UResponse<Guid?>> CreateHotel(HotelCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
-		if (!userData.HasPermission(TagUser.PermissionManageHotels)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await CanCreatePlace(userData, p.OrganizationId, TagUser.PermissionManageHotels, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		HotelEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -173,7 +376,8 @@ public class HotelService(
 			Address = p.Address,
 			PhoneNumber = p.PhoneNumber,
 			Email = p.Email,
-			AdminUserIds = IsFull(userData) ? p.AdminUserIds ?? [] : [userData.Id]
+			OrganizationId = p.OrganizationId,
+			AdminUserIds = await PlaceAdmins(p.OrganizationId, IsFull(userData) ? p.AdminUserIds ?? [] : [userData.Id], ct)
 		};
 
 		await db.Set<HotelEntity>().AddAsync(e, ct);
@@ -192,6 +396,7 @@ public class HotelService(
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.CityCode.IsNotNullOrEmpty()) q = q.Where(x => x.CityCode == p.CityCode);
 		if (p.MinStars.HasValue) q = q.Where(x => x.Stars >= p.MinStars);
+		if (p.OrganizationId.HasValue) q = q.Where(x => x.OrganizationId == p.OrganizationId);
 		if (p.MinPrice.HasValue || p.MaxPrice.HasValue) q = q.Where(x => x.Rooms.Any(r => (p.MinPrice == null || r.PricePerNight >= p.MinPrice) && (p.MaxPrice == null || r.PricePerNight <= p.MaxPrice)));
 		if (p.MinScore.HasValue) q = q.Where(x => x.Comments.Count > 0 && x.Comments.Average(c => c.Score) >= p.MinScore);
 
@@ -217,8 +422,12 @@ public class HotelService(
 		HotelEntity? e = await db.Set<HotelEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("hotelNotFound"));
 
-		if (!CanAct(userData, e.AdminUserIds, TagUser.PermissionManageHotels)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
-		if (TouchesAdminUserIds(p) && !IsFull(userData)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await CanAct(userData, e, TagUser.PermissionManageHotels, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (TouchesAdminUserIds(p) && !IsFull(userData) && !(Core.App.MultiTenant && await IsOwner(userData, e.OrganizationId, ct))) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (p.OrganizationId.HasValue && p.OrganizationId != e.OrganizationId) {
+			if (!IsFull(userData)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+			e.OrganizationId = p.OrganizationId;
+		}
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
 		if (p.CityCode.IsNotNullOrEmpty()) e.CityCode = p.CityCode;
@@ -244,6 +453,7 @@ public class HotelService(
 		if (p.CancellationFreeHours.HasValue) e.JsonData.CancellationFreeHours = p.CancellationFreeHours.Value;
 		if (p.CancellationPenaltyNights.HasValue) e.JsonData.CancellationPenaltyNights = p.CancellationPenaltyNights.Value;
 		e.ApplyUpdateParam<HotelEntity, TagHotel, HotelJson>(p);
+		if (Core.App.MultiTenant) e.AdminUserIds = await PlaceAdmins(e.OrganizationId, e.AdminUserIds, ct);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();
@@ -256,7 +466,7 @@ public class HotelService(
 		HotelEntity? e = await db.Set<HotelEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("hotelNotFound"));
 
-		if (!CanAct(userData, e.AdminUserIds, TagUser.PermissionDeleteHotels)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await CanAct(userData, e, TagUser.PermissionDeleteHotels, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<HotelEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
@@ -270,7 +480,7 @@ public class HotelService(
 
 		HotelEntity? hotel = await db.Set<HotelEntity>().FirstOrDefaultAsync(x => x.Id == p.HotelId, ct);
 		if (hotel == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("hotelNotFound"));
-		if (!CanAct(userData, hotel.AdminUserIds, TagUser.PermissionManageHotels)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await CanAct(userData, hotel, TagUser.PermissionManageHotels, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		HotelRoomEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -338,11 +548,11 @@ public class HotelService(
 		HotelRoomEntity? e = await db.Set<HotelRoomEntity>().AsTracking().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("hotelRoomNotFound"));
 
-		if (!CanAct(userData, e.Hotel.AdminUserIds, TagUser.PermissionManageHotels)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await CanAct(userData, e.Hotel, TagUser.PermissionManageHotels, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		// Moving it under another hotel/dorm needs the same right there.
 		if (p.HotelId.HasValue && p.HotelId != e.HotelId) {
 			HotelEntity? to = await db.Set<HotelEntity>().FirstOrDefaultAsync(x => x.Id == p.HotelId, ct);
-			if (to == null || !CanAct(userData, to.AdminUserIds, TagUser.PermissionManageHotels)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+			if (to == null || !await CanAct(userData, to, TagUser.PermissionManageHotels, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		}
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
@@ -371,7 +581,7 @@ public class HotelService(
 		HotelRoomEntity? e = await db.Set<HotelRoomEntity>().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("hotelRoomNotFound"));
 
-		if (!CanAct(userData, e.Hotel.AdminUserIds, TagUser.PermissionDeleteHotels)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await CanAct(userData, e.Hotel, TagUser.PermissionDeleteHotels, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<HotelRoomEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
@@ -385,7 +595,7 @@ public class HotelService(
 
 		HotelRoomEntity? room = await db.Set<HotelRoomEntity>().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.RoomId, ct);
 		if (room == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("hotelRoomNotFound"));
-		if (!CanAct(userData, room.Hotel.AdminUserIds, TagUser.PermissionManageReservations))
+		if (!await CanAct(userData, room.Hotel, TagUser.PermissionManageReservations, ct))
 			return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (!room.IsAvailable) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("thisRoomIsNotAvailableForBooking"));
@@ -500,7 +710,7 @@ public class HotelService(
 
 		HotelReservationEntity? e = await db.Set<HotelReservationEntity>().AsTracking().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("reservationNotFound"));
-		if (!CanAct(userData, e.Hotel.AdminUserIds, TagUser.PermissionManageReservations))
+		if (!await CanAct(userData, e.Hotel, TagUser.PermissionManageReservations, ct))
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.CheckInDate.HasValue) e.CheckInDate = p.CheckInDate.Value;
@@ -529,7 +739,7 @@ public class HotelService(
 
 		HotelReservationEntity? e = await db.Set<HotelReservationEntity>().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("reservationNotFound"));
-		if (!CanAct(userData, e.Hotel.AdminUserIds, TagUser.PermissionDeleteReservations))
+		if (!await CanAct(userData, e.Hotel, TagUser.PermissionDeleteReservations, ct))
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		await db.Set<HotelReservationEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
@@ -542,7 +752,7 @@ public class HotelService(
 
 		HotelReservationEntity? e = await db.Set<HotelReservationEntity>().AsTracking().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("reservationNotFound"));
-		if (!CanAct(userData, e.Hotel.AdminUserIds, TagUser.PermissionManageReservations))
+		if (!await CanAct(userData, e.Hotel, TagUser.PermissionManageReservations, ct))
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		e.Tags = [status];
@@ -713,7 +923,7 @@ public class HotelService(
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("reservationNotFound"));
 
 		bool isOwner = e.UserId == userData.Id;
-		if (!isOwner && !CanAct(userData, e.Hotel.AdminUserIds, TagUser.PermissionManageReservations)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!isOwner && !await CanAct(userData, e.Hotel, TagUser.PermissionManageReservations, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		if (e.Tags.Contains(TagHotelReservation.Cancelled)) return new UResponse(Usc.Conflict, ls.Get("thisReservationHasAlreadyBeenCancelled"));
 		if (e.Tags.Contains(TagHotelReservation.CheckedIn) || e.Tags.Contains(TagHotelReservation.CheckedOut)) return new UResponse(Usc.Conflict, ls.Get("aReservationThatHasAlreadyBeenCheckedInCannotBeCancelled"));
 
@@ -735,7 +945,7 @@ public class HotelService(
 
 		if (refund > 0) {
 			UResponse<WalletTxnResponse?> transfer = await ws.Transfer(new WalletTransferParams {
-				SenderId = Core.App.Users.SystemAdmin.Id,
+				SenderId = MoneyAccountOf(e.Hotel.OrganizationId),
 				ReceiverId = e.UserId,
 				Amount = refund,
 				Detail1 = ls.Get("hotelReservationRefund"),
@@ -814,7 +1024,7 @@ public class HotelService(
 		if (amount > 0) {
 			UResponse<WalletTxnResponse?> transfer = await ws.Transfer(new WalletTransferParams {
 				SenderId = p.UserId,
-				ReceiverId = Core.App.Users.SystemAdmin.Id,
+				ReceiverId = MoneyAccountOf(e.Reservation?.Hotel.OrganizationId),
 				Amount = amount,
 				Detail1 = ls.Get("hotelReservationPayment"),
 				KeyValues = HotelInvoiceKeyValues(e),
@@ -824,6 +1034,7 @@ public class HotelService(
 				await db.Set<HotelInvoiceEntity>().Where(x => x.Id == e.Id).ExecuteUpdateAsync(u => u.SetProperty(x => x.Tags, unpaidTags), ct);
 				return new UResponse(transfer.Status, transfer.Message);
 			}
+			await TakeCommission(e.Reservation?.Hotel.OrganizationId, amount, ls.Get("hotelReservationPayment"), HotelInvoiceKeyValues(e), ct);
 		}
 
 		e.PaidAmount = amount;
@@ -848,7 +1059,7 @@ public class HotelService(
 
 		HotelReservationEntity? reservation = await db.Set<HotelReservationEntity>().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.ReservationId, ct);
 		if (reservation == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("reservationNotFound"));
-		if (!CanAct(userData, reservation.Hotel.AdminUserIds, TagUser.PermissionManageInvoices))
+		if (!await CanAct(userData, reservation.Hotel, TagUser.PermissionManageInvoices, ct))
 			return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		EntityEntry<HotelInvoiceEntity> e = await db.AddAsync(new HotelInvoiceEntity {
@@ -928,11 +1139,11 @@ public class HotelService(
 
 		HotelInvoiceEntity? e = await db.Set<HotelInvoiceEntity>().AsTracking().Include(x => x.Reservation).ThenInclude(x => x!.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
-		if (!(e.Reservation == null ? IsFull(userData) : CanAct(userData, e.Reservation.Hotel.AdminUserIds, TagUser.PermissionManageInvoices)))
+		if (!(e.Reservation == null ? IsFull(userData) : await CanAct(userData, e.Reservation.Hotel, TagUser.PermissionManageInvoices, ct)))
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		if (p.ReservationId.HasValue && p.ReservationId != e.ReservationId) {
 			HotelReservationEntity? to = await db.Set<HotelReservationEntity>().Include(x => x.Hotel).FirstOrDefaultAsync(x => x.Id == p.ReservationId, ct);
-			if (to == null || !CanAct(userData, to.Hotel.AdminUserIds, TagUser.PermissionManageInvoices)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+			if (to == null || !await CanAct(userData, to.Hotel, TagUser.PermissionManageInvoices, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		}
 
 		if (p.DebtAmount.IsNotNull()) e.DebtAmount = p.DebtAmount.Value;
@@ -954,7 +1165,7 @@ public class HotelService(
 
 		HotelInvoiceEntity? e = await db.Set<HotelInvoiceEntity>().Include(x => x.Reservation).ThenInclude(x => x!.Hotel).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
-		if (!(e.Reservation == null ? IsFull(userData) : CanAct(userData, e.Reservation.Hotel.AdminUserIds, TagUser.PermissionDeleteInvoices)))
+		if (!(e.Reservation == null ? IsFull(userData) : await CanAct(userData, e.Reservation.Hotel, TagUser.PermissionDeleteInvoices, ct)))
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		await db.Set<HotelInvoiceEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
@@ -970,7 +1181,7 @@ public class HotelService(
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
 
 		bool isOwner = e.Reservation != null && e.Reservation.UserId == userData.Id;
-		bool isManager = e.Reservation != null && CanAct(userData, e.Reservation.Hotel.AdminUserIds, TagUser.PermissionPayInvoices);
+		bool isManager = e.Reservation != null && await CanAct(userData, e.Reservation.Hotel, TagUser.PermissionPayInvoices, ct);
 		if (!isOwner && !isManager) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		return await PayHotelInvoiceInternal(new HotelInvoicePayParams { InvoiceId = e.Id, UserId = e.Reservation!.UserId }, ct);
@@ -980,7 +1191,7 @@ public class HotelService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
-		if (!userData.HasPermission(TagUser.PermissionManageDorms)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await CanCreatePlace(userData, p.OrganizationId, TagUser.PermissionManageDorms, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		DormEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -1012,7 +1223,8 @@ public class HotelService(
 			CityCode = p.CityCode,
 			Address = p.Address,
 			PhoneNumber = p.PhoneNumber,
-			AdminUserIds = IsFull(userData) ? p.AdminUserIds ?? [] : [userData.Id]
+			OrganizationId = p.OrganizationId,
+			AdminUserIds = await PlaceAdmins(p.OrganizationId, IsFull(userData) ? p.AdminUserIds ?? [] : [userData.Id], ct)
 		};
 
 		await db.Set<DormEntity>().AddAsync(e, ct);
@@ -1030,6 +1242,7 @@ public class HotelService(
 
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 		if (p.CityCode.IsNotNullOrEmpty()) q = q.Where(x => x.CityCode.Contains(p.CityCode!));
+		if (p.OrganizationId.HasValue) q = q.Where(x => x.OrganizationId == p.OrganizationId);
 		if (p.MinRent.HasValue) q = q.Where(x => x.Rooms.SelectMany(r => r.Beds).Any(b => b.MonthlyRent >= p.MinRent));
 		if (p.MaxRent.HasValue) q = q.Where(x => x.Rooms.SelectMany(r => r.Beds).Any(b => b.MonthlyRent <= p.MaxRent));
 		if (p.AvailableOnly == true) q = q.Where(x => x.Rooms.SelectMany(r => r.Beds).Any(b => !b.Contracts.Any(c => c.StartDate <= DateTime.UtcNow && c.EndDate >= DateTime.UtcNow)));
@@ -1056,8 +1269,12 @@ public class HotelService(
 		DormEntity? e = await db.Set<DormEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("dormNotFound"));
 
-		if (!CanAct(userData, e.AdminUserIds, TagUser.PermissionManageDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
-		if (TouchesAdminUserIds(p) && !IsFull(userData)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await CanAct(userData, e, TagUser.PermissionManageDorms, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (TouchesAdminUserIds(p) && !IsFull(userData) && !(Core.App.MultiTenant && await IsOwner(userData, e.OrganizationId, ct))) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (p.OrganizationId.HasValue && p.OrganizationId != e.OrganizationId) {
+			if (!IsFull(userData)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+			e.OrganizationId = p.OrganizationId;
+		}
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
 		if (p.CityCode.IsNotNullOrEmpty()) e.CityCode = p.CityCode;
@@ -1083,6 +1300,7 @@ public class HotelService(
 		if (p.Latitude.HasValue) e.JsonData.Latitude = p.Latitude;
 		if (p.Longitude.HasValue) e.JsonData.Longitude = p.Longitude;
 		e.ApplyUpdateParam<DormEntity, TagDorm, DormJson>(p);
+		if (Core.App.MultiTenant) e.AdminUserIds = await PlaceAdmins(e.OrganizationId, e.AdminUserIds, ct);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();
@@ -1095,7 +1313,7 @@ public class HotelService(
 		DormEntity? e = await db.Set<DormEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("dormNotFound"));
 
-		if (!CanAct(userData, e.AdminUserIds, TagUser.PermissionDeleteDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await CanAct(userData, e, TagUser.PermissionDeleteDorms, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<DormEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
@@ -1109,7 +1327,7 @@ public class HotelService(
 
 		DormEntity? dorm = await db.Set<DormEntity>().FirstOrDefaultAsync(x => x.Id == p.DormId, ct);
 		if (dorm == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("dormNotFound"));
-		if (!CanAct(userData, dorm.AdminUserIds, TagUser.PermissionManageDorms)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await CanAct(userData, dorm, TagUser.PermissionManageDorms, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		DormRoomEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -1165,10 +1383,10 @@ public class HotelService(
 		DormRoomEntity? e = await db.Set<DormRoomEntity>().AsTracking().Include(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("dormRoomNotFound"));
 
-		if (!CanAct(userData, e.Dorm.AdminUserIds, TagUser.PermissionManageDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await CanAct(userData, e.Dorm, TagUser.PermissionManageDorms, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		if (p.DormId.HasValue && p.DormId != e.DormId) {
 			DormEntity? to = await db.Set<DormEntity>().FirstOrDefaultAsync(x => x.Id == p.DormId, ct);
-			if (to == null || !CanAct(userData, to.AdminUserIds, TagUser.PermissionManageDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+			if (to == null || !await CanAct(userData, to, TagUser.PermissionManageDorms, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		}
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
@@ -1190,7 +1408,7 @@ public class HotelService(
 		DormRoomEntity? e = await db.Set<DormRoomEntity>().Include(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("dormRoomNotFound"));
 
-		if (!CanAct(userData, e.Dorm.AdminUserIds, TagUser.PermissionDeleteDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await CanAct(userData, e.Dorm, TagUser.PermissionDeleteDorms, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<DormRoomEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
@@ -1204,7 +1422,7 @@ public class HotelService(
 
 		DormRoomEntity? room = await db.Set<DormRoomEntity>().Include(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.RoomId, ct);
 		if (room == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("dormRoomNotFound"));
-		if (!CanAct(userData, room.Dorm.AdminUserIds, TagUser.PermissionManageDorms)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await CanAct(userData, room.Dorm, TagUser.PermissionManageDorms, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		DormBedEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -1264,10 +1482,10 @@ public class HotelService(
 		DormBedEntity? e = await db.Set<DormBedEntity>().AsTracking().Include(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("dormBedNotFound"));
 
-		if (!CanAct(userData, e.Room.Dorm.AdminUserIds, TagUser.PermissionManageDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await CanAct(userData, e.Room.Dorm, TagUser.PermissionManageDorms, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		if (p.RoomId.HasValue && p.RoomId != e.RoomId) {
 			DormRoomEntity? to = await db.Set<DormRoomEntity>().Include(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.RoomId, ct);
-			if (to == null || !CanAct(userData, to.Dorm.AdminUserIds, TagUser.PermissionManageDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+			if (to == null || !await CanAct(userData, to.Dorm, TagUser.PermissionManageDorms, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		}
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
@@ -1288,7 +1506,7 @@ public class HotelService(
 		DormBedEntity? e = await db.Set<DormBedEntity>().Include(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("dormBedNotFound"));
 
-		if (!CanAct(userData, e.Room.Dorm.AdminUserIds, TagUser.PermissionDeleteDorms)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await CanAct(userData, e.Room.Dorm, TagUser.PermissionDeleteDorms, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		db.Set<DormBedEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
@@ -1302,7 +1520,7 @@ public class HotelService(
 
 		DormBedEntity? bed = await db.Set<DormBedEntity>().Include(x => x.Contracts).Include(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.BedId, ct);
 		if (bed == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("dormBedNotFound"));
-		if (!CanAct(userData, bed.Room.Dorm.AdminUserIds, TagUser.PermissionManageContracts)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await CanAct(userData, bed.Room.Dorm, TagUser.PermissionManageContracts, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		if (bed.Contracts.Any(y => y.EndDate >= DateTime.UtcNow)) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("thisBedHasAnActiveContract"));
 
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
@@ -1461,7 +1679,7 @@ public class HotelService(
 		DormBedContractEntity? e = await db.Set<DormBedContractEntity>().AsTracking().Include(x => x.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("contractNotFound"));
 
-		if (!CanAct(userData, e.Bed.Room.Dorm.AdminUserIds, TagUser.PermissionManageContracts)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await CanAct(userData, e.Bed.Room.Dorm, TagUser.PermissionManageContracts, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.Deposit.HasValue) e.Deposit = p.Deposit.Value;
 		if (p.Rent.HasValue) e.Rent = p.Rent.Value;
@@ -1481,7 +1699,7 @@ public class HotelService(
 		DormBedContractEntity? e = await db.Set<DormBedContractEntity>().Include(x => x.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("contractNotFound"));
 
-		if (!CanAct(userData, e.Bed.Room.Dorm.AdminUserIds, TagUser.PermissionDeleteContracts)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await CanAct(userData, e.Bed.Room.Dorm, TagUser.PermissionDeleteContracts, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		await db.Set<DormBedContractEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
@@ -1495,7 +1713,7 @@ public class HotelService(
 
 		DormBedContractEntity? contract = await db.Set<DormBedContractEntity>().Include(x => x.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.ContractId, ct);
 		if (contract == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("contractNotFound"));
-		if (!CanAct(userData, contract.Bed.Room.Dorm.AdminUserIds, TagUser.PermissionManageInvoices))
+		if (!await CanAct(userData, contract.Bed.Room.Dorm, TagUser.PermissionManageInvoices, ct))
 			return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		EntityEntry<DormBedInvoiceEntity> e = await db.AddAsync(new DormBedInvoiceEntity {
@@ -1578,11 +1796,11 @@ public class HotelService(
 
 		DormBedInvoiceEntity? e = await db.Set<DormBedInvoiceEntity>().AsTracking().Include(x => x.Contract).ThenInclude(x => x!.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
-		if (!(e.Contract == null ? IsFull(userData) : CanAct(userData, e.Contract.Bed.Room.Dorm.AdminUserIds, TagUser.PermissionManageInvoices)))
+		if (!(e.Contract == null ? IsFull(userData) : await CanAct(userData, e.Contract.Bed.Room.Dorm, TagUser.PermissionManageInvoices, ct)))
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		if (p.ContractId.HasValue && p.ContractId != e.ContractId) {
 			DormBedContractEntity? to = await db.Set<DormBedContractEntity>().Include(x => x.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.ContractId, ct);
-			if (to == null || !CanAct(userData, to.Bed.Room.Dorm.AdminUserIds, TagUser.PermissionManageInvoices)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+			if (to == null || !await CanAct(userData, to.Bed.Room.Dorm, TagUser.PermissionManageInvoices, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		}
 		if (p.CreditorAmount.IsNotNull()) e.CreditorAmount = p.CreditorAmount.Value;
 		if (p.DebtAmount.IsNotNull()) e.DebtAmount = p.DebtAmount.Value;
@@ -1604,7 +1822,7 @@ public class HotelService(
 
 		DormBedInvoiceEntity? e = await db.Set<DormBedInvoiceEntity>().Include(x => x.Contract).ThenInclude(x => x!.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
-		if (!(e.Contract == null ? IsFull(userData) : CanAct(userData, e.Contract.Bed.Room.Dorm.AdminUserIds, TagUser.PermissionDeleteInvoices)))
+		if (!(e.Contract == null ? IsFull(userData) : await CanAct(userData, e.Contract.Bed.Room.Dorm, TagUser.PermissionDeleteInvoices, ct)))
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		await db.Set<DormBedInvoiceEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
@@ -1629,7 +1847,7 @@ public class HotelService(
 		if (amount > 0) {
 			UResponse<WalletTxnResponse?> transfer = await ws.Transfer(new WalletTransferParams {
 				SenderId = p.UserId,
-				ReceiverId = Core.App.Users.SystemAdmin.Id,
+				ReceiverId = MoneyAccountOf(e.Contract?.Bed.Room.Dorm.OrganizationId),
 				Amount = amount,
 				Detail1 = ls.Get("dormInvoicePayment"),
 				KeyValues = DormBedInvoiceKeyValues(e),
@@ -1639,6 +1857,7 @@ public class HotelService(
 				await db.Set<DormBedInvoiceEntity>().Where(x => x.Id == e.Id).ExecuteUpdateAsync(u => u.SetProperty(x => x.Tags, unpaidTags), ct);
 				return new UResponse(transfer.Status, transfer.Message);
 			}
+			await TakeCommission(e.Contract?.Bed.Room.Dorm.OrganizationId, amount, ls.Get("dormInvoicePayment"), DormBedInvoiceKeyValues(e), ct);
 		}
 
 		e.PaidAmount = amount;
@@ -1660,7 +1879,7 @@ public class HotelService(
 		if (e?.Contract == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
 
 		bool isOwner = e.Contract.UserId == userData.Id;
-		bool isManager = CanAct(userData, e.Contract.Bed.Room.Dorm.AdminUserIds, TagUser.PermissionPayInvoices);
+		bool isManager = await CanAct(userData, e.Contract.Bed.Room.Dorm, TagUser.PermissionPayInvoices, ct);
 		if (!isOwner && !isManager) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		return await PayDormBedInvoice(new DormBedInvoicePayParams { InvoiceId = e.Id, UserId = e.Contract.UserId }, ct);
@@ -1701,5 +1920,646 @@ public class HotelService(
 		}).ToList();
 
 		return new UResponse<IEnumerable<DormBedInvoiceChartResponse>?>(chartData);
+	}
+
+	public async Task<UResponse<PropertyDashboardResponse?>> ReadPropertyDashboard(DashboardRangeParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<PropertyDashboardResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<PropertyDashboardResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		bool tenant = Core.App.MultiTenant && !userData.IsSystemAdmin;
+		if (tenant ? !await HasOrganizationPermission(userData, null, TagUser.PermissionViewDashboard, ct) : !userData.IsSuperAdmin)
+			return new UResponse<PropertyDashboardResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		Guid uid = userData.Id;
+		IQueryable<UserEntity> users = tenant ? RelatedUsers(db.Set<UserEntity>(), uid) : db.Set<UserEntity>();
+		IQueryable<HotelEntity> hotels = db.Set<HotelEntity>().Where(x => !tenant || x.AdminUserIds.Contains(uid));
+		IQueryable<HotelRoomEntity> hotelRooms = db.Set<HotelRoomEntity>().Where(x => !tenant || x.Hotel.AdminUserIds.Contains(uid));
+		IQueryable<HotelReservationEntity> reservations = db.Set<HotelReservationEntity>().Where(x => !tenant || x.Hotel.AdminUserIds.Contains(uid));
+		IQueryable<DormEntity> dorms = db.Set<DormEntity>().Where(x => !tenant || x.AdminUserIds.Contains(uid));
+		IQueryable<DormRoomEntity> dormRooms = db.Set<DormRoomEntity>().Where(x => !tenant || x.Dorm.AdminUserIds.Contains(uid));
+		IQueryable<DormBedEntity> dormBeds = db.Set<DormBedEntity>().Where(x => !tenant || x.Room.Dorm.AdminUserIds.Contains(uid));
+		IQueryable<DormBedContractEntity> contracts = db.Set<DormBedContractEntity>().Where(x => !tenant || x.Bed.Room.Dorm.AdminUserIds.Contains(uid));
+		IQueryable<DormBedInvoiceEntity> invoices = db.Set<DormBedInvoiceEntity>().Where(x => !tenant || x.Contract != null && x.Contract.Bed.Room.Dorm.AdminUserIds.Contains(uid));
+
+		DateTime now = DateTime.UtcNow;
+		DateTime to = p.ToDate ?? now;
+		DateTime from = p.FromDate ?? to.AddDays(-30);
+		DateTime soon = now.AddDays(30);
+
+		int usersCount = await users.CountAsync(ct);
+		int newUsersCount = await users.CountAsync(x => x.CreatedAt >= from && x.CreatedAt <= to, ct);
+
+		int hotelsCount = await hotels.CountAsync(ct);
+		int hotelRoomsCount = await hotelRooms.CountAsync(ct);
+		int hotelRoomsOccupiedCount = await reservations
+			.Where(x => x.CheckInDate <= now && x.CheckOutDate > now)
+			.Where(x => !x.Tags.Contains(TagHotelReservation.Cancelled) && !x.Tags.Contains(TagHotelReservation.NoShow) && !x.Tags.Contains(TagHotelReservation.CheckedOut))
+			.Select(x => x.RoomId).Distinct().CountAsync(ct);
+		int hotelRoomsAvailableCount = hotelRoomsCount - hotelRoomsOccupiedCount;
+
+		int dormsCount = await dorms.CountAsync(ct);
+		int dormRoomsCount = await dormRooms.CountAsync(ct);
+		int dormBedsCount = await dormBeds.CountAsync(ct);
+		int dormBedsOccupiedCount = await contracts.Where(x => x.StartDate <= now && x.EndDate >= now).Select(x => x.BedId).Distinct().CountAsync(ct);
+		int dormBedsAvailableCount = dormBedsCount - dormBedsOccupiedCount;
+
+		int contractsCount = await contracts.CountAsync(ct);
+		int activeContractsCount = await contracts.CountAsync(x => x.StartDate <= now && x.EndDate >= now, ct);
+		int upcomingContractsCount = await contracts.CountAsync(x => x.StartDate > now, ct);
+		int expiredContractsCount = await contracts.CountAsync(x => x.EndDate < now, ct);
+		int expiringSoonContractsCount = await contracts.CountAsync(x => x.EndDate >= now && x.EndDate <= soon, ct);
+
+		int invoicesCount = await invoices.CountAsync(ct);
+		int unpaidInvoicesCount = await invoices.CountAsync(x => x.Tags.Contains(TagDormBedInvoice.NotPaid), ct);
+		int paidInvoicesCount = invoicesCount - unpaidInvoicesCount;
+		int overdueInvoicesCount = await invoices.CountAsync(x => x.Tags.Contains(TagDormBedInvoice.NotPaid) && x.DueDate < now, ct);
+
+		decimal totalDebt = await invoices.SumAsync(x => (decimal?)x.DebtAmount, ct) ?? 0;
+		decimal totalPaid = await invoices.SumAsync(x => (decimal?)x.PaidAmount, ct) ?? 0;
+		decimal totalPenalty = await invoices.SumAsync(x => (decimal?)x.PenaltyAmount, ct) ?? 0;
+
+		List<DormBedInvoiceEntity> recentInvoices = await invoices
+			.Where(x => x.CreatedAt >= now.AddMonths(-12))
+			.ToListAsync(ct);
+		List<DormBedInvoiceChartResponse> monthlyRevenue = recentInvoices
+			.GroupBy(x => new { x.CreatedAt.Year, x.CreatedAt.Month })
+			.Select(g => new DormBedInvoiceChartResponse {
+				Month = new DateTime(g.Key.Year, g.Key.Month, 1).ToString("MMM yyyy"),
+				TotalDebt = g.Sum(x => x.DebtAmount),
+				TotalPaid = g.Sum(x => x.PaidAmount),
+				TotalPenalty = g.Sum(x => x.PenaltyAmount),
+				TotalRemaining = g.Sum(x => x.DebtAmount - x.PaidAmount),
+				InvoiceCount = g.Count()
+			})
+			.OrderBy(x => x.Month).ToList();
+
+		List<DormBedContractEntity> expiringEntities = await contracts
+			.Include(x => x.User).Include(x => x.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm)
+			.Where(x => x.EndDate >= now && x.EndDate <= soon)
+			.OrderBy(x => x.EndDate).Take(10).ToListAsync(ct);
+		List<ExpiringContractItem> expiringContracts = expiringEntities.Select(x => new ExpiringContractItem {
+			Id = x.Id, UserName = x.User.UserName, BedTitle = x.Bed.Title, DormTitle = x.Bed.Room.Dorm.Title, EndDate = x.EndDate, Rent = x.Rent
+		}).ToList();
+
+		List<DormBedInvoiceEntity> overdueEntities = await invoices
+			.Include(x => x.Contract).ThenInclude(x => x!.User)
+			.Where(x => x.Tags.Contains(TagDormBedInvoice.NotPaid) && x.DueDate < now)
+			.OrderBy(x => x.DueDate).Take(10).ToListAsync(ct);
+		List<OverdueInvoiceItem> overdueInvoices = overdueEntities.Select(x => new OverdueInvoiceItem {
+			Id = x.Id, UserName = x.Contract?.User.UserName, DebtAmount = x.DebtAmount, PaidAmount = x.PaidAmount,
+			PenaltyAmount = x.PenaltyAmount, DueDate = x.DueDate, DaysOverdue = Math.Max(0, (now - x.DueDate).Days)
+		}).ToList();
+
+		List<DormBedContractEntity> recentContractEntities = await contracts
+			.Include(x => x.User).Include(x => x.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm)
+			.OrderByDescending(x => x.CreatedAt).Take(5).ToListAsync(ct);
+		List<RecentContractItem> recentContracts = recentContractEntities.Select(x => new RecentContractItem {
+			Id = x.Id, UserName = x.User.UserName, BedTitle = x.Bed.Title, DormTitle = x.Bed.Room.Dorm.Title,
+			StartDate = x.StartDate, EndDate = x.EndDate, Rent = x.Rent, CreatedAt = x.CreatedAt
+		}).ToList();
+
+		List<UserEntity> recentUserEntities = await users
+			.OrderByDescending(x => x.CreatedAt).Take(5).ToListAsync(ct);
+		List<RecentUserItem> recentUsers = recentUserEntities.Select(x => new RecentUserItem {
+			Id = x.Id, DisplayName = $"{x.FirstName} {x.LastName}".Trim() is { Length: > 0 } n ? n : x.UserName,
+			UserName = x.UserName, PhoneNumber = x.PhoneNumber, CreatedAt = x.CreatedAt
+		}).ToList();
+
+		List<PropertyBreakdownItem> hotelsByCity = await hotels
+			.GroupBy(x => x.CityCode)
+			.Select(g => new PropertyBreakdownItem { Name = g.Key, Count = g.Count() })
+			.OrderByDescending(x => x.Count).Take(10).ToListAsync(ct);
+
+		List<PropertyBreakdownItem> dormsByCity = await dorms
+			.GroupBy(x => x.CityCode)
+			.Select(g => new PropertyBreakdownItem { Name = g.Key, Count = g.Count() })
+			.OrderByDescending(x => x.Count).Take(10).ToListAsync(ct);
+
+		return new UResponse<PropertyDashboardResponse?>(new PropertyDashboardResponse {
+			GeneratedAt = DateTime.UtcNow,
+			UsersCount = usersCount,
+			NewUsersCount = newUsersCount,
+			HotelsCount = hotelsCount,
+			HotelRoomsCount = hotelRoomsCount,
+			HotelRoomsAvailableCount = hotelRoomsAvailableCount,
+			HotelRoomsOccupiedCount = hotelRoomsOccupiedCount,
+			HotelOccupancyRate = hotelRoomsCount == 0 ? 0 : Math.Round(hotelRoomsOccupiedCount * 100.0 / hotelRoomsCount, 1),
+			DormsCount = dormsCount,
+			DormRoomsCount = dormRoomsCount,
+			DormBedsCount = dormBedsCount,
+			DormBedsAvailableCount = dormBedsAvailableCount,
+			DormBedsOccupiedCount = dormBedsOccupiedCount,
+			DormOccupancyRate = dormBedsCount == 0 ? 0 : Math.Round(dormBedsOccupiedCount * 100.0 / dormBedsCount, 1),
+			ContractsCount = contractsCount,
+			ActiveContractsCount = activeContractsCount,
+			UpcomingContractsCount = upcomingContractsCount,
+			ExpiredContractsCount = expiredContractsCount,
+			ExpiringSoonContractsCount = expiringSoonContractsCount,
+			InvoicesCount = invoicesCount,
+			PaidInvoicesCount = paidInvoicesCount,
+			UnpaidInvoicesCount = unpaidInvoicesCount,
+			OverdueInvoicesCount = overdueInvoicesCount,
+			TotalDebt = totalDebt,
+			TotalPaid = totalPaid,
+			TotalPenalty = totalPenalty,
+			TotalOutstanding = totalDebt + totalPenalty - totalPaid,
+			MonthlyRevenue = monthlyRevenue,
+			ExpiringContracts = expiringContracts,
+			OverdueInvoices = overdueInvoices,
+			RecentContracts = recentContracts,
+			RecentUsers = recentUsers,
+			HotelsByCity = hotelsByCity,
+			DormsByCity = dormsByCity
+		});
+	}
+
+	private static bool CanActOnPlace(JwtClaimData u, ICollection<Guid> placeAdminUserIds, TagUser permission) => u.HasPermission(permission) && (u.IsSuperAdmin || u.IsSubAdmin && placeAdminUserIds.Contains(u.Id));
+
+	private async Task<(ICollection<Guid> AdminUserIds, Guid? OrganizationId, TagUser Permission)?> PlaceOf(Guid? hotelId, Guid? hotelRoomId, Guid? dormId, Guid? dormRoomId, Guid? dormBedId, CancellationToken ct) {
+		if (hotelId != null || hotelRoomId != null) {
+			var hotel = hotelId != null
+				? await db.Set<HotelEntity>().Where(x => x.Id == hotelId).Select(x => new { x.AdminUserIds, x.OrganizationId }).FirstOrDefaultAsync(ct)
+				: await db.Set<HotelRoomEntity>().Where(x => x.Id == hotelRoomId).Select(x => new { x.Hotel.AdminUserIds, x.Hotel.OrganizationId }).FirstOrDefaultAsync(ct);
+			return (hotel?.AdminUserIds ?? [], hotel?.OrganizationId, TagUser.PermissionManageHotels);
+		}
+
+		if (dormId == null && dormRoomId == null && dormBedId == null) return null;
+		var dorm = dormId != null
+			? await db.Set<DormEntity>().Where(x => x.Id == dormId).Select(x => new { x.AdminUserIds, x.OrganizationId }).FirstOrDefaultAsync(ct)
+			: dormRoomId != null
+				? await db.Set<DormRoomEntity>().Where(x => x.Id == dormRoomId).Select(x => new { x.Dorm.AdminUserIds, x.Dorm.OrganizationId }).FirstOrDefaultAsync(ct)
+				: await db.Set<DormBedEntity>().Where(x => x.Id == dormBedId).Select(x => new { x.Room.Dorm.AdminUserIds, x.Room.Dorm.OrganizationId }).FirstOrDefaultAsync(ct);
+		return (dorm?.AdminUserIds ?? [], dorm?.OrganizationId, TagUser.PermissionManageDorms);
+	}
+
+	public async Task<bool> HasOrganizationPermission(JwtClaimData u, Guid? organizationId, TagUser permission, CancellationToken ct) {
+		List<OrganizationEntity> organizations = await db.Set<OrganizationEntity>()
+			.Where(x => (organizationId == null || x.Id == organizationId) && !x.Tags.Contains(TagOrganization.Inactive) && (x.OwnerId == u.Id || x.AdminUserIds.Contains(u.Id)))
+			.ToListAsync(ct);
+		return organizations.Any(x => x.OwnerId == u.Id || x.JsonData.Members.Any(m => m.UserId == u.Id && m.Permissions.Contains(permission)));
+	}
+
+	private async Task<bool> CanActOnPlace(JwtClaimData u, Guid? organizationId, ICollection<Guid> adminUserIds, TagUser permission, CancellationToken ct) {
+		if (!Core.App.MultiTenant) return CanActOnPlace(u, adminUserIds, permission);
+		if (u.IsSystemAdmin) return true;
+		return organizationId != null && adminUserIds.Contains(u.Id) && await HasOrganizationPermission(u, organizationId, permission, ct);
+	}
+
+	public IQueryable<UserEntity> RelatedUsers(IQueryable<UserEntity> q, Guid userId) => q.Where(x =>
+		x.Id == userId ||
+		db.Set<OrganizationEntity>().Any(o => (o.OwnerId == userId || o.AdminUserIds.Contains(userId)) && (o.OwnerId == x.Id || o.AdminUserIds.Contains(x.Id))) ||
+		db.Set<HotelReservationEntity>().Any(r => r.UserId == x.Id && r.Hotel.AdminUserIds.Contains(userId)) ||
+		db.Set<DormBedContractEntity>().Any(c => c.UserId == x.Id && c.Bed.Room.Dorm.AdminUserIds.Contains(userId)));
+
+	public async Task<bool?> CanActOnPlaceOf(JwtClaimData u, Guid? hotelId, Guid? hotelRoomId, Guid? dormId, Guid? dormRoomId, Guid? dormBedId, CancellationToken ct) {
+		(ICollection<Guid> AdminUserIds, Guid? OrganizationId, TagUser Permission)? place = await PlaceOf(hotelId, hotelRoomId, dormId, dormRoomId, dormBedId, ct);
+		return place == null ? null : await CanActOnPlace(u, place.Value.OrganizationId, place.Value.AdminUserIds, place.Value.Permission, ct);
+	}
+
+	// =====================================================================================================
+	// Demo data for the whole hotel & dorm system, created by ONE call: POST api/Hotel/Seed
+	//   - guest / resident users            - hotels with rooms, reservations, invoices (paid, unpaid, refunded) and reviews
+	//   - dorms with rooms and beds         - dorm contracts (active, expired, late) with deposit + monthly rent invoices, and reviews
+	// Every text/detail field (highlights, amenities, nearby places, FAQs, policies...) is filled so all screens look complete.
+	// Photos cannot be seeded (files must be uploaded); upload them from the admin panel ("Details & photos").
+	// It is safe to call twice: when the demo data already exists nothing is created.
+	// Requires DataSeeder/Users to have been run (it uses the system admin as creator).
+	// =====================================================================================================
+	public async Task<UResponse<List<KeyValue>?>> SeedHotelsAndDorms(CancellationToken ct = default) {
+		Guid adminId = Core.App.Users.SystemAdmin.Id;
+		DateTime now = DateTime.UtcNow;
+		DateTime today = now.Date;
+
+		if (!await db.Set<UserEntity>().AnyAsync(x => x.Id == adminId, ct)) return new UResponse<List<KeyValue>?>(null, Usc.BadRequest, "Run DataSeeder/Users first.");
+		if (await db.Set<HotelEntity>().AnyAsync(x => x.Title == "هتل سنتی عباسی اصفهان", ct)) return new UResponse<List<KeyValue>?>(null, Usc.Conflict, "Hotel and dorm demo data already exists.");
+
+		// ---------------------------------------------------------------- users (guests and dorm residents)
+		string[] firstNames = ["علی", "مریم", "رضا", "زهرا", "امیر", "سارا", "حسین", "نگار", "محمد", "فاطمه", "پویا", "الهام"];
+		string[] lastNames = ["احمدی", "رضایی", "کریمی", "موسوی", "حسینی", "صادقی", "نجفی", "قاسمی", "جعفری", "محمدی", "کاظمی", "یوسفی"];
+		HashSet<string> takenNames = (await db.Set<UserEntity>().Select(x => x.UserName).ToListAsync(ct)).ToHashSet();
+		List<UserEntity> users = [];
+		for (int i = 0; i < firstNames.Length; i++) {
+			string userName = $"demo{i + 1:00}";
+			if (takenNames.Contains(userName)) continue;
+			users.Add(new UserEntity {
+				Id = Guid.CreateVersion7(),
+				CreatedAt = now.AddDays(-90 + i),
+				CreatorId = adminId,
+				Tags = [TagUser.Unspecified, i % 2 == 0 ? TagUser.Male : TagUser.Female, TagUser.Verified],
+				UserName = userName,
+				Password = UPasswordHasher.Hash("Demo1234"),
+				RefreshToken = "",
+				PhoneNumber = $"0912000{i + 1:0000}",
+				Email = $"{userName}@example.com",
+				FirstName = firstNames[i],
+				LastName = lastNames[i],
+				JsonData = new UserJson()
+			});
+		}
+
+		// Users that already exist from an earlier partial run are looked up so the demo data can still reference them.
+		List<Guid> userIds = users.Select(x => x.Id).ToList();
+		if (userIds.Count < firstNames.Length)
+			userIds.AddRange(await db.Set<UserEntity>().Where(x => x.UserName.StartsWith("demo")).Select(x => x.Id).ToListAsync(ct));
+		if (userIds.Count == 0) userIds.Add(adminId);
+		Guid UserAt(int i) => userIds[i % userIds.Count];
+
+		List<HotelEntity> hotels = [];
+		List<HotelRoomEntity> rooms = [];
+		List<HotelReservationEntity> reservations = [];
+		List<HotelInvoiceEntity> hotelInvoices = [];
+		List<CommentEntity> comments = [];
+		List<DormEntity> dorms = [];
+		List<DormRoomEntity> dormRooms = [];
+		List<DormBedEntity> beds = [];
+		List<DormBedContractEntity> contracts = [];
+		List<DormBedInvoiceEntity> dormInvoices = [];
+
+		CommentEntity Review(Guid? hotelId, Guid? dormId, int userIndex, decimal score, string text, TagComment tag, int daysAgo) => new() {
+			Id = Guid.CreateVersion7(),
+			CreatedAt = now.AddDays(-daysAgo),
+			CreatorId = UserAt(userIndex),
+			UserId = UserAt(userIndex),
+			HotelId = hotelId,
+			DormId = dormId,
+			Score = score,
+			Description = text,
+			Tags = [tag],
+			JsonData = new CommentJson()
+		};
+
+		// ---------------------------------------------------------------- hotels
+		// Type, policies, amenities and meal plans are tags; the Json only keeps texts and numbers.
+		(string Title, string City, int Stars, string Address, string Phone, List<TagHotel> Tags, HotelJson Json, (string Title, int Capacity, decimal Price, int Quantity, string Bed, double Size, int Floor, List<TagRoom> Tags)[] Rooms)[] hotelSeeds = [
+			("هتل سنتی عباسی اصفهان", "104005", 4, "اصفهان، خیابان چهارباغ عباسی، کوچه ملک", "03132200100",
+				[
+					TagHotel.Traditional, TagHotel.Active, TagHotel.Featured, TagHotel.Approved,
+					TagHotel.ChildrenAllowed, TagHotel.ExtraBedAvailable, TagHotel.PriceIncludesTax,
+					TagHotel.Wifi, TagHotel.Parking, TagHotel.Reception24, TagHotel.LuggageStorage, TagHotel.Cafe, TagHotel.Garden, TagHotel.Cctv,
+					TagHotel.Breakfast, TagHotel.HalfBoard
+				],
+				new HotelJson {
+					Highlights = ["حیاط مرکزی با حوض و چهار باغچه", "ده دقیقه پیاده تا میدان نقش جهان", "صبحانه سنتی هر روز", "بنای مرمت‌شده‌ی دوره قاجار"],
+					Website = "https://khabroom.com", Whatsapp = "989120000001", Instagram = "khabroom", Telegram = "khabroom",
+					HowToGetThere = "از خیابان چهارباغ عباسی وارد کوچه‌ی ملک شوید؛ هتل سمت راست، روبه‌روی نانوایی سنتی است.",
+					Nearby = [
+						new PlaceNearby { Title = "میدان نقش جهان", DistanceMeters = 800, Minutes = 10 }, new PlaceNearby { Title = "سی‌وسه‌پل", DistanceMeters = 1200, Minutes = 15 }, new PlaceNearby { Title = "بازار قیصریه", DistanceMeters = 900, Minutes = 11 },
+						new PlaceNearby { Title = "ایستگاه مترو", DistanceMeters = 1500, Minutes = 5 }
+					],
+					Faqs = [new PlaceFaq { Question = "آیا پارکینگ دارید؟", Answer = "بله، پارکینگ اختصاصی و رایگان برای مهمانان وجود دارد." }, new PlaceFaq { Question = "امکان تحویل زودتر اتاق هست؟", Answer = "با هماهنگی قبلی و بسته به ظرفیت، ورود از ساعت ۱۲ ممکن است." }, new PlaceFaq { Question = "صبحانه شامل چه چیزهایی است؟", Answer = "نان سنگک، پنیر، تخم‌مرغ محلی، مربا، عسل و چای سماوری." }],
+					Description = "خانه‌ی قاجاری مرمت‌شده با حیاط مرکزی، حوض و چهار باغچه؛ ده دقیقه پیاده تا میدان نقش جهان. اتاق‌ها دور حیاط چیده شده‌اند و شب‌ها سکوت کامل است.",
+					Policies = "ورود از ساعت ۱۴ و خروج تا ساعت ۱۲ ظهر. پرداخت بیعانه هنگام رزرو الزامی است. کودکان زیر ۶ سال با والدین رایگان اقامت می‌کنند.",
+					CheckInTime = "14:00", CheckOutTime = "12:00",
+					Rules = ["استعمال دخانیات در اتاق‌ها ممنوع است", "ورود حیوان خانگی ممنوع است", "سکوت پس از ساعت ۲۳ رعایت شود"],
+					Latitude = 32.6607, Longitude = 51.6693, CancellationFreeHours = 48, CancellationPenaltyNights = 1
+				},
+				[
+					("اتاق دو تخته سنتی", 2, 4_200_000m, 12, "دو تخت", 24, 1, [TagRoom.Double, TagRoom.BreakfastIncluded, TagRoom.CourtyardView, TagRoom.Tv, TagRoom.Minibar, TagRoom.AirConditioning, TagRoom.Wardrobe, TagRoom.PrivateBathroom]),
+					("اتاق سه تخته", 3, 5_400_000m, 8, "سه تخت", 32, 1, [TagRoom.Triple, TagRoom.BreakfastIncluded, TagRoom.CourtyardView, TagRoom.Tv, TagRoom.Minibar, TagRoom.AirConditioning, TagRoom.Kettle, TagRoom.PrivateBathroom]),
+					("سوئیت خانوادگی", 4, 7_800_000m, 4, "یک دو نفره و دو تک", 48, 2, [TagRoom.Family, TagRoom.BreakfastIncluded, TagRoom.GardenView, TagRoom.Tv, TagRoom.Minibar, TagRoom.AirConditioning, TagRoom.Fridge, TagRoom.Kettle, TagRoom.Balcony, TagRoom.Bathtub])
+				]),
+
+			("هتل پارسیان ولیعصر", "108012", 5, "تهران، بلوار ولیعصر، بالاتر از پارک ملت", "02122000200",
+				[
+					TagHotel.Hotel, TagHotel.Active, TagHotel.Featured, TagHotel.Approved,
+					TagHotel.ChildrenAllowed, TagHotel.ExtraBedAvailable,
+					TagHotel.Wifi, TagHotel.Parking, TagHotel.Elevator, TagHotel.Reception24, TagHotel.LuggageStorage, TagHotel.Laundry, TagHotel.AirportShuttle, TagHotel.Restaurant, TagHotel.Cafe,
+					TagHotel.RoomService, TagHotel.Pool, TagHotel.Gym, TagHotel.Sauna, TagHotel.Spa, TagHotel.MeetingRoom, TagHotel.Wheelchair, TagHotel.Cctv,
+					TagHotel.RoomOnly, TagHotel.Breakfast, TagHotel.HalfBoard, TagHotel.FullBoard
+				],
+				new HotelJson {
+					Highlights = ["استخر و سونای اختصاصی مهمانان", "ترانسفر رایگان فرودگاه امام", "سالن همایش تا ۳۰۰ نفر", "ده دقیقه تا مترو ولیعصر"],
+					Website = "https://example.com/parsian", Whatsapp = "989120000002", Instagram = "parsian_valiasr",
+					HowToGetThere = "ورودی اصلی از بلوار ولیعصر است؛ پارکینگ طبقات منفی از خیابان فرعی شرقی.",
+					Nearby = [
+						new PlaceNearby { Title = "مترو ولیعصر", DistanceMeters = 600, Minutes = 8 }, new PlaceNearby { Title = "پارک ملت", DistanceMeters = 400, Minutes = 5 }, new PlaceNearby { Title = "بیمارستان آرش", DistanceMeters = 1800, Minutes = 6 },
+						new PlaceNearby { Title = "فرودگاه امام خمینی", DistanceMeters = 48000, Minutes = 50 }
+					],
+					Faqs = [new PlaceFaq { Question = "آیا سالن همایش دارید؟", Answer = "بله، سه سالن با ظرفیت ۵۰ تا ۳۰۰ نفر، با تجهیزات کامل صوتی و تصویری." }, new PlaceFaq { Question = "ساعت کار استخر چیست؟", Answer = "هر روز از ۷ صبح تا ۲۲ شب، ویژه‌ی مهمانان هتل." }],
+					Description = "هتل پنج‌ستاره‌ی مدرن در قلب تهران با استخر سرپوشیده، اسپا و سالن‌های همایش؛ مناسب سفرهای کاری و خانوادگی.",
+					Policies = "ورود از ساعت ۱۴ و خروج تا ۱۲. کارت ملی یا گذرنامه هنگام ورود الزامی است. کودکان زیر ۱۲ سال با استفاده از تخت موجود رایگان هستند.",
+					CheckInTime = "14:00", CheckOutTime = "12:00",
+					Rules = ["ساعت سکوت ۲۳ تا ۷ صبح", "میهمان‌پذیری در لابی تا ساعت ۲۲ مجاز است"],
+					Latitude = 35.7580, Longitude = 51.4090, CancellationFreeHours = 24, CancellationPenaltyNights = 1
+				},
+				[
+					("اتاق استاندارد", 2, 6_500_000m, 30, "دو تخت", 28, 5, [TagRoom.Double, TagRoom.BreakfastIncluded, TagRoom.CityView, TagRoom.Tv, TagRoom.Minibar, TagRoom.SafeBox, TagRoom.AirConditioning, TagRoom.HairDryer, TagRoom.PrivateBathroom]),
+					("اتاق دلوکس", 3, 8_900_000m, 20, "کینگ + کاناپه", 38, 10, [TagRoom.Deluxe, TagRoom.BreakfastIncluded, TagRoom.CityView, TagRoom.Tv, TagRoom.Minibar, TagRoom.SafeBox, TagRoom.AirConditioning, TagRoom.Desk, TagRoom.Kettle, TagRoom.Bathtub]),
+					("سوئیت رویال", 4, 16_500_000m, 6, "کینگ", 75, 17, [TagRoom.Suite, TagRoom.MountainView, TagRoom.Tv, TagRoom.Minibar, TagRoom.SafeBox, TagRoom.AirConditioning, TagRoom.Desk, TagRoom.Kettle, TagRoom.Bathtub, TagRoom.Balcony, TagRoom.Fridge])
+				]),
+
+			("مهمان‌پذیر باغ‌نو شیراز", "117044", 3, "شیراز، خیابان لطفعلی‌خان زند، کوچه‌ی باغ‌نو", "07132300300",
+				[
+					TagHotel.Guesthouse, TagHotel.Active, TagHotel.Approved,
+					TagHotel.PetsAllowed, TagHotel.ChildrenAllowed, TagHotel.PriceIncludesTax,
+					TagHotel.Wifi, TagHotel.Parking, TagHotel.Garden,
+					TagHotel.Breakfast
+				],
+				new HotelJson {
+					Highlights = ["باغچه‌ی نارنج و سایه‌بان", "صبحانه‌ی خانگی", "پنج دقیقه تا ارگ کریم‌خان"],
+					Whatsapp = "989120000003", Instagram = "baghnow_shiraz",
+					HowToGetThere = "از میدان شهدا به سمت لطفعلی‌خان زند؛ کوچه‌ی باغ‌نو دومین کوچه‌ی سمت چپ.",
+					Nearby = [new PlaceNearby { Title = "ارگ کریم‌خان", DistanceMeters = 450, Minutes = 6 }, new PlaceNearby { Title = "بازار وکیل", DistanceMeters = 600, Minutes = 8 }],
+					Faqs = [new PlaceFaq { Question = "آیا حیوان خانگی مجاز است؟", Answer = "بله، سگ و گربه‌ی کوچک با هماهنگی قبلی." }],
+					Description = "اقامتگاه صمیمی و خانوادگی در بافت تاریخی شیراز، با باغچه‌ی نارنج و صبحانه‌ی خانگی؛ پنج دقیقه تا ارگ کریم‌خان.",
+					Policies = "ورود از ساعت ۱۳ و خروج تا ۱۱:۳۰.",
+					CheckInTime = "13:00", CheckOutTime = "11:30",
+					Rules = ["ورود پس از ساعت ۲۳ با هماهنگی"],
+					Latitude = 29.6100, Longitude = 52.5420, CancellationFreeHours = 24, CancellationPenaltyNights = 1
+				},
+				[
+					("اتاق دو نفره", 2, 2_800_000m, 5, "دو تخت", 20, 1, [TagRoom.Double, TagRoom.BreakfastIncluded, TagRoom.GardenView, TagRoom.AirConditioning, TagRoom.Tv, TagRoom.PrivateBathroom]),
+					("اتاق خانوادگی", 4, 4_100_000m, 3, "چهار تخت", 34, 1, [TagRoom.Family, TagRoom.BreakfastIncluded, TagRoom.CourtyardView, TagRoom.AirConditioning, TagRoom.Tv, TagRoom.Fridge, TagRoom.PrivateBathroom])
+				]),
+
+			("هتل‌آپارتمان زائر مشهد", "111062", 4, "مشهد، خیابان امام رضا، نبش امام رضا ۲۱", "05132400400",
+				[
+					TagHotel.Apartment, TagHotel.Active, TagHotel.PendingApproval,
+					TagHotel.ChildrenAllowed, TagHotel.ExtraBedAvailable, TagHotel.PriceIncludesTax,
+					TagHotel.Wifi, TagHotel.Elevator, TagHotel.Parking, TagHotel.Reception24, TagHotel.LuggageStorage, TagHotel.PrayerRoom, TagHotel.Laundry,
+					TagHotel.RoomOnly, TagHotel.Breakfast
+				],
+				new HotelJson {
+					Highlights = ["آشپزخانه‌ی کامل در هر واحد", "پنج دقیقه پیاده تا حرم", "نمازخانه و انبار چمدان"],
+					Whatsapp = "989120000004",
+					HowToGetThere = "ورودی از خیابان امام رضا ۲۱؛ ایستگاه مترو حرم رضوی ۳ دقیقه پیاده.",
+					Nearby = [new PlaceNearby { Title = "حرم مطهر امام رضا (ع)", DistanceMeters = 400, Minutes = 5 }, new PlaceNearby { Title = "مترو شهدا", DistanceMeters = 250, Minutes = 3 }, new PlaceNearby { Title = "مرکز خرید رضوی", DistanceMeters = 700, Minutes = 9 }],
+					Faqs = [new PlaceFaq { Question = "آیا لوازم آشپزخانه در واحدها موجود است؟", Answer = "بله، ظروف، اجاق و یخچال کامل است." }],
+					Description = "واحدهای مبله با آشپزخانه‌ی کامل، ۵ دقیقه پیاده تا حرم مطهر؛ مناسب اقامت‌های چندشبه‌ی خانوادگی.",
+					Policies = "حداقل اقامت ۲ شب. ورود ۱۴ و خروج ۱۲.",
+					CheckInTime = "14:00", CheckOutTime = "12:00",
+					Rules = ["حداقل اقامت دو شب", "تعداد مهمان بیش از ظرفیت واحد مجاز نیست"],
+					Latitude = 36.2880, Longitude = 59.6170, CancellationFreeHours = 72, CancellationPenaltyNights = 1
+				},
+				[
+					("واحد یک‌خوابه", 3, 3_600_000m, 10, "یک دو نفره + مبل تخت‌شو", 45, 3, [TagRoom.Triple, TagRoom.CityView, TagRoom.Kitchenette, TagRoom.Fridge, TagRoom.Tv, TagRoom.AirConditioning, TagRoom.PrivateBathroom]),
+					("واحد دوخوابه", 5, 5_200_000m, 8, "دو دو نفره + مبل تخت‌شو", 70, 5, [TagRoom.Family, TagRoom.NonRefundable, TagRoom.CityView, TagRoom.Kitchenette, TagRoom.Fridge, TagRoom.Tv, TagRoom.AirConditioning, TagRoom.Balcony, TagRoom.PrivateBathroom])
+				])
+		];
+
+		int hotelIndex = 0;
+		foreach (var h in hotelSeeds) {
+			Guid hotelId = Guid.CreateVersion7();
+			h.Json.Detail1 = "";
+			hotels.Add(new HotelEntity {
+				Id = hotelId, CreatedAt = now.AddDays(-80), CreatorId = adminId, Tags = h.Tags, JsonData = h.Json,
+				Title = h.Title, CityCode = h.City, Stars = h.Stars, Address = h.Address, PhoneNumber = h.Phone, Email = $"info{hotelIndex + 1}@example.com"
+			});
+
+			List<HotelRoomEntity> hotelRooms = [];
+			foreach (var r in h.Rooms) {
+				HotelRoomEntity room = new() {
+					Id = Guid.CreateVersion7(), CreatedAt = now.AddDays(-79), CreatorId = adminId, HotelId = hotelId,
+					Tags = [TagRoom.Available, .. r.Tags],
+					Title = r.Title, Capacity = r.Capacity, PricePerNight = r.Price, Quantity = r.Quantity, IsAvailable = true, RoomNumber = $"{100 * (hotelRooms.Count + 1)}",
+					JsonData = new HotelRoomJson {
+						Description = $"{r.Title} با امکانات کامل و پاکیزگی روزانه.", BedType = r.Bed, SizeSquareMeters = r.Size, Floor = r.Floor,
+						ExtraGuestCapacity = 1, ExtraGuestPrice = 10000
+					}
+				};
+				hotelRooms.Add(room);
+			}
+
+			rooms.AddRange(hotelRooms);
+
+			// reservations: one of every status, with an invoice that matches it
+			(TagHotelReservation Status, int StartOffset, int Nights)[] plan = [
+				(TagHotelReservation.CheckedOut, -20, 3), (TagHotelReservation.CheckedIn, -1, 3), (TagHotelReservation.Confirmed, 5, 2),
+				(TagHotelReservation.Pending, 12, 2), (TagHotelReservation.Cancelled, 3, 2), (TagHotelReservation.CheckedOut, -45, 4)
+			];
+			for (int i = 0; i < plan.Length; i++) {
+				HotelRoomEntity room = hotelRooms[i % hotelRooms.Count];
+				Guid userId = UserAt(hotelIndex * 3 + i);
+				DateTime checkIn = today.AddDays(plan[i].StartOffset);
+				DateTime checkOut = checkIn.AddDays(plan[i].Nights);
+				decimal total = room.PricePerNight * plan[i].Nights;
+				bool cancelled = plan[i].Status == TagHotelReservation.Cancelled;
+				Guid reservationId = Guid.CreateVersion7();
+				reservations.Add(new HotelReservationEntity {
+					Id = reservationId, CreatedAt = checkIn.AddDays(-10), CreatorId = userId, Tags = [plan[i].Status],
+					CheckInDate = checkIn, CheckOutDate = checkOut, GuestCount = Math.Min(room.Capacity, 2 + i % 2), TotalPrice = total,
+					UserId = userId, RoomId = room.Id, HotelId = hotelId,
+					JsonData = new HotelReservationJson {
+						GuestName = $"{firstNames[(hotelIndex * 3 + i) % firstNames.Length]} {lastNames[(hotelIndex * 3 + i) % lastNames.Length]}",
+						GuestPhone = $"0912000{(hotelIndex * 3 + i) % 12 + 1:0000}", Notes = i % 2 == 0 ? "لطفاً اتاق طبقه‌ی بالا باشد." : null,
+						NightCount = plan[i].Nights, ReservationCode = $"KH{hotelIndex}{i}{Random.Shared.Next(1000, 9999)}",
+						Guests = [new ReservationGuestJson { FullName = $"{firstNames[(hotelIndex * 3 + i) % firstNames.Length]} {lastNames[(hotelIndex * 3 + i) % lastNames.Length]}", PhoneNumber = $"0912000{(hotelIndex * 3 + i) % 12 + 1:0000}" }],
+						CancelledAt = cancelled ? checkIn.AddDays(-4) : null, CancelReason = cancelled ? "تغییر برنامه‌ی سفر" : null,
+						CancellationPenalty = cancelled ? room.PricePerNight : null, RefundAmount = cancelled ? total - room.PricePerNight : null
+					}
+				});
+				bool paid = plan[i].Status is TagHotelReservation.CheckedOut or TagHotelReservation.CheckedIn or TagHotelReservation.Confirmed;
+				hotelInvoices.Add(new HotelInvoiceEntity {
+					Id = Guid.CreateVersion7(), CreatedAt = checkIn.AddDays(-10), CreatorId = userId,
+					Tags = cancelled ? [TagHotelInvoice.Refunded, TagHotelInvoice.Full] : paid ? [TagHotelInvoice.Paid, i % 2 == 0 ? TagHotelInvoice.PaidOnline : TagHotelInvoice.PaidManual, TagHotelInvoice.Full] : [TagHotelInvoice.NotPaid, TagHotelInvoice.Full],
+					DebtAmount = total, CreditorAmount = cancelled ? total - room.PricePerNight : 0, PaidAmount = paid || cancelled ? total : 0, PenaltyAmount = cancelled ? room.PricePerNight : 0,
+					ReservationId = reservationId, DueDate = checkIn, JsonData = new HotelInvoiceJson { PenaltyPrecentEveryDate = 0 }
+				});
+			}
+
+			string[] good = ["اقامتی بسیار دلنشین؛ پرسنل مهربان و اتاق‌ها تمیز بودند.", "موقعیت عالی و صبحانه‌ی خوشمزه. حتماً دوباره می‌آیم.", "قیمت مناسب نسبت به امکانات. تحویل اتاق سریع بود.", "برای سفر خانوادگی گزینه‌ی خوبی است؛ فضای آرام و امن."];
+			for (int i = 0; i < good.Length; i++) comments.Add(Review(hotelId, null, hotelIndex * 4 + i, i == 2 ? 4m : i == 3 ? 4.5m : 5m, good[i], TagComment.Released, 5 + i * 9));
+			comments.Add(Review(hotelId, null, hotelIndex + 6, 3m, "نظر در صف بررسی: سرویس بهداشتی می‌توانست بهتر باشد.", TagComment.InQueue, 2));
+			hotelIndex++;
+		}
+
+		// ---------------------------------------------------------------- dorms
+		// Residents, amenities, meals and what the rent includes are tags; the Json only keeps texts and numbers.
+		(string Title, string City, string Address, string Phone, List<TagDorm> Tags, DormJson Json, (string Title, int Beds, decimal Rent, decimal Deposit, double Size, int Floor, List<TagDormRoom> Tags)[] Rooms)[] dormSeeds = [
+			("خوابگاه دخترانه‌ی نگین", "108012", "تهران، امیرآباد شمالی، خیابان چهارم", "02166001000",
+				[
+					TagDorm.Girls, TagDorm.Active, TagDorm.Featured, TagDorm.Approved,
+					TagDorm.Bachelor, TagDorm.Master, TagDorm.Phd,
+					TagDorm.Wifi, TagDorm.SharedKitchen, TagDorm.StudyRoom, TagDorm.Laundry, TagDorm.Supervisor, TagDorm.Cctv, TagDorm.SecurityGuard, TagDorm.Lockers, TagDorm.Lounge,
+					TagDorm.Breakfast, TagDorm.Dinner,
+					TagDorm.InternetIncluded, TagDorm.UtilitiesIncluded, TagDorm.CleaningIncluded
+				],
+				new DormJson {
+					Highlights = ["هفت دقیقه پیاده تا دانشگاه تهران", "اتاق مطالعه‌ی شبانه‌روزی", "اینترنت فیبر ۱۰۰ مگابیت"],
+					Website = "https://example.com/negin", Whatsapp = "989120000011", Instagram = "negin_dorm", CurfewTime = "23:00", MinimumStayMonths = 6,
+					Policies = "ودیعه هنگام عقد قرارداد و اجاره‌ی ماهانه تا پنجم هر ماه پرداخت می‌شود. ودیعه پس از تسویه و تحویل اتاق حداکثر ظرف ۷ روز کاری مسترد می‌شود. فسخ زودهنگام با معرفی جایگزین بدون جریمه است.",
+					UniversityWalkMinutes = 7, HowToGetThere = "از ایستگاه مترو دانشگاه تهران با تاکسی یا ۱۰ دقیقه پیاده تا خیابان چهارم امیرآباد.",
+					Nearby = [new PlaceNearby { Title = "دانشگاه تهران", DistanceMeters = 450, Minutes = 7 }, new PlaceNearby { Title = "مترو دانشگاه تهران", DistanceMeters = 900, Minutes = 12 }, new PlaceNearby { Title = "داروخانه‌ی شبانه‌روزی", DistanceMeters = 200, Minutes = 3 }],
+					Faqs = [new PlaceFaq { Question = "ساعت آخرین ورود چه زمانی است؟", Answer = "ساعت ۲۳؛ برای ورود دیرتر باید از پیش با سرپرست هماهنگ کنید." }, new PlaceFaq { Question = "آیا امکان آشپزی وجود دارد؟", Answer = "بله، در هر طبقه یک آشپزخانه‌ی مشترک با یخچال جداگانه برای هر اتاق هست." }],
+					Description = "هفت دقیقه پیاده تا درِ اصلی دانشگاه تهران؛ اتاق‌های مبله‌ی دو و چهارنفره، اتاق مطالعه‌ی شبانه‌روزی و سرپرست مقیم.",
+					NearbyUniversity = "دانشگاه تهران", VisitingHours = "۱۶ تا ۲۰",
+					Rules = ["رعایت سکوت از ساعت ۲۲", "استعمال دخانیات ممنوع", "ورود مهمان تنها در لابی"], RequiredDocuments = ["کارت ملی", "گواهی اشتغال به تحصیل", "دو قطعه عکس ۳×۴"],
+					Latitude = 35.7300, Longitude = 51.3900
+				},
+				[
+					("اتاق دو نفره‌ی A", 2, 3_200_000m, 15_000_000m, 18, 2, [TagDormRoom.Double, TagDormRoom.Furnished, TagDormRoom.PrivateBathroom, TagDormRoom.Desk, TagDormRoom.Wardrobe, TagDormRoom.AirConditioning]),
+					("اتاق چهارنفره‌ی B", 4, 2_100_000m, 10_000_000m, 28, 3, [TagDormRoom.Dorm, TagDormRoom.Furnished, TagDormRoom.Desk, TagDormRoom.Wardrobe, TagDormRoom.Heating]),
+					("اتاق سه نفره‌ی C", 3, 2_600_000m, 12_000_000m, 22, 4, [TagDormRoom.Dorm, TagDormRoom.Furnished, TagDormRoom.PrivateBathroom, TagDormRoom.Desk, TagDormRoom.AirConditioning, TagDormRoom.Balcony])
+				]),
+
+			("خوابگاه پسرانه‌ی آرمان", "108012", "تهران، انقلاب، خیابان فخر رازی", "02166002000",
+				[
+					TagDorm.Boys, TagDorm.Active, TagDorm.Approved,
+					TagDorm.Bachelor, TagDorm.Master,
+					TagDorm.Wifi, TagDorm.SharedKitchen, TagDorm.BikeParking, TagDorm.Laundry, TagDorm.Cctv, TagDorm.Lockers, TagDorm.Lounge,
+					TagDorm.Dinner,
+					TagDorm.InternetIncluded, TagDorm.UtilitiesIncluded
+				],
+				new DormJson {
+					Highlights = ["نزدیک مترو انقلاب", "آشپزخانه‌ی مرکزی", "پارکینگ دوچرخه و موتور"], Whatsapp = "989120000012", MinimumStayMonths = 4,
+					Policies = "اجاره‌ی ماهانه. ودیعه معادل دو ماه اجاره است. ورود مهمان ممنوع.",
+					UniversityWalkMinutes = 15, HowToGetThere = "خروجی ۳ مترو انقلاب، ۱۰ دقیقه پیاده به سمت خیابان فخر رازی.",
+					Nearby = [new PlaceNearby { Title = "مترو انقلاب", DistanceMeters = 800, Minutes = 10 }, new PlaceNearby { Title = "کتابفروشی‌های انقلاب", DistanceMeters = 300, Minutes = 4 }],
+					Faqs = [new PlaceFaq { Question = "قرارداد ترمی است یا ماهانه؟", Answer = "هر دو ممکن است؛ حداقل مدت ۴ ماه." }],
+					Description = "ساختمان بازسازی‌شده‌ی چهارطبقه با آشپزخانه‌ی مرکزی؛ ۱۰ دقیقه تا مترو انقلاب.", NearbyUniversity = "دانشگاه تهران", VisitingHours = "۱۷ تا ۲۰",
+					Rules = ["ورود تا ساعت ۲۴", "ورود مهمان ممنوع"], RequiredDocuments = ["کارت ملی", "گواهی اشتغال به تحصیل"], Latitude = 35.7010, Longitude = 51.3950
+				},
+				[
+					("اتاق دو نفره", 2, 2_800_000m, 12_000_000m, 16, 1, [TagDormRoom.Double, TagDormRoom.Furnished, TagDormRoom.Desk, TagDormRoom.Heating]),
+					("اتاق چهارنفره", 4, 1_800_000m, 8_000_000m, 26, 2, [TagDormRoom.Dorm, TagDormRoom.Desk, TagDormRoom.Wardrobe])
+				]),
+
+			("خوابگاه دخترانه‌ی نسیم شیراز", "117044", "شیراز، بلوار ارم، خیابان دانشجو", "07132500500",
+				[
+					TagDorm.Girls, TagDorm.Active, TagDorm.Approved,
+					TagDorm.Bachelor, TagDorm.Master,
+					TagDorm.Wifi, TagDorm.Shuttle, TagDorm.SelfService, TagDorm.Garden, TagDorm.Supervisor, TagDorm.Cctv, TagDorm.SecurityGuard, TagDorm.SharedKitchen, TagDorm.StudyRoom,
+					TagDorm.Lunch, TagDorm.Dinner,
+					TagDorm.InternetIncluded, TagDorm.UtilitiesIncluded, TagDorm.CleaningIncluded
+				],
+				new DormJson {
+					Highlights = ["سرویس رفت‌وآمد رایگان", "سلف‌سرویس ناهار و شام", "حیاط و فضای سبز"], Instagram = "nasim_dorm", CurfewTime = "22:30", MinimumStayMonths = 6,
+					Policies = "ودیعه + اجاره‌ی ماهانه. ودیعه پس از تسویه مسترد می‌شود. فسخ پیش از پایان ترم با معرفی جایگزین. ورود خانواده در ساعات ۱۶ تا ۱۹.",
+					UniversityWalkMinutes = 20, HowToGetThere = "ایستگاه اتوبوس دانشگاه شیراز مقابل درب ورودی است.",
+					Nearby = [new PlaceNearby { Title = "دانشگاه شیراز", DistanceMeters = 1500, Minutes = 20 }, new PlaceNearby { Title = "ایستگاه اتوبوس", DistanceMeters = 50, Minutes = 1 }],
+					Faqs = [new PlaceFaq { Question = "سرویس رفت‌وآمد چند بار در روز است؟", Answer = "دو بار: صبح و عصر؛ رایگان برای ساکنین." }],
+					Description = "ویژه‌ی خواهران با ورودی مستقل، حیاط، سلف‌سرویس و سرویس رفت‌وآمد رایگان تا دانشگاه.", NearbyUniversity = "دانشگاه شیراز", VisitingHours = "۱۶ تا ۱۹",
+					Rules = ["رعایت پوشش و شئونات", "ورود تا ساعت ۲۲:۳۰"], RequiredDocuments = ["کارت ملی", "گواهی اشتغال به تحصیل", "معرفی‌نامه‌ی دانشگاه"], Latitude = 29.6400, Longitude = 52.5250
+				},
+				[
+					("اتاق سه نفره", 3, 1_900_000m, 10_000_000m, 22, 1, [TagDormRoom.Dorm, TagDormRoom.Furnished, TagDormRoom.PrivateBathroom, TagDormRoom.Desk, TagDormRoom.Wardrobe]),
+					("اتاق دو نفره", 2, 2_400_000m, 10_000_000m, 16, 2, [TagDormRoom.Double, TagDormRoom.Furnished, TagDormRoom.PrivateBathroom, TagDormRoom.Desk, TagDormRoom.AirConditioning])
+				]),
+
+			("خوابگاه پسرانه‌ی دانا", "101013", "تبریز، خیابان دانشگاه، کوچه‌ی سوم", "04133600600",
+				[
+					TagDorm.Boys, TagDorm.Active, TagDorm.PendingApproval,
+					TagDorm.Bachelor,
+					TagDorm.Wifi, TagDorm.SharedKitchen, TagDorm.BikeParking, TagDorm.Laundry, TagDorm.Lockers,
+					TagDorm.InternetIncluded, TagDorm.UtilitiesIncluded
+				],
+				new DormJson {
+					Highlights = ["هزینه‌ی شارژ و اینترنت در اجاره", "آشپزخانه‌ی بزرگ مرکزی"], MinimumStayMonths = 3,
+					Policies = "اجاره‌ی ماهانه. ودیعه‌ی ۸ میلیون تومان.", UniversityWalkMinutes = 12,
+					Nearby = [new PlaceNearby { Title = "دانشگاه تبریز", DistanceMeters = 900, Minutes = 12 }],
+					Description = "ارزان‌ترین گزینه‌ی ما با آشپزخانه‌ی بزرگ و پارکینگ دوچرخه؛ شارژ و اینترنت در اجاره لحاظ شده است.", NearbyUniversity = "دانشگاه تبریز", VisitingHours = "۱۷ تا ۲۰",
+					Rules = ["سکوت پس از ۲۳"], RequiredDocuments = ["کارت ملی"], Latitude = 38.0800, Longitude = 46.3200
+				},
+				[
+					("اتاق چهارنفره", 4, 1_500_000m, 8_000_000m, 26, 1, [TagDormRoom.Dorm, TagDormRoom.Desk]),
+					("اتاق دو نفره", 2, 2_000_000m, 8_000_000m, 15, 2, [TagDormRoom.Double, TagDormRoom.Desk, TagDormRoom.Heating])
+				]),
+
+			// Built without the Active tag to show the "hidden" state: the site and the app do not list it.
+			("خوابگاه دخترانه‌ی آرام کرج", "105009", "کرج، گوهردشت، فاز ۳", "02634700700",
+				[TagDorm.Girls, TagDorm.Inactive, TagDorm.Bachelor, TagDorm.Wifi, TagDorm.Garden, TagDorm.SharedKitchen],
+				new DormJson { Highlights = ["سی تخت", "حیاط بزرگ"], Description = "کوچک‌ترین مجموعه‌ی ما؛ سی تخت، حیاط و سکوت.", NearbyUniversity = "دانشگاه آزاد کرج", Latitude = 35.83, Longitude = 50.93 },
+				[("اتاق دو نفره", 2, 1_600_000m, 7_000_000m, 18, 1, [TagDormRoom.Double, TagDormRoom.Desk])])
+		];
+
+		int dormIndex = 0;
+		int residentIndex = 0;
+		foreach (var d in dormSeeds) {
+			Guid dormId = Guid.CreateVersion7();
+			dorms.Add(new DormEntity {
+				Id = dormId, CreatedAt = now.AddDays(-85), CreatorId = adminId, Tags = d.Tags, JsonData = d.Json,
+				Title = d.Title, CityCode = d.City, Address = d.Address, PhoneNumber = d.Phone
+			});
+
+			int roomNumber = 0;
+			foreach (var r in d.Rooms) {
+				roomNumber++;
+				Guid roomId = Guid.CreateVersion7();
+				dormRooms.Add(new DormRoomEntity {
+					Id = roomId, CreatedAt = now.AddDays(-84), CreatorId = adminId, DormId = dormId, Title = r.Title, Capacity = r.Beds,
+					Tags = r.Tags,
+					JsonData = new DormRoomJson { Description = $"{r.Title}؛ با میز مطالعه و کمد شخصی برای هر نفر.", Floor = r.Floor, SizeSquareMeters = r.Size }
+				});
+
+				for (int b = 0; b < r.Beds; b++) {
+					Guid bedId = Guid.CreateVersion7();
+					beds.Add(new DormBedEntity {
+						Id = bedId, CreatedAt = now.AddDays(-83), CreatorId = adminId, RoomId = roomId, Title = $"{(char)('A' + roomNumber - 1)}{b + 1}", Deposit = r.Deposit, MonthlyRent = r.Rent,
+						Tags = r.Beds > 2
+							? [TagDormBed.Single, b % 2 == 0 ? TagDormBed.BunkBottom : TagDormBed.BunkTop, TagDormBed.Locker, TagDormBed.ReadingLamp, TagDormBed.PowerOutlet]
+							: [TagDormBed.Single, TagDormBed.Desk, TagDormBed.Locker, TagDormBed.PrivacyCurtain, TagDormBed.PowerOutlet],
+						JsonData = new DormBedJson { Description = "تخت با تشک طبی." }
+					});
+
+					// pattern per bed: 0 = active contract, 1 = expired contract, 2 = free (no contract); inactive dorms have none
+					int pattern = (b + roomNumber + dormIndex) % 3;
+					if (d.Tags.Contains(TagDorm.Inactive) || pattern == 2) continue;
+
+					bool active = pattern == 0;
+					DateTime start = active ? today.AddMonths(-2).AddDays(-b) : today.AddMonths(-10);
+					DateTime end = active ? today.AddMonths(4) : today.AddMonths(-4);
+					Guid userId = UserAt(6 + residentIndex++);
+					Guid contractId = Guid.CreateVersion7();
+					contracts.Add(new DormBedContractEntity {
+						Id = contractId, CreatedAt = start.AddDays(-5), CreatorId = adminId, Tags = [TagDormBedContract.Monthly],
+						StartDate = start, EndDate = end, Deposit = r.Deposit, Rent = r.Rent, UserId = userId, BedId = bedId, JsonData = new DormBedContractJson()
+					});
+					dormInvoices.Add(new DormBedInvoiceEntity {
+						Id = Guid.CreateVersion7(), CreatedAt = start.AddDays(-5), CreatorId = adminId, Tags = [TagDormBedInvoice.Deposit, TagDormBedInvoice.Paid, TagDormBedInvoice.PaidOnline],
+						DebtAmount = r.Deposit, CreditorAmount = 0, PaidAmount = r.Deposit, PenaltyAmount = 0, ContractId = contractId, DueDate = start, JsonData = new DormBedInvoiceJson { PenaltyPrecentEveryDate = 1 }
+					});
+					bool lateResident = active && b == 0; // the first active resident of every room is late with the last rent
+					for (int m = 0; start.AddMonths(m) < end; m++) {
+						DateTime due = start.AddMonths(m);
+						bool inPast = due < today;
+						bool late = lateResident && inPast && due.AddMonths(1) >= today;
+						bool paid = inPast && !late;
+						decimal penalty = late ? 10000 : 0;
+						dormInvoices.Add(new DormBedInvoiceEntity {
+							Id = Guid.CreateVersion7(), CreatedAt = due.AddDays(-7), CreatorId = adminId,
+							Tags = paid ? [TagDormBedInvoice.Rent, TagDormBedInvoice.Paid, m % 2 == 0 ? TagDormBedInvoice.PaidOnline : TagDormBedInvoice.PaidManual] : [TagDormBedInvoice.Rent, TagDormBedInvoice.NotPaid],
+							DebtAmount = r.Rent, CreditorAmount = 0, PaidAmount = paid ? r.Rent : 0, PenaltyAmount = penalty, ContractId = contractId, DueDate = due,
+							JsonData = new DormBedInvoiceJson { PenaltyPrecentEveryDate = 1 }
+						});
+					}
+				}
+			}
+
+			if (!d.Tags.Contains(TagDorm.Inactive)) {
+				string[] texts = ["نزدیک دانشگاه و امن؛ سرپرست خوبی دارد.", "اینترنت پایدار و اتاق مطالعه‌ی عالی، قیمت منطقی.", "تمیز و آرام است؛ فقط آشپزخانه در ساعات اوج شلوغ می‌شود."];
+				for (int i = 0; i < texts.Length; i++) comments.Add(Review(null, dormId, dormIndex * 3 + i + 2, i == 2 ? 4m : 5m - i * 0.5m, texts[i], TagComment.Released, 8 + i * 12));
+			}
+
+			dormIndex++;
+		}
+
+		// ---------------------------------------------------------------- save everything in one transaction
+		await db.Set<UserEntity>().AddRangeAsync(users, ct);
+		await db.Set<HotelEntity>().AddRangeAsync(hotels, ct);
+		await db.Set<HotelRoomEntity>().AddRangeAsync(rooms, ct);
+		await db.Set<HotelReservationEntity>().AddRangeAsync(reservations, ct);
+		await db.Set<HotelInvoiceEntity>().AddRangeAsync(hotelInvoices, ct);
+		await db.Set<DormEntity>().AddRangeAsync(dorms, ct);
+		await db.Set<DormRoomEntity>().AddRangeAsync(dormRooms, ct);
+		await db.Set<DormBedEntity>().AddRangeAsync(beds, ct);
+		await db.Set<DormBedContractEntity>().AddRangeAsync(contracts, ct);
+		await db.Set<DormBedInvoiceEntity>().AddRangeAsync(dormInvoices, ct);
+		await db.Set<CommentEntity>().AddRangeAsync(comments, ct);
+		await db.SaveChangesAsync(ct);
+
+		return new UResponse<List<KeyValue>?>([
+			new KeyValue { Key = "users", Value = users.Count.ToString() },
+			new KeyValue { Key = "hotels", Value = hotels.Count.ToString() },
+			new KeyValue { Key = "hotelRooms", Value = rooms.Count.ToString() },
+			new KeyValue { Key = "hotelReservations", Value = reservations.Count.ToString() },
+			new KeyValue { Key = "hotelInvoices", Value = hotelInvoices.Count.ToString() },
+			new KeyValue { Key = "dorms", Value = dorms.Count.ToString() },
+			new KeyValue { Key = "dormRooms", Value = dormRooms.Count.ToString() },
+			new KeyValue { Key = "dormBeds", Value = beds.Count.ToString() },
+			new KeyValue { Key = "dormContracts", Value = contracts.Count.ToString() },
+			new KeyValue { Key = "dormInvoices", Value = dormInvoices.Count.ToString() },
+			new KeyValue { Key = "reviews", Value = comments.Count.ToString() },
+			new KeyValue { Key = "demoUsersPassword", Value = "Demo1234 (usernames demo01 ... demo12)" }
+		], Usc.Created);
 	}
 }

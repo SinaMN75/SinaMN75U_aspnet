@@ -26,7 +26,6 @@ public static class RouteTags {
 	public const string Notification = "api/Notification/";
 	public const string Bed = "api/Bed/";
 	public const string ChargeInternet = "api/ChargeInternet/";
-	public const string Merchant = "api/Merchant/";
 	public const string Moadi = "api/Moadi/";
 	public const string AppSettings = "api/AppSettings/";
 	public const string Process = "api/Process/";

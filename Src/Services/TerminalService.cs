@@ -3,6 +3,11 @@
 namespace SinaMN75U.Services;
 
 public interface ITerminalService {
+	Task<UResponse<Guid?>> CreateMerchant(MerchantCreateParams p, CancellationToken ct);
+	Task<UResponse<IEnumerable<MerchantResponse>?>> ReadMerchants(MerchantReadParams p, CancellationToken ct);
+	Task<UResponse<MerchantResponse?>> ReadMerchantById(IdParams<MerchantSelectorArgs> p, CancellationToken ct);
+	Task<UResponse> DeleteMerchant(IdParams p, CancellationToken ct);
+	Task<UResponse<FinancialOpsDashboardResponse?>> ReadFinancialOpsDashboard(DashboardRangeParams p, CancellationToken ct);
 	Task<UResponse<Guid?>> Create(TerminalCreateParams p, CancellationToken ct);
 	Task<UResponse> BulkCreate(TerminalBulkCreateParams p, CancellationToken ct);
 	Task<UResponse<TerminalImportResponse?>> Import(TerminalImportParams p, CancellationToken ct);
@@ -34,6 +39,133 @@ public class TerminalService(
 	ISmsNotificationService sms,
 	IWebHostEnvironment env
 ) : ITerminalService {
+	private static readonly TagWalletTxn[] SpendingTags = [
+		TagWalletTxn.MobileAndNationalCodeVerification, TagWalletTxn.ZipCodeToAddressDetail,
+		TagWalletTxn.VehicleViolationsDetail, TagWalletTxn.DrivingLicenceStatus, TagWalletTxn.LicencePlateDetail,
+		TagWalletTxn.DrivingLicenceNegativePoint, TagWalletTxn.IBanToBankAccountDetail, TagWalletTxn.FreewayTolls,
+		TagWalletTxn.MerchantCreationFee, TagWalletTxn.ChargeSimPin, TagWalletTxn.ChargeSimTopup, TagWalletTxn.InternetSim
+	];
+
+	public async Task<UResponse<FinancialOpsDashboardResponse?>> ReadFinancialOpsDashboard(DashboardRangeParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<FinancialOpsDashboardResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<FinancialOpsDashboardResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!userData.HasPermission(TagUser.PermissionViewDashboard)) return new UResponse<FinancialOpsDashboardResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		DateTime to = p.ToDate ?? DateTime.UtcNow;
+		DateTime from = p.FromDate ?? to.AddDays(-30);
+
+		int usersCount = await db.Set<UserEntity>().CountAsync(ct);
+		int newUsersCount = await db.Set<UserEntity>().CountAsync(x => x.CreatedAt >= from && x.CreatedAt <= to, ct);
+
+		int merchantsCount = await db.Set<MerchantEntity>().CountAsync(ct);
+		int newMerchantsCount = await db.Set<MerchantEntity>().CountAsync(x => x.CreatedAt >= from && x.CreatedAt <= to, ct);
+
+		int terminalsCount = await db.Set<TerminalEntity>().CountAsync(ct);
+		int terminalsAssignedCount = await db.Set<TerminalEntity>().CountAsync(x => x.MerchantId != null, ct);
+
+		int txnCount = await db.Set<TxnEntity>().CountAsync(ct);
+		int newTxnCount = await db.Set<TxnEntity>().CountAsync(x => x.CreatedAt >= from && x.CreatedAt <= to, ct);
+
+		int walletsCount = await db.Set<WalletEntity>().CountAsync(ct);
+		decimal totalWalletBalance = await db.Set<WalletEntity>().SumAsync(x => (decimal?)x.Balance, ct) ?? 0;
+
+		List<WalletTxnEntity> walletRows = await db.Set<WalletTxnEntity>()
+			.Where(x => x.CreatedAt >= from && x.CreatedAt <= to)
+			.ToListAsync(ct);
+
+		decimal totalIn = walletRows.Where(x => x.Tags.Contains(TagWalletTxn.Charge)).Sum(x => x.Amount);
+		decimal totalOut = walletRows.Where(x => x.Tags.Any(t => SpendingTags.Contains(t))).Sum(x => x.Amount);
+
+		List<TxnEntity> txnRows = await db.Set<TxnEntity>()
+			.Where(x => x.CreatedAt >= from && x.CreatedAt <= to)
+			.ToListAsync(ct);
+
+		List<AccountingBreakdownItem> txnByStatus = txnRows
+			.SelectMany(x => x.Tags.Where(t => t is TagTxn.Pending or TagTxn.Paid or TagTxn.Failed or TagTxn.Refunded).Select(t => (Tag: t, x.Amount)))
+			.GroupBy(x => x.Tag)
+			.Select(g => new AccountingBreakdownItem { Tag = (int)g.Key, TagName = g.Key.ToString(), Amount = g.Sum(i => i.Amount), Count = g.Count() })
+			.OrderByDescending(x => x.Amount).ToList();
+
+		List<AccountingBreakdownItem> txnByMethod = txnRows
+			.SelectMany(x => x.Tags.Where(t => t is TagTxn.CreditCard or TagTxn.Cash).Select(t => (Tag: t, x.Amount)))
+			.GroupBy(x => x.Tag)
+			.Select(g => new AccountingBreakdownItem { Tag = (int)g.Key, TagName = g.Key.ToString(), Amount = g.Sum(i => i.Amount), Count = g.Count() })
+			.OrderByDescending(x => x.Amount).ToList();
+
+		List<TerminalEntity> terminalTagRows = await db.Set<TerminalEntity>().ToListAsync(ct);
+
+		List<AccountingBreakdownItem> terminalsByType = terminalTagRows
+			.SelectMany(x => x.Tags)
+			.Where(t => t is not (TagTerminal.PendingApproval or TagTerminal.Approved or TagTerminal.Rejected))
+			.GroupBy(t => t)
+			.Select(g => new AccountingBreakdownItem { Tag = (int)g.Key, TagName = g.Key.ToString(), Amount = 0, Count = g.Count() })
+			.OrderByDescending(x => x.Count).ToList();
+
+		List<AccountingTimelineItem> dailyTimeline = walletRows
+			.GroupBy(x => x.CreatedAt.Date)
+			.Select(g => new AccountingTimelineItem {
+				Date = g.Key,
+				In = g.Where(x => x.Tags.Contains(TagWalletTxn.Charge)).Sum(x => x.Amount),
+				Out = g.Where(x => x.Tags.Any(t => SpendingTags.Contains(t))).Sum(x => x.Amount)
+			})
+			.OrderBy(x => x.Date).ToList();
+
+		List<TopMerchantItem> topMerchants = await db.Set<MerchantEntity>()
+			.OrderByDescending(x => x.Terminals.Count)
+			.Take(5)
+			.Select(x => new TopMerchantItem { Id = x.Id, Title = x.Title, City = x.CityCode, TerminalCount = x.Terminals.Count, CreatedAt = x.CreatedAt })
+			.ToListAsync(ct);
+
+		List<TxnEntity> recentTxnEntities = await db.Set<TxnEntity>().Include(x => x.User)
+			.OrderByDescending(x => x.CreatedAt).Take(10).ToListAsync(ct);
+		List<RecentTxnItem> recentTransactions = recentTxnEntities.Select(x => new RecentTxnItem {
+			Id = x.Id, Amount = x.Amount, TrackingNumber = x.TrackingNumber, UserName = x.User.UserName,
+			Tags = x.Tags.Select(t => t.ToString()).ToList(), CreatedAt = x.CreatedAt
+		}).ToList();
+
+		List<MerchantEntity> recentMerchantEntities = await db.Set<MerchantEntity>()
+			.OrderByDescending(x => x.CreatedAt).Take(5).ToListAsync(ct);
+		List<RecentMerchantItem> recentMerchants = recentMerchantEntities.Select(x => new RecentMerchantItem {
+			Id = x.Id, Title = x.Title, CityCode = x.CityCode, TerminalCount = 0, CreatedAt = x.CreatedAt
+		}).ToList();
+
+		List<UserEntity> recentUserEntities = await db.Set<UserEntity>()
+			.OrderByDescending(x => x.CreatedAt).Take(5).ToListAsync(ct);
+		List<RecentUserItem> recentUsers = recentUserEntities.Select(x => new RecentUserItem {
+			Id = x.Id, DisplayName = $"{x.FirstName} {x.LastName}".Trim() is { Length: > 0 } n ? n : x.UserName,
+			UserName = x.UserName, PhoneNumber = x.PhoneNumber, CreatedAt = x.CreatedAt
+		}).ToList();
+
+		return new UResponse<FinancialOpsDashboardResponse?>(new FinancialOpsDashboardResponse {
+			GeneratedAt = DateTime.UtcNow,
+			FromDate = from,
+			ToDate = to,
+			UsersCount = usersCount,
+			NewUsersCount = newUsersCount,
+			MerchantsCount = merchantsCount,
+			NewMerchantsCount = newMerchantsCount,
+			TerminalsCount = terminalsCount,
+			TerminalsAssignedCount = terminalsAssignedCount,
+			TerminalsUnassignedCount = terminalsCount - terminalsAssignedCount,
+			TxnCount = txnCount,
+			NewTxnCount = newTxnCount,
+			WalletsCount = walletsCount,
+			TotalWalletBalance = totalWalletBalance,
+			TotalIn = totalIn,
+			TotalOut = totalOut,
+			Net = totalIn - totalOut,
+			TxnByStatus = txnByStatus,
+			TxnByMethod = txnByMethod,
+			TerminalsByType = terminalsByType,
+			DailyTimeline = dailyTimeline,
+			TopMerchants = topMerchants,
+			RecentTransactions = recentTransactions,
+			RecentMerchants = recentMerchants,
+			RecentUsers = recentUsers
+		});
+	}
+
 	public async Task<UResponse<Guid?>> Create(TerminalCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
@@ -824,5 +956,82 @@ public class TerminalService(
 		if (user.ESignature.IsNullOrEmpty()) return null;
 		string path = Path.Combine(env.WebRootPath, "Media", user.ESignature.TrimStart('/', '\\'));
 		return File.Exists(path) ? File.ReadAllBytes(path) : null;
+	}
+
+	public async Task<UResponse<Guid?>> CreateMerchant(MerchantCreateParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (p.UserId != null && p.UserId != userData.Id && !userData.HasPermission(TagUser.PermissionManageMerchants)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		
+		MerchantEntity e = new() {
+			Id = p.Id ?? Guid.CreateVersion7(),
+			CreatorId = p.CreatorId ?? userData.Id,
+			CreatedAt = DateTime.UtcNow,
+			Tags = p.Tags,
+			UserId = p.UserId ?? userData.Id,
+			ZipCode = p.ZipCode,
+			Title = p.Title,
+			CityCode = p.CityCode,
+			PhoneNumber = p.PhoneNumber,
+			Landline = p.Landline,
+			NationalCode = p.NationalCode,
+			BankAccountId = p.BankAccountId,
+			Mcc = p.Mcc,
+			JsonData = new MerchantJson {
+				Detail1 = p.Detail1,
+				Detail2 = p.Detail2,
+				Address = p.Address,
+				BusinessTitle = p.BusinessTitle,
+				OwnerName = p.OwnerName,
+				OwnerPhoneNumber = p.OwnerPhoneNumber
+			}
+		};
+		await db.Set<MerchantEntity>().AddAsync(e, ct);
+		await db.SaveChangesAsync(ct);
+
+		return new UResponse<Guid?>(e.Id);
+	}
+	
+	public async Task<UResponse<IEnumerable<MerchantResponse>?>> ReadMerchants(MerchantReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<MerchantResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<IEnumerable<MerchantResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
+		IQueryable<MerchantEntity> q = db.Set<MerchantEntity>().ApplyReadParams(p);
+
+		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(x => x.UserId == p.UserId);
+		if (p.ZipCode.IsNotNullOrEmpty()) q = q.Where(x => x.ZipCode == p.ZipCode);
+		if (p.BankAccountId.IsNotNullOrEmpty()) q = q.Where(x => x.BankAccountId == p.BankAccountId);
+		if (p.NationalCode.IsNotNullOrEmpty()) q = q.Where(x => x.NationalCode == p.NationalCode);
+		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title == p.Title);
+		if (p.CityCode.IsNotNullOrEmpty()) q = q.Where(x => x.CityCode == p.CityCode);
+		if (p.InsId.IsNotNullOrEmpty()) q = q.Where(x => x.InsId == p.InsId);
+		if (p.Landline.IsNotNullOrEmpty()) q = q.Where(x => x.Landline == p.Landline);
+		if (p.PhoneNumber.IsNotNullOrEmpty()) q = q.Where(x => x.PhoneNumber == p.PhoneNumber);
+		if (p.MerchantId.IsNotNullOrEmpty()) q = q.Where(x => x.MerchantId == p.MerchantId);
+		if (p.Mcc.IsNotNullOrEmpty()) q = q.Where(x => x.Mcc == p.Mcc);
+
+		IQueryable<MerchantResponse> projected = q.Select(Projections.MerchantSelector(p.SelectorArgs));
+		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	}
+
+	public async Task<UResponse<MerchantResponse?>> ReadMerchantById(IdParams<MerchantSelectorArgs> p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<MerchantResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse<MerchantResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
+		MerchantResponse? e = await db.Set<MerchantEntity>().Select(Projections.MerchantSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		return e == null ? new UResponse<MerchantResponse?>(null, Usc.NotFound, ls.Get("merchantNotFound")) : new UResponse<MerchantResponse?>(e);
+	}
+
+	public async Task<UResponse> DeleteMerchant(IdParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+
+		bool canDeleteAll = userData.HasPermission(TagUser.PermissionDeleteMerchants);
+		await db.Set<MerchantEntity>().Where(x => x.Id == p.Id && (canDeleteAll || x.CreatorId == userData.Id || x.UserId == userData.Id)).ExecuteDeleteAsync(ct);
+
+		return new UResponse();
 	}
 }

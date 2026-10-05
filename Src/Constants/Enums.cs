@@ -102,6 +102,7 @@ public enum TagUser {
 	SystemUser = 204,
 	SunUser = 205,
 	SubAdmin = 206,
+	Organization = 207,
 	AwaitingVerification = 301,
 	Verified = 302,
 	NationalCardFrontVerified = 401,
@@ -385,6 +386,7 @@ public enum TagWalletTxn {
 	TournamentEntryFee = 219,
 	TournamentEntryRefund = 220,
 	TournamentEntrySettlement = 221,
+	PlatformCommission = 222,
 
 	ChargeSimPin = 301,
 	ChargeSimTopup = 302,
@@ -598,6 +600,11 @@ public enum TagHotel {
 	HalfBoard = 603,
 	FullBoard = 604,
 	AllInclusive = 605
+}
+
+public enum TagOrganization {
+	Active = 101,
+	Inactive = 102
 }
 
 public enum TagHotelReservation {

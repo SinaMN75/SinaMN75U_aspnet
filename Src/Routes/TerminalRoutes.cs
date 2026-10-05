@@ -24,5 +24,11 @@ public static class TerminalRoutes {
 		r.MapPost("ReadBroker", async (TerminalBrokerReadParams p, ITerminalService s, CancellationToken c) => (await s.ReadBroker(p, c)).ToResult()).Produces<UResponse<IEnumerable<TerminalBrokerResponse>>>();
 		r.MapPost("UpdateBroker", async (TerminalBrokerUpdateParams p, ITerminalService s, CancellationToken c) => (await s.UpdateBroker(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("DeleteBroker", async (IdParams p, ITerminalService s, CancellationToken c) => (await s.DeleteBroker(p, c)).ToResult()).Produces<UResponse>();
+
+		r.MapPost("Merchant/Create", async (MerchantCreateParams p, ITerminalService s, CancellationToken c) => (await s.CreateMerchant(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("Merchant/Read", async (MerchantReadParams p, ITerminalService s, CancellationToken c) => (await s.ReadMerchants(p, c)).ToResult()).Produces<UResponse<IEnumerable<MerchantResponse>>>();
+		r.MapPost("Merchant/ReadById", async (IdParams<MerchantSelectorArgs> p, ITerminalService s, CancellationToken c) => (await s.ReadMerchantById(p, c)).ToResult()).Produces<UResponse<MerchantResponse>>();
+		r.MapPost("Merchant/Delete", async (IdParams p, ITerminalService s, CancellationToken c) => (await s.DeleteMerchant(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("Dashboard/Read", async (DashboardRangeParams p, ITerminalService s, CancellationToken ct) => (await s.ReadFinancialOpsDashboard(p, ct)).ToResult()).Produces<UResponse<FinancialOpsDashboardResponse>>();
 	}
 }

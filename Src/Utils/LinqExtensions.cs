@@ -1,18 +1,6 @@
 namespace SinaMN75U.Utils;
 
 public static class LinqExtensions {
-	public static async Task<(ICollection<Guid> AdminUserIds, TagUser Permission)?> PlaceOf(this DbContext db, Guid? hotelId, Guid? hotelRoomId, Guid? dormId, Guid? dormRoomId, Guid? dormBedId, CancellationToken ct) {
-		List<Guid>? ids = null;
-		if (hotelId != null) ids = await db.Set<HotelEntity>().Where(x => x.Id == hotelId).Select(x => x.AdminUserIds.ToList()).FirstOrDefaultAsync(ct);
-		else if (hotelRoomId != null) ids = await db.Set<HotelRoomEntity>().Where(x => x.Id == hotelRoomId).Select(x => x.Hotel.AdminUserIds.ToList()).FirstOrDefaultAsync(ct);
-		if (hotelId != null || hotelRoomId != null) return (ids ?? [], TagUser.PermissionManageHotels);
-		if (dormId != null) ids = await db.Set<DormEntity>().Where(x => x.Id == dormId).Select(x => x.AdminUserIds.ToList()).FirstOrDefaultAsync(ct);
-		else if (dormRoomId != null) ids = await db.Set<DormRoomEntity>().Where(x => x.Id == dormRoomId).Select(x => x.Dorm.AdminUserIds.ToList()).FirstOrDefaultAsync(ct);
-		else if (dormBedId != null) ids = await db.Set<DormBedEntity>().Where(x => x.Id == dormBedId).Select(x => x.Room.Dorm.AdminUserIds.ToList()).FirstOrDefaultAsync(ct);
-		if (dormId != null || dormRoomId != null || dormBedId != null) return (ids ?? [], TagUser.PermissionManageDorms);
-		return null;
-	}
-
 	public static IQueryable<TEntity> WhereIn<TEntity, TId>(
 		this IQueryable<TEntity> query,
 		Expression<Func<TEntity, TId>> idSelector,

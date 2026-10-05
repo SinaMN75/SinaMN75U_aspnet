@@ -1,5 +1,26 @@
 namespace SinaMN75U.Data.Entities;
 
+// ---------------- Organization ----------------
+
+[Table("Organizations")]
+public sealed class OrganizationEntity : BaseEntity<TagOrganization, OrganizationJson> {
+	[Required, MaxLength(100)]
+	public required string Title { get; set; }
+
+	public required Guid OwnerId { get; set; }
+	public UserEntity Owner { get; set; } = null!;
+}
+
+public sealed class OrganizationJson : BaseJson {
+	public decimal CommissionPercent { get; set; }
+	public List<OrganizationMember> Members { get; set; } = [];
+}
+
+public sealed class OrganizationMember {
+	public Guid UserId { get; set; }
+	public List<TagUser> Permissions { get; set; } = [];
+}
+
 // ---------------- Hotel ----------------
 
 [Table("Hotels")]
@@ -20,6 +41,9 @@ public class HotelEntity : BaseEntity<TagHotel, HotelJson> {
 
 	[MaxLength(100)]
 	public string? Email { get; set; }
+
+	public Guid? OrganizationId { get; set; }
+	public OrganizationEntity? Organization { get; set; }
 
 	public ICollection<HotelRoomEntity> Rooms { get; set; } = [];
 	public ICollection<HotelReservationEntity> Reservations { get; set; } = [];
@@ -170,6 +194,9 @@ public class DormEntity : BaseEntity<TagDorm, DormJson> {
 
 	[MaxLength(20)]
 	public string? PhoneNumber { get; set; }
+
+	public Guid? OrganizationId { get; set; }
+	public OrganizationEntity? Organization { get; set; }
 
 	public ICollection<DormRoomEntity> Rooms { get; set; } = [];
 	public ICollection<CommentEntity> Comments { get; set; } = [];

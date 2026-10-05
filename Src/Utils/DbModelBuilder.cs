@@ -91,6 +91,10 @@ public static class DbModelBuilder {
 		});
 		builder.Entity<ConversationEntity>().HasMany(e => e.Users).WithMany().UsingEntity("ConversationUsers");
 		builder.Entity<MessageEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<OrganizationEntity>().OwnsOne(e => e.JsonData, b => {
+			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
+			b.OwnsMany(i => i.Members);
+		});
 		builder.Entity<HotelEntity>().OwnsOne(e => e.JsonData, b => {
 			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
 			b.OwnsMany(i => i.Nearby);

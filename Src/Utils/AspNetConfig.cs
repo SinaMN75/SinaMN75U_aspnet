@@ -95,10 +95,7 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<ISimCardService, SimCardService>();
 		builder.Services.AddScoped<INotificationService, NotificationService>();
 		builder.Services.AddScoped<IDataSeedService, DataSeedService>();
-		builder.Services.AddScoped<IParkingSeedService, ParkingSeedService>();
-		builder.Services.AddScoped<ISportSeedService, SportSeedService>();
 		builder.Services.AddScoped<IVasService, VasService>();
-		builder.Services.AddScoped<IMerchantService, MerchantService>();
 		builder.Services.AddScoped<IMoadiService, MoadiService>();
 		builder.Services.AddScoped<IPnService, PnService>();
 		builder.Services.AddScoped<IProcessService, ProcessService>();
@@ -174,7 +171,6 @@ public static partial class AspNetConfig {
 		app.MapNotificationRoutes(RouteTags.Notification);
 		app.MapDataSeedRoutes(RouteTags.DataSeeder);
 		app.MapChargeInternetRoutes(RouteTags.ChargeInternet);
-		app.MapMerchantRoutes(RouteTags.Merchant);
 		app.MapMoadiRoutes(RouteTags.Moadi);
 		app.MapAppSettingsRoutes(RouteTags.AppSettings);
 		app.MapProcessRoutes(RouteTags.Process);

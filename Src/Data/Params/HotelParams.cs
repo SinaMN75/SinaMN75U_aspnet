@@ -1,5 +1,38 @@
 namespace SinaMN75U.Data.Params;
 
+public sealed class OrganizationCreateParams : BaseCreateParams<TagOrganization> {
+	[UValidationRequired("titleIsRequired"), UValidationStringLength(2, 100, "TitleMinLength")]
+	public string Title { get; set; } = null!;
+
+	[UValidationRequired("userIsRequired")]
+	public Guid OwnerId { get; set; }
+
+	public string? OwnerPassword { get; set; }
+	public decimal CommissionPercent { get; set; }
+}
+
+public sealed class OrganizationUpdateParams : BaseUpdateParams<TagOrganization> {
+	public string? Title { get; set; }
+	public Guid? OwnerId { get; set; }
+	public string? OwnerPassword { get; set; }
+	public decimal? CommissionPercent { get; set; }
+}
+
+public sealed class OrganizationReadParams : BaseReadParams<TagOrganization> {
+	public string? Title { get; set; }
+}
+
+public sealed class OrganizationMemberParams : BaseParams {
+	[UValidationRequired("idIsRequired")]
+	public Guid OrganizationId { get; set; }
+
+	[UValidationRequired("userIsRequired")]
+	public Guid UserId { get; set; }
+
+	public List<TagUser> Permissions { get; set; } = [];
+	public string? Password { get; set; }
+}
+
 public sealed class HotelCreateParams : BaseCreateParams<TagHotel> {
 	[UValidationRequired("titleIsRequired"), UValidationStringLength(2, 100, "TitleMinLength")]
 	public string Title { get; set; } = null!;
@@ -29,6 +62,7 @@ public sealed class HotelCreateParams : BaseCreateParams<TagHotel> {
 	public double? Longitude { get; set; }
 	public int? CancellationFreeHours { get; set; }
 	public int? CancellationPenaltyNights { get; set; }
+	public Guid? OrganizationId { get; set; }
 }
 
 public sealed class HotelUpdateParams : BaseUpdateParams<TagHotel> {
@@ -56,6 +90,7 @@ public sealed class HotelUpdateParams : BaseUpdateParams<TagHotel> {
 	public double? Longitude { get; set; }
 	public int? CancellationFreeHours { get; set; }
 	public int? CancellationPenaltyNights { get; set; }
+	public Guid? OrganizationId { get; set; }
 }
 
 public sealed class HotelReadParams : BaseReadParams<TagHotel> {
@@ -65,6 +100,7 @@ public sealed class HotelReadParams : BaseReadParams<TagHotel> {
 	public decimal? MinPrice { get; set; }
 	public decimal? MaxPrice { get; set; }
 	public decimal? MinScore { get; set; }
+	public Guid? OrganizationId { get; set; }
 
 	public HotelSelectorArgs SelectorArgs { get; set; } = new();
 }
@@ -297,6 +333,7 @@ public sealed class DormCreateParams : BaseCreateParams<TagDorm> {
 	public string? Telegram { get; set; }
 	public double? Latitude { get; set; }
 	public double? Longitude { get; set; }
+	public Guid? OrganizationId { get; set; }
 }
 
 public sealed class DormUpdateParams : BaseUpdateParams<TagDorm> {
@@ -323,6 +360,7 @@ public sealed class DormUpdateParams : BaseUpdateParams<TagDorm> {
 	public string? Telegram { get; set; }
 	public double? Latitude { get; set; }
 	public double? Longitude { get; set; }
+	public Guid? OrganizationId { get; set; }
 }
 
 public sealed class DormReadParams : BaseReadParams<TagDorm> {
@@ -331,6 +369,7 @@ public sealed class DormReadParams : BaseReadParams<TagDorm> {
 	public decimal? MinRent { get; set; }
 	public decimal? MaxRent { get; set; }
 	public bool? AvailableOnly { get; set; }
+	public Guid? OrganizationId { get; set; }
 	public DormSelectorArgs SelectorArgs { get; set; } = new();
 }
 
