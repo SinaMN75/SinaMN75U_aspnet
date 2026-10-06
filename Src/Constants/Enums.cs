@@ -148,6 +148,8 @@ public enum TagUser {
 	PermissionManageWallets = 620, // charge wallets + all-users accounting report
 	PermissionManageContents = 621, // create/update/delete Content + Blog
 	PermissionViewDashboard = 622, // admin dashboards (financial ops, property)
+	PermissionManageAccounting = 623,
+	PermissionViewAccounting = 624,
 }
 
 public enum TagCategory {
@@ -610,6 +612,62 @@ public enum TagHotel {
 public enum TagOrganization {
 	Active = 101,
 	Inactive = 102
+}
+
+public enum TagAccount {
+	Asset = 101,
+	Liability = 102,
+	Equity = 103,
+	Income = 104,
+	Expense = 105,
+
+	Cash = 201,
+	Bank = 202,
+	PettyCash = 203,
+	Inactive = 204,
+
+	Wallet = 301,
+	InTransit = 302,
+	Receivable = 303,
+	ChecksReceivable = 304,
+	DepositsHeld = 305,
+	ChecksPayable = 306,
+	Payables = 307,
+	Capital = 308,
+	RentIncome = 309,
+	HotelIncome = 310,
+	ServiceIncome = 311,
+	PenaltyIncome = 312,
+	DamageIncome = 313,
+	CommissionExpense = 314
+}
+
+public enum TagVoucher {
+	Manual = 101,
+	Auto = 102,
+
+	Invoice = 201,
+	Payment = 202,
+	Receipt = 203,
+	Refund = 204,
+	Commission = 205,
+	Settlement = 206,
+	Payout = 207,
+	Check = 208,
+	Expense = 209,
+	Transfer = 210,
+	Opening = 211
+}
+
+public enum TagCheck {
+	Received = 101,
+	Issued = 102,
+	Guarantee = 103,
+
+	Pending = 201,
+	Cleared = 202,
+	Bounced = 203,
+	Returned = 204
 }
 
 public enum TagHotelReservation {

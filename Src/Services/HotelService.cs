@@ -81,6 +81,20 @@ public interface IHotelService {
 	public Task<UResponse> RequestOrganizationSettlement(OrganizationSettlementRequestParams p, CancellationToken ct);
 	public Task<UResponse> ProcessOrganizationSettlement(OrganizationSettlementProcessParams p, CancellationToken ct);
 	public Task ProcessDueInvoices(CancellationToken ct);
+	public Task<UResponse<Guid?>> CreateAccount(AccountCreateParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<AccountResponse>?>> ReadAccounts(AccountReadParams p, CancellationToken ct);
+	public Task<UResponse> UpdateAccount(AccountUpdateParams p, CancellationToken ct);
+	public Task<UResponse> DeleteAccount(IdParams p, CancellationToken ct);
+	public Task<UResponse<Guid?>> CreateVoucher(VoucherCreateParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<VoucherResponse>?>> ReadVouchers(VoucherReadParams p, CancellationToken ct);
+	public Task<UResponse> DeleteVoucher(IdParams p, CancellationToken ct);
+	public Task<UResponse<LedgerResponse?>> ReadLedger(LedgerReadParams p, CancellationToken ct);
+	public Task<UResponse<LedgerReportResponse?>> ReadLedgerReport(LedgerReportParams p, CancellationToken ct);
+	public Task<UResponse<Guid?>> CreateCheck(CheckCreateParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<CheckResponse>?>> ReadChecks(CheckReadParams p, CancellationToken ct);
+	public Task<UResponse> SetCheckStatus(CheckStatusParams p, CancellationToken ct);
+	public Task<UResponse> ReceiveDormBedInvoice(InvoiceReceiveParams p, CancellationToken ct);
+	public Task<UResponse> ReceiveHotelInvoice(InvoiceReceiveParams p, CancellationToken ct);
 }
 
 public class HotelService(
@@ -116,7 +130,7 @@ public class HotelService(
 
 	private static Guid MoneyAccountOf(Guid? organizationId) => Core.App.MultiTenant && organizationId != null ? organizationId.Value : Core.App.Users.SystemAdmin.Id;
 
-	private async Task TakeCommission(Guid? organizationId, decimal amount, string detail, List<KeyValue> keyValues, CancellationToken ct) {
+	private async Task TakeCommission(Guid? organizationId, decimal amount, string detail, List<KeyValue> keyValues, Guid sourceId, Guid? placeId, CancellationToken ct) {
 		if (!Core.App.MultiTenant || organizationId == null) return;
 		decimal percent = await db.Set<OrganizationEntity>().Where(x => x.Id == organizationId).Select(x => x.JsonData.CommissionPercent).FirstOrDefaultAsync(ct);
 		decimal commission = Math.Round(amount * percent / 100);
@@ -130,6 +144,7 @@ public class HotelService(
 			TagWalletTxn = [TagWalletTxn.PlatformCommission],
 			AllowOverdraft = true
 		}, ct);
+		await Post(organizationId, TagVoucher.Commission, sourceId, placeId, null, ls.Get("platformCommission", "fa"), DateTime.UtcNow, ct, new Leg(TagAccount.CommissionExpense, commission), new Leg(TagAccount.Wallet, -commission));
 	}
 
 	private static Guid UserIdOf(JwtClaimData? u) => u?.Id ?? Guid.Empty;
@@ -221,6 +236,7 @@ public class HotelService(
 			Tags = p.Tags,
 			JsonData = new OrganizationJson { Detail1 = p.Detail1, Detail2 = p.Detail2, CommissionPercent = p.CommissionPercent }
 		}, ct);
+		await AccountsOf(id, ct);
 		await db.SaveChangesAsync(ct);
 		return new UResponse<Guid?>(id, Usc.Created);
 	}
@@ -749,6 +765,9 @@ public class HotelService(
 		if (!await CanAct(userData, e.Hotel, TagUser.PermissionDeleteReservations, ct))
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
+		foreach (HotelInvoiceEntity invoice in await db.Set<HotelInvoiceEntity>().Include(x => x.Reservation).ThenInclude(x => x!.Hotel).Where(x => x.ReservationId == e.Id && x.JsonData.Posted).ToListAsync(ct))
+			await SyncHotelInvoice(invoice, true, ct);
+		await db.SaveChangesAsync(ct);
 		await db.Set<HotelReservationEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 		return new UResponse();
 	}
@@ -984,6 +1003,9 @@ public class HotelService(
 		e.JsonData.CancelReason = p.Reason;
 		e.JsonData.CancellationPenalty = penalty;
 		e.JsonData.RefundAmount = refund;
+		foreach (HotelInvoiceEntity invoice in e.Invoices) await SyncHotelInvoice(invoice, false, ct);
+		await Post(e.Hotel.OrganizationId, TagVoucher.Refund, e.Id, e.HotelId, e.UserId, $"{ls.Get("hotelReservationRefund", "fa")} - {e.Hotel.Title}", DateTime.UtcNow, ct,
+			new Leg(TagAccount.Receivable, refund), new Leg(TagAccount.Wallet, -refund));
 
 		await AddNotification(e.UserId, TagNotification.ReservationCancelled, ls.Get("reservationCancelled"), e.Hotel.Title, ct);
 		await db.SaveChangesAsync(ct);
@@ -1027,7 +1049,7 @@ public class HotelService(
 		int claimed = await db.Set<HotelInvoiceEntity>().Where(x => x.Id == e.Id && x.Tags.Contains(TagHotelInvoice.NotPaid)).ExecuteUpdateAsync(u => u.SetProperty(x => x.Tags, paidTags), ct);
 		if (claimed == 0) return new UResponse(Usc.Conflict, ls.Get("thisInvoiceHasAlreadyBeenPaid"));
 
-		decimal amount = e.DebtAmount + e.PenaltyAmount - e.CreditorAmount;
+		decimal amount = e.DebtAmount + e.PenaltyAmount - e.CreditorAmount - e.PaidAmount;
 		if (amount > 0) {
 			UResponse<WalletTxnResponse?> transfer = await ws.Transfer(new WalletTransferParams {
 				SenderId = p.UserId,
@@ -1041,11 +1063,14 @@ public class HotelService(
 				await db.Set<HotelInvoiceEntity>().Where(x => x.Id == e.Id).ExecuteUpdateAsync(u => u.SetProperty(x => x.Tags, unpaidTags), ct);
 				return new UResponse(transfer.Status, transfer.Message);
 			}
-			await TakeCommission(e.Reservation?.Hotel.OrganizationId, amount, ls.Get("hotelReservationPayment"), HotelInvoiceKeyValues(e), ct);
+			await TakeCommission(e.Reservation?.Hotel.OrganizationId, amount, ls.Get("hotelReservationPayment"), HotelInvoiceKeyValues(e), e.Id, e.Reservation?.HotelId, ct);
 		}
 
-		e.PaidAmount = amount;
+		e.PaidAmount += amount;
 		e.Tags = [TagHotelInvoice.PaidOnline];
+		await SyncHotelInvoice(e, false, ct);
+		await Post(e.Reservation?.Hotel.OrganizationId, TagVoucher.Payment, e.Id, e.Reservation?.HotelId, e.Reservation?.UserId, $"{ls.Get("hotelReservationPayment", "fa")} - {e.Reservation?.Hotel.Title}", DateTime.UtcNow, ct,
+			new Leg(TagAccount.Wallet, amount), new Leg(TagAccount.Receivable, -amount));
 
 		if (e.Reservation != null) {
 			HotelReservationEntity? reservation = await db.Set<HotelReservationEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == e.ReservationId, ct);
@@ -1161,6 +1186,7 @@ public class HotelService(
 		if (p.PenaltyPrecentEveryDate.IsNotNull()) e.JsonData.PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate.Value;
 
 		e.ApplyUpdateParam<HotelInvoiceEntity, TagHotelInvoice, HotelInvoiceJson>(p);
+		await SyncHotelInvoice(e, false, ct);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
@@ -1174,6 +1200,8 @@ public class HotelService(
 		if (!(e.Reservation == null ? IsFull(userData) : await CanAct(userData, e.Reservation.Hotel, TagUser.PermissionDeleteInvoices, ct)))
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
+		await SyncHotelInvoice(e, true, ct);
+		await db.SaveChangesAsync(ct);
 		await db.Set<HotelInvoiceEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
 		return new UResponse();
 	}
@@ -1707,6 +1735,9 @@ public class HotelService(
 
 		if (!await CanAct(userData, e.Bed.Room.Dorm, TagUser.PermissionDeleteContracts, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
+		foreach (DormBedInvoiceEntity invoice in await db.Set<DormBedInvoiceEntity>().Include(x => x.Contract).ThenInclude(x => x!.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm).Where(x => x.ContractId == e.Id && x.JsonData.Posted).ToListAsync(ct))
+			await SyncDormBedInvoice(invoice, true, ct);
+		await db.SaveChangesAsync(ct);
 		await db.Set<DormBedContractEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
 		return new UResponse();
@@ -1816,6 +1847,7 @@ public class HotelService(
 		if (p.PenaltyPrecentEveryDate.IsNotNull()) e.JsonData.PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate.Value;
 
 		e.ApplyUpdateParam<DormBedInvoiceEntity, TagDormBedInvoice, DormBedInvoiceJson>(p);
+		await SyncDormBedInvoice(e, false, ct);
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();
@@ -1830,6 +1862,8 @@ public class HotelService(
 		if (!(e.Contract == null ? IsFull(userData) : await CanAct(userData, e.Contract.Bed.Room.Dorm, TagUser.PermissionDeleteInvoices, ct)))
 			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
+		await SyncDormBedInvoice(e, true, ct);
+		await db.SaveChangesAsync(ct);
 		await db.Set<DormBedInvoiceEntity>().Where(x => p.Id == x.Id).ExecuteDeleteAsync(ct);
 
 		return new UResponse();
@@ -1848,7 +1882,7 @@ public class HotelService(
 		int claimed = await db.Set<DormBedInvoiceEntity>().Where(x => x.Id == e.Id && x.Tags.Contains(TagDormBedInvoice.NotPaid)).ExecuteUpdateAsync(u => u.SetProperty(x => x.Tags, paidTags), ct);
 		if (claimed == 0) return new UResponse(Usc.Conflict, ls.Get("thisInvoiceHasAlreadyBeenPaid"));
 
-		decimal amount = e.DebtAmount + e.PenaltyAmount - e.CreditorAmount;
+		decimal amount = DueOf(e);
 		if (amount > 0) {
 			UResponse<WalletTxnResponse?> transfer = await ws.Transfer(new WalletTransferParams {
 				SenderId = p.UserId,
@@ -1863,11 +1897,14 @@ public class HotelService(
 				return new UResponse(transfer.Status, transfer.Message);
 			}
 			decimal commissionBase = e.Tags.Contains(TagDormBedInvoice.Deposit) ? 0 : e.Contract != null && e.Contract.Tags.Contains(TagDormBedContract.SingleInvoice) ? Math.Max(0, amount - e.Contract.Deposit) : amount;
-			await TakeCommission(e.Contract?.Bed.Room.Dorm.OrganizationId, commissionBase, ls.Get("dormInvoicePayment"), DormBedInvoiceKeyValues(e), ct);
+			await TakeCommission(e.Contract?.Bed.Room.Dorm.OrganizationId, commissionBase, ls.Get("dormInvoicePayment"), DormBedInvoiceKeyValues(e), e.Id, e.Contract?.Bed.Room.DormId, ct);
 		}
 
-		e.PaidAmount = amount;
-		e.Tags = [TagDormBedInvoice.PaidOnline];
+		e.PaidAmount += amount;
+		e.Tags = [..e.Tags.Where(x => (int)x < 200), TagDormBedInvoice.PaidOnline];
+		await SyncDormBedInvoice(e, false, ct);
+		await Post(e.Contract?.Bed.Room.Dorm.OrganizationId, TagVoucher.Payment, e.Id, e.Contract?.Bed.Room.DormId, e.Contract?.UserId, $"{ls.Get("dormInvoicePayment", "fa")} - {e.Contract?.Bed.Room.Dorm.Title} - {e.Contract?.Bed.Title}", DateTime.UtcNow, ct,
+			new Leg(TagAccount.Wallet, amount), new Leg(TagAccount.Receivable, -amount));
 		await AddNotification(p.UserId, TagNotification.InvoicePaid, ls.Get("invoicePaid"), ls.Get("dormInvoicePayment"), ct);
 		await db.SaveChangesAsync(ct);
 
@@ -2611,18 +2648,26 @@ public class HotelService(
 		decimal unusedCredit = 0;
 		List<DormBedInvoiceEntity> rents = e.Invoices.Where(x => x.Tags.Contains(TagDormBedInvoice.Rent)).OrderBy(x => x.DueDate).ToList();
 		foreach (DormBedInvoiceEntity r in rents.Where(x => x.DueDate > end)) {
-			if (r.Tags.Contains(TagDormBedInvoice.NotPaid)) db.Set<DormBedInvoiceEntity>().Remove(r);
+			if (r.Tags.Contains(TagDormBedInvoice.NotPaid)) {
+				await SyncDormBedInvoice(r, true, ct);
+				db.Set<DormBedInvoiceEntity>().Remove(r);
+			}
 			else unusedCredit += r.PaidAmount;
 		}
 
-		foreach (DormBedInvoiceEntity d in e.Invoices.Where(x => x.Tags.Contains(TagDormBedInvoice.Deposit) && x.Tags.Contains(TagDormBedInvoice.NotPaid) && x.PaidAmount == 0))
+		foreach (DormBedInvoiceEntity d in e.Invoices.Where(x => x.Tags.Contains(TagDormBedInvoice.Deposit) && x.Tags.Contains(TagDormBedInvoice.NotPaid) && x.PaidAmount == 0).ToList()) {
+			await SyncDormBedInvoice(d, true, ct);
 			db.Set<DormBedInvoiceEntity>().Remove(d);
+		}
 
 		DormBedInvoiceEntity? current = rents.LastOrDefault(x => x.DueDate <= end);
 		if (current != null) {
 			PersianDateTime start = current.DueDate.ToPersian();
 			decimal fraction = Math.Min(1, ((end.Date - current.DueDate.Date).Days + 1) / (decimal)PersianDateTime.DaysInMonth(start.Year, start.Month));
-			if (current.Tags.Contains(TagDormBedInvoice.NotPaid)) current.DebtAmount = Math.Round(current.DebtAmount * fraction, 2);
+			if (current.Tags.Contains(TagDormBedInvoice.NotPaid)) {
+				current.DebtAmount = Math.Round(current.DebtAmount * fraction, 2);
+				await SyncDormBedInvoice(current, false, ct);
+			}
 			else unusedCredit += current.PaidAmount * (1 - fraction);
 		}
 
@@ -2631,15 +2676,23 @@ public class HotelService(
 			: e.Invoices.Where(x => x.Tags.Contains(TagDormBedInvoice.Deposit) && !x.Tags.Contains(TagDormBedInvoice.NotPaid)).Sum(x => x.PaidAmount);
 		decimal pool = depositPaid + Math.Round(unusedCredit, 2) - p.Deductions;
 
-		foreach (DormBedInvoiceEntity u in e.Invoices.Where(x => x.Tags.Contains(TagDormBedInvoice.NotPaid) && db.Entry(x).State != EntityState.Deleted).OrderBy(x => x.DueDate)) {
+		decimal applied = 0;
+		foreach (DormBedInvoiceEntity u in e.Invoices.Where(x => x.Tags.Contains(TagDormBedInvoice.NotPaid) && db.Entry(x).State != EntityState.Deleted).OrderBy(x => x.DueDate).ToList()) {
 			decimal due = DueOf(u);
 			if (due <= 0 || pool < due) continue;
 			u.PaidAmount += due;
 			u.Tags = [..u.Tags.Where(x => x != TagDormBedInvoice.NotPaid), TagDormBedInvoice.Paid];
 			pool -= due;
+			applied += due;
+			await SyncDormBedInvoice(u, false, ct);
 		}
 
-		if (pool < 0) await db.Set<DormBedInvoiceEntity>().AddAsync(NewDormBedInvoice(e, userData.Id, [TagDormBedInvoice.NotPaid, TagDormBedInvoice.Service], -pool, DateTime.UtcNow, 0), ct);
+		if (pool < 0) {
+			DormBedInvoiceEntity extra = NewDormBedInvoice(e, userData.Id, [TagDormBedInvoice.NotPaid, TagDormBedInvoice.Service], -pool, DateTime.UtcNow, 0);
+			extra.Contract = e;
+			await db.Set<DormBedInvoiceEntity>().AddAsync(extra, ct);
+			await SyncDormBedInvoice(extra, false, ct);
+		}
 
 		decimal refund = Math.Max(0, pool);
 		if (refund > 0) {
@@ -2657,6 +2710,11 @@ public class HotelService(
 			}, ct);
 			if (transfer.Result == null) return new UResponse(transfer.Status, transfer.Message);
 		}
+
+		decimal held = depositPaid + Math.Round(unusedCredit, 2);
+		await Post(e.Bed.Room.Dorm.OrganizationId, TagVoucher.Settlement, e.Id, e.Bed.Room.DormId, e.UserId, $"{ls.Get("contractSettled", "fa")} - {e.Bed.Room.Dorm.Title} - {e.Bed.Title}", DateTime.UtcNow, ct,
+			new Leg(TagAccount.DepositsHeld, depositPaid), new Leg(TagAccount.RentIncome, Math.Round(unusedCredit, 2)), new Leg(TagAccount.Receivable, -applied),
+			new Leg(TagAccount.DamageIncome, -(held - applied - refund)), new Leg(TagAccount.Wallet, -refund));
 
 		e.EndDate = end;
 		e.Tags = [..e.Tags, TagDormBedContract.Settled];
@@ -2750,6 +2808,7 @@ public class HotelService(
 			await db.Set<DormBedInvoiceEntity>().AddAsync(x, ct);
 		}
 
+		await SyncDormBedInvoice(e, true, ct);
 		db.Set<DormBedInvoiceEntity>().Remove(e);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
@@ -2778,6 +2837,7 @@ public class HotelService(
 		if (transfer.Result == null) return new UResponse(transfer.Status, transfer.Message);
 
 		e.JsonData.Settlements = [..e.JsonData.Settlements, new OrganizationSettlement { Id = id, Amount = p.Amount, Iban = p.Iban, CreatedAt = DateTime.UtcNow }];
+		await Post(e.Id, TagVoucher.Payout, id, null, null, ls.Get("organizationSettlement", "fa"), DateTime.UtcNow, ct, new Leg(TagAccount.InTransit, p.Amount), new Leg(TagAccount.Wallet, -p.Amount));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
@@ -2808,7 +2868,673 @@ public class HotelService(
 		e.JsonData.Settlements = e.JsonData.Settlements.Select(x => x.Id != s.Id ? x : new OrganizationSettlement {
 			Id = x.Id, Amount = x.Amount, Iban = x.Iban, CreatedAt = x.CreatedAt, ProcessedAt = DateTime.UtcNow, Approved = p.Approve, Note = p.Note
 		}).ToList();
+		await Post(e.Id, TagVoucher.Payout, s.Id, null, null, ls.Get("organizationSettlement", "fa"), DateTime.UtcNow, ct, new Leg(p.Approve ? TagAccount.Bank : TagAccount.Wallet, s.Amount), new Leg(TagAccount.InTransit, -s.Amount));
 		await AddNotification(e.OwnerId, TagNotification.General, ls.Get("organizationSettlement"), p.Approve ? s.Amount.ToIntString() : p.Note ?? "", ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	private static readonly (string Code, string Title, TagAccount[] Tags)[] DefaultAccounts = [
+		("1101", "صندوق", [TagAccount.Asset, TagAccount.Cash]),
+		("1102", "بانک", [TagAccount.Asset, TagAccount.Bank]),
+		("1103", "تنخواه", [TagAccount.Asset, TagAccount.PettyCash]),
+		("1104", "کیف پول سامانه", [TagAccount.Asset, TagAccount.Wallet]),
+		("1105", "وجوه در راه", [TagAccount.Asset, TagAccount.InTransit]),
+		("1201", "بدهکاران (ساکنان و مهمانان)", [TagAccount.Asset, TagAccount.Receivable]),
+		("1202", "اسناد دریافتنی", [TagAccount.Asset, TagAccount.ChecksReceivable]),
+		("2101", "ودیعه‌ی ساکنان", [TagAccount.Liability, TagAccount.DepositsHeld]),
+		("2102", "اسناد پرداختنی", [TagAccount.Liability, TagAccount.ChecksPayable]),
+		("2103", "بستانکاران", [TagAccount.Liability, TagAccount.Payables]),
+		("3101", "سرمایه", [TagAccount.Equity, TagAccount.Capital]),
+		("4101", "درآمد اجاره‌ی خوابگاه", [TagAccount.Income, TagAccount.RentIncome]),
+		("4102", "درآمد اقامت هتل", [TagAccount.Income, TagAccount.HotelIncome]),
+		("4103", "درآمد خدمات", [TagAccount.Income, TagAccount.ServiceIncome]),
+		("4104", "درآمد جریمه‌ی دیرکرد", [TagAccount.Income, TagAccount.PenaltyIncome]),
+		("4105", "درآمد خسارت و کسورات", [TagAccount.Income, TagAccount.DamageIncome]),
+		("5101", "کمیسیون سامانه", [TagAccount.Expense, TagAccount.CommissionExpense]),
+		("5201", "حقوق و دستمزد", [TagAccount.Expense]),
+		("5202", "آب، برق و گاز", [TagAccount.Expense]),
+		("5203", "تعمیرات و نگهداری", [TagAccount.Expense]),
+		("5204", "مواد غذایی", [TagAccount.Expense]),
+		("5205", "نظافت و بهداشت", [TagAccount.Expense]),
+		("5206", "اجاره‌ی ساختمان", [TagAccount.Expense]),
+		("5299", "سایر هزینه‌ها", [TagAccount.Expense])
+	];
+
+	private static readonly TagAccount[] ChargeRoles = [TagAccount.DepositsHeld, TagAccount.RentIncome, TagAccount.ServiceIncome, TagAccount.PenaltyIncome, TagAccount.HotelIncome];
+
+	private sealed record Leg(TagAccount Role, decimal Amount, Guid? AccountId = null);
+
+	private sealed record Entry(Guid AccountId, decimal Debit, decimal Credit, Guid? PersonId, string? Description);
+
+	private readonly Dictionary<Guid, List<AccountEntity>> _accounts = [];
+
+	private readonly List<VoucherEntity> _pending = [];
+
+	private static bool IsRole(TagAccount t) => (int)t >= 300;
+
+	private static bool IsMoneyBox(AccountEntity a) => a.Tags.Contains(TagAccount.Cash) || a.Tags.Contains(TagAccount.Bank) || a.Tags.Contains(TagAccount.PettyCash);
+
+	private async Task<(JwtClaimData? User, UResponse? Error)> BooksUser(string? token, Guid organizationId, TagUser permission, CancellationToken ct) {
+		JwtClaimData? u = ts.ExtractClaims(token);
+		if (u == null) return (null, new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue")));
+		if (u.IsExpired) return (null, new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired")));
+		if (!Core.App.MultiTenant) return (null, new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction")));
+		if (!await db.Set<OrganizationEntity>().AnyAsync(x => x.Id == organizationId, ct)) return (null, new UResponse(Usc.NotFound, ls.Get("organizationNotFound")));
+		bool allowed = u.IsSystemAdmin ||
+		               await HasOrganizationPermission(u, organizationId, permission, ct) ||
+		               permission == TagUser.PermissionViewAccounting && await HasOrganizationPermission(u, organizationId, TagUser.PermissionManageAccounting, ct);
+		return allowed ? (u, null) : (null, new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction")));
+	}
+
+	private async Task<bool> IsPlaceOf(Guid organizationId, Guid placeId, CancellationToken ct) =>
+		await db.Set<HotelEntity>().AnyAsync(x => x.Id == placeId && x.OrganizationId == organizationId, ct) ||
+		await db.Set<DormEntity>().AnyAsync(x => x.Id == placeId && x.OrganizationId == organizationId, ct);
+
+	private async Task<List<AccountEntity>> AccountsOf(Guid organizationId, CancellationToken ct) {
+		if (_accounts.TryGetValue(organizationId, out List<AccountEntity>? list)) return list;
+		list = await db.Set<AccountEntity>().Where(x => x.OrganizationId == organizationId).ToListAsync(ct);
+		if (list.Count == 0) {
+			DateTime now = DateTime.UtcNow;
+			list = DefaultAccounts.Select(a => new AccountEntity {
+				Id = Guid.CreateVersion7(),
+				CreatorId = organizationId,
+				CreatedAt = now,
+				Tags = a.Tags.ToList(),
+				Code = a.Code,
+				Title = a.Title,
+				OrganizationId = organizationId,
+				JsonData = new AccountJson()
+			}).ToList();
+			await db.Set<AccountEntity>().AddRangeAsync(list, ct);
+		}
+
+		_accounts[organizationId] = list;
+		return list;
+	}
+
+	private List<VoucherEntity> PendingVouchers() => _pending.Where(x => db.Entry(x).State == EntityState.Added).ToList();
+
+	private async Task<Guid> AddVoucher(Guid organizationId, ICollection<TagVoucher> tags, Guid? sourceId, Guid? placeId, DateTime date, string? description, Guid? registeredBy, IEnumerable<Entry> lines, CancellationToken ct) {
+		Guid id = Guid.CreateVersion7();
+		DateTime now = DateTime.UtcNow;
+		int last = await db.Set<VoucherEntity>().Where(x => x.OrganizationId == organizationId).MaxAsync(x => (int?)x.Number, ct) ?? 0;
+		VoucherEntity v = new() {
+			Id = id,
+			CreatorId = organizationId,
+			CreatedAt = now,
+			Tags = tags.Distinct().ToList(),
+			Number = last + PendingVouchers().Count(x => x.OrganizationId == organizationId) + 1,
+			Date = date,
+			PlaceId = placeId,
+			SourceId = sourceId,
+			OrganizationId = organizationId,
+			JsonData = new VoucherJson { Detail1 = description ?? "", RegisteredBy = registeredBy },
+			Lines = lines.Select(l => new VoucherLineEntity {
+				Id = Guid.CreateVersion7(),
+				CreatorId = organizationId,
+				CreatedAt = now,
+				Tags = tags.Distinct().ToList(),
+				VoucherId = id,
+				AccountId = l.AccountId,
+				Debit = l.Debit,
+				Credit = l.Credit,
+				PersonId = l.PersonId,
+				Description = l.Description
+			}).ToList()
+		};
+		await db.Set<VoucherEntity>().AddAsync(v, ct);
+		_pending.Add(v);
+		return id;
+	}
+
+	private async Task Post(Guid? organizationId, TagVoucher source, Guid? sourceId, Guid? placeId, Guid? personId, string description, DateTime date, CancellationToken ct, params Leg[] legs) {
+		if (!Core.App.MultiTenant || organizationId == null) return;
+		List<AccountEntity> accounts = await AccountsOf(organizationId.Value, ct);
+		List<Entry> lines = legs
+			.GroupBy(x => x.AccountId ?? accounts.First(a => a.Tags.Contains(x.Role)).Id)
+			.Select(g => (AccountId: g.Key, Amount: Math.Round(g.Sum(x => x.Amount), 2)))
+			.Where(x => x.Amount != 0)
+			.Select(x => new Entry(x.AccountId, Math.Max(0, x.Amount), Math.Max(0, -x.Amount), personId, null))
+			.ToList();
+		if (lines.Count == 0) return;
+		await AddVoucher(organizationId.Value, [TagVoucher.Auto, source], sourceId, placeId, date, description, null, lines, ct);
+	}
+
+	private async Task SyncCharge(Guid organizationId, Guid sourceId, Guid placeId, Guid personId, DateTime date, string description, Dictionary<TagAccount, decimal> target, CancellationToken ct) {
+		List<AccountEntity> accounts = await AccountsOf(organizationId, ct);
+		List<(Guid AccountId, decimal Amount)> posted = (await db.Set<VoucherLineEntity>()
+				.Where(x => x.Voucher.SourceId == sourceId && x.Tags.Contains(TagVoucher.Invoice))
+				.GroupBy(x => x.AccountId)
+				.Select(g => new { g.Key, Amount = g.Sum(x => x.Credit - x.Debit) })
+				.ToListAsync(ct))
+			.Select(x => (x.Key, x.Amount))
+			.Concat(PendingVouchers().Where(x => x.SourceId == sourceId && x.Tags.Contains(TagVoucher.Invoice)).SelectMany(x => x.Lines).Select(x => (x.AccountId, x.Credit - x.Debit)))
+			.ToList();
+
+		List<Leg> legs = [];
+		foreach (TagAccount role in ChargeRoles) {
+			Guid id = accounts.First(a => a.Tags.Contains(role)).Id;
+			decimal delta = Math.Round(target.GetValueOrDefault(role) - posted.Where(x => x.AccountId == id).Sum(x => x.Amount), 2);
+			if (delta == 0) continue;
+			legs.Add(new Leg(role, -delta));
+			legs.Add(new Leg(TagAccount.Receivable, delta));
+		}
+
+		await Post(organizationId, TagVoucher.Invoice, sourceId, placeId, personId, description, date, ct, legs.ToArray());
+	}
+
+	private async Task SyncDormBedInvoice(DormBedInvoiceEntity e, bool removed, CancellationToken ct) {
+		DormEntity? dorm = e.Contract?.Bed.Room.Dorm;
+		if (!Core.App.MultiTenant || dorm?.OrganizationId == null) return;
+
+		DateTime now = DateTime.UtcNow;
+		bool open = e.Tags.Contains(TagDormBedInvoice.NotPaid);
+		bool charged = !removed && (e.DueDate <= now || !open || e.PaidAmount > 0);
+		if (!charged && !e.JsonData.Posted) return;
+
+		decimal debt = charged ? Math.Max(0, e.DebtAmount - e.CreditorAmount) : 0;
+		bool single = e.Contract!.Tags.Contains(TagDormBedContract.SingleInvoice) && !e.Tags.Contains(TagDormBedInvoice.Rent) && !e.Tags.Contains(TagDormBedInvoice.Service);
+		decimal deposit = e.Tags.Contains(TagDormBedInvoice.Deposit) ? debt : single ? Math.Min(e.Contract.Deposit, debt) : 0;
+		Dictionary<TagAccount, decimal> target = new() {
+			[TagAccount.DepositsHeld] = deposit,
+			[e.Tags.Contains(TagDormBedInvoice.Service) ? TagAccount.ServiceIncome : TagAccount.RentIncome] = debt - deposit,
+			[TagAccount.PenaltyIncome] = charged && !open ? e.PenaltyAmount : 0
+		};
+		await SyncCharge(dorm.OrganizationId.Value, e.Id, dorm.Id, e.Contract.UserId, !e.JsonData.Posted && e.DueDate < now ? e.DueDate : now, $"{ls.Get("dormBedInvoiceIssued", "fa")} - {dorm.Title} - {e.Contract.Bed.Title}", target, ct);
+		e.JsonData.Posted = charged;
+	}
+
+	private async Task SyncHotelInvoice(HotelInvoiceEntity e, bool removed, CancellationToken ct) {
+		HotelReservationEntity? r = e.Reservation;
+		if (!Core.App.MultiTenant || r?.Hotel.OrganizationId == null) return;
+
+		DateTime now = DateTime.UtcNow;
+		bool charged = !removed && (e.DueDate <= now || !e.Tags.Contains(TagHotelInvoice.NotPaid) || e.PaidAmount > 0);
+		if (!charged && !e.JsonData.Posted) return;
+
+		decimal amount = !charged ? 0
+			: r.Tags.Contains(TagHotelReservation.Cancelled) ? Math.Max(0, e.PaidAmount - e.CreditorAmount)
+			: Math.Max(0, e.DebtAmount + e.PenaltyAmount - e.CreditorAmount);
+		await SyncCharge(r.Hotel.OrganizationId.Value, e.Id, r.HotelId, r.UserId, !e.JsonData.Posted && e.DueDate < now ? e.DueDate : now, $"{ls.Get("hotelInvoiceIssued", "fa")} - {r.Hotel.Title}", new Dictionary<TagAccount, decimal> { [TagAccount.HotelIncome] = amount }, ct);
+		e.JsonData.Posted = charged;
+	}
+
+	private async Task<UResponse?> PostReceipt(Guid? organizationId, Guid invoiceId, Guid placeId, Guid personId, Guid? contractId, decimal amount, InvoiceReceiveParams p, string description, Guid registeredBy, CancellationToken ct) {
+		if (!Core.App.MultiTenant || organizationId == null) return null;
+
+		DateTime now = DateTime.UtcNow;
+		if (p.Check != null) {
+			if (p.Check.Number.IsNullOrEmpty()) return new UResponse(Usc.BadRequest, ls.Get("numberRequired"));
+			Guid checkId = Guid.CreateVersion7();
+			await db.Set<CheckEntity>().AddAsync(new CheckEntity {
+				Id = checkId,
+				CreatorId = organizationId.Value,
+				CreatedAt = now,
+				Tags = [TagCheck.Received, TagCheck.Pending],
+				Amount = amount,
+				DueDate = p.Check.DueDate,
+				Number = p.Check.Number,
+				Bank = p.Check.Bank,
+				PersonId = personId,
+				ContractId = contractId,
+				PlaceId = placeId,
+				OrganizationId = organizationId.Value,
+				JsonData = new CheckJson { SayadId = p.Check.SayadId, Drawer = p.Check.Drawer, InvoiceId = invoiceId, RegisteredBy = registeredBy }
+			}, ct);
+			await Post(organizationId, TagVoucher.Check, checkId, placeId, personId, description, now, ct, new Leg(TagAccount.ChecksReceivable, amount), new Leg(TagAccount.Receivable, -amount));
+			return null;
+		}
+
+		AccountEntity? box = (await AccountsOf(organizationId.Value, ct)).FirstOrDefault(x => x.Id == p.AccountId && IsMoneyBox(x));
+		if (box == null) return new UResponse(Usc.BadRequest, ls.Get("selectACashOrBankAccount"));
+		await Post(organizationId, TagVoucher.Receipt, invoiceId, placeId, personId, description, now, ct, new Leg(TagAccount.Cash, amount, box.Id), new Leg(TagAccount.Receivable, -amount));
+		return null;
+	}
+
+	public async Task<UResponse> ReceiveDormBedInvoice(InvoiceReceiveParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
+		DormBedInvoiceEntity? e = await db.Set<DormBedInvoiceEntity>().AsTracking()
+			.Include(x => x.Contract).ThenInclude(x => x!.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm)
+			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e?.Contract == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
+		DormEntity dorm = e.Contract.Bed.Room.Dorm;
+		if (!await CanAct(userData, dorm, TagUser.PermissionPayInvoices, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!e.Tags.Contains(TagDormBedInvoice.NotPaid)) return new UResponse(Usc.Conflict, ls.Get("thisInvoiceHasAlreadyBeenPaid"));
+
+		decimal due = DueOf(e);
+		decimal amount = p.Amount ?? due;
+		if (amount <= 0 || amount > due) return new UResponse(Usc.BadRequest, ls.Get("amountIsNotValid"));
+
+		e.PaidAmount += amount;
+		if (amount == due) e.Tags = [..e.Tags.Where(x => x != TagDormBedInvoice.NotPaid), TagDormBedInvoice.PaidManual];
+		await SyncDormBedInvoice(e, false, ct);
+		UResponse? error = await PostReceipt(dorm.OrganizationId, e.Id, dorm.Id, e.Contract.UserId, e.Contract.Id, amount, p, $"{ls.Get("invoiceReceipt", "fa")} - {dorm.Title} - {e.Contract.Bed.Title}", userData.Id, ct);
+		if (error != null) return error;
+
+		await AddNotification(e.Contract.UserId, TagNotification.InvoicePaid, ls.Get("invoicePaid"), ls.Get("dormInvoicePayment"), ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse(Usc.Success, ls.Get("paymentCompleted"));
+	}
+
+	public async Task<UResponse> ReceiveHotelInvoice(InvoiceReceiveParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+
+		HotelInvoiceEntity? e = await db.Set<HotelInvoiceEntity>().AsTracking()
+			.Include(x => x.Reservation).ThenInclude(x => x!.Hotel)
+			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e?.Reservation == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
+		HotelReservationEntity r = e.Reservation;
+		if (!await CanAct(userData, r.Hotel, TagUser.PermissionPayInvoices, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (r.Tags.Contains(TagHotelReservation.Cancelled)) return new UResponse(Usc.Conflict, ls.Get("thisReservationHasAlreadyBeenCancelled"));
+		if (!e.Tags.Contains(TagHotelInvoice.NotPaid)) return new UResponse(Usc.Conflict, ls.Get("thisInvoiceHasAlreadyBeenPaid"));
+
+		decimal due = e.DebtAmount + e.PenaltyAmount - e.CreditorAmount - e.PaidAmount;
+		decimal amount = p.Amount ?? due;
+		if (amount <= 0 || amount > due) return new UResponse(Usc.BadRequest, ls.Get("amountIsNotValid"));
+
+		e.PaidAmount += amount;
+		if (amount == due) {
+			e.Tags = [TagHotelInvoice.PaidManual];
+			if (r.Tags.Contains(TagHotelReservation.Pending)) r.Tags = [TagHotelReservation.Confirmed];
+		}
+		await SyncHotelInvoice(e, false, ct);
+		UResponse? error = await PostReceipt(r.Hotel.OrganizationId, e.Id, r.HotelId, r.UserId, null, amount, p, $"{ls.Get("invoiceReceipt", "fa")} - {r.Hotel.Title}", userData.Id, ct);
+		if (error != null) return error;
+
+		await AddNotification(r.UserId, TagNotification.InvoicePaid, ls.Get("invoicePaid"), r.Hotel.Title, ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse(Usc.Success, ls.Get("paymentCompleted"));
+	}
+
+	private async Task ReopenInvoice(Guid id, decimal amount, CancellationToken ct) {
+		DormBedInvoiceEntity? d = await db.Set<DormBedInvoiceEntity>().AsTracking()
+			.Include(x => x.Contract).ThenInclude(x => x!.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm)
+			.FirstOrDefaultAsync(x => x.Id == id, ct);
+		if (d != null) {
+			d.PaidAmount = Math.Max(0, d.PaidAmount - amount);
+			if (!d.Tags.Contains(TagDormBedInvoice.NotPaid)) d.Tags = [..d.Tags.Where(x => (int)x < 200), TagDormBedInvoice.NotPaid];
+			await SyncDormBedInvoice(d, false, ct);
+			return;
+		}
+
+		HotelInvoiceEntity? h = await db.Set<HotelInvoiceEntity>().AsTracking().Include(x => x.Reservation).ThenInclude(x => x!.Hotel).FirstOrDefaultAsync(x => x.Id == id, ct);
+		if (h == null) return;
+		h.PaidAmount = Math.Max(0, h.PaidAmount - amount);
+		if (!h.Tags.Contains(TagHotelInvoice.NotPaid)) h.Tags = [..h.Tags.Where(x => (int)x < 200), TagHotelInvoice.NotPaid];
+		await SyncHotelInvoice(h, false, ct);
+	}
+
+	public async Task<UResponse<Guid?>> CreateAccount(AccountCreateParams p, CancellationToken ct) {
+		(JwtClaimData? userData, UResponse? error) = await BooksUser(p.Token, p.OrganizationId, TagUser.PermissionManageAccounting, ct);
+		if (error != null) return new UResponse<Guid?>(null, error.Status, error.Message);
+
+		List<AccountEntity> accounts = await AccountsOf(p.OrganizationId, ct);
+		if (accounts.Any(x => x.Code == p.Code)) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("accountCodeExists"));
+		List<TagAccount> tags = p.Tags.Where(x => !IsRole(x)).Distinct().ToList();
+		if (tags.Count(x => (int)x < 200) != 1) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("tagsIsRequired"));
+
+		Guid id = Guid.CreateVersion7();
+		await db.Set<AccountEntity>().AddAsync(new AccountEntity {
+			Id = id,
+			CreatorId = p.OrganizationId,
+			CreatedAt = DateTime.UtcNow,
+			Tags = tags,
+			Code = p.Code,
+			Title = p.Title,
+			OrganizationId = p.OrganizationId,
+			JsonData = new AccountJson { Detail1 = p.Detail1, Detail2 = p.Detail2, RegisteredBy = userData!.Id }
+		}, ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse<Guid?>(id, Usc.Created);
+	}
+
+	public async Task<UResponse<IEnumerable<AccountResponse>?>> ReadAccounts(AccountReadParams p, CancellationToken ct) {
+		(_, UResponse? error) = await BooksUser(p.Token, p.OrganizationId, TagUser.PermissionViewAccounting, ct);
+		if (error != null) return new UResponse<IEnumerable<AccountResponse>?>(null, error.Status, error.Message);
+
+		await AccountsOf(p.OrganizationId, ct);
+		await db.SaveChangesAsync(ct);
+
+		IQueryable<VoucherLineEntity> lines = db.Set<VoucherLineEntity>().Where(l =>
+			l.Voucher.OrganizationId == p.OrganizationId &&
+			(p.FromDate == null || l.Voucher.Date >= p.FromDate) &&
+			(p.ToDate == null || l.Voucher.Date <= p.ToDate) &&
+			(p.PlaceId == null || l.Voucher.PlaceId == p.PlaceId));
+
+		return await db.Set<AccountEntity>().Where(x => x.OrganizationId == p.OrganizationId).ApplyReadParams(p).OrderBy(x => x.Code).Select(x => new AccountResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			CreatorId = x.CreatorId,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			Code = x.Code,
+			Title = x.Title,
+			OrganizationId = x.OrganizationId,
+			Debit = lines.Where(l => l.AccountId == x.Id).Sum(l => (decimal?)l.Debit) ?? 0,
+			Credit = lines.Where(l => l.AccountId == x.Id).Sum(l => (decimal?)l.Credit) ?? 0,
+			Balance = lines.Where(l => l.AccountId == x.Id).Sum(l => (decimal?)(l.Debit - l.Credit)) ?? 0
+		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	}
+
+	public async Task<UResponse> UpdateAccount(AccountUpdateParams p, CancellationToken ct) {
+		AccountEntity? e = await db.Set<AccountEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ledgerAccountNotFound"));
+		(_, UResponse? error) = await BooksUser(p.Token, e.OrganizationId, TagUser.PermissionManageAccounting, ct);
+		if (error != null) return error;
+
+		if (p.Code.IsNotNullOrEmpty() && p.Code != e.Code) {
+			if (await db.Set<AccountEntity>().AnyAsync(x => x.OrganizationId == e.OrganizationId && x.Code == p.Code, ct)) return new UResponse(Usc.Conflict, ls.Get("accountCodeExists"));
+			e.Code = p.Code;
+		}
+
+		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
+		List<TagAccount> fixedTags = e.Tags.Where(x => (int)x < 200 || IsRole(x)).ToList();
+		e.ApplyUpdateParam<AccountEntity, TagAccount, AccountJson>(p);
+		e.Tags = fixedTags.Concat(e.Tags.Where(x => (int)x is >= 200 and < 300)).Distinct().ToList();
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> DeleteAccount(IdParams p, CancellationToken ct) {
+		AccountEntity? e = await db.Set<AccountEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("ledgerAccountNotFound"));
+		(_, UResponse? error) = await BooksUser(p.Token, e.OrganizationId, TagUser.PermissionManageAccounting, ct);
+		if (error != null) return error;
+		if (e.Tags.Any(IsRole) || await db.Set<VoucherLineEntity>().AnyAsync(x => x.AccountId == e.Id, ct)) return new UResponse(Usc.Conflict, ls.Get("accountHasEntries"));
+
+		await db.Set<AccountEntity>().Where(x => x.Id == e.Id).ExecuteDeleteAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse<Guid?>> CreateVoucher(VoucherCreateParams p, CancellationToken ct) {
+		(JwtClaimData? userData, UResponse? error) = await BooksUser(p.Token, p.OrganizationId, TagUser.PermissionManageAccounting, ct);
+		if (error != null) return new UResponse<Guid?>(null, error.Status, error.Message);
+
+		List<AccountEntity> accounts = await AccountsOf(p.OrganizationId, ct);
+		if (p.Lines.Any(x => x.Debit < 0 || x.Credit < 0 || x.Debit > 0 == x.Credit > 0 || !accounts.Any(a => a.Id == x.AccountId && !a.Tags.Contains(TagAccount.Inactive))))
+			return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("amountIsNotValid"));
+		if (p.Lines.Sum(x => x.Debit) != p.Lines.Sum(x => x.Credit)) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("voucherIsNotBalanced"));
+		if (p.PlaceId != null && !await IsPlaceOf(p.OrganizationId, p.PlaceId.Value, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		Guid id = await AddVoucher(p.OrganizationId, [TagVoucher.Manual, ..p.Tags.Where(x => x != TagVoucher.Auto)], null, p.PlaceId, p.Date ?? DateTime.UtcNow, p.Detail1, userData!.Id,
+			p.Lines.Select(x => new Entry(x.AccountId, x.Debit, x.Credit, x.PersonId, x.Description)), ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse<Guid?>(id, Usc.Created);
+	}
+
+	public async Task<UResponse<IEnumerable<VoucherResponse>?>> ReadVouchers(VoucherReadParams p, CancellationToken ct) {
+		(_, UResponse? error) = await BooksUser(p.Token, p.OrganizationId, TagUser.PermissionViewAccounting, ct);
+		if (error != null) return new UResponse<IEnumerable<VoucherResponse>?>(null, error.Status, error.Message);
+
+		IQueryable<VoucherEntity> q = db.Set<VoucherEntity>().Where(x => x.OrganizationId == p.OrganizationId).ApplyReadParams(p);
+		if (p.FromDate != null) q = q.Where(x => x.Date >= p.FromDate);
+		if (p.ToDate != null) q = q.Where(x => x.Date <= p.ToDate);
+		if (p.PlaceId != null) q = q.Where(x => x.PlaceId == p.PlaceId);
+		if (p.SourceId != null) q = q.Where(x => x.SourceId == p.SourceId);
+		if (p.PersonId != null) q = q.Where(x => x.Lines.Any(l => l.PersonId == p.PersonId));
+		if (p.AccountId != null) q = q.Where(x => x.Lines.Any(l => l.AccountId == p.AccountId));
+
+		return await q.OrderByDescending(x => x.Date).ThenByDescending(x => x.Number).Select(x => new VoucherResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			CreatorId = x.CreatorId,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			Number = x.Number,
+			Date = x.Date,
+			PlaceId = x.PlaceId,
+			SourceId = x.SourceId,
+			OrganizationId = x.OrganizationId,
+			Total = x.Lines.Sum(l => l.Debit),
+			Lines = x.Lines.OrderByDescending(l => l.Debit).Select(l => new VoucherLineResponse {
+				Id = l.Id,
+				AccountId = l.AccountId,
+				AccountCode = l.Account.Code,
+				AccountTitle = l.Account.Title,
+				PersonId = l.PersonId,
+				PersonName = db.Set<UserEntity>().Where(u => u.Id == l.PersonId).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+				Debit = l.Debit,
+				Credit = l.Credit,
+				Description = l.Description
+			}).ToList()
+		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	}
+
+	public async Task<UResponse> DeleteVoucher(IdParams p, CancellationToken ct) {
+		VoucherEntity? e = await db.Set<VoucherEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("voucherNotFound"));
+		(_, UResponse? error) = await BooksUser(p.Token, e.OrganizationId, TagUser.PermissionManageAccounting, ct);
+		if (error != null) return error;
+		if (!e.Tags.Contains(TagVoucher.Manual)) return new UResponse(Usc.Conflict, ls.Get("onlyManualVouchersCanBeDeleted"));
+
+		await db.Set<VoucherEntity>().Where(x => x.Id == e.Id).ExecuteDeleteAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse<LedgerResponse?>> ReadLedger(LedgerReadParams p, CancellationToken ct) {
+		(_, UResponse? error) = await BooksUser(p.Token, p.OrganizationId, TagUser.PermissionViewAccounting, ct);
+		if (error != null) return new UResponse<LedgerResponse?>(null, error.Status, error.Message);
+
+		IQueryable<VoucherLineEntity> q = db.Set<VoucherLineEntity>().Where(x => x.Voucher.OrganizationId == p.OrganizationId);
+		if (p.AccountId != null) q = q.Where(x => x.AccountId == p.AccountId);
+		if (p.AccountTags.IsNotNullOrEmpty()) q = q.Where(x => x.Account.Tags.Any(t => p.AccountTags!.Contains(t)));
+		if (p.PersonId != null) q = q.Where(x => x.PersonId == p.PersonId);
+		if (p.PlaceId != null) q = q.Where(x => x.Voucher.PlaceId == p.PlaceId);
+
+		decimal opening = p.FromDate == null ? 0 : await q.Where(x => x.Voucher.Date < p.FromDate).SumAsync(x => (decimal?)(x.Debit - x.Credit), ct) ?? 0;
+		if (p.FromDate != null) q = q.Where(x => x.Voucher.Date >= p.FromDate);
+		if (p.ToDate != null) q = q.Where(x => x.Voucher.Date <= p.ToDate);
+
+		List<LedgerLineResponse> lines = await q.OrderBy(x => x.Voucher.Date).ThenBy(x => x.Voucher.Number).Select(x => new LedgerLineResponse {
+			VoucherId = x.VoucherId,
+			Number = x.Voucher.Number,
+			Date = x.Voucher.Date,
+			Tags = x.Tags,
+			Description = x.Description ?? x.Voucher.JsonData.Detail1,
+			AccountId = x.AccountId,
+			AccountTitle = x.Account.Title,
+			PersonId = x.PersonId,
+			PersonName = db.Set<UserEntity>().Where(u => u.Id == x.PersonId).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+			Debit = x.Debit,
+			Credit = x.Credit
+		}).ToListAsync(ct);
+
+		decimal balance = opening;
+		foreach (LedgerLineResponse l in lines) {
+			balance += l.Debit - l.Credit;
+			l.Balance = balance;
+		}
+
+		return new UResponse<LedgerResponse?>(new LedgerResponse {
+			Opening = opening,
+			TotalDebit = lines.Sum(x => x.Debit),
+			TotalCredit = lines.Sum(x => x.Credit),
+			Closing = balance,
+			Lines = lines
+		});
+	}
+
+	public async Task<UResponse<LedgerReportResponse?>> ReadLedgerReport(LedgerReportParams p, CancellationToken ct) {
+		(_, UResponse? error) = await BooksUser(p.Token, p.OrganizationId, TagUser.PermissionViewAccounting, ct);
+		if (error != null) return new UResponse<LedgerReportResponse?>(null, error.Status, error.Message);
+
+		List<AccountEntity> accounts = await AccountsOf(p.OrganizationId, ct);
+		await db.SaveChangesAsync(ct);
+
+		var sums = await db.Set<VoucherLineEntity>()
+			.Where(x => x.Voucher.OrganizationId == p.OrganizationId && (p.FromDate == null || x.Voucher.Date >= p.FromDate) && (p.ToDate == null || x.Voucher.Date <= p.ToDate))
+			.GroupBy(x => new { x.AccountId, x.Voucher.PlaceId })
+			.Select(g => new { g.Key.AccountId, g.Key.PlaceId, Debit = g.Sum(x => x.Debit), Credit = g.Sum(x => x.Credit) })
+			.ToListAsync(ct);
+		Dictionary<Guid, decimal> opening = p.FromDate == null
+			? []
+			: await db.Set<VoucherLineEntity>()
+				.Where(x => x.Voucher.OrganizationId == p.OrganizationId && x.Voucher.Date < p.FromDate)
+				.GroupBy(x => x.AccountId)
+				.Select(g => new { g.Key, Amount = g.Sum(x => x.Debit - x.Credit) })
+				.ToDictionaryAsync(x => x.Key, x => x.Amount, ct);
+
+		LedgerReportResponse r = new();
+		foreach (AccountEntity a in accounts.OrderBy(x => x.Code)) {
+			decimal debit = sums.Where(x => x.AccountId == a.Id).Sum(x => x.Debit);
+			decimal credit = sums.Where(x => x.AccountId == a.Id).Sum(x => x.Credit);
+			if (a.Tags.Contains(TagAccount.Income) && credit != debit) r.Income.Add(new LedgerReportItem { AccountId = a.Id, Code = a.Code, Title = a.Title, Amount = credit - debit });
+			if (a.Tags.Contains(TagAccount.Expense) && credit != debit) r.Expense.Add(new LedgerReportItem { AccountId = a.Id, Code = a.Code, Title = a.Title, Amount = debit - credit });
+			if (!IsMoneyBox(a) && !a.Tags.Contains(TagAccount.Wallet)) continue;
+			decimal o = opening.GetValueOrDefault(a.Id);
+			r.MoneyBoxes.Add(new LedgerMoneyBoxItem { AccountId = a.Id, Title = a.Title, Tags = a.Tags, Opening = o, In = debit, Out = credit, Closing = o + debit - credit });
+		}
+
+		r.NetProfit = r.Income.Sum(x => x.Amount) - r.Expense.Sum(x => x.Amount);
+
+		HashSet<Guid> incomeIds = accounts.Where(x => x.Tags.Contains(TagAccount.Income)).Select(x => x.Id).ToHashSet();
+		HashSet<Guid> expenseIds = accounts.Where(x => x.Tags.Contains(TagAccount.Expense)).Select(x => x.Id).ToHashSet();
+		Dictionary<Guid, string> titles = (await db.Set<HotelEntity>().Where(x => x.OrganizationId == p.OrganizationId).Select(x => new { x.Id, x.Title }).ToListAsync(ct))
+			.Concat(await db.Set<DormEntity>().Where(x => x.OrganizationId == p.OrganizationId).Select(x => new { x.Id, x.Title }).ToListAsync(ct))
+			.ToDictionary(x => x.Id, x => x.Title);
+		r.Places = sums
+			.Where(x => incomeIds.Contains(x.AccountId) || expenseIds.Contains(x.AccountId))
+			.GroupBy(x => x.PlaceId)
+			.Select(g => new LedgerPlaceItem {
+				PlaceId = g.Key,
+				Title = g.Key != null ? titles.GetValueOrDefault(g.Key.Value, "") : "",
+				Income = g.Where(x => incomeIds.Contains(x.AccountId)).Sum(x => x.Credit - x.Debit),
+				Expense = g.Where(x => expenseIds.Contains(x.AccountId)).Sum(x => x.Debit - x.Credit)
+			}).ToList();
+
+		DateTime now = DateTime.UtcNow;
+		var due = (await db.Set<DormBedInvoiceEntity>()
+				.Where(x => x.Tags.Contains(TagDormBedInvoice.NotPaid) && x.DueDate <= now && x.Contract != null && x.Contract.Bed.Room.Dorm.OrganizationId == p.OrganizationId)
+				.Select(x => new { PersonId = x.Contract!.UserId, x.DueDate, Amount = x.DebtAmount + x.PenaltyAmount - x.CreditorAmount - x.PaidAmount })
+				.ToListAsync(ct))
+			.Concat(await db.Set<HotelInvoiceEntity>()
+				.Where(x => x.Tags.Contains(TagHotelInvoice.NotPaid) && x.DueDate <= now && x.Reservation != null && !x.Reservation.Tags.Contains(TagHotelReservation.Cancelled) && x.Reservation.Hotel.OrganizationId == p.OrganizationId)
+				.Select(x => new { PersonId = x.Reservation!.UserId, x.DueDate, Amount = x.DebtAmount + x.PenaltyAmount - x.CreditorAmount - x.PaidAmount })
+				.ToListAsync(ct))
+			.Where(x => x.Amount > 0)
+			.ToList();
+		List<Guid> personIds = due.Select(x => x.PersonId).Distinct().ToList();
+		var people = await db.Set<UserEntity>().Where(x => personIds.Contains(x.Id)).Select(x => new { x.Id, x.FirstName, x.LastName, x.PhoneNumber }).ToDictionaryAsync(x => x.Id, ct);
+		r.Aging = due.GroupBy(x => x.PersonId).Select(g => {
+			decimal Bucket(int min, int max) => g.Where(x => (now - x.DueDate).Days >= min && (now - x.DueDate).Days <= max).Sum(x => x.Amount);
+			var person = people.GetValueOrDefault(g.Key);
+			return new LedgerAgingItem {
+				PersonId = g.Key,
+				PersonName = person == null ? null : $"{person.FirstName} {person.LastName}".Trim(),
+				PhoneNumber = person?.PhoneNumber,
+				Days0 = Bucket(0, 30),
+				Days30 = Bucket(31, 60),
+				Days60 = Bucket(61, 90),
+				Days90 = Bucket(91, int.MaxValue),
+				Total = g.Sum(x => x.Amount)
+			};
+		}).OrderByDescending(x => x.Total).ToList();
+
+		return new UResponse<LedgerReportResponse?>(r);
+	}
+
+	public async Task<UResponse<Guid?>> CreateCheck(CheckCreateParams p, CancellationToken ct) {
+		(JwtClaimData? userData, UResponse? error) = await BooksUser(p.Token, p.OrganizationId, TagUser.PermissionManageAccounting, ct);
+		if (error != null) return new UResponse<Guid?>(null, error.Status, error.Message);
+
+		List<TagCheck> kind = p.Tags.Where(x => x is TagCheck.Received or TagCheck.Issued or TagCheck.Guarantee).Distinct().ToList();
+		if (kind.Count != 1) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("tagsIsRequired"));
+		if (p.Amount <= 0) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("amountIsNotValid"));
+		if (p.AccountId != null && (await AccountsOf(p.OrganizationId, ct)).All(x => x.Id != p.AccountId)) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("ledgerAccountNotFound"));
+		if (p.PlaceId != null && !await IsPlaceOf(p.OrganizationId, p.PlaceId.Value, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		Guid id = Guid.CreateVersion7();
+		DateTime now = DateTime.UtcNow;
+		await db.Set<CheckEntity>().AddAsync(new CheckEntity {
+			Id = id,
+			CreatorId = p.OrganizationId,
+			CreatedAt = now,
+			Tags = [kind[0], TagCheck.Pending],
+			Amount = p.Amount,
+			DueDate = p.DueDate,
+			Number = p.Number,
+			Bank = p.Bank,
+			PersonId = p.PersonId,
+			ContractId = p.ContractId,
+			PlaceId = p.PlaceId,
+			OrganizationId = p.OrganizationId,
+			JsonData = new CheckJson { Detail1 = p.Detail1, Detail2 = p.Detail2, SayadId = p.SayadId, Drawer = p.Drawer, AccountId = p.AccountId, RegisteredBy = userData!.Id }
+		}, ct);
+
+		if (kind[0] == TagCheck.Received)
+			await Post(p.OrganizationId, TagVoucher.Check, id, p.PlaceId, p.PersonId, $"{ls.Get("receivedCheck", "fa")} {p.Number}", now, ct,
+				new Leg(TagAccount.ChecksReceivable, p.Amount), new Leg(TagAccount.Receivable, -p.Amount, p.AccountId));
+		if (kind[0] == TagCheck.Issued)
+			await Post(p.OrganizationId, TagVoucher.Check, id, p.PlaceId, p.PersonId, $"{ls.Get("issuedCheck", "fa")} {p.Number}", now, ct,
+				new Leg(TagAccount.Payables, p.Amount, p.AccountId), new Leg(TagAccount.ChecksPayable, -p.Amount));
+
+		await db.SaveChangesAsync(ct);
+		return new UResponse<Guid?>(id, Usc.Created);
+	}
+
+	public async Task<UResponse<IEnumerable<CheckResponse>?>> ReadChecks(CheckReadParams p, CancellationToken ct) {
+		(_, UResponse? error) = await BooksUser(p.Token, p.OrganizationId, TagUser.PermissionViewAccounting, ct);
+		if (error != null) return new UResponse<IEnumerable<CheckResponse>?>(null, error.Status, error.Message);
+
+		IQueryable<CheckEntity> q = db.Set<CheckEntity>().Where(x => x.OrganizationId == p.OrganizationId).ApplyReadParams(p);
+		if (p.PersonId != null) q = q.Where(x => x.PersonId == p.PersonId);
+		if (p.ContractId != null) q = q.Where(x => x.ContractId == p.ContractId);
+		if (p.FromDueDate != null) q = q.Where(x => x.DueDate >= p.FromDueDate);
+		if (p.ToDueDate != null) q = q.Where(x => x.DueDate <= p.ToDueDate);
+
+		return await q.OrderBy(x => x.DueDate).Select(x => new CheckResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			CreatorId = x.CreatorId,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			Amount = x.Amount,
+			DueDate = x.DueDate,
+			Number = x.Number,
+			Bank = x.Bank,
+			PersonId = x.PersonId,
+			PersonName = db.Set<UserEntity>().Where(u => u.Id == x.PersonId).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+			ContractId = x.ContractId,
+			PlaceId = x.PlaceId,
+			OrganizationId = x.OrganizationId
+		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	}
+
+	public async Task<UResponse> SetCheckStatus(CheckStatusParams p, CancellationToken ct) {
+		CheckEntity? e = await db.Set<CheckEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("checkNotFound"));
+		(_, UResponse? error) = await BooksUser(p.Token, e.OrganizationId, TagUser.PermissionManageAccounting, ct);
+		if (error != null) return error;
+		if (!e.Tags.Contains(TagCheck.Pending) || p.Status is not (TagCheck.Cleared or TagCheck.Bounced or TagCheck.Returned))
+			return new UResponse(Usc.Conflict, ls.Get("checkIsNotPending"));
+
+		bool cleared = p.Status == TagCheck.Cleared;
+		AccountEntity? box = (await AccountsOf(e.OrganizationId, ct)).FirstOrDefault(x => x.Id == p.AccountId && IsMoneyBox(x));
+		if (cleared && box == null) return new UResponse(Usc.BadRequest, ls.Get("selectACashOrBankAccount"));
+
+		DateTime date = p.Date ?? DateTime.UtcNow;
+		string description = $"{ls.Get(cleared ? "checkCleared" : p.Status == TagCheck.Bounced ? "checkBounced" : "checkReturned", "fa")} {e.Number}";
+		Guid? counter = e.JsonData.AccountId;
+		if (e.Tags.Contains(TagCheck.Received)) {
+			if (cleared) await Post(e.OrganizationId, TagVoucher.Check, e.Id, e.PlaceId, e.PersonId, description, date, ct, new Leg(TagAccount.Cash, e.Amount, box!.Id), new Leg(TagAccount.ChecksReceivable, -e.Amount));
+			else {
+				await Post(e.OrganizationId, TagVoucher.Check, e.Id, e.PlaceId, e.PersonId, description, date, ct, new Leg(TagAccount.Receivable, e.Amount, counter), new Leg(TagAccount.ChecksReceivable, -e.Amount));
+				if (e.JsonData.InvoiceId != null) await ReopenInvoice(e.JsonData.InvoiceId.Value, e.Amount, ct);
+			}
+		}
+		else if (e.Tags.Contains(TagCheck.Issued)) {
+			if (cleared) await Post(e.OrganizationId, TagVoucher.Check, e.Id, e.PlaceId, e.PersonId, description, date, ct, new Leg(TagAccount.ChecksPayable, e.Amount), new Leg(TagAccount.Cash, -e.Amount, box!.Id));
+			else await Post(e.OrganizationId, TagVoucher.Check, e.Id, e.PlaceId, e.PersonId, description, date, ct, new Leg(TagAccount.ChecksPayable, e.Amount), new Leg(TagAccount.Payables, -e.Amount, counter));
+		}
+		else if (cleared) await Post(e.OrganizationId, TagVoucher.Check, e.Id, e.PlaceId, e.PersonId, description, date, ct, new Leg(TagAccount.Cash, e.Amount, box!.Id), new Leg(TagAccount.Receivable, -e.Amount));
+
+		e.Tags = [..e.Tags.Where(x => x != TagCheck.Pending), p.Status];
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
@@ -2831,6 +3557,28 @@ public class HotelService(
 			else if (e.DueDate >= now && !e.JsonData.DueReminded) {
 				await AddNotification(e.Contract!.UserId, TagNotification.InvoiceDue, ls.Get("invoiceDueSoon", "fa"), e.Contract.Bed.Room.Dorm.Title, ct);
 				e.JsonData.DueReminded = true;
+			}
+		}
+
+		if (Core.App.MultiTenant) {
+			List<DormBedInvoiceEntity> dormInvoices = await db.Set<DormBedInvoiceEntity>().AsTracking()
+				.Include(x => x.Contract).ThenInclude(x => x!.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm)
+				.Where(x => !x.JsonData.Posted && x.DueDate <= now && x.Contract != null && x.Contract.Bed.Room.Dorm.OrganizationId != null)
+				.ToListAsync(ct);
+			foreach (DormBedInvoiceEntity e in dormInvoices) await SyncDormBedInvoice(e, false, ct);
+
+			List<HotelInvoiceEntity> hotelInvoices = await db.Set<HotelInvoiceEntity>().AsTracking()
+				.Include(x => x.Reservation).ThenInclude(x => x!.Hotel)
+				.Where(x => !x.JsonData.Posted && x.DueDate <= now && x.Reservation != null && x.Reservation.Hotel.OrganizationId != null)
+				.ToListAsync(ct);
+			foreach (HotelInvoiceEntity e in hotelInvoices) await SyncHotelInvoice(e, false, ct);
+
+			List<CheckEntity> checks = await db.Set<CheckEntity>().AsTracking().Include(x => x.Organization)
+				.Where(x => x.Tags.Contains(TagCheck.Pending) && !x.JsonData.DueReminded && x.DueDate <= soon)
+				.ToListAsync(ct);
+			foreach (CheckEntity c in checks) {
+				await AddNotification(c.Organization.OwnerId, TagNotification.General, ls.Get("checkIsDueSoon", "fa"), $"{c.Number} - {c.Amount.ToIntString()}", ct);
+				c.JsonData.DueReminded = true;
 			}
 		}
 

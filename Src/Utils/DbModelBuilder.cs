@@ -99,6 +99,9 @@ public static class DbModelBuilder {
 			b.OwnsMany(i => i.Members);
 			b.OwnsMany(i => i.Settlements);
 		});
+		builder.Entity<AccountEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<VoucherEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<CheckEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<HotelEntity>().OwnsOne(e => e.JsonData, b => {
 			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
 			b.OwnsMany(i => i.Nearby);
