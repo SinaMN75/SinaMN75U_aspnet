@@ -15,13 +15,14 @@ public class MediaService(
 	DbContext db,
 	ITokenService ts,
 	ILocalizationService ls,
-	IHotelService hs
+	IHotelService hs,
+	IDormService ds
 ) : IMediaService {
 	private async Task<bool> CanChange(JwtClaimData u, Guid creatorId, Guid? hotelId, Guid? hotelRoomId, Guid? dormId, Guid? dormRoomId, Guid? dormBedId, Guid? contentId, Guid? blogId, CancellationToken ct, Guid? venueId = null, Guid? postId = null) {
 		if (u.IsSuperAdmin) return true;
 		if (venueId != null) return u.IsAdmin || await db.Set<VenueEntity>().AnyAsync(x => x.Id == venueId && (x.CreatorId == u.Id || x.AdminUserIds.Contains(u.Id)), ct);
 		if (postId != null) return await db.Set<PostEntity>().AnyAsync(x => x.Id == postId && x.CreatorId == u.Id, ct);
-		bool? place = await hs.CanActOnPlaceOf(u, hotelId, hotelRoomId, dormId, dormRoomId, dormBedId, ct);
+		bool? place = await hs.CanActOnPlaceOf(u, hotelId, hotelRoomId, ct) ?? await ds.CanActOnPlaceOf(u, dormId, dormRoomId, dormBedId, ct);
 		if (place != null) return place.Value;
 		if (contentId != null) return u.HasPermission(TagUser.PermissionManageContents);
 		if (blogId != null) return u.HasPermission(TagUser.PermissionManageContents) || await db.Set<BlogEntity>().AnyAsync(x => x.Id == blogId && x.CreatorId == u.Id, ct);

@@ -31,6 +31,8 @@ public static class RouteTags {
 	public const string Process = "api/Process/";
 	public const string Pn = "api/Pn/";
 	public const string Hotel = "api/Hotel/";
+	public const string Dorm = "api/Dorm/";
+	public const string Organization = "api/Organization/";
 	public const string Blog = "api/Blog/";
 	public const string FileManager = "api/FileManager/";
 	public const string DbAdmin = "api/DbAdmin/";

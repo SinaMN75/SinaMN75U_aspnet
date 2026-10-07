@@ -13,7 +13,8 @@ public class IpgService(
 	ILocalizationService ls,
 	ITokenService ts,
 	IHttpContextAccessor httpContext,
-	IHotelService hs
+	IHotelService hs,
+	IDormService ds
 ) : IIpgService {
 	private IIpgProvider Provider => providers.First(x => x.Tag == Core.App.Ipg.Tag);
 
@@ -206,7 +207,7 @@ public class IpgService(
 						UserId = txn.UserId
 					}, ct);
 				else
-					await hs.PayDormBedInvoice(new DormBedInvoicePayParams {
+					await ds.PayDormBedInvoice(new DormBedInvoicePayParams {
 						InvoiceId = additionalData.InvoiceId.ToGuid(),
 						UserId = txn.UserId
 					}, ct);

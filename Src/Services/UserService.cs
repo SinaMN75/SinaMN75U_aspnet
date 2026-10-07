@@ -11,22 +11,32 @@ public interface IUserService {
 	public Task<UResponse<bool?>> IsUserAuthenticated(BaseParams p, CancellationToken ct);
 }
 
+public interface IUserScope {
+	IQueryable<Guid> RelatedUserIds(Guid userId);
+}
+
 public class UserService(
 	DbContext db,
 	ILocalizationService ls,
 	ITokenService ts,
 	IMemoryCache cache,
 	IWebHostEnvironment env,
-	IHotelService hs
+	IOrganizationService os,
+	IEnumerable<IUserScope> scopes
 ) : IUserService {
 	private static bool IsTenant(JwtClaimData u) => Core.App.MultiTenant && !u.IsSystemAdmin;
+
+	private IQueryable<UserEntity> RelatedUsers(IQueryable<UserEntity> q, Guid userId) {
+		IQueryable<Guid> ids = scopes.Select(s => s.RelatedUserIds(userId)).Aggregate((a, b) => a.Union(b));
+		return q.Where(x => x.Id == userId || ids.Contains(x.Id));
+	}
 
 	public async Task<UResponse<Guid?>> Create(UserCreateParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		bool allowed = IsTenant(userData)
-			? await hs.HasOrganizationPermission(userData, null, TagUser.PermissionManageUsers, ct) && !p.Tags.Any(JwtClaimData.IsRoleTag)
+			? await os.HasOrganizationPermission(userData, null, TagUser.PermissionManageUsers, ct) && !p.Tags.Any(JwtClaimData.IsRoleTag)
 			: userData.HasPermission(TagUser.PermissionManageUsers) && p.Tags.All(userData.CanGrant);
 		if (!allowed) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
@@ -116,12 +126,12 @@ public class UserService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<IEnumerable<UserResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<IEnumerable<UserResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
-		if (IsTenant(userData) ? !await hs.HasOrganizationPermission(userData, null, TagUser.PermissionManageUsers, ct) : !userData.HasPermission(TagUser.PermissionManageUsers))
+		if (IsTenant(userData) ? !await os.HasOrganizationPermission(userData, null, TagUser.PermissionManageUsers, ct) : !userData.HasPermission(TagUser.PermissionManageUsers))
 			return new UResponse<IEnumerable<UserResponse>?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		IQueryable<UserEntity> q = db.Set<UserEntity>().ApplyReadParams(p);
 		if (IsTenant(userData)) {
-			if (p.PhoneNumber.IsNullOrEmpty() && p.NationalCode.IsNullOrEmpty()) q = hs.RelatedUsers(q, userData.Id);
+			if (p.PhoneNumber.IsNullOrEmpty() && p.NationalCode.IsNullOrEmpty()) q = RelatedUsers(q, userData.Id);
 			else p.SelectorArgs = new UserSelectorArgs();
 		}
 
@@ -156,7 +166,7 @@ public class UserService(
 		if (userData == null) return new UResponse<UserResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<UserResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		bool allowed = userData.Id == p.Id || (IsTenant(userData)
-			? await hs.HasOrganizationPermission(userData, null, TagUser.PermissionManageUsers, ct) && await hs.RelatedUsers(db.Set<UserEntity>().Where(x => x.Id == p.Id), userData.Id).AnyAsync(ct)
+			? await os.HasOrganizationPermission(userData, null, TagUser.PermissionManageUsers, ct) && await RelatedUsers(db.Set<UserEntity>().Where(x => x.Id == p.Id), userData.Id).AnyAsync(ct)
 			: userData.HasPermission(TagUser.PermissionManageUsers));
 		if (!allowed) return new UResponse<UserResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 

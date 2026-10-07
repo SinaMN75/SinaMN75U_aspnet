@@ -35,3 +35,14 @@ public class KeyValue {
 	public required string Key { get; set; }
 	public required string Value { get; set; }
 }
+
+public sealed class PlaceNearby {
+	public string Title { get; set; } = "";
+	public int? DistanceMeters { get; set; }
+	public int? Minutes { get; set; }
+}
+
+public sealed class PlaceFaq {
+	public string Question { get; set; } = "";
+	public string Answer { get; set; } = "";
+}

@@ -5,9 +5,48 @@ public interface IDataSeedService {
 	Task<UResponse> SeedAppVersions();
 	Task<UResponse> SeedCategories();
 	Task<UResponse> SeedContents();
+	Task<(List<UserEntity> Created, List<Guid> Ids)> DemoUsers(CancellationToken ct);
 }
 
 public class DataSeedService(DbContext db) : IDataSeedService {
+	public static readonly string[] DemoFirstNames = ["علی", "مریم", "رضا", "زهرا", "امیر", "سارا", "حسین", "نگار", "محمد", "فاطمه", "پویا", "الهام"];
+
+	public static readonly string[] DemoLastNames = ["احمدی", "رضایی", "کریمی", "موسوی", "حسینی", "صادقی", "نجفی", "قاسمی", "جعفری", "محمدی", "کاظمی", "یوسفی"];
+
+	public async Task<(List<UserEntity> Created, List<Guid> Ids)> DemoUsers(CancellationToken ct) {
+		Guid adminId = Core.App.Users.SystemAdmin.Id;
+		DateTime now = DateTime.UtcNow;
+		string[] firstNames = DemoFirstNames;
+		string[] lastNames = DemoLastNames;
+		HashSet<string> takenNames = (await db.Set<UserEntity>().Select(x => x.UserName).ToListAsync(ct)).ToHashSet();
+		List<UserEntity> users = [];
+		for (int i = 0; i < firstNames.Length; i++) {
+			string userName = $"demo{i + 1:00}";
+			if (takenNames.Contains(userName)) continue;
+			users.Add(new UserEntity {
+				Id = Guid.CreateVersion7(),
+				CreatedAt = now.AddDays(-90 + i),
+				CreatorId = adminId,
+				Tags = [TagUser.Unspecified, i % 2 == 0 ? TagUser.Male : TagUser.Female, TagUser.Verified],
+				UserName = userName,
+				Password = UPasswordHasher.Hash("Demo1234"),
+				RefreshToken = "",
+				PhoneNumber = $"0912000{i + 1:0000}",
+				Email = $"{userName}@example.com",
+				FirstName = firstNames[i],
+				LastName = lastNames[i],
+				JsonData = new UserJson()
+			});
+		}
+
+		// Users that already exist from an earlier partial run are looked up so the demo data can still reference them.
+		List<Guid> userIds = users.Select(x => x.Id).ToList();
+		if (userIds.Count < firstNames.Length)
+			userIds.AddRange(await db.Set<UserEntity>().Where(x => x.UserName.StartsWith("demo")).Select(x => x.Id).ToListAsync(ct));
+		if (userIds.Count == 0) userIds.Add(adminId);
+		return (users, userIds);
+	}
+
 	public async Task<UResponse> SeedUsers() {
 		List<UserEntity> defaults = [Core.App.Users.SystemAdmin, Core.App.Users.ITHub, Core.App.Users.AvaPlus, Core.App.Users.Mobtakeran];
 		List<Guid> ids = defaults.Select(x => x.Id).ToList();

@@ -99,7 +99,14 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IMoadiService, MoadiService>();
 		builder.Services.AddScoped<IPnService, PnService>();
 		builder.Services.AddScoped<IProcessService, ProcessService>();
+		builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 		builder.Services.AddScoped<IHotelService, HotelService>();
+		builder.Services.AddScoped<IDormService, DormService>();
+		builder.Services.AddScoped<IAccountingSource>(sp => (HotelService)sp.GetRequiredService<IHotelService>());
+		builder.Services.AddScoped<IAccountingSource>(sp => (DormService)sp.GetRequiredService<IDormService>());
+		builder.Services.AddScoped<IUserScope>(sp => (OrganizationService)sp.GetRequiredService<IOrganizationService>());
+		builder.Services.AddScoped<IUserScope>(sp => (HotelService)sp.GetRequiredService<IHotelService>());
+		builder.Services.AddScoped<IUserScope>(sp => (DormService)sp.GetRequiredService<IDormService>());
 		builder.Services.AddScoped<IBlogService, BlogService>();
 		builder.Services.AddScoped<IFileManagerService, FileManagerService>();
 		builder.Services.AddScoped<IDbAdminService, DbAdminService>();
@@ -113,6 +120,8 @@ public static partial class AspNetConfig {
 		builder.Services.AddSingleton<IRealtimeService, RealtimeService>();
 		builder.Services.AddHostedService<SportReminderService>();
 		builder.Services.AddHostedService<HotelReminderService>();
+		builder.Services.AddHostedService<DormReminderService>();
+		builder.Services.AddHostedService<AccountingReminderService>();
 
 		if (Core.App.Test) {
 			builder.Services.AddScoped<IInquiryService, InquiryServiceFake>();
@@ -176,7 +185,9 @@ public static partial class AspNetConfig {
 		app.MapAppSettingsRoutes(RouteTags.AppSettings);
 		app.MapProcessRoutes(RouteTags.Process);
 		app.MapPnRoutes(RouteTags.Pn);
+		app.MapOrganizationRoutes(RouteTags.Organization);
 		app.MapHotelRoutes(RouteTags.Hotel);
+		app.MapDormRoutes(RouteTags.Dorm);
 		app.MapBlogRoutes(RouteTags.Blog);
 		app.MapFileManagerRoutes(RouteTags.FileManager);
 		app.MapDbAdminRoutes(RouteTags.DbAdmin);
