@@ -71,7 +71,8 @@ public class DormService(
 ) : IDormService, IAccountingSource, IUserScope, IPlaceResidency {
 	private static Guid UserIdOf(JwtClaimData? u) => u?.Id ?? Guid.Empty;
 
-	private Task<bool> CanAct(JwtClaimData u, DormEntity place, TagUser permission, CancellationToken ct) => os.CanActOnPlace(u, place.OrganizationId, place.AdminUserIds, permission, ct);
+	private async Task<bool> CanAct(JwtClaimData u, DormEntity place, TagUser permission, CancellationToken ct) =>
+		await os.HasModule(u, place.OrganizationId, TagModule.Dorm, ct) && await os.CanActOnPlace(u, place.OrganizationId, place.AdminUserIds, permission, ct);
 
 	private async Task AddNotification(Guid userId, TagNotification tag, string title, string body, CancellationToken ct) =>
 		await db.Set<NotificationEntity>().AddAsync(new NotificationEntity {
@@ -115,7 +116,7 @@ public class DormService(
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		if (!await os.CanCreatePlace(userData, p.OrganizationId, TagUser.PermissionManageDorms, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
-		string? planError = await os.PlanError(userData, p.OrganizationId, x => x.MaxPlaces, () => os.PlaceCount(p.OrganizationId!.Value, ct), ct);
+		string? planError = await os.PlanError(userData, p.OrganizationId, TagPlanLimit.Places, () => os.PlaceCount(p.OrganizationId!.Value, ct), ct);
 		if (planError != null) return new UResponse<Guid?>(null, Usc.Forbidden, planError);
 
 		DormEntity e = new() {
@@ -353,7 +354,7 @@ public class DormService(
 		if (room == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("dormRoomNotFound"));
 		if (!await CanAct(userData, room.Dorm, TagUser.PermissionManageDorms, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		Guid? organizationId = room.Dorm.OrganizationId;
-		string? planError = await os.PlanError(userData, organizationId, x => x.MaxBeds, () => db.Set<DormBedEntity>().CountAsync(x => x.Room.Dorm.OrganizationId == organizationId, ct), ct);
+		string? planError = await os.PlanError(userData, organizationId, TagPlanLimit.Beds, () => db.Set<DormBedEntity>().CountAsync(x => x.Room.Dorm.OrganizationId == organizationId, ct), ct);
 		if (planError != null) return new UResponse<Guid?>(null, Usc.Forbidden, planError);
 
 		DormBedEntity e = new() {
@@ -1188,7 +1189,7 @@ public class DormService(
 			: dormRoomId != null
 				? await db.Set<DormRoomEntity>().Where(x => x.Id == dormRoomId).Select(x => new { x.Dorm.AdminUserIds, x.Dorm.OrganizationId }).FirstOrDefaultAsync(ct)
 				: await db.Set<DormBedEntity>().Where(x => x.Id == dormBedId).Select(x => new { x.Room.Dorm.AdminUserIds, x.Room.Dorm.OrganizationId }).FirstOrDefaultAsync(ct);
-		return await os.CanActOnPlace(u, dorm?.OrganizationId, dorm?.AdminUserIds ?? [], TagUser.PermissionManageDorms, ct);
+		return await os.HasModule(u, dorm?.OrganizationId, TagModule.Dorm, ct) && await os.CanActOnPlace(u, dorm?.OrganizationId, dorm?.AdminUserIds ?? [], TagUser.PermissionManageDorms, ct);
 	}
 
 	public IQueryable<Guid> RelatedUserIds(Guid userId) => db.Set<DormBedContractEntity>().Where(c => c.Bed.Room.Dorm.AdminUserIds.Contains(userId)).Select(c => c.UserId);
@@ -1648,7 +1649,8 @@ public class DormService(
 		Guid userId = p.UserId ?? u!.Id;
 		if (userId != u!.Id && !manager) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		if (!await db.Set<UserEntity>().AnyAsync(x => x.Id == userId, ct)) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("accountNotFound"));
-		if (await os.IsBlacklisted(dorm!.OrganizationId, userId, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youCannotApplyToThisPlace"));
+		if (!await os.HasModule(null, dorm!.OrganizationId, TagModule.Dorm, ct)) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("subscriptionInactive"));
+		if (await os.IsBlacklisted(dorm.OrganizationId, userId, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youCannotApplyToThisPlace"));
 		if (await db.Set<DormApplicationEntity>().AnyAsync(x => x.DormId == dorm.Id && x.UserId == userId && (x.Tags.Contains(TagDormApplication.Pending) || x.Tags.Contains(TagDormApplication.Waitlisted)), ct))
 			return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("youAlreadyHaveAnOpenApplication"));
 

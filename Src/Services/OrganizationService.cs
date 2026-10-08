@@ -11,11 +11,12 @@ public interface IOrganizationService {
 	public Task<UResponse> RemoveOrganizationMember(OrganizationMemberParams p, CancellationToken ct);
 	public Task<bool> IsPlaceOf(Guid organizationId, Guid placeId, CancellationToken ct);
 	public Task<Dictionary<Guid, string>> PlaceTitles(Guid organizationId, CancellationToken ct);
-	public Task<bool> HasOrganizationPermission(JwtClaimData u, Guid? organizationId, TagUser permission, CancellationToken ct);
+	public Task<bool> HasOrganizationPermission(JwtClaimData u, Guid? organizationId, TagUser permission, CancellationToken ct, TagModule? module = null);
 	public Task<bool> CanActOnPlace(JwtClaimData u, Guid? organizationId, ICollection<Guid> adminUserIds, TagUser permission, CancellationToken ct);
 	public IQueryable<Guid> RelatedUserIds(Guid userId);
-	public Task<bool> CanManage(JwtClaimData u, Guid organizationId, TagUser permission, CancellationToken ct);
-	public Task<string?> PlanError(JwtClaimData u, Guid? organizationId, Func<OrganizationPlan, int?> limit, Func<Task<int>> count, CancellationToken ct);
+	public Task<bool> CanManage(JwtClaimData u, Guid organizationId, TagUser permission, CancellationToken ct, TagModule? module = null);
+	public Task<bool> HasModule(JwtClaimData? u, Guid? organizationId, TagModule module, CancellationToken ct);
+	public Task<string?> PlanError(JwtClaimData u, Guid? organizationId, TagPlanLimit limit, Func<Task<int>> count, CancellationToken ct);
 	public Task<int> PlaceCount(Guid organizationId, CancellationToken ct);
 	public Task<Guid?> OrganizationOfPlace(Guid placeId, CancellationToken ct);
 	public Task<bool> IsBlacklisted(Guid? organizationId, Guid userId, CancellationToken ct);
@@ -34,6 +35,16 @@ public interface IOrganizationService {
 	public Task<UResponse> DeleteCustomer(IdParams p, CancellationToken ct);
 	public Task LogActivity(JwtClaimData u, string path, BaseParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<ActivityLogResponse>?>> ReadActivityLogs(ActivityLogReadParams p, CancellationToken ct);
+	public Task<UResponse<Guid?>> CreatePlan(SubscriptionPlanCreateParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<SubscriptionPlanResponse>?>> ReadPlans(SubscriptionPlanReadParams p, CancellationToken ct);
+	public Task<UResponse> UpdatePlan(SubscriptionPlanUpdateParams p, CancellationToken ct);
+	public Task<UResponse> DeletePlan(IdParams p, CancellationToken ct);
+	public Task<UResponse<SubscriptionQuoteResponse?>> QuoteSubscription(SubscriptionQuoteParams p, CancellationToken ct);
+	public Task<UResponse<SubscriptionBuyResponse?>> BuySubscription(SubscriptionBuyParams p, CancellationToken ct);
+	public Task<UResponse> PaySubscription(IdParams p, CancellationToken ct);
+	public Task<UResponse> PaySubscriptionInternal(Guid organizationId, Guid userId, CancellationToken ct);
+	public Task<UResponse> GrantSubscription(SubscriptionGrantParams p, CancellationToken ct);
+	public Task<UResponse> CancelSubscription(SubscriptionCancelParams p, CancellationToken ct);
 }
 
 public interface IPlaceResidency {
@@ -65,7 +76,9 @@ public class OrganizationService(
 	public static bool TouchesAdminUserIds<T>(BaseUpdateParams<T> p) => p.AdminUserIds.IsNotNullOrEmpty() || p.AddAdminUserIds.IsNotNullOrEmpty() || p.RemoveAdminUserIds.IsNotNullOrEmpty();
 
 	public async Task<bool> CanCreatePlace(JwtClaimData u, Guid? organizationId, TagUser permission, CancellationToken ct) =>
-		Core.App.MultiTenant ? u.IsSystemAdmin || organizationId != null && await HasOrganizationPermission(u, organizationId, permission, ct) : u.HasPermission(permission);
+		Core.App.MultiTenant
+			? u.IsSystemAdmin || organizationId != null && await HasOrganizationPermission(u, organizationId, permission, ct)
+			: u.HasPermission(permission) && await HasModuleFor(u, organizationId, permission, null, ct);
 
 	public async Task<bool> IsOwner(JwtClaimData u, Guid? organizationId, CancellationToken ct) =>
 		organizationId != null && await db.Set<OrganizationEntity>().AnyAsync(x => x.Id == organizationId && x.OwnerId == u.Id, ct);
@@ -85,45 +98,49 @@ public class OrganizationService(
 		UserEntity? owner = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.OwnerId, ct);
 		if (owner == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("accountNotFound"));
 		if (!SetFirstAdminPassword(owner, p.OwnerPassword)) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("pleaseEnterAPassword"));
-		if (!owner.Tags.Contains(TagUser.SuperAdmin)) owner.Tags = [..owner.Tags, TagUser.SuperAdmin];
 
-		Guid id = p.Id ?? Guid.CreateVersion7();
+		OrganizationEntity e = await AddOrganization(p.Id ?? Guid.CreateVersion7(), p.Title, owner, userData.Id, p.Tags, new OrganizationJson {
+			Detail1 = p.Detail1,
+			Detail2 = p.Detail2,
+			CommissionPercent = p.CommissionPercent,
+			LogoUrl = p.LogoUrl,
+			Address = p.Address,
+			PhoneNumber = p.PhoneNumber,
+			NationalId = p.NationalId,
+			EconomicCode = p.EconomicCode,
+			VatPercent = Math.Clamp(p.VatPercent ?? 0, 0, 100),
+			TaxServiceId = p.TaxServiceId
+		}, ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse<Guid?>(e.Id, Usc.Created);
+	}
+
+	private async Task<OrganizationEntity> AddOrganization(Guid id, string title, UserEntity owner, Guid creatorId, ICollection<TagOrganization> tags, OrganizationJson json, CancellationToken ct) {
+		if (!owner.Tags.Contains(TagUser.SuperAdmin)) owner.Tags = [..owner.Tags, TagUser.SuperAdmin];
 		DateTime now = DateTime.UtcNow;
 		await db.Set<UserEntity>().AddAsync(new UserEntity {
 			Id = id,
-			CreatorId = userData.Id,
+			CreatorId = creatorId,
 			CreatedAt = now,
 			UserName = "organization_" + id.ToString("N"),
 			Password = UPasswordHasher.Hash(Guid.NewGuid().ToString()),
 			RefreshToken = "",
-			FirstName = p.Title,
+			FirstName = title,
 			JsonData = new UserJson(),
 			Tags = [TagUser.Organization],
 			Wallets = [new WalletEntity { Id = id, CreatorId = id, CreatedAt = now, JsonData = new WalletJson(), Tags = [TagWallet.Primary], Balance = 0 }]
 		}, ct);
-		await db.Set<OrganizationEntity>().AddAsync(new OrganizationEntity {
+		OrganizationEntity e = new() {
 			Id = id,
-			CreatorId = userData.Id,
+			CreatorId = creatorId,
 			CreatedAt = now,
-			Title = p.Title,
+			Title = title,
 			OwnerId = owner.Id,
-			Tags = p.Tags,
-			JsonData = new OrganizationJson {
-				Detail1 = p.Detail1,
-				Detail2 = p.Detail2,
-				CommissionPercent = p.CommissionPercent,
-				Plan = p.Plan,
-				LogoUrl = p.LogoUrl,
-				Address = p.Address,
-				PhoneNumber = p.PhoneNumber,
-				NationalId = p.NationalId,
-				EconomicCode = p.EconomicCode,
-				VatPercent = Math.Clamp(p.VatPercent ?? 0, 0, 100),
-				TaxServiceId = p.TaxServiceId
-			}
-		}, ct);
-		await db.SaveChangesAsync(ct);
-		return new UResponse<Guid?>(id, Usc.Created);
+			Tags = tags,
+			JsonData = json
+		};
+		await db.Set<OrganizationEntity>().AddAsync(e, ct);
+		return e;
 	}
 
 	public async Task<UResponse<IEnumerable<OrganizationResponse>?>> ReadOrganizations(OrganizationReadParams p, CancellationToken ct) {
@@ -136,7 +153,7 @@ public class OrganizationService(
 		if (!IsFull(userData)) q = q.Where(x => x.OwnerId == uid || x.AdminUserIds.Contains(uid));
 		if (p.Title.IsNotNullOrEmpty()) q = q.Where(x => x.Title.Contains(p.Title!));
 
-		return await q.Select(x => new OrganizationResponse {
+		UResponse<IEnumerable<OrganizationResponse>?> r = await q.Select(x => new OrganizationResponse {
 			Id = x.Id,
 			CreatedAt = x.CreatedAt,
 			CreatorId = x.CreatorId,
@@ -147,6 +164,13 @@ public class OrganizationService(
 			OwnerId = x.OwnerId,
 			Balance = db.Set<WalletEntity>().Where(w => w.CreatorId == x.Id).Sum(w => (decimal?)w.Balance) ?? 0
 		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+		DateTime now = DateTime.UtcNow;
+		foreach (OrganizationResponse o in r.Result ?? []) {
+			o.Modules = ModulesOf(o.JsonData, now);
+			o.SubscriptionEndsAt = o.JsonData.Subscriptions.Where(x => IsLive(x, now)).Max(x => x.ExpiresAt);
+		}
+
+		return r;
 	}
 
 	public async Task<UResponse> UpdateOrganization(OrganizationUpdateParams p, CancellationToken ct) {
@@ -157,7 +181,7 @@ public class OrganizationService(
 		OrganizationEntity? e = await db.Set<OrganizationEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("organizationNotFound"));
 
-		bool platformChange = p.OwnerId.HasValue && p.OwnerId != e.OwnerId || p.CommissionPercent.HasValue || p.Plan != null || p.Tags != null || p.AddTags != null || p.RemoveTags != null;
+		bool platformChange = p.OwnerId.HasValue && p.OwnerId != e.OwnerId || p.CommissionPercent.HasValue || p.Tags != null || p.AddTags != null || p.RemoveTags != null;
 		if (!userData.IsSystemAdmin && (e.OwnerId != userData.Id || platformChange)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		if (p.OwnerId.HasValue && p.OwnerId != e.OwnerId) {
@@ -176,7 +200,6 @@ public class OrganizationService(
 
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
 		if (p.CommissionPercent.HasValue) e.JsonData.CommissionPercent = p.CommissionPercent.Value;
-		if (p.Plan != null) e.JsonData.Plan = p.Plan;
 		if (p.LogoUrl != null) e.JsonData.LogoUrl = p.LogoUrl.NullIfEmpty();
 		if (p.Address != null) e.JsonData.Address = p.Address.NullIfEmpty();
 		if (p.PhoneNumber != null) e.JsonData.PhoneNumber = p.PhoneNumber.NullIfEmpty();
@@ -202,6 +225,11 @@ public class OrganizationService(
 		if (user == null) return new UResponse(Usc.NotFound, ls.Get("accountNotFound"));
 		if (user.Tags.Contains(TagUser.SystemAdmin) || user.Tags.Contains(TagUser.Organization)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		if (!SetFirstAdminPassword(user, p.Password)) return new UResponse(Usc.BadRequest, ls.Get("pleaseEnterAPassword"));
+
+		if (e.JsonData.Members.All(x => x.UserId != user.Id)) {
+			string? planError = await PlanError(userData, e.Id, TagPlanLimit.Members, () => Task.FromResult(e.JsonData.Members.Count), ct);
+			if (planError != null) return new UResponse(Usc.Forbidden, planError);
+		}
 
 		OrganizationMember member = new() { UserId = user.Id, Permissions = p.Permissions.Where(x => (int)x is >= 600 and < 700).Distinct().ToList() };
 		e.JsonData.Members = e.JsonData.Members.Where(x => x.UserId != user.Id).Append(member).ToList();
@@ -280,17 +308,327 @@ public class OrganizationService(
 		user.Tags = tags;
 	}
 
-	public async Task<bool> HasOrganizationPermission(JwtClaimData u, Guid? organizationId, TagUser permission, CancellationToken ct) {
+	public async Task<UResponse<Guid?>> CreatePlan(SubscriptionPlanCreateParams p, CancellationToken ct) {
+		JwtClaimData? u = ts.ExtractClaims(p.Token);
+		if (u is not { IsSystemAdmin: true }) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		string? error = PlanDataError(p.Modules, p.Prices);
+		if (error != null) return new UResponse<Guid?>(null, Usc.BadRequest, error);
+
+		Guid id = p.Id ?? Guid.CreateVersion7();
+		await db.Set<SubscriptionPlanEntity>().AddAsync(new SubscriptionPlanEntity {
+			Id = id,
+			CreatorId = u.Id,
+			CreatedAt = DateTime.UtcNow,
+			Tags = p.Tags.Count == 0 ? [TagSubscriptionPlan.Active] : p.Tags,
+			Title = p.Title,
+			Order = p.Order,
+			JsonData = new SubscriptionPlanJson {
+				Detail1 = p.Detail1,
+				Detail2 = p.Detail2,
+				Modules = p.Modules.Distinct().ToList(),
+				Prices = p.Prices.OrderBy(x => x.Months).ToList(),
+				Limits = p.Limits.Where(x => x.Value > 0).ToList(),
+				Features = p.Features.Where(x => x.IsNotNullOrEmpty()).ToList(),
+				TrialDays = Math.Max(0, p.TrialDays)
+			}
+		}, ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse<Guid?>(id, Usc.Created);
+	}
+
+	public async Task<UResponse<IEnumerable<SubscriptionPlanResponse>?>> ReadPlans(SubscriptionPlanReadParams p, CancellationToken ct) {
+		bool all = ts.ExtractClaims(p.Token) is { IsSystemAdmin: true };
+		IQueryable<SubscriptionPlanEntity> q = db.Set<SubscriptionPlanEntity>().ApplyReadParams(p);
+		if (!all) q = q.Where(x => x.Tags.Contains(TagSubscriptionPlan.Active));
+		List<SubscriptionPlanResponse> list = await q.OrderBy(x => x.Order).ThenBy(x => x.CreatedAt).Select(x => new SubscriptionPlanResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			CreatorId = x.CreatorId,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			Title = x.Title,
+			Order = x.Order
+		}).ToListAsync(ct);
+		if (p.Module != null) list = list.Where(x => x.JsonData.Modules.Contains(p.Module.Value)).ToList();
+		return new UResponse<IEnumerable<SubscriptionPlanResponse>?>(list);
+	}
+
+	public async Task<UResponse> UpdatePlan(SubscriptionPlanUpdateParams p, CancellationToken ct) {
+		JwtClaimData? u = ts.ExtractClaims(p.Token);
+		if (u is not { IsSystemAdmin: true }) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		SubscriptionPlanEntity? e = await db.Set<SubscriptionPlanEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("planNotFound"));
+		string? error = PlanDataError(p.Modules ?? e.JsonData.Modules, p.Prices ?? e.JsonData.Prices);
+		if (error != null) return new UResponse(Usc.BadRequest, error);
+
+		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
+		if (p.Order != null) e.Order = p.Order.Value;
+		if (p.Modules != null) e.JsonData.Modules = p.Modules.Distinct().ToList();
+		if (p.Prices != null) e.JsonData.Prices = p.Prices.OrderBy(x => x.Months).ToList();
+		if (p.Limits != null) e.JsonData.Limits = p.Limits.Where(x => x.Value > 0).ToList();
+		if (p.Features != null) e.JsonData.Features = p.Features.Where(x => x.IsNotNullOrEmpty()).ToList();
+		if (p.TrialDays != null) e.JsonData.TrialDays = Math.Max(0, p.TrialDays.Value);
+		e.ApplyUpdateParam<SubscriptionPlanEntity, TagSubscriptionPlan, SubscriptionPlanJson>(p);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> DeletePlan(IdParams p, CancellationToken ct) {
+		JwtClaimData? u = ts.ExtractClaims(p.Token);
+		if (u is not { IsSystemAdmin: true }) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		await db.Set<SubscriptionPlanEntity>().Where(x => x.Id == p.Id).ExecuteDeleteAsync(ct);
+		return new UResponse();
+	}
+
+	private string? PlanDataError(ICollection<TagModule> modules, ICollection<PlanPrice> prices) =>
+		modules.Count == 0 ? ls.Get("planModulesRequired")
+		: prices.Count == 0 || prices.Any(x => x.Months <= 0 || x.Price < 0) || prices.Select(x => x.Months).Distinct().Count() != prices.Count ? ls.Get("planPricesAreNotValid")
+		: null;
+
+	private static decimal RemainingValue(OrganizationSubscription s, DateTime now) {
+		if (s.StartsAt == null || s.ExpiresAt == null || s.ExpiresAt <= s.StartsAt) return 0;
+		double total = (s.ExpiresAt.Value - s.StartsAt.Value).TotalDays;
+		double left = (s.ExpiresAt.Value - (now > s.StartsAt.Value ? now : s.StartsAt.Value)).TotalDays;
+		return Math.Round(s.Price * (decimal)Math.Clamp(left / total, 0, 1));
+	}
+
+	private (SubscriptionQuoteResponse? Quote, List<Guid> Replaces, string? Error) Quote(OrganizationEntity? org, SubscriptionPlanEntity plan, int months, bool trial, DateTime now) {
+		if (!plan.Tags.Contains(TagSubscriptionPlan.Active)) return (null, [], ls.Get("planNotFound"));
+		List<OrganizationSubscription> current = org?.JsonData.Subscriptions.Where(x => x.Status == TagSubscription.Active && x.ExpiresAt > now).ToList() ?? [];
+		decimal price;
+		DateTime start = now;
+		DateTime end;
+		if (trial) {
+			if (plan.JsonData.TrialDays <= 0 || org != null && org.JsonData.Subscriptions.Any(x => x.Trial && x.Status != TagSubscription.Pending)) return (null, [], ls.Get("trialNotAvailable"));
+			months = 0;
+			price = 0;
+			end = now.AddDays(plan.JsonData.TrialDays);
+		}
+		else {
+			PlanPrice? planPrice = plan.JsonData.Prices.FirstOrDefault(x => x.Months == months);
+			if (planPrice == null) return (null, [], ls.Get("planPricesAreNotValid"));
+			price = planPrice.Price;
+			List<OrganizationSubscription> same = current.Where(x => x.PlanId == plan.Id).ToList();
+			if (same.Count != 0) start = same.Max(x => x.ExpiresAt!.Value);
+			end = start.AddMonths(months);
+		}
+
+		bool renewal = start > now;
+		List<OrganizationSubscription> replaced = renewal || trial ? [] : current.Where(x => x.PlanId != plan.Id && x.Modules.All(plan.JsonData.Modules.Contains)).ToList();
+		decimal credit = Math.Min(price, replaced.Sum(x => RemainingValue(x, now)));
+		return (new SubscriptionQuoteResponse {
+			PlanId = plan.Id,
+			Title = plan.Title,
+			Months = months,
+			Trial = trial,
+			Renewal = renewal,
+			Price = price,
+			Credit = credit,
+			Payable = price - credit,
+			StartsAt = start,
+			ExpiresAt = end,
+			Replaces = replaced.Select(x => x.Title).ToList()
+		}, replaced.Select(x => x.Id).ToList(), null);
+	}
+
+	private static void Activate(OrganizationJson j, OrganizationSubscription s, DateTime now) {
+		List<OrganizationSubscription> current = j.Subscriptions.Where(x => x.Id != s.Id && x.Status == TagSubscription.Active && x.ExpiresAt > now).ToList();
+		DateTime start = s.Trial || s.PlanId == null ? now : current.Where(x => x.PlanId == s.PlanId).Select(x => x.ExpiresAt!.Value).DefaultIfEmpty(now).Max();
+		if (start < now) start = now;
+		s.StartsAt = start;
+		s.ExpiresAt = start.AddMonths(s.Months).AddDays(s.Days);
+		s.Status = TagSubscription.Active;
+		foreach (OrganizationSubscription x in current.Where(x => s.Replaces.Contains(x.Id))) x.Status = TagSubscription.Replaced;
+	}
+
+	private static OrganizationSubscription NewSubscription(Guid? planId, string title, IEnumerable<TagModule> modules, IEnumerable<PlanLimit> limits, Guid registeredBy, DateTime now) => new() {
+		Id = Guid.CreateVersion7(),
+		PlanId = planId,
+		Title = title,
+		Modules = modules.Distinct().ToList(),
+		Limits = limits.Select(x => new PlanLimit { Kind = x.Kind, Value = x.Value }).ToList(),
+		Status = TagSubscription.Pending,
+		CreatedAt = now,
+		RegisteredBy = registeredBy
+	};
+
+	private async Task<(JwtClaimData? User, SubscriptionPlanEntity? Plan, OrganizationEntity? Organization, UResponse? Error)> SubscriptionContext(string? token, Guid planId, Guid? organizationId, CancellationToken ct) {
+		JwtClaimData? u = ts.ExtractClaims(token);
+		if (u == null) return (null, null, null, new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue")));
+		if (u.IsExpired) return (null, null, null, new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired")));
+		SubscriptionPlanEntity? plan = await db.Set<SubscriptionPlanEntity>().FirstOrDefaultAsync(x => x.Id == planId, ct);
+		if (plan == null) return (null, null, null, new UResponse(Usc.NotFound, ls.Get("planNotFound")));
+		if (organizationId == null) return (u, plan, null, null);
+		OrganizationEntity? org = await db.Set<OrganizationEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == organizationId, ct);
+		if (org == null) return (null, null, null, new UResponse(Usc.NotFound, ls.Get("organizationNotFound")));
+		if (!u.IsSystemAdmin && org.OwnerId != u.Id) return (null, null, null, new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction")));
+		return (u, plan, org, null);
+	}
+
+	public async Task<UResponse<SubscriptionQuoteResponse?>> QuoteSubscription(SubscriptionQuoteParams p, CancellationToken ct) {
+		(_, SubscriptionPlanEntity? plan, OrganizationEntity? org, UResponse? error) = await SubscriptionContext(p.Token, p.PlanId, p.OrganizationId, ct);
+		if (error != null) return new UResponse<SubscriptionQuoteResponse?>(null, error.Status, error.Message);
+		(SubscriptionQuoteResponse? quote, _, string? quoteError) = Quote(org, plan!, p.Months, p.Trial, DateTime.UtcNow);
+		return quote == null ? new UResponse<SubscriptionQuoteResponse?>(null, Usc.BadRequest, quoteError!) : new UResponse<SubscriptionQuoteResponse?>(quote);
+	}
+
+	public async Task<UResponse<SubscriptionBuyResponse?>> BuySubscription(SubscriptionBuyParams p, CancellationToken ct) {
+		(JwtClaimData? u, SubscriptionPlanEntity? plan, OrganizationEntity? org, UResponse? error) = await SubscriptionContext(p.Token, p.PlanId, p.OrganizationId, ct);
+		if (error != null) return new UResponse<SubscriptionBuyResponse?>(null, error.Status, error.Message);
+		DateTime now = DateTime.UtcNow;
+		(SubscriptionQuoteResponse? quote, List<Guid> replaces, string? quoteError) = Quote(org, plan!, p.Months, p.Trial, now);
+		if (quote == null) return new UResponse<SubscriptionBuyResponse?>(null, Usc.BadRequest, quoteError!);
+
+		if (org == null) {
+			if (p.Title.IsNullOrEmpty() || p.Title!.Trim().Length < 2) return new UResponse<SubscriptionBuyResponse?>(null, Usc.BadRequest, ls.Get("titleIsRequired"));
+			UserEntity? owner = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == u!.Id, ct);
+			if (owner == null) return new UResponse<SubscriptionBuyResponse?>(null, Usc.NotFound, ls.Get("accountNotFound"));
+			if (!SetFirstAdminPassword(owner, p.Password)) return new UResponse<SubscriptionBuyResponse?>(null, Usc.BadRequest, ls.Get("pleaseEnterAPassword"));
+			org = await AddOrganization(Guid.CreateVersion7(), p.Title.Trim(), owner, owner.Id, [TagOrganization.Active], new OrganizationJson(), ct);
+		}
+
+		OrganizationSubscription s = NewSubscription(plan!.Id, plan.Title, plan.JsonData.Modules, plan.JsonData.Limits, u!.Id, now);
+		s.Months = quote.Months;
+		s.Days = quote.Trial ? plan.JsonData.TrialDays : 0;
+		s.Trial = quote.Trial;
+		s.Price = quote.Price;
+		s.Credit = quote.Credit;
+		s.Replaces = replaces;
+		org.JsonData.Subscriptions = [..org.JsonData.Subscriptions.Where(x => x.Status != TagSubscription.Pending), s];
+		if (quote.Payable <= 0) Activate(org.JsonData, s, now);
+		_json.Remove(org.Id);
+		await db.SaveChangesAsync(ct);
+
+		bool active = quote.Payable <= 0;
+		if (!active && p.FromWallet) active = (await PaySubscriptionInternal(org.Id, u.Id, ct)).Status == Usc.Success;
+		return new UResponse<SubscriptionBuyResponse?>(new SubscriptionBuyResponse { OrganizationId = org.Id, SubscriptionId = s.Id, Payable = quote.Payable, Active = active });
+	}
+
+	public async Task<UResponse> PaySubscription(IdParams p, CancellationToken ct) {
+		JwtClaimData? u = ts.ExtractClaims(p.Token);
+		if (u == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		if (u.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
+		if (!u.IsSystemAdmin && !await IsOwner(u, p.Id, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		return await PaySubscriptionInternal(p.Id, u.Id, ct);
+	}
+
+	public async Task<UResponse> PaySubscriptionInternal(Guid organizationId, Guid userId, CancellationToken ct) {
+		OrganizationEntity? org = await db.Set<OrganizationEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == organizationId, ct);
+		OrganizationSubscription? s = org?.JsonData.Subscriptions.FirstOrDefault(x => x.Status == TagSubscription.Pending);
+		if (org == null || s == null) return new UResponse(Usc.NotFound, ls.Get("subscriptionNotFound"));
+
+		decimal amount = s.Price - s.Credit - s.Paid;
+		if (amount > 0) {
+			UResponse<WalletTxnResponse?> transfer = await sp.GetRequiredService<IWalletService>().Transfer(new WalletTransferParams {
+				SenderId = userId,
+				ReceiverId = Core.App.Users.SystemAdmin.Id,
+				Amount = amount,
+				Detail1 = $"{ls.Get("subscription")} {s.Title} - {org.Title}",
+				KeyValues = [new KeyValue { Key = ls.Get("organization"), Value = org.Title }],
+				TagWalletTxn = [TagWalletTxn.Subscription]
+			}, ct);
+			if (transfer.Result == null) return new UResponse(transfer.Status, transfer.Message);
+			s.Paid += amount;
+		}
+
+		Activate(org.JsonData, s, DateTime.UtcNow);
+		org.JsonData.Subscriptions = org.JsonData.Subscriptions.ToList();
+		_json.Remove(org.Id);
+		await db.SaveChangesAsync(ct);
+		return new UResponse(Usc.Success, ls.Get("paymentCompleted"));
+	}
+
+	public async Task<UResponse> GrantSubscription(SubscriptionGrantParams p, CancellationToken ct) {
+		JwtClaimData? u = ts.ExtractClaims(p.Token);
+		if (u is not { IsSystemAdmin: true }) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		OrganizationEntity? org = await db.Set<OrganizationEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.OrganizationId, ct);
+		if (org == null) return new UResponse(Usc.NotFound, ls.Get("organizationNotFound"));
+		SubscriptionPlanEntity? plan = p.PlanId == null ? null : await db.Set<SubscriptionPlanEntity>().FirstOrDefaultAsync(x => x.Id == p.PlanId, ct);
+		List<TagModule> modules = p.Modules ?? plan?.JsonData.Modules ?? [];
+		if (modules.Count == 0) return new UResponse(Usc.BadRequest, ls.Get("planModulesRequired"));
+		if (p.Months <= 0 && p.Days <= 0) return new UResponse(Usc.BadRequest, ls.Get("planPricesAreNotValid"));
+
+		DateTime now = DateTime.UtcNow;
+		OrganizationSubscription s = NewSubscription(plan?.Id, p.Title.NullIfEmpty() ?? plan?.Title ?? ls.Get("subscription"), modules, p.Limits ?? plan?.JsonData.Limits ?? [], u.Id, now);
+		s.Months = Math.Max(0, p.Months);
+		s.Days = Math.Max(0, p.Days);
+		org.JsonData.Subscriptions = [..org.JsonData.Subscriptions, s];
+		Activate(org.JsonData, s, now);
+		_json.Remove(org.Id);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> CancelSubscription(SubscriptionCancelParams p, CancellationToken ct) {
+		JwtClaimData? u = ts.ExtractClaims(p.Token);
+		if (u is not { IsSystemAdmin: true }) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		OrganizationEntity? org = await db.Set<OrganizationEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.OrganizationId, ct);
+		OrganizationSubscription? s = org?.JsonData.Subscriptions.FirstOrDefault(x => x.Id == p.SubscriptionId);
+		if (org == null || s == null) return new UResponse(Usc.NotFound, ls.Get("subscriptionNotFound"));
+		s.Status = TagSubscription.Cancelled;
+		org.JsonData.Subscriptions = org.JsonData.Subscriptions.ToList();
+		_json.Remove(org.Id);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<bool> HasOrganizationPermission(JwtClaimData u, Guid? organizationId, TagUser permission, CancellationToken ct, TagModule? module = null) {
 		List<OrganizationEntity> organizations = await db.Set<OrganizationEntity>()
 			.Where(x => (organizationId == null || x.Id == organizationId) && !x.Tags.Contains(TagOrganization.Inactive) && (x.OwnerId == u.Id || x.AdminUserIds.Contains(u.Id)))
 			.ToListAsync(ct);
-		return organizations.Any(x => x.OwnerId == u.Id || x.JsonData.Members.Any(m => m.UserId == u.Id && m.Permissions.Contains(permission)));
+		DateTime now = DateTime.UtcNow;
+		TagModule? m = module ?? ModuleOf(permission);
+		return organizations.Any(x => Allows(x.JsonData, m, now) && (x.OwnerId == u.Id || x.JsonData.Members.Any(y => y.UserId == u.Id && y.Permissions.Contains(permission))));
 	}
+
+	private static readonly Dictionary<TagUser, TagModule> PermissionModules = new() {
+		[TagUser.PermissionManageHotels] = TagModule.Hotel,
+		[TagUser.PermissionDeleteHotels] = TagModule.Hotel,
+		[TagUser.PermissionManageReservations] = TagModule.Hotel,
+		[TagUser.PermissionDeleteReservations] = TagModule.Hotel,
+		[TagUser.PermissionManageDorms] = TagModule.Dorm,
+		[TagUser.PermissionDeleteDorms] = TagModule.Dorm,
+		[TagUser.PermissionManageContracts] = TagModule.Dorm,
+		[TagUser.PermissionDeleteContracts] = TagModule.Dorm,
+		[TagUser.PermissionManageInvoices] = TagModule.Dorm,
+		[TagUser.PermissionDeleteInvoices] = TagModule.Dorm,
+		[TagUser.PermissionManageAccounting] = TagModule.Accounting,
+		[TagUser.PermissionViewAccounting] = TagModule.Accounting,
+		[TagUser.PermissionManageInventory] = TagModule.Inventory,
+		[TagUser.PermissionManageStaff] = TagModule.Staff
+	};
+
+	private static TagModule? ModuleOf(TagUser permission) => PermissionModules.TryGetValue(permission, out TagModule m) ? m : null;
+
+	public static bool IsLive(OrganizationSubscription s, DateTime now) => s.Status == TagSubscription.Active && s.StartsAt <= now && s.ExpiresAt > now;
+
+	public static List<TagModule>? ModulesOf(OrganizationJson j, DateTime now) =>
+		j.Subscriptions.Count == 0 ? null : j.Subscriptions.Where(x => IsLive(x, now)).SelectMany(x => x.Modules).Distinct().Order().ToList();
+
+	public static bool Allows(OrganizationJson j, TagModule? module, DateTime now) => module == null || ModulesOf(j, now) is not { } list || list.Contains(module.Value);
+
+	private readonly Dictionary<Guid, OrganizationJson?> _json = [];
+
+	private async Task<OrganizationJson?> JsonOf(Guid organizationId, CancellationToken ct) {
+		if (_json.TryGetValue(organizationId, out OrganizationJson? j)) return j;
+		j = await db.Set<OrganizationEntity>().Where(x => x.Id == organizationId).Select(x => x.JsonData).FirstOrDefaultAsync(ct);
+		_json[organizationId] = j;
+		return j;
+	}
+
+	public async Task<bool> HasModule(JwtClaimData? u, Guid? organizationId, TagModule module, CancellationToken ct) {
+		if (organizationId == null || u?.IsSystemAdmin == true) return true;
+		OrganizationJson? j = await JsonOf(organizationId.Value, ct);
+		return j == null || Allows(j, module, DateTime.UtcNow);
+	}
+
+	private async Task<bool> HasModuleFor(JwtClaimData u, Guid? organizationId, TagUser permission, TagModule? module, CancellationToken ct) =>
+		(module ?? ModuleOf(permission)) is not { } m || await HasModule(u, organizationId, m, ct);
 
 	private static bool CanActOnPlace(JwtClaimData u, ICollection<Guid> placeAdminUserIds, TagUser permission) => u.HasPermission(permission) && (u.IsSuperAdmin || u.IsSubAdmin && placeAdminUserIds.Contains(u.Id));
 
 	public async Task<bool> CanActOnPlace(JwtClaimData u, Guid? organizationId, ICollection<Guid> adminUserIds, TagUser permission, CancellationToken ct) {
-		if (!Core.App.MultiTenant) return CanActOnPlace(u, adminUserIds, permission);
+		if (!Core.App.MultiTenant) return CanActOnPlace(u, adminUserIds, permission) && await HasModuleFor(u, organizationId, permission, null, ct);
 		if (u.IsSystemAdmin) return true;
 		return organizationId != null && adminUserIds.Contains(u.Id) && await HasOrganizationPermission(u, organizationId, permission, ct);
 	}
@@ -300,18 +638,25 @@ public class OrganizationService(
 		return mine.Select(o => o.OwnerId).Union(mine.SelectMany(o => o.AdminUserIds));
 	}
 
-	public async Task<bool> CanManage(JwtClaimData u, Guid organizationId, TagUser permission, CancellationToken ct) =>
-		IsFull(u) || !Core.App.MultiTenant && u.HasPermission(permission) || await HasOrganizationPermission(u, organizationId, permission, ct);
+	public async Task<bool> CanManage(JwtClaimData u, Guid organizationId, TagUser permission, CancellationToken ct, TagModule? module = null) =>
+		(IsFull(u) || !Core.App.MultiTenant && u.HasPermission(permission)) && await HasModuleFor(u, organizationId, permission, module, ct) ||
+		await HasOrganizationPermission(u, organizationId, permission, ct, module);
 
 	public Task<OrganizationEntity?> ReadOrganization(Guid? organizationId, CancellationToken ct) =>
 		organizationId == null ? Task.FromResult<OrganizationEntity?>(null) : db.Set<OrganizationEntity>().FirstOrDefaultAsync(x => x.Id == organizationId, ct);
 
-	public async Task<string?> PlanError(JwtClaimData u, Guid? organizationId, Func<OrganizationPlan, int?> limit, Func<Task<int>> count, CancellationToken ct) {
+	public static int? LimitOf(OrganizationJson j, TagPlanLimit kind, DateTime now) {
+		List<int> values = j.Subscriptions.Where(x => IsLive(x, now)).SelectMany(x => x.Limits).Where(x => x.Kind == kind).Select(x => x.Value).ToList();
+		return values.Count == 0 ? null : values.Max();
+	}
+
+	public async Task<string?> PlanError(JwtClaimData u, Guid? organizationId, TagPlanLimit limit, Func<Task<int>> count, CancellationToken ct) {
 		if (organizationId == null || u.IsSystemAdmin) return null;
-		OrganizationPlan? plan = (await ReadOrganization(organizationId, ct))?.JsonData.Plan;
-		if (plan == null) return null;
-		if (plan.ExpiresAt != null && plan.ExpiresAt < DateTime.UtcNow) return ls.Get("organizationPlanExpired");
-		int? max = limit(plan);
+		OrganizationJson? j = await JsonOf(organizationId.Value, ct);
+		if (j == null || j.Subscriptions.Count == 0) return null;
+		DateTime now = DateTime.UtcNow;
+		if (!j.Subscriptions.Any(x => IsLive(x, now))) return ls.Get("organizationPlanExpired");
+		int? max = LimitOf(j, limit, now);
 		return max != null && await count() >= max ? ls.Get("organizationPlanLimitReached") : null;
 	}
 
@@ -477,6 +822,7 @@ public class OrganizationService(
 		if (organizationId == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("organizationNotFound"));
 		if (p.PlaceId != null && !await IsPlaceOf(organizationId.Value, p.PlaceId.Value, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
+		if (!await HasModule(u, organizationId, TagModule.Staff, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("subscriptionInactive"));
 		bool staff = await CanManage(u, organizationId.Value, TagUser.PermissionManageStaff, ct);
 		if (!staff) {
 			bool resident = false;

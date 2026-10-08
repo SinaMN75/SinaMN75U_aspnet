@@ -4,6 +4,7 @@ public sealed class IpgPayParams : BaseParams {
 	public required decimal Amount { get; set; }
 	public TagTxn Tag { get; set; } = TagTxn.ChargeWallet;
 	public string? InvoiceId { get; set; }
+	public string? ReturnUrl { get; set; }
 	public string? BillId { get; set; }
 	public string? PaymentId { get; set; }
 	public string? ChargeMobileNumber { get; set; }
@@ -23,6 +24,7 @@ public sealed class IpgAdditionalData {
 	public TagTxn? Tag { get; set; }
 	public TagIpgPayment Kind { get; set; } = TagIpgPayment.NormalSale;
 	public string? InvoiceId { get; set; }
+	public string? ReturnUrl { get; set; }
 	public string? BillId { get; set; }
 	public string? PaymentId { get; set; }
 	public string? ChargeMobileNumber { get; set; }

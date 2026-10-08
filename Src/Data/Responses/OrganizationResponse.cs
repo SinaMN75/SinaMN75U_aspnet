@@ -4,6 +4,34 @@ public sealed class OrganizationResponse : BaseResponse<TagOrganization, Organiz
 	public required string Title { get; set; }
 	public Guid OwnerId { get; set; }
 	public decimal Balance { get; set; }
+	public List<TagModule>? Modules { get; set; }
+	public DateTime? SubscriptionEndsAt { get; set; }
+}
+
+public sealed class SubscriptionPlanResponse : BaseResponse<TagSubscriptionPlan, SubscriptionPlanJson> {
+	public required string Title { get; set; }
+	public int Order { get; set; }
+}
+
+public sealed class SubscriptionQuoteResponse {
+	public Guid PlanId { get; set; }
+	public string Title { get; set; } = "";
+	public int Months { get; set; }
+	public bool Trial { get; set; }
+	public bool Renewal { get; set; }
+	public decimal Price { get; set; }
+	public decimal Credit { get; set; }
+	public decimal Payable { get; set; }
+	public DateTime StartsAt { get; set; }
+	public DateTime ExpiresAt { get; set; }
+	public List<string> Replaces { get; set; } = [];
+}
+
+public sealed class SubscriptionBuyResponse {
+	public Guid OrganizationId { get; set; }
+	public Guid SubscriptionId { get; set; }
+	public decimal Payable { get; set; }
+	public bool Active { get; set; }
 }
 
 public sealed class StaffShiftResponse : BaseResponse<TagStaffShift, StaffShiftJson> {

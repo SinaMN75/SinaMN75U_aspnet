@@ -25,6 +25,15 @@ public static class OrganizationRoutes {
 		r.MapPost("Customer/Read", async (OrganizationCustomerReadParams p, IOrganizationService s, CancellationToken c) => (await s.ReadCustomers(p, c)).ToResult()).Produces<UResponse<IEnumerable<OrganizationCustomerResponse>>>();
 		r.MapPost("Customer/Delete", async (IdParams p, IOrganizationService s, CancellationToken c) => (await s.DeleteCustomer(p, c)).ToResult()).Produces<UResponse>();
 
+		r.MapPost("Plan/Create", async (SubscriptionPlanCreateParams p, IOrganizationService s, CancellationToken c) => (await s.CreatePlan(p, c)).ToResult()).Produces<UResponse<Guid?>>();
+		r.MapPost("Plan/Read", async (SubscriptionPlanReadParams p, IOrganizationService s, CancellationToken c) => (await s.ReadPlans(p, c)).ToResult()).Produces<UResponse<IEnumerable<SubscriptionPlanResponse>>>();
+		r.MapPost("Plan/Update", async (SubscriptionPlanUpdateParams p, IOrganizationService s, CancellationToken c) => (await s.UpdatePlan(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("Plan/Delete", async (IdParams p, IOrganizationService s, CancellationToken c) => (await s.DeletePlan(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("Subscription/Quote", async (SubscriptionQuoteParams p, IOrganizationService s, CancellationToken c) => (await s.QuoteSubscription(p, c)).ToResult()).Produces<UResponse<SubscriptionQuoteResponse>>();
+		r.MapPost("Subscription/Buy", async (SubscriptionBuyParams p, IOrganizationService s, CancellationToken c) => (await s.BuySubscription(p, c)).ToResult()).Produces<UResponse<SubscriptionBuyResponse>>();
+		r.MapPost("Subscription/Pay", async (IdParams p, IOrganizationService s, CancellationToken c) => (await s.PaySubscription(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("Subscription/Grant", async (SubscriptionGrantParams p, IOrganizationService s, CancellationToken c) => (await s.GrantSubscription(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("Subscription/Cancel", async (SubscriptionCancelParams p, IOrganizationService s, CancellationToken c) => (await s.CancelSubscription(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("ActivityLog/Read", async (ActivityLogReadParams p, IOrganizationService s, CancellationToken c) => (await s.ReadActivityLogs(p, c)).ToResult()).Produces<UResponse<IEnumerable<ActivityLogResponse>>>();
 	}
 }

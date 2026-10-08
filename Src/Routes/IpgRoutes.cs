@@ -62,7 +62,7 @@ public static class IpgRoutes {
 				      <div class='container'>
 				          <div class='icon {{(data.Paid ? "success" : "error")}}'>{{(data.Paid ? "✅" : "❌")}}</div>
 				          <h2>{{(data.Paid ? "پرداخت موفق" : "پرداخت ناموفق")}}</h2>
-				          {{$"<a class='back' href='{WebUtility.HtmlEncode(Core.App.Ipg.ReturnUrl)}'>بازگشت به برنامه</a>"}}
+				          {{$"<a class='back' href='{WebUtility.HtmlEncode(data.ReturnUrl ?? Core.App.Ipg.ReturnUrl)}'>بازگشت به برنامه</a>"}}
 				      </div>
 				      <script>
 				          (function() {
@@ -72,7 +72,7 @@ public static class IpgRoutes {
 				              // In an iframe the app reads the message above. Opened in a browser instead: send the user back.
 				              if (window.parent !== window) return;
 				              try { window.close(); } catch (e) {} // web: the tab the app opened closes itself
-				              var returnUrl = {{JsonSerializer.Serialize(Core.App.Ipg.ReturnUrl)}};
+				              var returnUrl = {{JsonSerializer.Serialize(data.ReturnUrl ?? Core.App.Ipg.ReturnUrl)}};
 				              // Native app: reopen it. The delay lets an in-app webview close itself first.
 				              if (returnUrl) setTimeout(function() { location.href = returnUrl; }, 1000);
 				          })();

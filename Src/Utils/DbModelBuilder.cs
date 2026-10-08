@@ -114,7 +114,12 @@ public static class DbModelBuilder {
 			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
 			b.OwnsMany(i => i.Members);
 			b.OwnsMany(i => i.Settlements);
-			b.OwnsOne(i => i.Plan);
+			b.OwnsMany(i => i.Subscriptions, s => s.OwnsMany(x => x.Limits));
+		});
+		builder.Entity<SubscriptionPlanEntity>().OwnsOne(e => e.JsonData, b => {
+			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
+			b.OwnsMany(i => i.Prices);
+			b.OwnsMany(i => i.Limits);
 		});
 		builder.Entity<StaffShiftEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<StaffTaskEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));

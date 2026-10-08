@@ -78,7 +78,8 @@ public class HotelService(
 	private static decimal PenaltyOf(decimal debt, int percentPerDay, DateTime dueDate, DateTime now) =>
 		percentPerDay <= 0 || dueDate > now ? 0 : debt * (percentPerDay / 100m) * Math.Max(0, (now - dueDate).Days);
 
-	private Task<bool> CanAct(JwtClaimData u, HotelEntity place, TagUser permission, CancellationToken ct) => os.CanActOnPlace(u, place.OrganizationId, place.AdminUserIds, permission, ct);
+	private async Task<bool> CanAct(JwtClaimData u, HotelEntity place, TagUser permission, CancellationToken ct) =>
+		await os.HasModule(u, place.OrganizationId, TagModule.Hotel, ct) && await os.CanActOnPlace(u, place.OrganizationId, place.AdminUserIds, permission, ct);
 
 	private async Task AddNotification(Guid userId, TagNotification tag, string title, string body, CancellationToken ct) =>
 		await db.Set<NotificationEntity>().AddAsync(new NotificationEntity {
@@ -119,7 +120,7 @@ public class HotelService(
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		if (!await os.CanCreatePlace(userData, p.OrganizationId, TagUser.PermissionManageHotels, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
-		string? planError = await os.PlanError(userData, p.OrganizationId, x => x.MaxPlaces, () => os.PlaceCount(p.OrganizationId!.Value, ct), ct);
+		string? planError = await os.PlanError(userData, p.OrganizationId, TagPlanLimit.Places, () => os.PlaceCount(p.OrganizationId!.Value, ct), ct);
 		if (planError != null) return new UResponse<Guid?>(null, Usc.Forbidden, planError);
 
 		HotelEntity e = new() {
@@ -258,7 +259,7 @@ public class HotelService(
 		if (hotel == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("hotelNotFound"));
 		if (!await CanAct(userData, hotel, TagUser.PermissionManageHotels, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		Guid? organizationId = hotel.OrganizationId;
-		string? planError = await os.PlanError(userData, organizationId, x => x.MaxRooms,
+		string? planError = await os.PlanError(userData, organizationId, TagPlanLimit.Rooms,
 			async () => (await db.Set<HotelRoomEntity>().Where(x => x.Hotel.OrganizationId == organizationId).SumAsync(x => (int?)x.Quantity, ct) ?? 0) + Math.Max(1, p.Quantity) - 1, ct);
 		if (planError != null) return new UResponse<Guid?>(null, Usc.Forbidden, planError);
 
@@ -648,6 +649,7 @@ public class HotelService(
 		Dictionary<Guid, int> booked = await ReadBookedCounts([room.Id], p.CheckInDate, p.CheckOutDate, ct);
 		if (booked.GetValueOrDefault(room.Id, 0) >= room.Quantity) return new UResponse<HotelReservationResponse?>(null, Usc.Conflict, ls.Get("thisRoomIsAlreadyBookedForTheSelectedDates"));
 
+		if (!await os.HasModule(null, room.Hotel.OrganizationId, TagModule.Hotel, ct)) return new UResponse<HotelReservationResponse?>(null, Usc.Conflict, ls.Get("thisHotelIsCurrentlyNotAcceptingReservations"));
 		if (await os.IsBlacklisted(room.Hotel.OrganizationId, userData.Id, ct)) return new UResponse<HotelReservationResponse?>(null, Usc.Forbidden, ls.Get("youCannotBookThisPlace"));
 		(decimal total, string? priceError) = await StayPrice(room, p.CheckInDate, p.CheckOutDate, guestCount, ct);
 		if (priceError != null) return new UResponse<HotelReservationResponse?>(null, Usc.Conflict, priceError);
@@ -1036,7 +1038,7 @@ public class HotelService(
 		var hotel = hotelId != null
 			? await db.Set<HotelEntity>().Where(x => x.Id == hotelId).Select(x => new { x.AdminUserIds, x.OrganizationId }).FirstOrDefaultAsync(ct)
 			: await db.Set<HotelRoomEntity>().Where(x => x.Id == hotelRoomId).Select(x => new { x.Hotel.AdminUserIds, x.Hotel.OrganizationId }).FirstOrDefaultAsync(ct);
-		return await os.CanActOnPlace(u, hotel?.OrganizationId, hotel?.AdminUserIds ?? [], TagUser.PermissionManageHotels, ct);
+		return await os.HasModule(u, hotel?.OrganizationId, TagModule.Hotel, ct) && await os.CanActOnPlace(u, hotel?.OrganizationId, hotel?.AdminUserIds ?? [], TagUser.PermissionManageHotels, ct);
 	}
 
 	public IQueryable<Guid> RelatedUserIds(Guid userId) => db.Set<HotelReservationEntity>().Where(r => r.Hotel.AdminUserIds.Contains(userId)).Select(r => r.UserId);

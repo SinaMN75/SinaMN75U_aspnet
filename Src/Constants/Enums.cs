@@ -289,7 +289,8 @@ public enum TagTxn {
 	HotelInvoice = 304,
 	BillPayment = 305,
 	TopUp = 306,
-	MultiplexedSale = 307
+	MultiplexedSale = 307,
+	Subscription = 308
 }
 
 public enum TagParking {
@@ -394,6 +395,7 @@ public enum TagWalletTxn {
 	DormDepositRefund = 223,
 	OrganizationSettlement = 224,
 	OrganizationSettlementRefund = 225,
+	Subscription = 226,
 
 	ChargeSimPin = 301,
 	ChargeSimTopup = 302,
@@ -1164,4 +1166,34 @@ public enum TagActivityLog {
 	Update = 102,
 	Delete = 103,
 	Action = 104
+}
+
+public enum TagModule {
+	Hotel = 101,
+	Dorm = 102,
+	Accounting = 103,
+	Inventory = 104,
+	Staff = 105
+}
+
+public enum TagSubscriptionPlan {
+	Active = 101,
+	Inactive = 102,
+
+	Featured = 201
+}
+
+public enum TagSubscription {
+	Pending = 101,
+	Active = 102,
+	Replaced = 103,
+	Cancelled = 104
+}
+
+public enum TagPlanLimit {
+	Places = 101,
+	Rooms = 102,
+	Beds = 103,
+	Members = 104,
+	Warehouses = 105
 }

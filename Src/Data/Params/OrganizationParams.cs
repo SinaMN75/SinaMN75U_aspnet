@@ -16,7 +16,6 @@ public sealed class OrganizationCreateParams : BaseCreateParams<TagOrganization>
 	public string? EconomicCode { get; set; }
 	public decimal? VatPercent { get; set; }
 	public string? TaxServiceId { get; set; }
-	public OrganizationPlan? Plan { get; set; }
 }
 
 public sealed class OrganizationUpdateParams : BaseUpdateParams<TagOrganization> {
@@ -31,7 +30,6 @@ public sealed class OrganizationUpdateParams : BaseUpdateParams<TagOrganization>
 	public string? EconomicCode { get; set; }
 	public decimal? VatPercent { get; set; }
 	public string? TaxServiceId { get; set; }
-	public OrganizationPlan? Plan { get; set; }
 }
 
 public sealed class OrganizationReadParams : BaseReadParams<TagOrganization> {
@@ -135,4 +133,71 @@ public sealed class ActivityLogReadParams : BaseReadParams<TagActivityLog> {
 	public Guid? OrganizationId { get; set; }
 	public Guid? UserId { get; set; }
 	public string? Path { get; set; }
+}
+
+public sealed class SubscriptionPlanCreateParams : BaseCreateParams<TagSubscriptionPlan> {
+	[UValidationRequired("titleIsRequired"), UValidationStringLength(2, 100, "TitleMinLength")]
+	public string Title { get; set; } = null!;
+
+	public int Order { get; set; }
+	public List<TagModule> Modules { get; set; } = [];
+	public List<PlanPrice> Prices { get; set; } = [];
+	public List<PlanLimit> Limits { get; set; } = [];
+	public List<string> Features { get; set; } = [];
+	public int TrialDays { get; set; }
+}
+
+public sealed class SubscriptionPlanUpdateParams : BaseUpdateParams<TagSubscriptionPlan> {
+	public string? Title { get; set; }
+	public int? Order { get; set; }
+	public List<TagModule>? Modules { get; set; }
+	public List<PlanPrice>? Prices { get; set; }
+	public List<PlanLimit>? Limits { get; set; }
+	public List<string>? Features { get; set; }
+	public int? TrialDays { get; set; }
+}
+
+public sealed class SubscriptionPlanReadParams : BaseReadParams<TagSubscriptionPlan> {
+	public TagModule? Module { get; set; }
+}
+
+public sealed class SubscriptionQuoteParams : BaseParams {
+	[UValidationRequired("idIsRequired")]
+	public Guid PlanId { get; set; }
+
+	public int Months { get; set; }
+	public bool Trial { get; set; }
+	public Guid? OrganizationId { get; set; }
+}
+
+public sealed class SubscriptionBuyParams : BaseParams {
+	[UValidationRequired("idIsRequired")]
+	public Guid PlanId { get; set; }
+
+	public int Months { get; set; }
+	public bool Trial { get; set; }
+	public Guid? OrganizationId { get; set; }
+	public string? Title { get; set; }
+	public string? Password { get; set; }
+	public bool FromWallet { get; set; }
+}
+
+public sealed class SubscriptionGrantParams : BaseParams {
+	[UValidationRequired("idIsRequired")]
+	public Guid OrganizationId { get; set; }
+
+	public Guid? PlanId { get; set; }
+	public string? Title { get; set; }
+	public List<TagModule>? Modules { get; set; }
+	public List<PlanLimit>? Limits { get; set; }
+	public int Months { get; set; }
+	public int Days { get; set; }
+}
+
+public sealed class SubscriptionCancelParams : BaseParams {
+	[UValidationRequired("idIsRequired")]
+	public Guid OrganizationId { get; set; }
+
+	[UValidationRequired("idIsRequired")]
+	public Guid SubscriptionId { get; set; }
 }

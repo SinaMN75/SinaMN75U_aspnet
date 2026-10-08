@@ -13,7 +13,7 @@ public sealed class OrganizationJson : BaseJson {
 	public decimal CommissionPercent { get; set; }
 	public List<OrganizationMember> Members { get; set; } = [];
 	public List<OrganizationSettlement> Settlements { get; set; } = [];
-	public OrganizationPlan? Plan { get; set; }
+	public List<OrganizationSubscription> Subscriptions { get; set; } = [];
 	public string? LogoUrl { get; set; }
 	public string? Address { get; set; }
 	public string? PhoneNumber { get; set; }
@@ -23,12 +23,50 @@ public sealed class OrganizationJson : BaseJson {
 	public string? TaxServiceId { get; set; }
 }
 
-public sealed class OrganizationPlan {
-	public string? Title { get; set; }
-	public int? MaxPlaces { get; set; }
-	public int? MaxRooms { get; set; }
-	public int? MaxBeds { get; set; }
+public sealed class OrganizationSubscription {
+	public Guid Id { get; set; }
+	public Guid? PlanId { get; set; }
+	public string Title { get; set; } = "";
+	public List<TagModule> Modules { get; set; } = [];
+	public List<PlanLimit> Limits { get; set; } = [];
+	public int Months { get; set; }
+	public int Days { get; set; }
+	public bool Trial { get; set; }
+	public decimal Price { get; set; }
+	public decimal Credit { get; set; }
+	public decimal Paid { get; set; }
+	public List<Guid> Replaces { get; set; } = [];
+	public TagSubscription Status { get; set; }
+	public DateTime CreatedAt { get; set; }
+	public DateTime? StartsAt { get; set; }
 	public DateTime? ExpiresAt { get; set; }
+	public Guid? RegisteredBy { get; set; }
+}
+
+[Table("SubscriptionPlans")]
+public sealed class SubscriptionPlanEntity : BaseEntity<TagSubscriptionPlan, SubscriptionPlanJson> {
+	[Required, MaxLength(100)]
+	public required string Title { get; set; }
+
+	public int Order { get; set; }
+}
+
+public sealed class SubscriptionPlanJson : BaseJson {
+	public List<TagModule> Modules { get; set; } = [];
+	public List<PlanPrice> Prices { get; set; } = [];
+	public List<PlanLimit> Limits { get; set; } = [];
+	public List<string> Features { get; set; } = [];
+	public int TrialDays { get; set; }
+}
+
+public sealed class PlanPrice {
+	public int Months { get; set; }
+	public decimal Price { get; set; }
+}
+
+public sealed class PlanLimit {
+	public TagPlanLimit Kind { get; set; }
+	public int Value { get; set; }
 }
 
 public sealed class OrganizationSettlement {

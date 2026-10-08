@@ -211,7 +211,7 @@ public class AccountingService(
 		if (u == null) return (null, new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue")));
 		if (u.IsExpired) return (null, new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired")));
 		if (!await db.Set<OrganizationEntity>().AnyAsync(x => x.Id == organizationId, ct)) return (null, new UResponse(Usc.NotFound, ls.Get("organizationNotFound")));
-		bool allowed = OrganizationService.IsFull(u) ||
+		bool allowed = OrganizationService.IsFull(u) && await os.HasModule(u, organizationId, TagModule.Accounting, ct) ||
 		               await os.HasOrganizationPermission(u, organizationId, permission, ct) ||
 		               permission == TagUser.PermissionViewAccounting && await os.HasOrganizationPermission(u, organizationId, TagUser.PermissionManageAccounting, ct);
 		return allowed ? (u, null) : (null, new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction")));

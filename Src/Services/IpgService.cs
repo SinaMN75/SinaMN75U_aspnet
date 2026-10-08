@@ -14,7 +14,8 @@ public class IpgService(
 	ITokenService ts,
 	IHttpContextAccessor httpContext,
 	IHotelService hs,
-	IDormService ds
+	IDormService ds,
+	IOrganizationService os
 ) : IIpgService {
 	private IIpgProvider Provider => providers.First(x => x.Tag == Core.App.Ipg.Tag);
 
@@ -77,6 +78,7 @@ public class IpgService(
 			Tag = p.Tag,
 			Kind = kind,
 			InvoiceId = p.InvoiceId,
+			ReturnUrl = ReturnUrlOf(p.ReturnUrl),
 			BillId = bill?.BillId,
 			PaymentId = bill?.PaymentId,
 			ChargeMobileNumber = p.ChargeMobileNumber
@@ -201,7 +203,9 @@ public class IpgService(
 			if (kind != TagIpgPayment.NormalSale) return true;
 
 			if (additionalData is { InvoiceId: not null }) {
-				if (additionalData.Tag == TagTxn.HotelInvoice)
+				if (additionalData.Tag == TagTxn.Subscription)
+					await os.PaySubscriptionInternal(additionalData.InvoiceId.ToGuid(), txn.UserId, ct);
+				else if (additionalData.Tag == TagTxn.HotelInvoice)
 					await hs.PayHotelInvoiceInternal(new HotelInvoicePayParams {
 						InvoiceId = additionalData.InvoiceId.ToGuid(),
 						UserId = txn.UserId
@@ -220,6 +224,9 @@ public class IpgService(
 			return txn.Tags.Contains(TagTxn.Paid);
 		}
 	}
+
+	private static string? ReturnUrlOf(string? url) =>
+		Uri.TryCreate(url, UriKind.Absolute, out Uri? uri) && Core.App.Cors.AllowedOrigins.Any(x => Uri.TryCreate(x, UriKind.Absolute, out Uri? o) && o.Scheme == uri.Scheme && o.Authority == uri.Authority) ? url : null;
 
 	private static TagIpgPayment Kind(IpgPayParams p) {
 		if (p.BillId.IsNotNullOrEmpty() && p.PaymentId.IsNotNullOrEmpty()) return TagIpgPayment.Bill;

@@ -39,7 +39,7 @@ public class InventoryService(
 		if (u == null) return (null, new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue")));
 		if (u.IsExpired) return (null, new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired")));
 		if (!await db.Set<OrganizationEntity>().AnyAsync(x => x.Id == organizationId, ct)) return (null, new UResponse(Usc.NotFound, ls.Get("organizationNotFound")));
-		return await os.CanManage(u, organizationId, permission, ct) ? (u, null) : (null, new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction")));
+		return await os.CanManage(u, organizationId, permission, ct, TagModule.Inventory) ? (u, null) : (null, new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction")));
 	}
 
 	private async Task<UResponse?> CheckPlace(Guid organizationId, Guid? placeId, CancellationToken ct) =>
@@ -77,9 +77,11 @@ public class InventoryService(
 	}
 
 	public async Task<UResponse<Guid?>> CreateWarehouse(WarehouseCreateParams p, CancellationToken ct) {
-		(_, UResponse? error) = await Keeper(p.Token, p.OrganizationId, ct);
+		(JwtClaimData? u, UResponse? error) = await Keeper(p.Token, p.OrganizationId, ct);
 		error ??= await CheckPlace(p.OrganizationId, p.PlaceId, ct);
 		if (error != null) return new UResponse<Guid?>(null, error.Status, error.Message);
+		string? planError = await os.PlanError(u!, p.OrganizationId, TagPlanLimit.Warehouses, () => db.Set<WarehouseEntity>().CountAsync(x => x.OrganizationId == p.OrganizationId, ct), ct);
+		if (planError != null) return new UResponse<Guid?>(null, Usc.Forbidden, planError);
 
 		Guid id = Guid.CreateVersion7();
 		await db.Set<WarehouseEntity>().AddAsync(new WarehouseEntity {
