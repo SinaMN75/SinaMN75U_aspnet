@@ -2,7 +2,7 @@ namespace SinaMN75U.Routes;
 
 public static class AccountingRoutes {
 	public static void MapAccountingRoutes(this IEndpointRouteBuilder app, string tag) {
-		RouteGroupBuilder r = app.MapGroup(tag).WithTags(tag).AddEndpointFilter<UValidationFilter>();
+		RouteGroupBuilder r = app.MapGroup(tag).WithTags(tag).AddEndpointFilter<UValidationFilter>().AddEndpointFilter<ActivityLogFilter>();
 		r.MapPost("Report", async (AccountingReportParams p, IAccountingService s, CancellationToken c) => (await s.Report(p, c)).ToResult()).Produces<UResponse<AccountingReportResponse?>>();
 
 		r.MapPost("Settlement/Request", async (OrganizationSettlementRequestParams p, IAccountingService s, CancellationToken c) => (await s.RequestOrganizationSettlement(p, c)).ToResult()).Produces<UResponse>();
@@ -18,6 +18,7 @@ public static class AccountingRoutes {
 		r.MapPost("Voucher/Delete", async (IdParams p, IAccountingService s, CancellationToken c) => (await s.DeleteVoucher(p, c)).ToResult()).Produces<UResponse>();
 
 		r.MapPost("Ledger/Read", async (LedgerReadParams p, IAccountingService s, CancellationToken c) => (await s.ReadLedger(p, c)).ToResult()).Produces<UResponse<LedgerResponse>>();
+		r.MapPost("Ledger/TaxInvoices", async (LedgerReportParams p, IAccountingService s, CancellationToken c) => (await s.ReadTaxInvoices(p, c)).ToResult()).Produces<UResponse<IEnumerable<TaxInvoiceItem>>>();
 		r.MapPost("Ledger/Report", async (LedgerReportParams p, IAccountingService s, CancellationToken c) => (await s.ReadLedgerReport(p, c)).ToResult()).Produces<UResponse<LedgerReportResponse>>();
 
 		r.MapPost("Check/Create", async (CheckCreateParams p, IAccountingService s, CancellationToken c) => (await s.CreateCheck(p, c)).ToResult()).Produces<UResponse<Guid?>>();

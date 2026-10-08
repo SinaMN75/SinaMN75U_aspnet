@@ -44,6 +44,8 @@ public sealed class DormJson : BaseJson {
 	public string? Telegram { get; set; }
 	public double? Latitude { get; set; }
 	public double? Longitude { get; set; }
+	public List<string> LaundryMachines { get; set; } = [];
+	public int? LaundrySlotMinutes { get; set; }
 }
 
 [Table("DormRooms")]
@@ -114,6 +116,23 @@ public class DormBedContractJson : BaseJson {
 	public string? DeductionReason { get; set; }
 	public decimal? DepositRefund { get; set; }
 	public List<ContractBedChange> BedHistory { get; set; } = [];
+	public string? GuardianName { get; set; }
+	public string? GuardianPhone { get; set; }
+	public string? EmergencyName { get; set; }
+	public string? EmergencyPhone { get; set; }
+	public string? EmergencyRelation { get; set; }
+	public Guid? ApplicationId { get; set; }
+	public List<HandoverItem> CheckInChecklist { get; set; } = [];
+	public List<HandoverItem> CheckOutChecklist { get; set; } = [];
+	public Guid? DamageInvoiceId { get; set; }
+}
+
+public sealed class HandoverItem {
+	public string Title { get; set; } = "";
+	public bool Ok { get; set; }
+	public string? Note { get; set; }
+	public decimal Damage { get; set; }
+	public List<string> PhotoUrls { get; set; } = [];
 }
 
 public sealed class ContractBedChange {
@@ -141,3 +160,102 @@ public sealed class DormBedInvoiceJson : BaseJson {
 	public bool OverdueReminded { get; set; }
 	public bool Posted { get; set; }
 }
+
+[Table("DormApplications")]
+public sealed class DormApplicationEntity : BaseEntity<TagDormApplication, DormApplicationJson> {
+	public required DateTime DesiredStartDate { get; set; }
+	public DateTime? DesiredEndDate { get; set; }
+
+	public required Guid DormId { get; set; }
+	public DormEntity Dorm { get; set; } = null!;
+
+	public required Guid UserId { get; set; }
+	public UserEntity User { get; set; } = null!;
+}
+
+public sealed class DormApplicationJson : BaseJson {
+	public string? ReviewNote { get; set; }
+	public Guid? ReviewedBy { get; set; }
+	public DateTime? ReviewedAt { get; set; }
+	public Guid? BedId { get; set; }
+	public Guid? ContractId { get; set; }
+	public List<DormApplicationDocument> Documents { get; set; } = [];
+}
+
+public sealed class DormApplicationDocument {
+	public string Title { get; set; } = "";
+	public string? Url { get; set; }
+	public bool? Approved { get; set; }
+}
+
+[Table("DormRecords")]
+public sealed class DormRecordEntity : BaseEntity<TagDormRecord, DormRecordJson> {
+	[Required, MaxLength(200)]
+	public required string Title { get; set; }
+
+	public required DateTime Date { get; set; }
+	public DateTime? EndDate { get; set; }
+
+	public required Guid DormId { get; set; }
+	public DormEntity Dorm { get; set; } = null!;
+
+	public Guid? UserId { get; set; }
+	public UserEntity? User { get; set; }
+}
+
+public sealed class DormRecordJson : BaseJson {
+	public string? Body { get; set; }
+	public string? VisitorName { get; set; }
+	public string? VisitorPhone { get; set; }
+	public string? VisitorNationalCode { get; set; }
+	public string? Relation { get; set; }
+	public Guid? RoomId { get; set; }
+	public Guid? ReviewedBy { get; set; }
+	public decimal? Penalty { get; set; }
+	public Guid? InvoiceId { get; set; }
+	public List<HandoverItem> Items { get; set; } = [];
+}
+
+[Table("DormMeals")]
+public sealed class DormMealEntity : BaseEntity<TagDormMeal, BaseJson> {
+	[Required, MaxLength(200)]
+	public required string Title { get; set; }
+
+	public required DateTime Date { get; set; }
+
+	[Column(TypeName = "decimal(24,2)")]
+	public decimal Price { get; set; }
+
+	public int? Capacity { get; set; }
+
+	public required Guid DormId { get; set; }
+	public DormEntity Dorm { get; set; } = null!;
+
+	public ICollection<DormBookingEntity> Bookings { get; set; } = [];
+}
+
+[Table("DormBookings")]
+public sealed class DormBookingEntity : BaseEntity<TagDormBooking, DormBookingJson> {
+	public required DateTime StartAt { get; set; }
+	public DateTime? EndAt { get; set; }
+
+	[MaxLength(50)]
+	public string? Resource { get; set; }
+
+	[Column(TypeName = "decimal(24,2)")]
+	public decimal Price { get; set; }
+
+	public required Guid DormId { get; set; }
+	public DormEntity Dorm { get; set; } = null!;
+
+	public required Guid UserId { get; set; }
+	public UserEntity User { get; set; } = null!;
+
+	public Guid? MealId { get; set; }
+	public DormMealEntity? Meal { get; set; }
+}
+
+public sealed class DormBookingJson : BaseJson {
+	public Guid? InvoiceId { get; set; }
+}
+

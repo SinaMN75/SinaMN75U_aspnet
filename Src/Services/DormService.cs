@@ -39,6 +39,25 @@ public interface IDormService {
 	public Task<List<AccountingDue>> Outstanding(Guid organizationId, DateTime now, CancellationToken ct);
 	public Task<UResponse<DormDashboardResponse?>> ReadDormDashboard(DashboardRangeParams p, CancellationToken ct);
 	public Task<UResponse<List<KeyValue>?>> SeedDorms(CancellationToken ct = default);
+	public Task<UResponse> SetDormBedContractChecklist(DormBedContractChecklistParams p, CancellationToken ct);
+	public Task<UResponse<Guid?>> CreateDormApplication(DormApplicationCreateParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<DormApplicationResponse>?>> ReadDormApplications(DormApplicationReadParams p, CancellationToken ct);
+	public Task<UResponse> ReviewDormApplication(DormApplicationReviewParams p, CancellationToken ct);
+	public Task<UResponse> DeleteDormApplication(IdParams p, CancellationToken ct);
+	public Task<UResponse<Guid?>> CreateDormRecord(DormRecordCreateParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<DormRecordResponse>?>> ReadDormRecords(DormRecordReadParams p, CancellationToken ct);
+	public Task<UResponse> UpdateDormRecord(DormRecordUpdateParams p, CancellationToken ct);
+	public Task<UResponse> DeleteDormRecord(IdParams p, CancellationToken ct);
+	public Task<UResponse<Guid?>> CreateDormMeal(DormMealCreateParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<DormMealResponse>?>> ReadDormMeals(DormMealReadParams p, CancellationToken ct);
+	public Task<UResponse> UpdateDormMeal(DormMealUpdateParams p, CancellationToken ct);
+	public Task<UResponse> DeleteDormMeal(IdParams p, CancellationToken ct);
+	public Task<UResponse<Guid?>> CreateDormBooking(DormBookingCreateParams p, CancellationToken ct);
+	public Task<UResponse<IEnumerable<DormBookingResponse>?>> ReadDormBookings(DormBookingReadParams p, CancellationToken ct);
+	public Task<UResponse> CancelDormBooking(IdParams p, CancellationToken ct);
+	public Task<UResponse<string?>> PrintDormBedContract(IdParams p, CancellationToken ct);
+	public Task<UResponse<string?>> PrintDormBedInvoice(IdParams p, CancellationToken ct);
+	public Task<bool> IsResidentOf(Guid userId, Guid placeId, CancellationToken ct);
 }
 
 public class DormService(
@@ -49,7 +68,7 @@ public class DormService(
 	IOrganizationService os,
 	IAccountingService acc,
 	IDataSeedService seeds
-) : IDormService, IAccountingSource, IUserScope {
+) : IDormService, IAccountingSource, IUserScope, IPlaceResidency {
 	private static Guid UserIdOf(JwtClaimData? u) => u?.Id ?? Guid.Empty;
 
 	private Task<bool> CanAct(JwtClaimData u, DormEntity place, TagUser permission, CancellationToken ct) => os.CanActOnPlace(u, place.OrganizationId, place.AdminUserIds, permission, ct);
@@ -96,6 +115,8 @@ public class DormService(
 		if (userData == null) return new UResponse<Guid?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<Guid?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 		if (!await os.CanCreatePlace(userData, p.OrganizationId, TagUser.PermissionManageDorms, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		string? planError = await os.PlanError(userData, p.OrganizationId, x => x.MaxPlaces, () => os.PlaceCount(p.OrganizationId!.Value, ct), ct);
+		if (planError != null) return new UResponse<Guid?>(null, Usc.Forbidden, planError);
 
 		DormEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -120,7 +141,9 @@ public class DormService(
 				Instagram = p.Instagram,
 				Telegram = p.Telegram,
 				Latitude = p.Latitude,
-				Longitude = p.Longitude
+				Longitude = p.Longitude,
+				LaundryMachines = p.LaundryMachines ?? [],
+				LaundrySlotMinutes = p.LaundrySlotMinutes
 			},
 			Tags = p.Tags,
 			Title = p.Title,
@@ -203,6 +226,8 @@ public class DormService(
 		if (p.Telegram.IsNotNull()) e.JsonData.Telegram = p.Telegram;
 		if (p.Latitude.HasValue) e.JsonData.Latitude = p.Latitude;
 		if (p.Longitude.HasValue) e.JsonData.Longitude = p.Longitude;
+		if (p.LaundryMachines != null) e.JsonData.LaundryMachines = p.LaundryMachines;
+		if (p.LaundrySlotMinutes.HasValue) e.JsonData.LaundrySlotMinutes = p.LaundrySlotMinutes;
 		e.ApplyUpdateParam<DormEntity, TagDorm, DormJson>(p);
 		if (Core.App.MultiTenant) e.AdminUserIds = await os.PlaceAdmins(e.OrganizationId, e.AdminUserIds, ct);
 		await db.SaveChangesAsync(ct);
@@ -327,6 +352,9 @@ public class DormService(
 		DormRoomEntity? room = await db.Set<DormRoomEntity>().Include(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.RoomId, ct);
 		if (room == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("dormRoomNotFound"));
 		if (!await CanAct(userData, room.Dorm, TagUser.PermissionManageDorms, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		Guid? organizationId = room.Dorm.OrganizationId;
+		string? planError = await os.PlanError(userData, organizationId, x => x.MaxBeds, () => db.Set<DormBedEntity>().CountAsync(x => x.Room.Dorm.OrganizationId == organizationId, ct), ct);
+		if (planError != null) return new UResponse<Guid?>(null, Usc.Forbidden, planError);
 
 		DormBedEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
@@ -441,10 +469,25 @@ public class DormService(
 			UserId = user.Id,
 			CreatorId = p.CreatorId ?? userData.Id,
 			BedId = bed.Id,
-			JsonData = new DormBedContractJson(),
+			JsonData = new DormBedContractJson {
+				GuardianName = p.GuardianName,
+				GuardianPhone = p.GuardianPhone,
+				EmergencyName = p.EmergencyName,
+				EmergencyPhone = p.EmergencyPhone,
+				EmergencyRelation = p.EmergencyRelation,
+				ApplicationId = p.ApplicationId
+			},
 			Tags = p.Tags
 		};
 		await db.Set<DormBedContractEntity>().AddAsync(e, ct);
+		if (p.ApplicationId != null) {
+			DormApplicationEntity? application = await db.Set<DormApplicationEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.ApplicationId && x.UserId == user.Id, ct);
+			if (application != null) {
+				application.Tags = [TagDormApplication.Converted];
+				application.JsonData.ContractId = contractId;
+				application.JsonData.BedId = bed.Id;
+			}
+		}
 
 		if (p.Tags.Contains(TagDormBedContract.SingleInvoice)) {
 			await db.Set<DormBedInvoiceEntity>().AddAsync(new DormBedInvoiceEntity {
@@ -589,6 +632,11 @@ public class DormService(
 		if (p.Rent.HasValue) e.Rent = p.Rent.Value;
 		if (p.StartDate.HasValue) e.StartDate = p.StartDate.Value;
 		if (p.EndDate.HasValue) e.EndDate = p.EndDate.Value;
+		if (p.GuardianName != null) e.JsonData.GuardianName = p.GuardianName;
+		if (p.GuardianPhone != null) e.JsonData.GuardianPhone = p.GuardianPhone;
+		if (p.EmergencyName != null) e.JsonData.EmergencyName = p.EmergencyName;
+		if (p.EmergencyPhone != null) e.JsonData.EmergencyPhone = p.EmergencyPhone;
+		if (p.EmergencyRelation != null) e.JsonData.EmergencyRelation = p.EmergencyRelation;
 
 		e.ApplyUpdateParam<DormBedContractEntity, TagDormBedContract, DormBedContractJson>(p);
 		await db.SaveChangesAsync(ct);
@@ -1056,7 +1104,7 @@ public class DormService(
 
 	private async Task SyncDormBedInvoice(DormBedInvoiceEntity e, bool removed, CancellationToken ct) {
 		DormEntity? dorm = e.Contract?.Bed.Room.Dorm;
-		if (!Core.App.MultiTenant || dorm?.OrganizationId == null) return;
+		if (dorm?.OrganizationId == null) return;
 
 		DateTime now = DateTime.UtcNow;
 		bool open = e.Tags.Contains(TagDormBedInvoice.NotPaid);
@@ -1064,11 +1112,11 @@ public class DormService(
 		if (!charged && !e.JsonData.Posted) return;
 
 		decimal debt = charged ? Math.Max(0, e.DebtAmount - e.CreditorAmount) : 0;
-		bool single = e.Contract!.Tags.Contains(TagDormBedContract.SingleInvoice) && !e.Tags.Contains(TagDormBedInvoice.Rent) && !e.Tags.Contains(TagDormBedInvoice.Service);
+		bool single = e.Contract!.Tags.Contains(TagDormBedContract.SingleInvoice) && !e.Tags.Contains(TagDormBedInvoice.Rent) && !e.Tags.Contains(TagDormBedInvoice.Service) && !e.Tags.Contains(TagDormBedInvoice.Damage);
 		decimal deposit = e.Tags.Contains(TagDormBedInvoice.Deposit) ? debt : single ? Math.Min(e.Contract.Deposit, debt) : 0;
 		Dictionary<TagAccount, decimal> target = new() {
 			[TagAccount.DepositsHeld] = deposit,
-			[e.Tags.Contains(TagDormBedInvoice.Service) ? TagAccount.ServiceIncome : TagAccount.RentIncome] = debt - deposit,
+			[e.Tags.Contains(TagDormBedInvoice.Damage) ? TagAccount.DamageIncome : e.Tags.Contains(TagDormBedInvoice.Service) ? TagAccount.ServiceIncome : TagAccount.RentIncome] = debt - deposit,
 			[TagAccount.PenaltyIncome] = charged && !open ? e.PenaltyAmount : 0
 		};
 		await acc.SyncCharge(dorm.OrganizationId.Value, e.Id, dorm.Id, e.Contract.UserId, !e.JsonData.Posted && e.DueDate < now ? e.DueDate : now, $"{ls.Get("dormBedInvoiceIssued", "fa")} - {dorm.Title} - {e.Contract.Bed.Title}", target, ct);
@@ -1124,13 +1172,11 @@ public class DormService(
 			}
 		}
 
-		if (Core.App.MultiTenant) {
-			List<DormBedInvoiceEntity> dormInvoices = await db.Set<DormBedInvoiceEntity>().AsTracking()
-				.Include(x => x.Contract).ThenInclude(x => x!.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm)
-				.Where(x => !x.JsonData.Posted && x.DueDate <= now && x.Contract != null && x.Contract.Bed.Room.Dorm.OrganizationId != null)
-				.ToListAsync(ct);
-			foreach (DormBedInvoiceEntity e in dormInvoices) await SyncDormBedInvoice(e, false, ct);
-		}
+		List<DormBedInvoiceEntity> dormInvoices = await db.Set<DormBedInvoiceEntity>().AsTracking()
+			.Include(x => x.Contract).ThenInclude(x => x!.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm)
+			.Where(x => !x.JsonData.Posted && x.DueDate <= now && x.Contract != null && x.Contract.Bed.Room.Dorm.OrganizationId != null)
+			.ToListAsync(ct);
+		foreach (DormBedInvoiceEntity e in dormInvoices) await SyncDormBedInvoice(e, false, ct);
 
 		await db.SaveChangesAsync(ct);
 	}
@@ -1515,6 +1561,571 @@ public class DormService(
 			new KeyValue { Key = "reviews", Value = comments.Count.ToString() },
 			new KeyValue { Key = "demoUsersPassword", Value = "Demo1234 (usernames demo01 ... demo12)" }
 		], Usc.Created);
+	}
+
+	public async Task<bool> IsResidentOf(Guid userId, Guid placeId, CancellationToken ct) {
+		DateTime now = DateTime.UtcNow;
+		return await db.Set<DormBedContractEntity>().AnyAsync(x => x.UserId == userId && x.Bed.Room.DormId == placeId && x.EndDate >= now && !x.Tags.Contains(TagDormBedContract.Settled), ct);
+	}
+
+	private Task<DormBedContractEntity?> ActiveContract(Guid userId, Guid dormId, DateTime date, CancellationToken ct) =>
+		db.Set<DormBedContractEntity>().AsTracking()
+			.Include(x => x.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm)
+			.Where(x => x.UserId == userId && x.Bed.Room.DormId == dormId && x.StartDate <= date && x.EndDate >= date && !x.Tags.Contains(TagDormBedContract.Settled))
+			.OrderByDescending(x => x.StartDate)
+			.FirstOrDefaultAsync(ct);
+
+	private static List<HandoverItem> Handover(IEnumerable<HandoverItemParams>? items) => (items ?? []).Select(x => new HandoverItem {
+		Title = x.Title,
+		Ok = x.Ok,
+		Note = x.Note,
+		Damage = Math.Max(0, x.Damage),
+		PhotoUrls = x.PhotoUrls
+	}).ToList();
+
+	private async Task<(JwtClaimData? User, DormEntity? Dorm, bool Manager, UResponse? Error)> DormAccess(string? token, Guid dormId, TagUser permission, CancellationToken ct) {
+		JwtClaimData? u = ts.ExtractClaims(token);
+		if (u == null) return (null, null, false, new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue")));
+		if (u.IsExpired) return (null, null, false, new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired")));
+		DormEntity? dorm = await db.Set<DormEntity>().FirstOrDefaultAsync(x => x.Id == dormId, ct);
+		if (dorm == null) return (u, null, false, new UResponse(Usc.NotFound, ls.Get("dormNotFound")));
+		return (u, dorm, await CanAct(u, dorm, permission, ct), null);
+	}
+
+	private IQueryable<T> ScopeToDorms<T>(IQueryable<T> q, JwtClaimData? u, Expression<Func<T, bool>> mine, Expression<Func<T, ICollection<Guid>>> admins) {
+		if (OrganizationService.IsFull(u)) return q;
+		Guid uid = UserIdOf(u);
+		bool scoped = OrganizationService.IsScopedAdmin(u);
+		ParameterExpression x = mine.Parameters[0];
+		Expression adminCheck = Expression.Call(typeof(Enumerable), nameof(Enumerable.Contains), [typeof(Guid)], new ParameterReplacer(admins.Parameters[0], x).Visit(admins.Body), Expression.Constant(uid));
+		Expression body = scoped ? Expression.OrElse(mine.Body, adminCheck) : mine.Body;
+		return q.Where(Expression.Lambda<Func<T, bool>>(body, x));
+	}
+
+	private sealed class ParameterReplacer(ParameterExpression from, ParameterExpression to) : ExpressionVisitor {
+		protected override Expression VisitParameter(ParameterExpression node) => node == from ? to : base.VisitParameter(node);
+	}
+
+	public async Task<UResponse> SetDormBedContractChecklist(DormBedContractChecklistParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		DormBedContractEntity? e = await ContractForChange(p.ContractId, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("contractNotFound"));
+		if (!await CanAct(userData, e.Bed.Room.Dorm, TagUser.PermissionManageContracts, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		List<HandoverItem> items = Handover(p.Items);
+		if (!p.CheckOut) e.JsonData.CheckInChecklist = items;
+		else {
+			e.JsonData.CheckOutChecklist = items;
+			decimal damage = items.Sum(x => x.Damage);
+			DormBedInvoiceEntity? invoice = e.Invoices.FirstOrDefault(x => x.Id == e.JsonData.DamageInvoiceId);
+			if (invoice == null && damage > 0) {
+				invoice = NewDormBedInvoice(e, userData.Id, [TagDormBedInvoice.NotPaid, TagDormBedInvoice.Damage], damage, DateTime.UtcNow, 0);
+				invoice.JsonData.Detail1 = ls.Get("handoverDamage", "fa");
+				invoice.Contract = e;
+				await db.Set<DormBedInvoiceEntity>().AddAsync(invoice, ct);
+				e.JsonData.DamageInvoiceId = invoice.Id;
+				await SyncDormBedInvoice(invoice, false, ct);
+				await AddNotification(e.UserId, TagNotification.InvoiceIssued, ls.Get("newInvoicesIssued"), e.Bed.Room.Dorm.Title, ct);
+			}
+			else if (invoice != null && invoice.Tags.Contains(TagDormBedInvoice.NotPaid) && invoice.PaidAmount == 0) {
+				invoice.DebtAmount = damage;
+				await SyncDormBedInvoice(invoice, damage == 0, ct);
+				if (damage == 0) {
+					db.Set<DormBedInvoiceEntity>().Remove(invoice);
+					e.JsonData.DamageInvoiceId = null;
+				}
+			}
+		}
+
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse<Guid?>> CreateDormApplication(DormApplicationCreateParams p, CancellationToken ct) {
+		(JwtClaimData? u, DormEntity? dorm, bool manager, UResponse? error) = await DormAccess(p.Token, p.DormId, TagUser.PermissionManageContracts, ct);
+		if (error != null) return new UResponse<Guid?>(null, error.Status, error.Message);
+		Guid userId = p.UserId ?? u!.Id;
+		if (userId != u!.Id && !manager) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!await db.Set<UserEntity>().AnyAsync(x => x.Id == userId, ct)) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("accountNotFound"));
+		if (await os.IsBlacklisted(dorm!.OrganizationId, userId, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youCannotApplyToThisPlace"));
+		if (await db.Set<DormApplicationEntity>().AnyAsync(x => x.DormId == dorm.Id && x.UserId == userId && (x.Tags.Contains(TagDormApplication.Pending) || x.Tags.Contains(TagDormApplication.Waitlisted)), ct))
+			return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("youAlreadyHaveAnOpenApplication"));
+
+		Guid id = Guid.CreateVersion7();
+		await db.Set<DormApplicationEntity>().AddAsync(new DormApplicationEntity {
+			Id = id,
+			CreatorId = userId,
+			CreatedAt = DateTime.UtcNow,
+			Tags = [TagDormApplication.Pending],
+			DesiredStartDate = p.DesiredStartDate,
+			DesiredEndDate = p.DesiredEndDate,
+			DormId = dorm.Id,
+			UserId = userId,
+			JsonData = new DormApplicationJson {
+				Detail1 = p.Detail1,
+				Documents = p.Documents.Select(x => new DormApplicationDocument { Title = x.Title, Url = x.Url }).ToList()
+			}
+		}, ct);
+		foreach (Guid admin in dorm.AdminUserIds) await AddNotification(admin, TagNotification.General, ls.Get("newDormApplication"), dorm.Title, ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse<Guid?>(id, Usc.Created);
+	}
+
+	public async Task<UResponse<IEnumerable<DormApplicationResponse>?>> ReadDormApplications(DormApplicationReadParams p, CancellationToken ct) {
+		JwtClaimData? u = ts.ExtractClaims(p.Token);
+		if (u == null) return new UResponse<IEnumerable<DormApplicationResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		Guid uid = u.Id;
+		IQueryable<DormApplicationEntity> q = db.Set<DormApplicationEntity>().ApplyReadParams(p);
+		q = p.Mine ? q.Where(x => x.UserId == uid) : ScopeToDorms(q, u, x => x.UserId == uid, x => x.Dorm.AdminUserIds);
+		if (p.DormId != null) q = q.Where(x => x.DormId == p.DormId);
+		if (p.UserId != null) q = q.Where(x => x.UserId == p.UserId);
+
+		return await q.Select(x => new DormApplicationResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			CreatorId = x.CreatorId,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			DesiredStartDate = x.DesiredStartDate,
+			DesiredEndDate = x.DesiredEndDate,
+			DormId = x.DormId,
+			DormTitle = x.Dorm.Title,
+			UserId = x.UserId,
+			UserName = x.User.FirstName + " " + x.User.LastName,
+			PhoneNumber = x.User.PhoneNumber,
+			WaitlistPosition = x.Tags.Contains(TagDormApplication.Waitlisted)
+				? db.Set<DormApplicationEntity>().Count(y => y.DormId == x.DormId && y.Tags.Contains(TagDormApplication.Waitlisted) && y.CreatedAt < x.CreatedAt) + 1
+				: null
+		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	}
+
+	public async Task<UResponse> ReviewDormApplication(DormApplicationReviewParams p, CancellationToken ct) {
+		DormApplicationEntity? e = await db.Set<DormApplicationEntity>().AsTracking().Include(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("itemNotFound"));
+		(JwtClaimData? u, _, bool manager, UResponse? error) = await DormAccess(p.Token, e.DormId, TagUser.PermissionManageContracts, ct);
+		if (error != null) return error;
+		if (!manager) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (p.Status is not (TagDormApplication.Approved or TagDormApplication.Rejected or TagDormApplication.Waitlisted or TagDormApplication.Pending))
+			return new UResponse(Usc.BadRequest, ls.Get("tagsIsRequired"));
+
+		e.Tags = [p.Status];
+		e.JsonData.ReviewNote = p.ReviewNote;
+		e.JsonData.ReviewedBy = u!.Id;
+		e.JsonData.ReviewedAt = DateTime.UtcNow;
+		if (p.BedId != null) e.JsonData.BedId = p.BedId;
+		if (p.DocumentApprovals != null)
+			for (int i = 0; i < Math.Min(p.DocumentApprovals.Count, e.JsonData.Documents.Count); i++)
+				e.JsonData.Documents[i].Approved = p.DocumentApprovals[i];
+		e.JsonData.Documents = e.JsonData.Documents.ToList();
+
+		string key = p.Status switch {
+			TagDormApplication.Approved => "dormApplicationApproved",
+			TagDormApplication.Rejected => "dormApplicationRejected",
+			TagDormApplication.Waitlisted => "dormApplicationWaitlisted",
+			_ => "dormApplicationUpdated"
+		};
+		await AddNotification(e.UserId, TagNotification.General, ls.Get(key), e.Dorm.Title, ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> DeleteDormApplication(IdParams p, CancellationToken ct) {
+		JwtClaimData? u = ts.ExtractClaims(p.Token);
+		if (u == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		DormApplicationEntity? e = await db.Set<DormApplicationEntity>().Include(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("itemNotFound"));
+		if (!(e.UserId == u.Id && e.Tags.Contains(TagDormApplication.Pending)) && !await CanAct(u, e.Dorm, TagUser.PermissionManageContracts, ct))
+			return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		db.Set<DormApplicationEntity>().Remove(e);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse<Guid?>> CreateDormRecord(DormRecordCreateParams p, CancellationToken ct) {
+		(JwtClaimData? u, DormEntity? dorm, bool manager, UResponse? error) = await DormAccess(p.Token, p.DormId, TagUser.PermissionManageContracts, ct);
+		if (error != null) return new UResponse<Guid?>(null, error.Status, error.Message);
+
+		TagDormRecord kind = p.Tags.FirstOrDefault(x => (int)x < 300, TagDormRecord.Announcement);
+		Guid? userId = p.UserId;
+		List<TagDormRecord> tags;
+		if (manager) tags = [kind, ..p.Tags.Where(x => (int)x >= 300).Take(1)];
+		else {
+			if (kind != TagDormRecord.NightLeave && kind != TagDormRecord.Visitor) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+			if (!await IsResidentOf(u!.Id, dorm!.Id, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+			userId = u.Id;
+			tags = [kind, TagDormRecord.Pending];
+		}
+
+		if (kind is TagDormRecord.CheckIn or TagDormRecord.CheckOut or TagDormRecord.NightLeave or TagDormRecord.Violation or TagDormRecord.Warning && userId == null)
+			return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("userIsRequired"));
+
+		DateTime date = p.Date ?? DateTime.UtcNow;
+		DormRecordEntity e = new() {
+			Id = Guid.CreateVersion7(),
+			CreatorId = u!.Id,
+			CreatedAt = DateTime.UtcNow,
+			Tags = tags,
+			Title = p.Title,
+			Date = date,
+			EndDate = p.EndDate,
+			DormId = dorm!.Id,
+			UserId = userId,
+			JsonData = new DormRecordJson {
+				Detail1 = p.Detail1,
+				Detail2 = p.Detail2,
+				Body = p.Body,
+				VisitorName = p.VisitorName,
+				VisitorPhone = p.VisitorPhone,
+				VisitorNationalCode = p.VisitorNationalCode,
+				Relation = p.Relation,
+				RoomId = p.RoomId,
+				Penalty = manager ? p.Penalty : null,
+				Items = Handover(p.Items)
+			}
+		};
+		await db.Set<DormRecordEntity>().AddAsync(e, ct);
+
+		if (manager && kind == TagDormRecord.Announcement) {
+			DateTime now = DateTime.UtcNow;
+			List<Guid> residents = await db.Set<DormBedContractEntity>()
+				.Where(x => x.Bed.Room.DormId == dorm.Id && x.StartDate <= now && x.EndDate >= now && !x.Tags.Contains(TagDormBedContract.Settled))
+				.Select(x => x.UserId).Distinct().ToListAsync(ct);
+			foreach (Guid r in residents) await AddNotification(r, TagNotification.General, p.Title, dorm.Title, ct);
+		}
+
+		if (manager && userId != null && kind is TagDormRecord.Violation or TagDormRecord.Warning) {
+			await AddNotification(userId.Value, TagNotification.General, $"{ls.Get(kind == TagDormRecord.Violation ? "violationRecorded" : "warningRecorded")}: {p.Title}", dorm.Title, ct);
+			if (p.Penalty > 0) {
+				DormBedContractEntity? contract = await ActiveContract(userId.Value, dorm.Id, date, ct);
+				if (contract != null) {
+					DormBedInvoiceEntity invoice = NewDormBedInvoice(contract, u.Id, [TagDormBedInvoice.NotPaid, TagDormBedInvoice.Damage], p.Penalty.Value, date, 0);
+					invoice.JsonData.Detail1 = p.Title;
+					invoice.Contract = contract;
+					await db.Set<DormBedInvoiceEntity>().AddAsync(invoice, ct);
+					await SyncDormBedInvoice(invoice, false, ct);
+					e.JsonData.InvoiceId = invoice.Id;
+				}
+			}
+		}
+
+		if (!manager)
+			foreach (Guid admin in dorm.AdminUserIds) await AddNotification(admin, TagNotification.General, ls.Get(kind == TagDormRecord.NightLeave ? "newLeaveRequest" : "newVisitorRequest"), dorm.Title, ct);
+
+		await db.SaveChangesAsync(ct);
+		return new UResponse<Guid?>(e.Id, Usc.Created);
+	}
+
+	public async Task<UResponse<IEnumerable<DormRecordResponse>?>> ReadDormRecords(DormRecordReadParams p, CancellationToken ct) {
+		JwtClaimData? u = ts.ExtractClaims(p.Token);
+		if (u == null) return new UResponse<IEnumerable<DormRecordResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		Guid uid = u.Id;
+		DateTime now = DateTime.UtcNow;
+		IQueryable<DormRecordEntity> q = db.Set<DormRecordEntity>().ApplyReadParams(p);
+		Expression<Func<DormRecordEntity, bool>> mine = x => x.UserId == uid || x.Tags.Contains(TagDormRecord.Announcement) && db.Set<DormBedContractEntity>().Any(c => c.UserId == uid && c.Bed.Room.DormId == x.DormId && c.EndDate >= now);
+		q = p.Mine ? q.Where(mine) : ScopeToDorms(q, u, mine, x => x.Dorm.AdminUserIds);
+		if (p.DormId != null) q = q.Where(x => x.DormId == p.DormId);
+		if (p.UserId != null) q = q.Where(x => x.UserId == p.UserId);
+		if (p.FromDate != null) q = q.Where(x => x.Date >= p.FromDate);
+		if (p.ToDate != null) q = q.Where(x => x.Date <= p.ToDate);
+
+		return await q.OrderByDescending(x => x.Date).Select(x => new DormRecordResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			CreatorId = x.CreatorId,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			Title = x.Title,
+			Date = x.Date,
+			EndDate = x.EndDate,
+			DormId = x.DormId,
+			DormTitle = x.Dorm.Title,
+			UserId = x.UserId,
+			UserName = x.User == null ? null : x.User.FirstName + " " + x.User.LastName
+		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	}
+
+	public async Task<UResponse> UpdateDormRecord(DormRecordUpdateParams p, CancellationToken ct) {
+		DormRecordEntity? e = await db.Set<DormRecordEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("itemNotFound"));
+		(JwtClaimData? u, DormEntity? dorm, bool manager, UResponse? error) = await DormAccess(p.Token, e.DormId, TagUser.PermissionManageContracts, ct);
+		if (error != null) return error;
+		if (!manager) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		bool wasPending = e.Tags.Contains(TagDormRecord.Pending);
+		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title!;
+		if (p.Date != null) e.Date = p.Date.Value;
+		if (p.EndDate != null) e.EndDate = p.EndDate;
+		if (p.Body != null) e.JsonData.Body = p.Body;
+		if (p.VisitorName != null) e.JsonData.VisitorName = p.VisitorName;
+		if (p.VisitorPhone != null) e.JsonData.VisitorPhone = p.VisitorPhone;
+		if (p.Items != null) e.JsonData.Items = Handover(p.Items);
+		List<TagDormRecord> status = [..p.Tags ?? p.AddTags ?? []];
+		if (status.Any(x => (int)x >= 300)) {
+			e.Tags = [..e.Tags.Where(x => (int)x < 300), status.First(x => (int)x >= 300)];
+			e.JsonData.ReviewedBy = u!.Id;
+		}
+
+		if (wasPending && e.UserId != null && !e.Tags.Contains(TagDormRecord.Pending))
+			await AddNotification(e.UserId.Value, TagNotification.General, ls.Get(e.Tags.Contains(TagDormRecord.Approved) ? "yourRequestIsApproved" : "yourRequestIsRejected"), dorm!.Title, ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> DeleteDormRecord(IdParams p, CancellationToken ct) {
+		DormRecordEntity? e = await db.Set<DormRecordEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("itemNotFound"));
+		(JwtClaimData? u, _, bool manager, UResponse? error) = await DormAccess(p.Token, e.DormId, TagUser.PermissionManageContracts, ct);
+		if (error != null) return error;
+		if (!manager && !(e.UserId == u!.Id && e.Tags.Contains(TagDormRecord.Pending))) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		db.Set<DormRecordEntity>().Remove(e);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse<Guid?>> CreateDormMeal(DormMealCreateParams p, CancellationToken ct) {
+		(_, DormEntity? dorm, bool manager, UResponse? error) = await DormAccess(p.Token, p.DormId, TagUser.PermissionManageDorms, ct);
+		if (error != null) return new UResponse<Guid?>(null, error.Status, error.Message);
+		if (!manager) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		Guid id = Guid.CreateVersion7();
+		await db.Set<DormMealEntity>().AddAsync(new DormMealEntity {
+			Id = id,
+			CreatorId = p.CreatorId ?? ts.ExtractClaims(p.Token)!.Id,
+			CreatedAt = DateTime.UtcNow,
+			Tags = p.Tags,
+			Title = p.Title,
+			Date = p.Date,
+			Price = Math.Max(0, p.Price),
+			Capacity = p.Capacity,
+			DormId = dorm!.Id,
+			JsonData = new BaseJson { Detail1 = p.Detail1, Detail2 = p.Detail2 }
+		}, ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse<Guid?>(id, Usc.Created);
+	}
+
+	public async Task<UResponse<IEnumerable<DormMealResponse>?>> ReadDormMeals(DormMealReadParams p, CancellationToken ct) {
+		JwtClaimData? u = ts.ExtractClaims(p.Token);
+		if (u == null) return new UResponse<IEnumerable<DormMealResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		Guid uid = u.Id;
+		IQueryable<DormMealEntity> q = db.Set<DormMealEntity>().ApplyReadParams(p);
+		if (p.DormId != null) q = q.Where(x => x.DormId == p.DormId);
+		if (p.FromDate != null) q = q.Where(x => x.Date >= p.FromDate);
+		if (p.ToDate != null) q = q.Where(x => x.Date <= p.ToDate);
+		return await q.OrderBy(x => x.Date).Select(x => new DormMealResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			CreatorId = x.CreatorId,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			Title = x.Title,
+			Date = x.Date,
+			Price = x.Price,
+			Capacity = x.Capacity,
+			ReservedCount = x.Bookings.Count(b => b.Tags.Contains(TagDormBooking.Reserved)),
+			ReservedByMe = x.Bookings.Any(b => b.UserId == uid && b.Tags.Contains(TagDormBooking.Reserved)),
+			DormId = x.DormId
+		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	}
+
+	public async Task<UResponse> UpdateDormMeal(DormMealUpdateParams p, CancellationToken ct) {
+		DormMealEntity? e = await db.Set<DormMealEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("itemNotFound"));
+		(_, _, bool manager, UResponse? error) = await DormAccess(p.Token, e.DormId, TagUser.PermissionManageDorms, ct);
+		if (error != null) return error;
+		if (!manager) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title!;
+		if (p.Date != null) e.Date = p.Date.Value;
+		if (p.Price != null) e.Price = Math.Max(0, p.Price.Value);
+		if (p.Capacity != null) e.Capacity = p.Capacity;
+		e.ApplyUpdateParam<DormMealEntity, TagDormMeal, BaseJson>(p);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse> DeleteDormMeal(IdParams p, CancellationToken ct) {
+		DormMealEntity? e = await db.Set<DormMealEntity>().FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("itemNotFound"));
+		(_, _, bool manager, UResponse? error) = await DormAccess(p.Token, e.DormId, TagUser.PermissionManageDorms, ct);
+		if (error != null) return error;
+		if (!manager) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (await db.Set<DormBookingEntity>().AnyAsync(x => x.MealId == e.Id && x.Tags.Contains(TagDormBooking.Reserved), ct)) return new UResponse(Usc.Conflict, ls.Get("itemIsInUse"));
+		db.Set<DormMealEntity>().Remove(e);
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse<Guid?>> CreateDormBooking(DormBookingCreateParams p, CancellationToken ct) {
+		(JwtClaimData? u, DormEntity? dorm, bool manager, UResponse? error) = await DormAccess(p.Token, p.DormId, TagUser.PermissionManageContracts, ct);
+		if (error != null) return new UResponse<Guid?>(null, error.Status, error.Message);
+		Guid userId = p.UserId ?? u!.Id;
+		if (userId != u!.Id && !manager) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		bool meal = p.MealId != null || p.Tags.Contains(TagDormBooking.Meal);
+		DormBookingEntity e = new() {
+			Id = Guid.CreateVersion7(),
+			CreatorId = userId,
+			CreatedAt = DateTime.UtcNow,
+			Tags = [meal ? TagDormBooking.Meal : TagDormBooking.Laundry, TagDormBooking.Reserved],
+			StartAt = p.StartAt ?? DateTime.UtcNow,
+			EndAt = p.EndAt,
+			Resource = p.Resource,
+			DormId = dorm!.Id,
+			UserId = userId,
+			MealId = p.MealId,
+			JsonData = new DormBookingJson { Detail1 = p.Detail1, Detail2 = p.Detail2 }
+		};
+
+		if (meal) {
+			DormMealEntity? m = await db.Set<DormMealEntity>().FirstOrDefaultAsync(x => x.Id == p.MealId && x.DormId == dorm.Id, ct);
+			if (m == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("itemNotFound"));
+			if (!manager && m.Date.Date < DateTime.UtcNow.Date) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("thisMealIsPast"));
+			List<DormBookingEntity> booked = await db.Set<DormBookingEntity>().Where(x => x.MealId == m.Id && x.Tags.Contains(TagDormBooking.Reserved)).ToListAsync(ct);
+			if (booked.Any(x => x.UserId == userId)) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("youAlreadyReservedThis"));
+			if (m.Capacity != null && booked.Count >= m.Capacity) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("capacityIsFull"));
+			DormBedContractEntity? contract = await ActiveContract(userId, dorm.Id, m.Date, ct);
+			if (contract == null) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youHaveNoActiveContractHere"));
+			e.StartAt = m.Date;
+			e.Price = m.Price;
+			if (m.Price > 0) {
+				DormBedInvoiceEntity invoice = NewDormBedInvoice(contract, u.Id, [TagDormBedInvoice.NotPaid, TagDormBedInvoice.Service], m.Price, m.Date, 0);
+				invoice.JsonData.Detail1 = m.Title;
+				invoice.Contract = contract;
+				await db.Set<DormBedInvoiceEntity>().AddAsync(invoice, ct);
+				await SyncDormBedInvoice(invoice, false, ct);
+				e.JsonData.InvoiceId = invoice.Id;
+			}
+		}
+		else {
+			if (p.StartAt == null) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("dateIsRequired"));
+			if (!manager && !await IsResidentOf(userId, dorm.Id, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youHaveNoActiveContractHere"));
+			if (dorm.JsonData.LaundryMachines.Count != 0 && !dorm.JsonData.LaundryMachines.Contains(p.Resource ?? "")) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("selectALaundryMachine"));
+			e.EndAt = p.EndAt ?? e.StartAt.AddMinutes(dorm.JsonData.LaundrySlotMinutes ?? 60);
+			if (e.EndAt <= e.StartAt) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("endDateMustBeAfterStartDate"));
+			DateTime start = e.StartAt;
+			DateTime end = e.EndAt.Value;
+			if (await db.Set<DormBookingEntity>().AnyAsync(x => x.DormId == dorm.Id && x.Tags.Contains(TagDormBooking.Laundry) && x.Tags.Contains(TagDormBooking.Reserved) && x.Resource == p.Resource && x.StartAt < end && x.EndAt > start, ct))
+				return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("thisTimeIsAlreadyBooked"));
+		}
+
+		await db.Set<DormBookingEntity>().AddAsync(e, ct);
+		await db.SaveChangesAsync(ct);
+		return new UResponse<Guid?>(e.Id, Usc.Created);
+	}
+
+	public async Task<UResponse<IEnumerable<DormBookingResponse>?>> ReadDormBookings(DormBookingReadParams p, CancellationToken ct) {
+		JwtClaimData? u = ts.ExtractClaims(p.Token);
+		if (u == null) return new UResponse<IEnumerable<DormBookingResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		Guid uid = u.Id;
+		IQueryable<DormBookingEntity> q = db.Set<DormBookingEntity>().ApplyReadParams(p);
+		q = p.Mine ? q.Where(x => x.UserId == uid) : ScopeToDorms(q, u, x => x.UserId == uid, x => x.Dorm.AdminUserIds);
+		if (p.DormId != null) q = q.Where(x => x.DormId == p.DormId);
+		if (p.UserId != null) q = q.Where(x => x.UserId == p.UserId);
+		if (p.MealId != null) q = q.Where(x => x.MealId == p.MealId);
+		if (p.FromDate != null) q = q.Where(x => x.StartAt >= p.FromDate);
+		if (p.ToDate != null) q = q.Where(x => x.StartAt <= p.ToDate);
+		return await q.OrderBy(x => x.StartAt).Select(x => new DormBookingResponse {
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			CreatorId = x.CreatorId,
+			Tags = x.Tags,
+			JsonData = x.JsonData,
+			StartAt = x.StartAt,
+			EndAt = x.EndAt,
+			Resource = x.Resource,
+			Price = x.Price,
+			DormId = x.DormId,
+			UserId = x.UserId,
+			UserName = x.User.FirstName + " " + x.User.LastName,
+			MealId = x.MealId,
+			MealTitle = x.Meal == null ? null : x.Meal.Title
+		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
+	}
+
+	public async Task<UResponse> CancelDormBooking(IdParams p, CancellationToken ct) {
+		JwtClaimData? u = ts.ExtractClaims(p.Token);
+		if (u == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		DormBookingEntity? e = await db.Set<DormBookingEntity>().AsTracking().Include(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse(Usc.NotFound, ls.Get("itemNotFound"));
+		bool manager = await CanAct(u, e.Dorm, TagUser.PermissionManageContracts, ct);
+		if (!manager && (e.UserId != u.Id || e.StartAt <= DateTime.UtcNow)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!e.Tags.Contains(TagDormBooking.Reserved)) return new UResponse(Usc.Conflict, ls.Get("thisBookingCannotBeCancelled"));
+
+		e.Tags = [..e.Tags.Where(x => (int)x < 200), TagDormBooking.Cancelled];
+		if (e.JsonData.InvoiceId != null) {
+			DormBedInvoiceEntity? invoice = await db.Set<DormBedInvoiceEntity>().AsTracking()
+				.Include(x => x.Contract).ThenInclude(x => x!.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm)
+				.FirstOrDefaultAsync(x => x.Id == e.JsonData.InvoiceId, ct);
+			if (invoice != null && invoice.Tags.Contains(TagDormBedInvoice.NotPaid) && invoice.PaidAmount == 0) {
+				await SyncDormBedInvoice(invoice, true, ct);
+				db.Set<DormBedInvoiceEntity>().Remove(invoice);
+			}
+		}
+
+		await db.SaveChangesAsync(ct);
+		return new UResponse();
+	}
+
+	public async Task<UResponse<string?>> PrintDormBedContract(IdParams p, CancellationToken ct) {
+		JwtClaimData? u = ts.ExtractClaims(p.Token);
+		if (u == null) return new UResponse<string?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		DormBedContractEntity? e = await db.Set<DormBedContractEntity>()
+			.Include(x => x.User).Include(x => x.Invoices)
+			.Include(x => x.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm)
+			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e == null) return new UResponse<string?>(null, Usc.NotFound, ls.Get("contractNotFound"));
+		if (e.UserId != u.Id && !await CanAct(u, e.Bed.Room.Dorm, TagUser.PermissionManageContracts, ct)) return new UResponse<string?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		DormEntity dorm = e.Bed.Room.Dorm;
+		OrganizationEntity? organization = await os.ReadOrganization(dorm.OrganizationId, ct);
+		string html = PrintTemplate.Build(organization, dorm.Title, ls.Get("dormContractTitle", "fa"), [
+				(ls.Get("resident", "fa"), $"{e.User.FirstName} {e.User.LastName}"),
+				(ls.Get("nationalCode", "fa"), e.User.NationalCode),
+				(ls.Get("phoneNumber", "fa"), e.User.PhoneNumber),
+				(ls.Get("dorm", "fa"), dorm.Title),
+				(ls.Get("address", "fa"), dorm.Address),
+				(ls.Get("roomAndBed", "fa"), $"{e.Bed.Room.Title} / {e.Bed.Title}"),
+				(ls.Get("startDate", "fa"), PrintTemplate.Date(e.StartDate)),
+				(ls.Get("endDate", "fa"), PrintTemplate.Date(e.EndDate)),
+				(ls.Get("monthlyRent", "fa"), PrintTemplate.Money(e.Rent)),
+				(ls.Get("deposit", "fa"), PrintTemplate.Money(e.Deposit)),
+				(ls.Get("guardian", "fa"), string.Join(" - ", new[] { e.JsonData.GuardianName, e.JsonData.GuardianPhone }.Where(x => x.IsNotNullOrEmpty()))),
+				(ls.Get("emergencyContact", "fa"), string.Join(" - ", new[] { e.JsonData.EmergencyName, e.JsonData.EmergencyRelation, e.JsonData.EmergencyPhone }.Where(x => x.IsNotNullOrEmpty())))
+			],
+			[ls.Get("dueDate", "fa"), ls.Get("amount", "fa"), ls.Get("status", "fa")],
+			e.Invoices.OrderBy(x => x.DueDate).Select(i => (IReadOnlyList<string>)[PrintTemplate.Date(i.DueDate), PrintTemplate.Money(i.DebtAmount + i.PenaltyAmount - i.CreditorAmount), ls.Get(i.Tags.Contains(TagDormBedInvoice.NotPaid) ? "notPaid" : "paid", "fa")]),
+			[..dorm.JsonData.Rules, dorm.JsonData.Policies ?? ""],
+			[ls.Get("residentSignature", "fa"), ls.Get("organizationSignature", "fa")]);
+		return new UResponse<string?>(html);
+	}
+
+	public async Task<UResponse<string?>> PrintDormBedInvoice(IdParams p, CancellationToken ct) {
+		JwtClaimData? u = ts.ExtractClaims(p.Token);
+		if (u == null) return new UResponse<string?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
+		DormBedInvoiceEntity? e = await db.Set<DormBedInvoiceEntity>()
+			.Include(x => x.Contract).ThenInclude(x => x!.User)
+			.Include(x => x.Contract).ThenInclude(x => x!.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm)
+			.FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		if (e?.Contract == null) return new UResponse<string?>(null, Usc.NotFound, ls.Get("invoiceNotFound"));
+		if (e.Contract.UserId != u.Id && !await CanAct(u, e.Contract.Bed.Room.Dorm, TagUser.PermissionManageInvoices, ct)) return new UResponse<string?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+
+		DormEntity dorm = e.Contract.Bed.Room.Dorm;
+		OrganizationEntity? organization = await os.ReadOrganization(dorm.OrganizationId, ct);
+		bool paid = !e.Tags.Contains(TagDormBedInvoice.NotPaid);
+		string html = PrintTemplate.Build(organization, dorm.Title, ls.Get(paid ? "paymentReceipt" : "invoice", "fa"), [
+			(ls.Get("resident", "fa"), $"{e.Contract.User.FirstName} {e.Contract.User.LastName}"),
+			(ls.Get("roomAndBed", "fa"), $"{e.Contract.Bed.Room.Title} / {e.Contract.Bed.Title}"),
+			(ls.Get("description", "fa"), e.JsonData.Detail1),
+			(ls.Get("dueDate", "fa"), PrintTemplate.Date(e.DueDate)),
+			(ls.Get("amount", "fa"), PrintTemplate.Money(e.DebtAmount)),
+			(ls.Get("discount", "fa"), e.CreditorAmount > 0 ? PrintTemplate.Money(e.CreditorAmount) : null),
+			(ls.Get("penalty", "fa"), e.PenaltyAmount > 0 ? PrintTemplate.Money(e.PenaltyAmount) : null),
+			(ls.Get("paidAmount", "fa"), PrintTemplate.Money(e.PaidAmount)),
+			(ls.Get("remaining", "fa"), PrintTemplate.Money(Math.Max(0, DueOf(e)))),
+			(ls.Get("status", "fa"), ls.Get(paid ? "paid" : "notPaid", "fa"))
+		], signatures: [ls.Get("organizationSignature", "fa")]);
+		return new UResponse<string?>(html);
 	}
 }
 

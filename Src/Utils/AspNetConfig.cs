@@ -102,6 +102,9 @@ public static partial class AspNetConfig {
 		builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 		builder.Services.AddScoped<IHotelService, HotelService>();
 		builder.Services.AddScoped<IDormService, DormService>();
+		builder.Services.AddScoped<IInventoryService, InventoryService>();
+		builder.Services.AddScoped<IPlaceResidency>(sp => (HotelService)sp.GetRequiredService<IHotelService>());
+		builder.Services.AddScoped<IPlaceResidency>(sp => (DormService)sp.GetRequiredService<IDormService>());
 		builder.Services.AddScoped<IAccountingSource>(sp => (HotelService)sp.GetRequiredService<IHotelService>());
 		builder.Services.AddScoped<IAccountingSource>(sp => (DormService)sp.GetRequiredService<IDormService>());
 		builder.Services.AddScoped<IUserScope>(sp => (OrganizationService)sp.GetRequiredService<IOrganizationService>());
@@ -188,6 +191,7 @@ public static partial class AspNetConfig {
 		app.MapOrganizationRoutes(RouteTags.Organization);
 		app.MapHotelRoutes(RouteTags.Hotel);
 		app.MapDormRoutes(RouteTags.Dorm);
+		app.MapInventoryRoutes(RouteTags.Inventory);
 		app.MapBlogRoutes(RouteTags.Blog);
 		app.MapFileManagerRoutes(RouteTags.FileManager);
 		app.MapDbAdminRoutes(RouteTags.DbAdmin);

@@ -106,6 +106,9 @@ public sealed class LedgerReportResponse {
 	public List<LedgerReportItem> Income { get; set; } = [];
 	public List<LedgerReportItem> Expense { get; set; } = [];
 	public decimal NetProfit { get; set; }
+	public decimal VatSales { get; set; }
+	public decimal VatPurchases { get; set; }
+	public decimal VatDue { get; set; }
 	public List<LedgerMoneyBoxItem> MoneyBoxes { get; set; } = [];
 	public List<LedgerPlaceItem> Places { get; set; } = [];
 	public List<LedgerAgingItem> Aging { get; set; } = [];
@@ -156,4 +159,21 @@ public sealed class CheckResponse : BaseResponse<TagCheck, CheckJson> {
 	public Guid? ContractId { get; set; }
 	public Guid? PlaceId { get; set; }
 	public Guid OrganizationId { get; set; }
+}
+
+public sealed class TaxInvoiceItem {
+	public Guid SourceId { get; set; }
+	public int Number { get; set; }
+	public DateTime Date { get; set; }
+	public Guid? PersonId { get; set; }
+	public string? PersonName { get; set; }
+	public string? NationalCode { get; set; }
+	public string? PhoneNumber { get; set; }
+	public string? PlaceTitle { get; set; }
+	public string? Description { get; set; }
+	public string? ServiceId { get; set; }
+	public decimal Amount { get; set; }
+	public decimal VatPercent { get; set; }
+	public decimal Vat { get; set; }
+	public decimal Total { get; set; }
 }

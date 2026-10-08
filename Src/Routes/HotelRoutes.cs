@@ -2,7 +2,7 @@ namespace SinaMN75U.Routes;
 
 public static class HotelRoutes {
 	public static void MapHotelRoutes(this IEndpointRouteBuilder app, string tag) {
-		RouteGroupBuilder r = app.MapGroup(tag).WithTags(tag).AddEndpointFilter<UValidationFilter>();
+		RouteGroupBuilder r = app.MapGroup(tag).WithTags(tag).AddEndpointFilter<UValidationFilter>().AddEndpointFilter<ActivityLogFilter>();
 
 		r.MapPost("Hotel/Create", async (HotelCreateParams p, IHotelService s, CancellationToken c) => (await s.CreateHotel(p, c)).ToResult()).Produces<UResponse<Guid?>>();
 		r.MapPost("Hotel/Read", async (HotelReadParams p, IHotelService s, CancellationToken c) => (await s.ReadHotels(p, c)).ToResult()).Produces<UResponse<IEnumerable<HotelResponse>>>();
@@ -38,5 +38,19 @@ public static class HotelRoutes {
 
 		r.MapPost("Dashboard/Read", async (DashboardRangeParams p, IHotelService s, CancellationToken ct) => (await s.ReadHotelDashboard(p, ct)).ToResult()).Produces<UResponse<HotelDashboardResponse>>();
 		r.MapPost("Seed", async (IHotelService s, CancellationToken c) => (await s.SeedHotels(c)).ToResult()).Produces<UResponse<List<KeyValue>>>();
+
+		r.MapPost("HotelRate/Create", async (HotelRateCreateParams p, IHotelService s, CancellationToken c) => (await s.CreateHotelRate(p, c)).ToResult()).Produces<UResponse<Guid?>>();
+		r.MapPost("HotelRate/Read", async (HotelRateReadParams p, IHotelService s, CancellationToken c) => (await s.ReadHotelRates(p, c)).ToResult()).Produces<UResponse<IEnumerable<HotelRateResponse>>>();
+		r.MapPost("HotelRate/Update", async (HotelRateUpdateParams p, IHotelService s, CancellationToken c) => (await s.UpdateHotelRate(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("HotelRate/Delete", async (IdParams p, IHotelService s, CancellationToken c) => (await s.DeleteHotelRate(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("HotelRoom/Calendar", async (HotelRoomCalendarParams p, IHotelService s, CancellationToken c) => (await s.ReadHotelRoomCalendar(p, c)).ToResult()).Produces<UResponse<IEnumerable<HotelCalendarDay>>>();
+		r.MapPost("HotelRoom/Housekeeping", async (HotelHousekeepingParams p, IHotelService s, CancellationToken c) => (await s.SetHotelRoomHousekeeping(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("HotelReservation/CreateGroup", async (HotelReservationGroupParams p, IHotelService s, CancellationToken c) => (await s.CreateHotelReservationGroup(p, c)).ToResult()).Produces<UResponse<List<Guid>>>();
+		r.MapPost("HotelReservation/Extend", async (HotelReservationExtendParams p, IHotelService s, CancellationToken c) => (await s.ExtendHotelReservation(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("HotelReservation/ChangeRoom", async (HotelReservationChangeRoomParams p, IHotelService s, CancellationToken c) => (await s.ChangeHotelReservationRoom(p, c)).ToResult()).Produces<UResponse>();
+		r.MapPost("HotelReservation/GuestExport", async (HotelGuestExportParams p, IHotelService s, CancellationToken c) => (await s.ExportHotelGuests(p, c)).ToResult()).Produces<UResponse<IEnumerable<HotelGuestExportItem>>>();
+		r.MapPost("HotelReservation/Print", async (IdParams p, IHotelService s, CancellationToken c) => (await s.PrintHotelReservation(p, c)).ToResult()).Produces<UResponse<string>>();
+		r.MapPost("NightAudit/Read", async (HotelNightAuditParams p, IHotelService s, CancellationToken c) => (await s.ReadHotelNightAudit(p, c)).ToResult()).Produces<UResponse<HotelNightAuditResponse>>();
+		r.MapPost("NightAudit/Close", async (HotelNightAuditParams p, IHotelService s, CancellationToken c) => (await s.CloseHotelNightAudit(p, c)).ToResult()).Produces<UResponse<HotelNightAuditResponse>>();
 	}
 }

@@ -23,9 +23,9 @@ public class JwtClaimData {
 	public bool CanManage(Guid creatorId, ICollection<Guid> adminUserIds) => IsAdmin || Id == creatorId || adminUserIds.Contains(Id);
 	public bool HasPermission(TagUser permission) => IsAdmin || !Core.App.MultiTenant && IsSubAdmin && Tags.Contains(permission);
 
-	public bool CanGrant(TagUser tag) => !IsRoleTag(tag) || AdminRank > RankOf(tag);
+	public bool CanGrant(TagUser tag) => IsSystemAdmin || !IsRoleTag(tag) || AdminRank > RankOf(tag);
 
-	public bool CanManageUser(Guid userId, IEnumerable<TagUser> userTags) => Id == userId || AdminRank > Rank(userTags);
+	public bool CanManageUser(Guid userId, IEnumerable<TagUser> userTags) => IsSystemAdmin || Id == userId || AdminRank > Rank(userTags);
 
 	public static bool IsRoleTag(TagUser tag) => tag is TagUser.SystemAdmin or TagUser.SuperAdmin or TagUser.SystemUser or TagUser.SubAdmin || (int)tag is >= 600 and < 700;
 

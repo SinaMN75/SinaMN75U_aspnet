@@ -131,7 +131,7 @@ public class WalletService(
 	}
 
 	private async Task<bool> CanReadWalletOf(JwtClaimData u, Guid userId, CancellationToken ct) =>
-		u.Id == userId || u.HasPermission(TagUser.PermissionManageWallets) || Core.App.MultiTenant && await db.Set<OrganizationEntity>().AnyAsync(x => x.Id == userId && x.OwnerId == u.Id, ct);
+		u.Id == userId || u.HasPermission(TagUser.PermissionManageWallets) || await db.Set<OrganizationEntity>().AnyAsync(x => x.Id == userId && x.OwnerId == u.Id, ct);
 
 	public async Task<UResponse<WalletTxnResponse?>> Transfer(WalletTransferParams p, CancellationToken ct) {
 		if (p.Amount < 0) return new UResponse<WalletTxnResponse?>(null, Usc.BadRequest, ls.Get("amountIsNotValid"));

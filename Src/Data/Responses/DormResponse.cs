@@ -151,3 +151,47 @@ public sealed class DormCityItem {
 	public string Name { get; set; } = "";
 	public int Count { get; set; }
 }
+
+public sealed class DormApplicationResponse : BaseResponse<TagDormApplication, DormApplicationJson> {
+	public DateTime DesiredStartDate { get; set; }
+	public DateTime? DesiredEndDate { get; set; }
+	public Guid DormId { get; set; }
+	public string? DormTitle { get; set; }
+	public Guid UserId { get; set; }
+	public string? UserName { get; set; }
+	public string? PhoneNumber { get; set; }
+	public int? WaitlistPosition { get; set; }
+}
+
+public sealed class DormRecordResponse : BaseResponse<TagDormRecord, DormRecordJson> {
+	public required string Title { get; set; }
+	public DateTime Date { get; set; }
+	public DateTime? EndDate { get; set; }
+	public Guid DormId { get; set; }
+	public string? DormTitle { get; set; }
+	public Guid? UserId { get; set; }
+	public string? UserName { get; set; }
+}
+
+public sealed class DormMealResponse : BaseResponse<TagDormMeal, BaseJson> {
+	public required string Title { get; set; }
+	public DateTime Date { get; set; }
+	public decimal Price { get; set; }
+	public int? Capacity { get; set; }
+	public int ReservedCount { get; set; }
+	public bool ReservedByMe { get; set; }
+	public Guid DormId { get; set; }
+}
+
+public sealed class DormBookingResponse : BaseResponse<TagDormBooking, DormBookingJson> {
+	public DateTime StartAt { get; set; }
+	public DateTime? EndAt { get; set; }
+	public string? Resource { get; set; }
+	public decimal Price { get; set; }
+	public Guid DormId { get; set; }
+	public Guid UserId { get; set; }
+	public string? UserName { get; set; }
+	public Guid? MealId { get; set; }
+	public string? MealTitle { get; set; }
+}
+

@@ -30,6 +30,8 @@ public sealed class DormCreateParams : BaseCreateParams<TagDorm> {
 	public double? Latitude { get; set; }
 	public double? Longitude { get; set; }
 	public Guid? OrganizationId { get; set; }
+	public List<string>? LaundryMachines { get; set; }
+	public int? LaundrySlotMinutes { get; set; }
 }
 
 public sealed class DormUpdateParams : BaseUpdateParams<TagDorm> {
@@ -57,6 +59,8 @@ public sealed class DormUpdateParams : BaseUpdateParams<TagDorm> {
 	public double? Latitude { get; set; }
 	public double? Longitude { get; set; }
 	public Guid? OrganizationId { get; set; }
+	public List<string>? LaundryMachines { get; set; }
+	public int? LaundrySlotMinutes { get; set; }
 }
 
 public sealed class DormReadParams : BaseReadParams<TagDorm> {
@@ -150,6 +154,12 @@ public sealed class DormBedContractCreateParams : BaseCreateParams<TagDormBedCon
 	public Guid BedId { get; set; }
 
 	public int PenaltyPrecentEveryDate { get; set; }
+	public string? GuardianName { get; set; }
+	public string? GuardianPhone { get; set; }
+	public string? EmergencyName { get; set; }
+	public string? EmergencyPhone { get; set; }
+	public string? EmergencyRelation { get; set; }
+	public Guid? ApplicationId { get; set; }
 }
 
 public sealed class DormBedContractUpdateParams : BaseUpdateParams<TagDormBedContract> {
@@ -157,6 +167,11 @@ public sealed class DormBedContractUpdateParams : BaseUpdateParams<TagDormBedCon
 	public DateTime? EndDate { get; set; }
 	public decimal? Deposit { get; set; }
 	public decimal? Rent { get; set; }
+	public string? GuardianName { get; set; }
+	public string? GuardianPhone { get; set; }
+	public string? EmergencyName { get; set; }
+	public string? EmergencyPhone { get; set; }
+	public string? EmergencyRelation { get; set; }
 }
 
 public sealed class DormBedContractReadParams : BaseReadParams<TagDormBedContract> {
@@ -260,3 +275,140 @@ public sealed class DormBedInvoicePayParams {
 	public required Guid InvoiceId { get; set; }
 	public required Guid UserId { get; set; }
 }
+
+public sealed class HandoverItemParams {
+	public string Title { get; set; } = "";
+	public bool Ok { get; set; }
+	public string? Note { get; set; }
+	public decimal Damage { get; set; }
+	public List<string> PhotoUrls { get; set; } = [];
+}
+
+public sealed class DormBedContractChecklistParams : BaseParams {
+	[UValidationRequired("idIsRequired")]
+	public Guid ContractId { get; set; }
+
+	public bool CheckOut { get; set; }
+	public List<HandoverItemParams> Items { get; set; } = [];
+}
+
+public sealed class DormApplicationDocumentParams {
+	public string Title { get; set; } = "";
+	public string? Url { get; set; }
+	public bool? Approved { get; set; }
+}
+
+public sealed class DormApplicationCreateParams : BaseParams {
+	[UValidationRequired("idIsRequired")]
+	public Guid DormId { get; set; }
+
+	[UValidationRequired("startDateIsRequired")]
+	public DateTime DesiredStartDate { get; set; }
+
+	public DateTime? DesiredEndDate { get; set; }
+	public Guid? UserId { get; set; }
+	public string Detail1 { get; set; } = "";
+	public List<DormApplicationDocumentParams> Documents { get; set; } = [];
+}
+
+public sealed class DormApplicationReadParams : BaseReadParams<TagDormApplication> {
+	public Guid? DormId { get; set; }
+	public Guid? UserId { get; set; }
+	public bool Mine { get; set; }
+}
+
+public sealed class DormApplicationReviewParams : BaseParams {
+	[UValidationRequired("idIsRequired")]
+	public Guid Id { get; set; }
+
+	public TagDormApplication Status { get; set; }
+	public string? ReviewNote { get; set; }
+	public Guid? BedId { get; set; }
+	public List<bool?>? DocumentApprovals { get; set; }
+}
+
+public sealed class DormRecordCreateParams : BaseCreateParams<TagDormRecord> {
+	[UValidationRequired("idIsRequired")]
+	public Guid DormId { get; set; }
+
+	[UValidationRequired("titleIsRequired")]
+	public string Title { get; set; } = null!;
+
+	public DateTime? Date { get; set; }
+	public DateTime? EndDate { get; set; }
+	public Guid? UserId { get; set; }
+	public string? Body { get; set; }
+	public string? VisitorName { get; set; }
+	public string? VisitorPhone { get; set; }
+	public string? VisitorNationalCode { get; set; }
+	public string? Relation { get; set; }
+	public Guid? RoomId { get; set; }
+	public decimal? Penalty { get; set; }
+	public List<HandoverItemParams>? Items { get; set; }
+}
+
+public sealed class DormRecordUpdateParams : BaseUpdateParams<TagDormRecord> {
+	public string? Title { get; set; }
+	public DateTime? Date { get; set; }
+	public DateTime? EndDate { get; set; }
+	public string? Body { get; set; }
+	public string? VisitorName { get; set; }
+	public string? VisitorPhone { get; set; }
+	public List<HandoverItemParams>? Items { get; set; }
+}
+
+public sealed class DormRecordReadParams : BaseReadParams<TagDormRecord> {
+	public Guid? DormId { get; set; }
+	public Guid? UserId { get; set; }
+	public DateTime? FromDate { get; set; }
+	public DateTime? ToDate { get; set; }
+	public bool Mine { get; set; }
+}
+
+public sealed class DormMealCreateParams : BaseCreateParams<TagDormMeal> {
+	[UValidationRequired("idIsRequired")]
+	public Guid DormId { get; set; }
+
+	[UValidationRequired("titleIsRequired")]
+	public string Title { get; set; } = null!;
+
+	[UValidationRequired("dateIsRequired")]
+	public DateTime Date { get; set; }
+
+	public decimal Price { get; set; }
+	public int? Capacity { get; set; }
+}
+
+public sealed class DormMealUpdateParams : BaseUpdateParams<TagDormMeal> {
+	public string? Title { get; set; }
+	public DateTime? Date { get; set; }
+	public decimal? Price { get; set; }
+	public int? Capacity { get; set; }
+}
+
+public sealed class DormMealReadParams : BaseReadParams<TagDormMeal> {
+	public Guid? DormId { get; set; }
+	public DateTime? FromDate { get; set; }
+	public DateTime? ToDate { get; set; }
+}
+
+public sealed class DormBookingCreateParams : BaseCreateParams<TagDormBooking> {
+	[UValidationRequired("idIsRequired")]
+	public Guid DormId { get; set; }
+
+	public Guid? UserId { get; set; }
+	public Guid? MealId { get; set; }
+	public DateTime? StartAt { get; set; }
+	public DateTime? EndAt { get; set; }
+	public string? Resource { get; set; }
+}
+
+public sealed class DormBookingReadParams : BaseReadParams<TagDormBooking> {
+	public Guid? DormId { get; set; }
+	public Guid? UserId { get; set; }
+	public Guid? MealId { get; set; }
+	public DateTime? FromDate { get; set; }
+	public DateTime? ToDate { get; set; }
+	public bool Mine { get; set; }
+}
+

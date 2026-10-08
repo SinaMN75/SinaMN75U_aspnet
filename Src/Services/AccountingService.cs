@@ -4,7 +4,9 @@ public interface IAccountingService {
 	Task<UResponse<AccountingReportResponse?>> Report(AccountingReportParams p, CancellationToken ct);
 	Task TakeCommission(Guid? organizationId, decimal amount, string detail, List<KeyValue> keyValues, Guid sourceId, Guid? placeId, CancellationToken ct);
 	Task Post(Guid? organizationId, TagVoucher source, Guid? sourceId, Guid? placeId, Guid? personId, string description, DateTime date, CancellationToken ct, params AccountingLeg[] legs);
-	Task SyncCharge(Guid organizationId, Guid sourceId, Guid placeId, Guid personId, DateTime date, string description, Dictionary<TagAccount, decimal> target, CancellationToken ct);
+	Task SyncCharge(Guid organizationId, Guid sourceId, Guid placeId, Guid personId, DateTime date, string description, Dictionary<TagAccount, decimal> target, CancellationToken ct, decimal vatPercent = 0);
+	Task<decimal> VatPercentOf(Guid organizationId, CancellationToken ct);
+	Task<UResponse<IEnumerable<TaxInvoiceItem>?>> ReadTaxInvoices(LedgerReportParams p, CancellationToken ct);
 	Task<UResponse?> PostReceipt(Guid? organizationId, Guid invoiceId, Guid placeId, Guid personId, Guid? contractId, decimal amount, InvoiceReceiveParams p, string description, Guid registeredBy, CancellationToken ct);
 	Task<UResponse<Guid?>> CreateAccount(AccountCreateParams p, CancellationToken ct);
 	Task<UResponse<IEnumerable<AccountResponse>?>> ReadAccounts(AccountReadParams p, CancellationToken ct);
@@ -21,6 +23,7 @@ public interface IAccountingService {
 	Task<UResponse> RequestOrganizationSettlement(OrganizationSettlementRequestParams p, CancellationToken ct);
 	Task<UResponse> ProcessOrganizationSettlement(OrganizationSettlementProcessParams p, CancellationToken ct);
 	Task RemindChecks(CancellationToken ct);
+	Task<bool> IsAccountOf(Guid organizationId, Guid accountId, CancellationToken ct);
 }
 
 public interface IAccountingSource {
@@ -51,7 +54,7 @@ public class AccountingService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse<AccountingReportResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<AccountingReportResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
-		if (p.UserId != userData.Id && !userData.HasPermission(TagUser.PermissionManageWallets) && !(Core.App.MultiTenant && await db.Set<OrganizationEntity>().AnyAsync(x => x.Id == p.UserId && x.OwnerId == userData.Id, ct)))
+		if (p.UserId != userData.Id && !userData.HasPermission(TagUser.PermissionManageWallets) && !(await db.Set<OrganizationEntity>().AnyAsync(x => x.Id == p.UserId && x.OwnerId == userData.Id, ct)))
 			return new UResponse<AccountingReportResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		DateTime from = p.FromDate ?? DateTime.UtcNow.AddMonths(-1);
@@ -134,7 +137,7 @@ public class AccountingService(
 	private sealed record TxnRow(decimal Amount, ICollection<TagTxn> Tags);
 
 	public async Task TakeCommission(Guid? organizationId, decimal amount, string detail, List<KeyValue> keyValues, Guid sourceId, Guid? placeId, CancellationToken ct) {
-		if (!Core.App.MultiTenant || organizationId == null) return;
+		if (organizationId == null) return;
 		decimal percent = await db.Set<OrganizationEntity>().Where(x => x.Id == organizationId).Select(x => x.JsonData.CommissionPercent).FirstOrDefaultAsync(ct);
 		decimal commission = Math.Round(amount * percent / 100);
 		if (commission <= 0) return;
@@ -168,9 +171,12 @@ public class AccountingService(
 		("1105", "وجوه در راه", [TagAccount.Asset, TagAccount.InTransit]),
 		("1201", "بدهکاران (ساکنان و مهمانان)", [TagAccount.Asset, TagAccount.Receivable]),
 		("1202", "اسناد دریافتنی", [TagAccount.Asset, TagAccount.ChecksReceivable]),
+		("1203", "مالیات بر ارزش افزوده‌ی خرید", [TagAccount.Asset, TagAccount.VatReceivable]),
+		("1301", "موجودی کالا", [TagAccount.Asset, TagAccount.Inventory]),
 		("2101", "ودیعه‌ی ساکنان", [TagAccount.Liability, TagAccount.DepositsHeld]),
 		("2102", "اسناد پرداختنی", [TagAccount.Liability, TagAccount.ChecksPayable]),
 		("2103", "بستانکاران", [TagAccount.Liability, TagAccount.Payables]),
+		("2104", "مالیات بر ارزش افزوده‌ی فروش", [TagAccount.Liability, TagAccount.VatPayable]),
 		("3101", "سرمایه", [TagAccount.Equity, TagAccount.Capital]),
 		("4101", "درآمد اجاره‌ی خوابگاه", [TagAccount.Income, TagAccount.RentIncome]),
 		("4102", "درآمد اقامت هتل", [TagAccount.Income, TagAccount.HotelIncome]),
@@ -184,10 +190,11 @@ public class AccountingService(
 		("5204", "مواد غذایی", [TagAccount.Expense]),
 		("5205", "نظافت و بهداشت", [TagAccount.Expense]),
 		("5206", "اجاره‌ی ساختمان", [TagAccount.Expense]),
+		("5207", "مصرف کالا و ملزومات", [TagAccount.Expense, TagAccount.ConsumptionExpense]),
 		("5299", "سایر هزینه‌ها", [TagAccount.Expense])
 	];
 
-	private static readonly TagAccount[] ChargeRoles = [TagAccount.DepositsHeld, TagAccount.RentIncome, TagAccount.ServiceIncome, TagAccount.PenaltyIncome, TagAccount.HotelIncome];
+	private static readonly TagAccount[] ChargeRoles = [TagAccount.DepositsHeld, TagAccount.RentIncome, TagAccount.ServiceIncome, TagAccount.PenaltyIncome, TagAccount.HotelIncome, TagAccount.DamageIncome, TagAccount.VatPayable];
 
 	private sealed record Entry(Guid AccountId, decimal Debit, decimal Credit, Guid? PersonId, string? Description);
 
@@ -203,9 +210,8 @@ public class AccountingService(
 		JwtClaimData? u = ts.ExtractClaims(token);
 		if (u == null) return (null, new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue")));
 		if (u.IsExpired) return (null, new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired")));
-		if (!Core.App.MultiTenant) return (null, new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction")));
 		if (!await db.Set<OrganizationEntity>().AnyAsync(x => x.Id == organizationId, ct)) return (null, new UResponse(Usc.NotFound, ls.Get("organizationNotFound")));
-		bool allowed = u.IsSystemAdmin ||
+		bool allowed = OrganizationService.IsFull(u) ||
 		               await os.HasOrganizationPermission(u, organizationId, permission, ct) ||
 		               permission == TagUser.PermissionViewAccounting && await os.HasOrganizationPermission(u, organizationId, TagUser.PermissionManageAccounting, ct);
 		return allowed ? (u, null) : (null, new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction")));
@@ -214,19 +220,23 @@ public class AccountingService(
 	private async Task<List<AccountEntity>> AccountsOf(Guid organizationId, CancellationToken ct) {
 		if (_accounts.TryGetValue(organizationId, out List<AccountEntity>? list)) return list;
 		list = await db.Set<AccountEntity>().Where(x => x.OrganizationId == organizationId).ToListAsync(ct);
-		if (list.Count == 0) {
-			DateTime now = DateTime.UtcNow;
-			list = DefaultAccounts.Select(a => new AccountEntity {
+		List<AccountEntity> current = list;
+		DateTime now = DateTime.UtcNow;
+		List<AccountEntity> missing = DefaultAccounts
+			.Where(a => current.Count == 0 || a.Tags.Any(IsRole) && !a.Tags.Where(IsRole).Any(r => current.Any(x => x.Tags.Contains(r))))
+			.Select(a => new AccountEntity {
 				Id = Guid.CreateVersion7(),
 				CreatorId = organizationId,
 				CreatedAt = now,
 				Tags = a.Tags.ToList(),
-				Code = a.Code,
+				Code = current.Any(x => x.Code == a.Code) ? a.Code + "9" : a.Code,
 				Title = a.Title,
 				OrganizationId = organizationId,
 				JsonData = new AccountJson()
 			}).ToList();
-			await db.Set<AccountEntity>().AddRangeAsync(list, ct);
+		if (missing.Count != 0) {
+			await db.Set<AccountEntity>().AddRangeAsync(missing, ct);
+			list = [..list, ..missing];
 		}
 
 		_accounts[organizationId] = list;
@@ -269,7 +279,7 @@ public class AccountingService(
 	}
 
 	public async Task Post(Guid? organizationId, TagVoucher source, Guid? sourceId, Guid? placeId, Guid? personId, string description, DateTime date, CancellationToken ct, params AccountingLeg[] legs) {
-		if (!Core.App.MultiTenant || organizationId == null) return;
+		if (organizationId == null) return;
 		List<AccountEntity> accounts = await AccountsOf(organizationId.Value, ct);
 		List<Entry> lines = legs
 			.GroupBy(x => x.AccountId ?? accounts.First(a => a.Tags.Contains(x.Role)).Id)
@@ -281,8 +291,18 @@ public class AccountingService(
 		await AddVoucher(organizationId.Value, [TagVoucher.Auto, source], sourceId, placeId, date, description, null, lines, ct);
 	}
 
-	public async Task SyncCharge(Guid organizationId, Guid sourceId, Guid placeId, Guid personId, DateTime date, string description, Dictionary<TagAccount, decimal> target, CancellationToken ct) {
+	public async Task<decimal> VatPercentOf(Guid organizationId, CancellationToken ct) =>
+		await db.Set<OrganizationEntity>().Where(x => x.Id == organizationId).Select(x => x.JsonData.VatPercent).FirstOrDefaultAsync(ct);
+
+	public async Task SyncCharge(Guid organizationId, Guid sourceId, Guid placeId, Guid personId, DateTime date, string description, Dictionary<TagAccount, decimal> target, CancellationToken ct, decimal vatPercent = 0) {
 		List<AccountEntity> accounts = await AccountsOf(organizationId, ct);
+		if (vatPercent > 0)
+			foreach (TagAccount role in target.Keys.Where(x => x != TagAccount.DepositsHeld && x != TagAccount.VatPayable).ToList()) {
+				decimal vat = Math.Round(target[role] * vatPercent / (100 + vatPercent));
+				target[role] -= vat;
+				target[TagAccount.VatPayable] = target.GetValueOrDefault(TagAccount.VatPayable) + vat;
+			}
+
 		List<(Guid AccountId, decimal Amount)> posted = (await db.Set<VoucherLineEntity>()
 				.Where(x => x.Voucher.SourceId == sourceId && x.Tags.Contains(TagVoucher.Invoice))
 				.GroupBy(x => x.AccountId)
@@ -305,7 +325,7 @@ public class AccountingService(
 	}
 
 	public async Task<UResponse?> PostReceipt(Guid? organizationId, Guid invoiceId, Guid placeId, Guid personId, Guid? contractId, decimal amount, InvoiceReceiveParams p, string description, Guid registeredBy, CancellationToken ct) {
-		if (!Core.App.MultiTenant || organizationId == null) return null;
+		if (organizationId == null) return null;
 
 		DateTime now = DateTime.UtcNow;
 		if (p.Check != null) {
@@ -558,6 +578,9 @@ public class AccountingService(
 		}
 
 		r.NetProfit = r.Income.Sum(x => x.Amount) - r.Expense.Sum(x => x.Amount);
+		r.VatSales = accounts.Where(x => x.Tags.Contains(TagAccount.VatPayable)).Sum(a => sums.Where(x => x.AccountId == a.Id).Sum(x => x.Credit - x.Debit));
+		r.VatPurchases = accounts.Where(x => x.Tags.Contains(TagAccount.VatReceivable)).Sum(a => sums.Where(x => x.AccountId == a.Id).Sum(x => x.Debit - x.Credit));
+		r.VatDue = r.VatSales - r.VatPurchases;
 
 		HashSet<Guid> incomeIds = accounts.Where(x => x.Tags.Contains(TagAccount.Income)).Select(x => x.Id).ToHashSet();
 		HashSet<Guid> expenseIds = accounts.Where(x => x.Tags.Contains(TagAccount.Expense)).Select(x => x.Id).ToHashSet();
@@ -594,6 +617,54 @@ public class AccountingService(
 		}).OrderByDescending(x => x.Total).ToList();
 
 		return new UResponse<LedgerReportResponse?>(r);
+	}
+
+	public async Task<UResponse<IEnumerable<TaxInvoiceItem>?>> ReadTaxInvoices(LedgerReportParams p, CancellationToken ct) {
+		(_, UResponse? error) = await BooksUser(p.Token, p.OrganizationId, TagUser.PermissionViewAccounting, ct);
+		if (error != null) return new UResponse<IEnumerable<TaxInvoiceItem>?>(null, error.Status, error.Message);
+
+		List<AccountEntity> accounts = await AccountsOf(p.OrganizationId, ct);
+		await db.SaveChangesAsync(ct);
+		HashSet<Guid> incomeIds = accounts.Where(x => x.Tags.Contains(TagAccount.Income)).Select(x => x.Id).ToHashSet();
+		HashSet<Guid> vatIds = accounts.Where(x => x.Tags.Contains(TagAccount.VatPayable)).Select(x => x.Id).ToHashSet();
+		List<Guid> ids = await db.Set<VoucherEntity>()
+			.Where(x => x.OrganizationId == p.OrganizationId && x.SourceId != null && x.Tags.Contains(TagVoucher.Invoice))
+			.GroupBy(x => x.SourceId!.Value)
+			.Where(g => (p.FromDate == null || g.Min(x => x.Date) >= p.FromDate) && (p.ToDate == null || g.Min(x => x.Date) <= p.ToDate))
+			.Select(g => g.Key)
+			.ToListAsync(ct);
+		var lines = await db.Set<VoucherLineEntity>()
+			.Where(x => x.Voucher.OrganizationId == p.OrganizationId && x.Tags.Contains(TagVoucher.Invoice) && ids.Contains(x.Voucher.SourceId!.Value))
+			.Select(x => new { SourceId = x.Voucher.SourceId!.Value, x.Voucher.Number, x.Voucher.Date, x.Voucher.PlaceId, x.PersonId, Description = x.Voucher.JsonData.Detail1, x.AccountId, Amount = x.Credit - x.Debit })
+			.ToListAsync(ct);
+
+		string? serviceId = (await db.Set<OrganizationEntity>().Where(x => x.Id == p.OrganizationId).Select(x => x.JsonData.TaxServiceId).FirstOrDefaultAsync(ct));
+		Dictionary<Guid, string> titles = await os.PlaceTitles(p.OrganizationId, ct);
+		List<Guid> personIds = lines.Where(x => x.PersonId != null).Select(x => x.PersonId!.Value).Distinct().ToList();
+		var people = await db.Set<UserEntity>().Where(x => personIds.Contains(x.Id)).Select(x => new { x.Id, x.FirstName, x.LastName, x.NationalCode, x.PhoneNumber }).ToDictionaryAsync(x => x.Id, ct);
+		List<TaxInvoiceItem> items = lines.GroupBy(x => x.SourceId).Select(g => {
+			var first = g.OrderBy(x => x.Number).First();
+			var person = first.PersonId == null ? null : people.GetValueOrDefault(first.PersonId.Value);
+			decimal amount = g.Where(x => incomeIds.Contains(x.AccountId)).Sum(x => x.Amount);
+			decimal vat = g.Where(x => vatIds.Contains(x.AccountId)).Sum(x => x.Amount);
+			return new TaxInvoiceItem {
+				SourceId = g.Key,
+				Number = first.Number,
+				Date = first.Date,
+				PersonId = first.PersonId,
+				PersonName = person == null ? null : $"{person.FirstName} {person.LastName}".Trim(),
+				NationalCode = person?.NationalCode,
+				PhoneNumber = person?.PhoneNumber,
+				PlaceTitle = first.PlaceId == null ? null : titles.GetValueOrDefault(first.PlaceId.Value),
+				Description = first.Description,
+				ServiceId = serviceId,
+				Amount = amount,
+				VatPercent = amount > 0 ? Math.Round(vat * 100 / amount) : 0,
+				Vat = vat,
+				Total = amount + vat
+			};
+		}).Where(x => x.Total > 0).OrderBy(x => x.Date).ToList();
+		return new UResponse<IEnumerable<TaxInvoiceItem>?>(items);
 	}
 
 	public async Task<UResponse<Guid?>> CreateCheck(CheckCreateParams p, CancellationToken ct) {
@@ -701,7 +772,6 @@ public class AccountingService(
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse(Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
-		if (!Core.App.MultiTenant) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		if (p.Amount <= 0) return new UResponse(Usc.BadRequest, ls.Get("amountIsNotValid"));
 
 		OrganizationEntity? e = await db.Set<OrganizationEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.OrganizationId, ct);
@@ -728,7 +798,7 @@ public class AccountingService(
 	public async Task<UResponse> ProcessOrganizationSettlement(OrganizationSettlementProcessParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
 		if (userData == null) return new UResponse(Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
-		if (!Core.App.MultiTenant || !userData.IsSystemAdmin) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		if (!userData.IsSystemAdmin) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
 		OrganizationEntity? e = await db.Set<OrganizationEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.OrganizationId, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("organizationNotFound"));
@@ -757,8 +827,9 @@ public class AccountingService(
 		return new UResponse();
 	}
 
+	public async Task<bool> IsAccountOf(Guid organizationId, Guid accountId, CancellationToken ct) => (await AccountsOf(organizationId, ct)).Any(x => x.Id == accountId);
+
 	public async Task RemindChecks(CancellationToken ct) {
-		if (!Core.App.MultiTenant) return;
 		DateTime soon = DateTime.UtcNow.AddDays(3);
 		List<CheckEntity> checks = await db.Set<CheckEntity>().AsTracking().Include(x => x.Organization)
 			.Where(x => x.Tags.Contains(TagCheck.Pending) && !x.JsonData.DueReminded && x.DueDate <= soon)

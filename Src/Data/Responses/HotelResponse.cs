@@ -96,3 +96,71 @@ public sealed class HotelCityItem {
 	public string Name { get; set; } = "";
 	public int Count { get; set; }
 }
+
+public sealed class HotelRateResponse : BaseResponse<TagHotelRate, HotelRateJson> {
+	public DateTime StartDate { get; set; }
+	public DateTime EndDate { get; set; }
+	public decimal? Price { get; set; }
+	public decimal? Percent { get; set; }
+	public Guid HotelId { get; set; }
+	public Guid? RoomId { get; set; }
+	public string? RoomTitle { get; set; }
+}
+
+public sealed class HotelCalendarDay {
+	public DateTime Date { get; set; }
+	public decimal Price { get; set; }
+	public int Booked { get; set; }
+	public int Available { get; set; }
+	public bool Closed { get; set; }
+}
+
+public sealed class HotelNightAuditResponse {
+	public DateTime Date { get; set; }
+	public DateTime? LastAuditDate { get; set; }
+	public int TotalRooms { get; set; }
+	public int OccupiedRooms { get; set; }
+	public double Occupancy { get; set; }
+	public decimal RoomRevenue { get; set; }
+	public decimal OpenBalance { get; set; }
+	public List<HotelAuditItem> Arrivals { get; set; } = [];
+	public List<HotelAuditItem> Departures { get; set; } = [];
+	public List<HotelAuditItem> InHouse { get; set; } = [];
+	public List<HotelAuditItem> NoShows { get; set; } = [];
+	public List<HotelRoomUnitItem> DirtyUnits { get; set; } = [];
+}
+
+public sealed class HotelAuditItem {
+	public Guid ReservationId { get; set; }
+	public string? ReservationCode { get; set; }
+	public string? GuestName { get; set; }
+	public string? RoomTitle { get; set; }
+	public string? RoomNumber { get; set; }
+	public DateTime CheckInDate { get; set; }
+	public DateTime CheckOutDate { get; set; }
+	public decimal Balance { get; set; }
+}
+
+public sealed class HotelRoomUnitItem {
+	public Guid RoomId { get; set; }
+	public string? RoomTitle { get; set; }
+	public required string Number { get; set; }
+	public TagHousekeeping Status { get; set; }
+}
+
+public sealed class HotelGuestExportItem {
+	public string? ReservationCode { get; set; }
+	public DateTime CheckInDate { get; set; }
+	public DateTime CheckOutDate { get; set; }
+	public string? RoomTitle { get; set; }
+	public string? RoomNumber { get; set; }
+	public required string FullName { get; set; }
+	public string? NationalCode { get; set; }
+	public string? Nationality { get; set; }
+	public string? PassportNumber { get; set; }
+	public DateTime? BirthDate { get; set; }
+	public string? FatherName { get; set; }
+	public string? Gender { get; set; }
+	public string? PhoneNumber { get; set; }
+}
+

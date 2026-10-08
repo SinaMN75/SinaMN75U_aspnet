@@ -164,6 +164,9 @@ public sealed class HotelReservationCreateParams : BaseCreateParams<TagHotelRese
 	public string? Notes { get; set; }
 	public List<ReservationGuestParams>? Guests { get; set; }
 	public int PenaltyPrecentEveryDate { get; set; }
+	public string? RoomNumber { get; set; }
+	public string? GroupCode { get; set; }
+	public string? GroupName { get; set; }
 }
 
 public sealed class ReservationGuestParams {
@@ -172,6 +175,11 @@ public sealed class ReservationGuestParams {
 
 	public string? NationalCode { get; set; }
 	public string? PhoneNumber { get; set; }
+	public string? Nationality { get; set; }
+	public string? PassportNumber { get; set; }
+	public DateTime? BirthDate { get; set; }
+	public string? FatherName { get; set; }
+	public string? Gender { get; set; }
 }
 
 public sealed class HotelReservationBookParams : BaseParams {
@@ -215,6 +223,7 @@ public sealed class HotelReservationUpdateParams : BaseUpdateParams<TagHotelRese
 	public string? GuestPhone { get; set; }
 	public string? Notes { get; set; }
 	public List<ReservationGuestParams>? Guests { get; set; }
+	public string? RoomNumber { get; set; }
 }
 
 public sealed class HotelReservationReadParams : BaseReadParams<TagHotelReservation> {
@@ -227,6 +236,7 @@ public sealed class HotelReservationReadParams : BaseReadParams<TagHotelReservat
 	public bool? ActiveOnly { get; set; }
 	public bool? UpcomingOnly { get; set; }
 	public bool? PastOnly { get; set; }
+	public string? GroupCode { get; set; }
 
 	public HotelReservationSelectorArgs SelectorArgs { get; set; } = new();
 }
@@ -270,3 +280,118 @@ public sealed class HotelInvoiceReadParams : BaseReadParams<TagHotelInvoice> {
 	public decimal? MinDebtAmount { get; set; }
 	public decimal? MaxDebtAmount { get; set; }
 }
+
+public sealed class HotelRateCreateParams : BaseCreateParams<TagHotelRate> {
+	[UValidationRequired("HotelIdRequired")]
+	public Guid HotelId { get; set; }
+
+	public Guid? RoomId { get; set; }
+
+	[UValidationRequired("startDateIsRequired")]
+	public DateTime StartDate { get; set; }
+
+	[UValidationRequired("endDateIsRequired")]
+	public DateTime EndDate { get; set; }
+
+	public decimal? Price { get; set; }
+	public decimal? Percent { get; set; }
+	public List<int>? Weekdays { get; set; }
+	public int? MinNights { get; set; }
+}
+
+public sealed class HotelRateUpdateParams : BaseUpdateParams<TagHotelRate> {
+	public DateTime? StartDate { get; set; }
+	public DateTime? EndDate { get; set; }
+	public decimal? Price { get; set; }
+	public decimal? Percent { get; set; }
+	public List<int>? Weekdays { get; set; }
+	public int? MinNights { get; set; }
+}
+
+public sealed class HotelRateReadParams : BaseReadParams<TagHotelRate> {
+	public Guid? HotelId { get; set; }
+	public Guid? RoomId { get; set; }
+	public DateTime? FromDate { get; set; }
+	public DateTime? ToDate { get; set; }
+}
+
+public sealed class HotelRoomCalendarParams : BaseParams {
+	[UValidationRequired("roomIsRequired")]
+	public Guid RoomId { get; set; }
+
+	public DateTime FromDate { get; set; }
+	public int Days { get; set; } = 31;
+}
+
+public sealed class HotelHousekeepingParams : BaseParams {
+	[UValidationRequired("roomIsRequired")]
+	public Guid RoomId { get; set; }
+
+	[UValidationRequired("numberRequired")]
+	public string Number { get; set; } = null!;
+
+	public TagHousekeeping Status { get; set; }
+	public string? Note { get; set; }
+}
+
+public sealed class HotelGroupRoomParams {
+	public Guid RoomId { get; set; }
+	public int Count { get; set; } = 1;
+	public int GuestCount { get; set; } = 1;
+}
+
+public sealed class HotelReservationGroupParams : BaseParams {
+	[UValidationRequired("userIsRequired")]
+	public Guid UserId { get; set; }
+
+	[UValidationRequired("checkInDateIsRequired")]
+	public DateTime CheckInDate { get; set; }
+
+	[UValidationRequired("checkOutDateIsRequired")]
+	public DateTime CheckOutDate { get; set; }
+
+	[UValidationRequired("titleIsRequired")]
+	public string GroupName { get; set; } = null!;
+
+	[UValidationMinCollectionLength(1, "roomIsRequired")]
+	public List<HotelGroupRoomParams> Rooms { get; set; } = [];
+
+	public string? GuestPhone { get; set; }
+	public string? Notes { get; set; }
+	public int PenaltyPrecentEveryDate { get; set; }
+}
+
+public sealed class HotelReservationExtendParams : BaseParams {
+	[UValidationRequired("reservationIsRequired")]
+	public Guid Id { get; set; }
+
+	[UValidationRequired("checkOutDateIsRequired")]
+	public DateTime CheckOutDate { get; set; }
+}
+
+public sealed class HotelReservationChangeRoomParams : BaseParams {
+	[UValidationRequired("reservationIsRequired")]
+	public Guid Id { get; set; }
+
+	[UValidationRequired("roomIsRequired")]
+	public Guid RoomId { get; set; }
+
+	public bool KeepPrice { get; set; }
+	public string? RoomNumber { get; set; }
+}
+
+public sealed class HotelNightAuditParams : BaseParams {
+	[UValidationRequired("HotelIdRequired")]
+	public Guid HotelId { get; set; }
+
+	public DateTime? Date { get; set; }
+}
+
+public sealed class HotelGuestExportParams : BaseParams {
+	[UValidationRequired("HotelIdRequired")]
+	public Guid HotelId { get; set; }
+
+	public DateTime FromDate { get; set; }
+	public DateTime ToDate { get; set; }
+}
+

@@ -150,6 +150,8 @@ public enum TagUser {
 	PermissionViewDashboard = 622, // admin dashboards (financial ops, property)
 	PermissionManageAccounting = 623,
 	PermissionViewAccounting = 624,
+	PermissionManageInventory = 625,
+	PermissionManageStaff = 626,
 }
 
 public enum TagCategory {
@@ -547,6 +549,7 @@ public enum TagDormBedInvoice {
 	Deposit = 101,
 	Rent = 102,
 	Service = 103,
+	Damage = 104,
 	Paid = 201,
 	PaidOnline = 202,
 	PaidManual = 203,
@@ -639,7 +642,11 @@ public enum TagAccount {
 	ServiceIncome = 311,
 	PenaltyIncome = 312,
 	DamageIncome = 313,
-	CommissionExpense = 314
+	CommissionExpense = 314,
+	Inventory = 315,
+	ConsumptionExpense = 316,
+	VatPayable = 317,
+	VatReceivable = 318
 }
 
 public enum TagVoucher {
@@ -656,7 +663,9 @@ public enum TagVoucher {
 	Check = 208,
 	Expense = 209,
 	Transfer = 210,
-	Opening = 211
+	Opening = 211,
+	Purchase = 212,
+	Consumption = 213
 }
 
 public enum TagCheck {
@@ -681,6 +690,7 @@ public enum TagHotelReservation {
 
 public enum TagHotelInvoice {
 	Full = 101,
+	Extra = 102,
 	Paid = 201,
 	PaidOnline = 202,
 	PaidManual = 203,
@@ -1017,4 +1027,141 @@ public enum TagMessage {
 
 	Edited = 201,
 	Deleted = 202
+}
+
+public enum TagWarehouse {
+	Main = 101,
+	Branch = 102,
+	Kitchen = 103,
+	Inactive = 201
+}
+
+public enum TagInventoryItem {
+	Consumable = 101,
+	Food = 102,
+	Cleaning = 103,
+	Equipment = 104,
+	Inactive = 201
+}
+
+public enum TagStockMovement {
+	In = 101,
+	Out = 102,
+	TransferIn = 103,
+	TransferOut = 104,
+	Adjustment = 105
+}
+
+public enum TagSupplier {
+	Active = 101,
+	Inactive = 102
+}
+
+public enum TagPurchase {
+	Requested = 101,
+	Approved = 102,
+	Rejected = 103,
+	Received = 104
+}
+
+public enum TagAsset {
+	Furniture = 101,
+	Appliance = 102,
+	Electronic = 103,
+	Other = 104,
+
+	InUse = 201,
+	InRepair = 202,
+	Retired = 203
+}
+
+public enum TagDormApplication {
+	Pending = 101,
+	Approved = 102,
+	Rejected = 103,
+	Waitlisted = 104,
+	Converted = 105
+}
+
+public enum TagDormRecord {
+	CheckIn = 101,
+	CheckOut = 102,
+	NightLeave = 103,
+	Visitor = 104,
+
+	Announcement = 201,
+	Violation = 202,
+	Warning = 203,
+	Inspection = 204,
+
+	Pending = 301,
+	Approved = 302,
+	Rejected = 303
+}
+
+public enum TagDormMeal {
+	Breakfast = 101,
+	Lunch = 102,
+	Dinner = 103
+}
+
+public enum TagDormBooking {
+	Meal = 101,
+	Laundry = 102,
+
+	Reserved = 201,
+	Cancelled = 202,
+	Used = 203
+}
+
+public enum TagHotelRate {
+	Seasonal = 101,
+	Holiday = 102,
+	Plan = 103,
+	Closed = 104
+}
+
+public enum TagHousekeeping {
+	Clean = 101,
+	Dirty = 102,
+	Inspected = 103,
+	OutOfOrder = 104
+}
+
+public enum TagStaffShift {
+	Morning = 101,
+	Evening = 102,
+	Night = 103,
+
+	Planned = 201,
+	Present = 202,
+	Absent = 203
+}
+
+public enum TagStaffTask {
+	Task = 101,
+	Maintenance = 102,
+	Cleaning = 103,
+
+	Open = 201,
+	InProgress = 202,
+	Done = 203,
+	Cancelled = 204,
+
+	Low = 301,
+	Normal = 302,
+	Urgent = 303
+}
+
+public enum TagOrganizationCustomer {
+	Regular = 101,
+	Vip = 102,
+	Blacklisted = 103
+}
+
+public enum TagActivityLog {
+	Create = 101,
+	Update = 102,
+	Delete = 103,
+	Action = 104
 }

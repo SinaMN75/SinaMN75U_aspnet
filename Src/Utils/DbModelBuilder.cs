@@ -44,8 +44,24 @@ public static class DbModelBuilder {
 		builder.Entity<DormBedContractEntity>().OwnsOne(e => e.JsonData, b => {
 			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
 			b.OwnsMany(i => i.BedHistory);
+			b.OwnsMany(i => i.CheckInChecklist);
+			b.OwnsMany(i => i.CheckOutChecklist);
 		});
-		builder.Entity<HotelRoomEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<DormApplicationEntity>().OwnsOne(e => e.JsonData, b => {
+			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
+			b.OwnsMany(i => i.Documents);
+		});
+		builder.Entity<DormRecordEntity>().OwnsOne(e => e.JsonData, b => {
+			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
+			b.OwnsMany(i => i.Items);
+		});
+		builder.Entity<DormMealEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<DormBookingEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<HotelRoomEntity>().OwnsOne(e => e.JsonData, b => {
+			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
+			b.OwnsMany(i => i.Units);
+		});
+		builder.Entity<HotelRateEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<HotelInvoiceEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<DormBedEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<DormRoomEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
@@ -98,7 +114,21 @@ public static class DbModelBuilder {
 			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
 			b.OwnsMany(i => i.Members);
 			b.OwnsMany(i => i.Settlements);
+			b.OwnsOne(i => i.Plan);
 		});
+		builder.Entity<StaffShiftEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<StaffTaskEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<OrganizationCustomerEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<ActivityLogEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<WarehouseEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<InventoryItemEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<StockMovementEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<SupplierEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
+		builder.Entity<PurchaseEntity>().OwnsOne(e => e.JsonData, b => {
+			RelationalOwnedNavigationBuilderExtensions.ToJson(b);
+			b.OwnsMany(i => i.Lines);
+		});
+		builder.Entity<AssetEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<AccountEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<VoucherEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
 		builder.Entity<CheckEntity>().OwnsOne(e => e.JsonData, b => RelationalOwnedNavigationBuilderExtensions.ToJson(b));
