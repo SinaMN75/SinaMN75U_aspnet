@@ -838,7 +838,7 @@ public class HotelService(
 
 		if (e.Reservation != null) {
 			HotelReservationEntity? reservation = await db.Set<HotelReservationEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == e.ReservationId, ct);
-			if (reservation != null && !reservation.Tags.Contains(TagHotelReservation.Cancelled)) {
+			if (reservation != null && reservation.Tags.Contains(TagHotelReservation.Pending)) {
 				reservation.Tags = [TagHotelReservation.Confirmed];
 				await AddNotification(reservation.UserId, TagNotification.ReservationConfirmed, ls.Get("reservationConfirmed"), e.Reservation.Hotel.Title, ct);
 			}
@@ -1352,9 +1352,16 @@ public class HotelService(
 	private async Task SetUnit(Guid roomId, string number, TagHousekeeping status, string? note, Guid by, CancellationToken ct) {
 		HotelRoomEntity? room = await db.Set<HotelRoomEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == roomId, ct);
 		if (room == null) return;
-		List<HotelRoomUnit> units = room.JsonData.Units.Where(x => x.Number != number).ToList();
-		units.Add(new HotelRoomUnit { Number = number, Status = status, Note = note, UpdatedAt = DateTime.UtcNow, UpdatedBy = by });
-		room.JsonData.Units = units.OrderBy(x => x.Number).ToList();
+		HotelRoomUnit? unit = room.JsonData.Units.FirstOrDefault(x => x.Number == number);
+		if (unit == null) {
+			unit = new HotelRoomUnit { Number = number };
+			room.JsonData.Units = [..room.JsonData.Units, unit];
+		}
+
+		unit.Status = status;
+		unit.Note = note;
+		unit.UpdatedAt = DateTime.UtcNow;
+		unit.UpdatedBy = by;
 	}
 
 	private async Task<(JwtClaimData? User, HotelEntity? Hotel, UResponse? Error)> HotelManager(string? token, Guid hotelId, TagUser permission, CancellationToken ct) {

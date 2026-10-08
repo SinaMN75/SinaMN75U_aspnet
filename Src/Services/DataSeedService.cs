@@ -6,9 +6,10 @@ public interface IDataSeedService {
 	Task<UResponse> SeedCategories();
 	Task<UResponse> SeedContents();
 	Task<(List<UserEntity> Created, List<Guid> Ids)> DemoUsers(CancellationToken ct);
+	Task<UResponse<List<KeyValue>?>> SeedDemo(BaseParams p, CancellationToken ct);
 }
 
-public class DataSeedService(DbContext db) : IDataSeedService {
+public partial class DataSeedService(DbContext db, IServiceProvider sp) : IDataSeedService {
 	public static readonly string[] DemoFirstNames = ["علی", "مریم", "رضا", "زهرا", "امیر", "سارا", "حسین", "نگار", "محمد", "فاطمه", "پویا", "الهام"];
 
 	public static readonly string[] DemoLastNames = ["احمدی", "رضایی", "کریمی", "موسوی", "حسینی", "صادقی", "نجفی", "قاسمی", "جعفری", "محمدی", "کاظمی", "یوسفی"];

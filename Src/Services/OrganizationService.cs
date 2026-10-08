@@ -590,8 +590,6 @@ public class OrganizationService(
 		[TagUser.PermissionDeleteDorms] = TagModule.Dorm,
 		[TagUser.PermissionManageContracts] = TagModule.Dorm,
 		[TagUser.PermissionDeleteContracts] = TagModule.Dorm,
-		[TagUser.PermissionManageInvoices] = TagModule.Dorm,
-		[TagUser.PermissionDeleteInvoices] = TagModule.Dorm,
 		[TagUser.PermissionManageAccounting] = TagModule.Accounting,
 		[TagUser.PermissionViewAccounting] = TagModule.Accounting,
 		[TagUser.PermissionManageInventory] = TagModule.Inventory,
