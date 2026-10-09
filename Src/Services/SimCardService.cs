@@ -39,6 +39,10 @@ public class SimCardService(
 		if (userData.IsExpired) return new UResponse<IEnumerable<SimCardResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		IQueryable<SimCardEntity> q = db.Set<SimCardEntity>().ApplyReadParams(p);
+		if (!userData.IsAdmin) {
+			Guid uid = userData.Id;
+			q = q.Where(x => x.UserId == uid);
+		}
 		IQueryable<SimCardResponse> projected = q.Select(Projections.SimCardSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 	}

@@ -40,7 +40,6 @@ public partial class DataSeedService(DbContext db, IServiceProvider sp) : IDataS
 			});
 		}
 
-		// Users that already exist from an earlier partial run are looked up so the demo data can still reference them.
 		List<Guid> userIds = users.Select(x => x.Id).ToList();
 		if (userIds.Count < firstNames.Length)
 			userIds.AddRange(await db.Set<UserEntity>().Where(x => x.UserName.StartsWith("demo")).Select(x => x.Id).ToListAsync(ct));

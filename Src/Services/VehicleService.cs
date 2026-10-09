@@ -40,6 +40,10 @@ public class VehicleService(
 		if (userData.IsExpired) return new UResponse<IEnumerable<VehicleResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		IQueryable<VehicleEntity> q = db.Set<VehicleEntity>().ApplyReadParams(p);
+		if (!userData.IsAdmin) {
+			Guid uid = userData.Id;
+			q = q.Where(x => x.CreatorId == uid);
+		}
 		if (p.Brand.IsNotNullOrEmpty()) q = q.Where(x => x.Brand == p.Brand);
 		if (p.LicencePlate.IsNotNullOrEmpty()) q = q.Where(x => x.LicencePlate == p.LicencePlate);
 		if (p.Color.IsNotNullOrEmpty()) q = q.Where(x => x.Color == p.Color);

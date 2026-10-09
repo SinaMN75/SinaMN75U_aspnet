@@ -443,7 +443,7 @@ public class AccountingService(
 		if (error != null) return new UResponse<Guid?>(null, error.Status, error.Message);
 
 		List<AccountEntity> accounts = await AccountsOf(p.OrganizationId, ct);
-		if (p.Lines.Any(x => x.Debit < 0 || x.Credit < 0 || x.Debit > 0 == x.Credit > 0 || !accounts.Any(a => a.Id == x.AccountId && !a.Tags.Contains(TagAccount.Inactive))))
+		if (p.Lines.Count < 2 || p.Lines.Any(x => x.Debit < 0 || x.Credit < 0 || x.Debit > 0 == x.Credit > 0 || !accounts.Any(a => a.Id == x.AccountId && !a.Tags.Contains(TagAccount.Inactive))))
 			return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("amountIsNotValid"));
 		if (p.Lines.Sum(x => x.Debit) != p.Lines.Sum(x => x.Credit)) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("voucherIsNotBalanced"));
 		if (p.PlaceId != null && !await os.IsPlaceOf(p.OrganizationId, p.PlaceId.Value, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));

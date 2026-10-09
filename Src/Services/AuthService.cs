@@ -138,13 +138,25 @@ public class AuthService(
 		});
 	}
 
+	private static List<string> PhoneForms(string? phone) {
+		if (phone.IsNullOrEmpty()) return [];
+		string digits = new(phone.Where(char.IsAsciiDigit).ToArray());
+		string local = digits.StartsWith("0098") ? digits[4..] : digits.StartsWith("98") && digits.Length == 12 ? digits[2..] : digits.StartsWith('0') ? digits[1..] : digits;
+		return local.Length == 10 && local.StartsWith('9') ? [phone, "0" + local, "+98" + local, "98" + local] : [phone];
+	}
+
+	private IQueryable<UserEntity> ByPhone(IQueryable<UserEntity> q, string? phone) {
+		List<string> forms = PhoneForms(phone);
+		return q.Where(x => x.PhoneNumber != null && forms.Contains(x.PhoneNumber)).OrderByDescending(x => x.PhoneNumber == phone);
+	}
+
 	public async Task<UResponse> GetVerificationCodeForLogin(GetMobileVerificationCodeForLoginParams p, CancellationToken ct) {
-		UserResponse? existingUser = await db.Set<UserEntity>().Select(x => new UserResponse {
+		UserResponse? existingUser = await ByPhone(db.Set<UserEntity>(), p.PhoneNumber).Select(x => new UserResponse {
 			Id = x.Id,
 			PhoneNumber = x.PhoneNumber,
 			JsonData = x.JsonData,
 			Tags = x.Tags
-		}).FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
+		}).FirstOrDefaultAsync(ct);
 
 		if (existingUser != null) {
 			if (!await smsNotificationService.SendOtpSms(existingUser)) return new UResponse(Usc.MaximumLimitReached, ls.Get("tooManyOTPRequestsPleaseWaitAndTryAgain"));
@@ -177,10 +189,10 @@ public class AuthService(
 	}
 
 	public async Task<UResponse<LoginResponse?>> VerifyCodeForLogin(VerifyMobileForLoginParams p, CancellationToken ct) {
-		string lockKey = "lockout_otp_" + p.PhoneNumber;
+		string lockKey = "lockout_otp_" + PhoneForms(p.PhoneNumber).Last();
 		if (IsLockedOut(lockKey)) return new UResponse<LoginResponse?>(null, Usc.TooManyRequests, ls.Get("tooManyFailedAttemptsPleaseTryAgainLater"));
 
-		UserEntity? user = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber, ct);
+		UserEntity? user = await ByPhone(db.Set<UserEntity>().AsTracking(), p.PhoneNumber).FirstOrDefaultAsync(ct);
 		if (user == null) return new UResponse<LoginResponse?>(null, Usc.UserNotFound, ls.Get("accountNotFound"));
 
 		if (p.Otp != Core.App.BasicSettings.DefaultVerificationKey && p.Otp != cache.Get("otp_" + user.Id)) {
@@ -204,7 +216,7 @@ public class AuthService(
 
 	public async Task<UResponse<LoginResponse?>> LoginOrRegister(RegisterParams p, CancellationToken ct) {
 		if (p.PhoneNumber.IsNullOrEmpty() || p.NationalCode.IsNullOrEmpty()) return new UResponse<LoginResponse?>(null, Usc.BadRequest, ls.Get("loginInformationIsWrong"));
-		UserEntity? user = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.PhoneNumber == p.PhoneNumber && x.NationalCode == p.NationalCode, ct);
+		UserEntity? user = await ByPhone(db.Set<UserEntity>().AsTracking().Where(x => x.NationalCode == p.NationalCode), p.PhoneNumber).FirstOrDefaultAsync(ct);
 		if (user == null) return await Register(p, ct);
 		if (JwtClaimData.Rank(user.Tags) > 0) return new UResponse<LoginResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 

@@ -999,6 +999,10 @@ public class TerminalService(
 		if (userData.IsExpired) return new UResponse<IEnumerable<MerchantResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		IQueryable<MerchantEntity> q = db.Set<MerchantEntity>().ApplyReadParams(p);
+		if (!userData.HasPermission(TagUser.PermissionManageMerchants)) {
+			Guid uid = userData.Id;
+			q = q.Where(x => x.UserId == uid || x.CreatorId == uid);
+		}
 
 		if (p.UserId.IsNotNullOrEmpty()) q = q.Where(x => x.UserId == p.UserId);
 		if (p.ZipCode.IsNotNullOrEmpty()) q = q.Where(x => x.ZipCode == p.ZipCode);
@@ -1021,7 +1025,9 @@ public class TerminalService(
 		if (userData == null) return new UResponse<MerchantResponse?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		if (userData.IsExpired) return new UResponse<MerchantResponse?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
-		MerchantResponse? e = await db.Set<MerchantEntity>().Select(Projections.MerchantSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
+		Guid uid = userData.Id;
+		bool all = userData.HasPermission(TagUser.PermissionManageMerchants);
+		MerchantResponse? e = await db.Set<MerchantEntity>().Where(x => all || x.UserId == uid || x.CreatorId == uid).Select(Projections.MerchantSelector(p.SelectorArgs)).FirstOrDefaultAsync(x => x.Id == p.Id, ct);
 		return e == null ? new UResponse<MerchantResponse?>(null, Usc.NotFound, ls.Get("merchantNotFound")) : new UResponse<MerchantResponse?>(e);
 	}
 

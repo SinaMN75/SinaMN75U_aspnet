@@ -392,14 +392,18 @@ public class OrganizationService(
 		return Math.Round(s.Price * (decimal)Math.Clamp(left / total, 0, 1));
 	}
 
-	private (SubscriptionQuoteResponse? Quote, List<Guid> Replaces, string? Error) Quote(OrganizationEntity? org, SubscriptionPlanEntity plan, int months, bool trial, DateTime now) {
+	private async Task<bool> TrialUsed(Guid ownerId, CancellationToken ct) =>
+		(await db.Set<OrganizationEntity>().Where(x => x.OwnerId == ownerId).Select(x => x.JsonData).ToListAsync(ct))
+		.Any(j => j.Subscriptions.Any(x => x.Trial && x.Status != TagSubscription.Pending));
+
+	private (SubscriptionQuoteResponse? Quote, List<Guid> Replaces, string? Error) Quote(OrganizationEntity? org, SubscriptionPlanEntity plan, int months, bool trial, bool trialUsed, DateTime now) {
 		if (!plan.Tags.Contains(TagSubscriptionPlan.Active)) return (null, [], ls.Get("planNotFound"));
 		List<OrganizationSubscription> current = org?.JsonData.Subscriptions.Where(x => x.Status == TagSubscription.Active && x.ExpiresAt > now).ToList() ?? [];
 		decimal price;
 		DateTime start = now;
 		DateTime end;
 		if (trial) {
-			if (plan.JsonData.TrialDays <= 0 || org != null && org.JsonData.Subscriptions.Any(x => x.Trial && x.Status != TagSubscription.Pending)) return (null, [], ls.Get("trialNotAvailable"));
+			if (plan.JsonData.TrialDays <= 0 || trialUsed) return (null, [], ls.Get("trialNotAvailable"));
 			months = 0;
 			price = 0;
 			end = now.AddDays(plan.JsonData.TrialDays);
@@ -466,9 +470,10 @@ public class OrganizationService(
 	}
 
 	public async Task<UResponse<SubscriptionQuoteResponse?>> QuoteSubscription(SubscriptionQuoteParams p, CancellationToken ct) {
-		(_, SubscriptionPlanEntity? plan, OrganizationEntity? org, UResponse? error) = await SubscriptionContext(p.Token, p.PlanId, p.OrganizationId, ct);
+		(JwtClaimData? u, SubscriptionPlanEntity? plan, OrganizationEntity? org, UResponse? error) = await SubscriptionContext(p.Token, p.PlanId, p.OrganizationId, ct);
 		if (error != null) return new UResponse<SubscriptionQuoteResponse?>(null, error.Status, error.Message);
-		(SubscriptionQuoteResponse? quote, _, string? quoteError) = Quote(org, plan!, p.Months, p.Trial, DateTime.UtcNow);
+		bool trialUsed = p.Trial && await TrialUsed(org?.OwnerId ?? u!.Id, ct);
+		(SubscriptionQuoteResponse? quote, _, string? quoteError) = Quote(org, plan!, p.Months, p.Trial, trialUsed, DateTime.UtcNow);
 		return quote == null ? new UResponse<SubscriptionQuoteResponse?>(null, Usc.BadRequest, quoteError!) : new UResponse<SubscriptionQuoteResponse?>(quote);
 	}
 
@@ -476,7 +481,8 @@ public class OrganizationService(
 		(JwtClaimData? u, SubscriptionPlanEntity? plan, OrganizationEntity? org, UResponse? error) = await SubscriptionContext(p.Token, p.PlanId, p.OrganizationId, ct);
 		if (error != null) return new UResponse<SubscriptionBuyResponse?>(null, error.Status, error.Message);
 		DateTime now = DateTime.UtcNow;
-		(SubscriptionQuoteResponse? quote, List<Guid> replaces, string? quoteError) = Quote(org, plan!, p.Months, p.Trial, now);
+		bool trialUsed = p.Trial && await TrialUsed(org?.OwnerId ?? u!.Id, ct);
+		(SubscriptionQuoteResponse? quote, List<Guid> replaces, string? quoteError) = Quote(org, plan!, p.Months, p.Trial, trialUsed, now);
 		if (quote == null) return new UResponse<SubscriptionBuyResponse?>(null, Usc.BadRequest, quoteError!);
 
 		if (org == null) {
@@ -700,13 +706,22 @@ public class OrganizationService(
 		return await CanManage(u, organizationId.Value, permission, ct) ? (u, null) : (null, new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction")));
 	}
 
+	private Task<bool> IsMember(Guid organizationId, Guid userId, CancellationToken ct) =>
+		db.Set<OrganizationEntity>().AnyAsync(x => x.Id == organizationId && (x.OwnerId == userId || x.AdminUserIds.Contains(userId)), ct);
+
+	private async Task<UResponse?> StaffTargetError(Guid organizationId, Guid? userId, Guid? placeId, CancellationToken ct) {
+		if (userId != null && !await IsMember(organizationId, userId.Value, ct)) return new UResponse(Usc.BadRequest, ls.Get("userIsNotAMemberOfThisOrganization"));
+		if (placeId != null && !await IsPlaceOf(organizationId, placeId.Value, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		return null;
+	}
+
 	private IQueryable<string?> NameOf(Guid? userId) => db.Set<UserEntity>().Where(x => x.Id == userId).Select(x => x.FirstName + " " + x.LastName);
 
 	public async Task<UResponse<Guid?>> CreateShift(StaffShiftCreateParams p, CancellationToken ct) {
 		(JwtClaimData? u, UResponse? error) = await Staff(p.Token, p.OrganizationId, TagUser.PermissionManageStaff, ct);
 		if (error != null) return new UResponse<Guid?>(null, error.Status, error.Message);
 		if (p.EndAt <= p.StartAt) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("endDateMustBeAfterStartDate"));
-		if (!await db.Set<UserEntity>().AnyAsync(x => x.Id == p.UserId, ct)) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("accountNotFound"));
+		if (await StaffTargetError(p.OrganizationId, p.UserId, p.PlaceId, ct) is { } targetError) return new UResponse<Guid?>(null, targetError.Status, targetError.Message);
 
 		Guid id = Guid.CreateVersion7();
 		await db.Set<StaffShiftEntity>().AddAsync(new StaffShiftEntity {
@@ -764,6 +779,7 @@ public class OrganizationService(
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("itemNotFound"));
 		(_, UResponse? error) = await Staff(p.Token, e.OrganizationId, TagUser.PermissionManageStaff, ct);
 		if (error != null) return error;
+		if (await StaffTargetError(e.OrganizationId, p.UserId, p.PlaceId, ct) is { } targetError) return targetError;
 
 		if (p.UserId != null) e.UserId = p.UserId.Value;
 		if (p.StartAt != null) e.StartAt = p.StartAt.Value;
@@ -822,6 +838,7 @@ public class OrganizationService(
 
 		if (!await HasModule(u, organizationId, TagModule.Staff, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("subscriptionInactive"));
 		bool staff = await CanManage(u, organizationId.Value, TagUser.PermissionManageStaff, ct);
+		if (staff && await StaffTargetError(organizationId.Value, p.AssigneeId, null, ct) is { } targetError) return new UResponse<Guid?>(null, targetError.Status, targetError.Message);
 		if (!staff) {
 			bool resident = false;
 			if (p.PlaceId != null)
@@ -898,6 +915,7 @@ public class OrganizationService(
 		bool staff = await CanManage(u, e.OrganizationId, TagUser.PermissionManageStaff, ct);
 		if (!staff && e.AssigneeId != u.Id) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
+		if (staff && await StaffTargetError(e.OrganizationId, p.AssigneeId, p.PlaceId, ct) is { } targetError) return targetError;
 		bool wasDone = e.Tags.Contains(TagStaffTask.Done);
 		Guid? oldAssignee = e.AssigneeId;
 		if (staff) {

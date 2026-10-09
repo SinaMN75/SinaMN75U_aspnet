@@ -42,7 +42,7 @@ public static class DormRoutes {
 		r.MapPost("DormBedInvoice/Receive", async (InvoiceReceiveParams p, IDormService s, CancellationToken c) => (await s.ReceiveDormBedInvoice(p, c)).ToResult()).Produces<UResponse>();
 
 		r.MapPost("Dashboard/Read", async (DashboardRangeParams p, IDormService s, CancellationToken ct) => (await s.ReadDormDashboard(p, ct)).ToResult()).Produces<UResponse<DormDashboardResponse>>();
-		r.MapPost("Seed", async (IDormService s, CancellationToken c) => (await s.SeedDorms(c)).ToResult()).Produces<UResponse<List<KeyValue>>>();
+		r.MapPost("Seed", async (BaseParams p, IDormService s, CancellationToken c) => (await s.SeedDorms(p, c)).ToResult()).Produces<UResponse<List<KeyValue>>>();
 
 		r.MapPost("DormBedContract/Checklist", async (DormBedContractChecklistParams p, IDormService s, CancellationToken c) => (await s.SetDormBedContractChecklist(p, c)).ToResult()).Produces<UResponse>();
 		r.MapPost("DormBedContract/Print", async (IdParams p, IDormService s, CancellationToken c) => (await s.PrintDormBedContract(p, c)).ToResult()).Produces<UResponse<string>>();

@@ -344,6 +344,7 @@ public class SportService(
 		if (p.Capacity is < 2) return new UResponse(Usc.BadRequest, ls.Get("capacityMustBeAtLeastTwo"));
 
 		List<TagTournament> before = Group(e.Tags, 100).Concat(Group(e.Tags, 200)).ToList();
+		bool wasCancelled = e.Tags.Contains(TagTournament.Cancelled);
 		if (p.Title.IsNotNullOrEmpty()) e.Title = p.Title;
 		if (p.StartDate.HasValue) e.StartDate = p.StartDate.Value;
 		if (p.Capacity.HasValue) e.Capacity = p.Capacity.Value;
@@ -370,7 +371,7 @@ public class SportService(
 			return new UResponse(Usc.Conflict, ls.Get("tournamentHasStarted"));
 
 		await db.SaveChangesAsync(ct);
-		if (e.Tags.Contains(TagTournament.Cancelled)) {
+		if (!wasCancelled && e.Tags.Contains(TagTournament.Cancelled)) {
 			List<TournamentEntryEntity> entries = await db.Set<TournamentEntryEntity>().AsTracking().Include(x => x.Users).Where(x => x.TournamentId == e.Id).ToListAsync(ct);
 			foreach (TournamentEntryEntity entry in entries) await RefundEntry(entry, e.Title, ct);
 			await db.AddNotifications(entries.SelectMany(x => x.Users.Select(u => u.Id)), userData.Id, "notifTournamentCancelled", e.Title, "tournament", e.Id, ct);
@@ -1749,6 +1750,7 @@ public class SportService(
 	/// past action is then moved back to its date. Every seed user has a fixed id, so Reset removes what an earlier run made
 	/// and nothing else. Sign in to the app with demo@sportopia.app / Sport@1234.
 	public async Task<UResponse<SportSeedResponse?>> SeedSportopia(SportSeedParams p, CancellationToken ct) {
+		if (ts.ExtractClaims(p.Token) is not { IsSystemAdmin: true }) return new UResponse<SportSeedResponse?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		_ct = ct;
 		_userIds = Users.Select(x => SeedId($"user:{x.Key}")).ToList();
 		DateTime now = DateTime.UtcNow;

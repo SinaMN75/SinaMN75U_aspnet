@@ -126,7 +126,7 @@ public class ChargeInternetService(
 			ReservePath = "api/v2/Topup/Reserve",
 			ReserveAttachments = new Dictionary<string, string> {
 				{ "subscriber", subscriber },
-				{ "amount", p.Amount.ToIntString() },
+				{ "amount", p.OperatorId == "2" ? (p.Amount / 10).ToIntString() : p.Amount.ToIntString() },
 				{ "operator_id", p.OperatorId },
 				{ "device", Device },
 				{ "type", type }

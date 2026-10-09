@@ -37,7 +37,7 @@ public static class HotelRoutes {
 		r.MapPost("HotelInvoice/Receive", async (InvoiceReceiveParams p, IHotelService s, CancellationToken c) => (await s.ReceiveHotelInvoice(p, c)).ToResult()).Produces<UResponse>();
 
 		r.MapPost("Dashboard/Read", async (DashboardRangeParams p, IHotelService s, CancellationToken ct) => (await s.ReadHotelDashboard(p, ct)).ToResult()).Produces<UResponse<HotelDashboardResponse>>();
-		r.MapPost("Seed", async (IHotelService s, CancellationToken c) => (await s.SeedHotels(c)).ToResult()).Produces<UResponse<List<KeyValue>>>();
+		r.MapPost("Seed", async (BaseParams p, IHotelService s, CancellationToken c) => (await s.SeedHotels(p, c)).ToResult()).Produces<UResponse<List<KeyValue>>>();
 
 		r.MapPost("HotelRate/Create", async (HotelRateCreateParams p, IHotelService s, CancellationToken c) => (await s.CreateHotelRate(p, c)).ToResult()).Produces<UResponse<Guid?>>();
 		r.MapPost("HotelRate/Read", async (HotelRateReadParams p, IHotelService s, CancellationToken c) => (await s.ReadHotelRates(p, c)).ToResult()).Produces<UResponse<IEnumerable<HotelRateResponse>>>();

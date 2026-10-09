@@ -426,7 +426,7 @@ public class InventoryService(
 		if (!await db.Set<WarehouseEntity>().AnyAsync(x => x.Id == p.WarehouseId && x.OrganizationId == p.OrganizationId, ct)) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("itemNotFound"));
 		if (p.SupplierId != null && !await db.Set<SupplierEntity>().AnyAsync(x => x.Id == p.SupplierId && x.OrganizationId == p.OrganizationId, ct)) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("itemNotFound"));
 		List<Guid> itemIds = p.Lines.Select(x => x.ItemId).Distinct().ToList();
-		if (p.Lines.Any(x => x.Quantity <= 0 || x.UnitPrice < 0) || await db.Set<InventoryItemEntity>().CountAsync(x => itemIds.Contains(x.Id) && x.OrganizationId == p.OrganizationId, ct) != itemIds.Count)
+		if (p.Lines.Count == 0 || p.Lines.Any(x => x.Quantity <= 0 || x.UnitPrice < 0) || await db.Set<InventoryItemEntity>().CountAsync(x => itemIds.Contains(x.Id) && x.OrganizationId == p.OrganizationId, ct) != itemIds.Count)
 			return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("quantityIsNotValid"));
 
 		int last = await db.Set<PurchaseEntity>().Where(x => x.OrganizationId == p.OrganizationId).MaxAsync(x => (int?)x.Number, ct) ?? 0;

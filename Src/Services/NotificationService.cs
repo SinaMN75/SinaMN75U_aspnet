@@ -37,6 +37,10 @@ public class NotificationService(
 		if (userData.IsExpired) return new UResponse<IEnumerable<NotificationResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		IQueryable<NotificationEntity> q = db.Set<NotificationEntity>().ApplyReadParams(p);
+		if (!userData.IsAdmin) {
+			Guid uid = userData.Id;
+			q = q.Where(x => x.UserId == uid);
+		}
 		
 		if (p.UserId.IsNotNull()) q = q.Where(x => x.UserId == p.UserId);
 		

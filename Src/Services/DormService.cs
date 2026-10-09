@@ -38,7 +38,7 @@ public interface IDormService {
 	public Task ReopenPayment(Guid sourceId, decimal amount, CancellationToken ct);
 	public Task<List<AccountingDue>> Outstanding(Guid organizationId, DateTime now, CancellationToken ct);
 	public Task<UResponse<DormDashboardResponse?>> ReadDormDashboard(DashboardRangeParams p, CancellationToken ct);
-	public Task<UResponse<List<KeyValue>?>> SeedDorms(CancellationToken ct = default);
+	public Task<UResponse<List<KeyValue>?>> SeedDorms(BaseParams p, CancellationToken ct);
 	public Task<UResponse> SetDormBedContractChecklist(DormBedContractChecklistParams p, CancellationToken ct);
 	public Task<UResponse<Guid?>> CreateDormApplication(DormApplicationCreateParams p, CancellationToken ct);
 	public Task<UResponse<IEnumerable<DormApplicationResponse>?>> ReadDormApplications(DormApplicationReadParams p, CancellationToken ct);
@@ -454,7 +454,8 @@ public class DormService(
 		DormBedEntity? bed = await db.Set<DormBedEntity>().Include(x => x.Contracts).Include(x => x.Room).ThenInclude(x => x.Dorm).FirstOrDefaultAsync(x => x.Id == p.BedId, ct);
 		if (bed == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("dormBedNotFound"));
 		if (!await CanAct(userData, bed.Room.Dorm, TagUser.PermissionManageContracts, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
-		if (bed.Contracts.Any(y => y.EndDate >= DateTime.UtcNow)) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("thisBedHasAnActiveContract"));
+		if (p.EndDate <= p.StartDate) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("endDateMustBeAfterStartDate"));
+		if (Overlaps(bed.Contracts, null, p.StartDate, p.EndDate)) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("thisBedHasAnActiveContract"));
 
 		UserEntity? user = await db.Set<UserEntity>().FirstOrDefaultAsync(x => x.Id == p.UserId, ct);
 		if (user == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("accountNotFound"));
@@ -509,80 +510,8 @@ public class DormService(
 			return new UResponse<Guid?>(e.Id);
 		}
 
-		if (e.Deposit >= 1)
-			await db.Set<DormBedInvoiceEntity>().AddAsync(new DormBedInvoiceEntity {
-				Id = Guid.CreateVersion7(),
-				CreatorId = p.CreatorId ?? userData.Id,
-				CreatedAt = DateTime.UtcNow,
-				Tags = [TagDormBedInvoice.NotPaid, TagDormBedInvoice.Deposit],
-				DebtAmount = e.Deposit,
-				CreditorAmount = 0,
-				PaidAmount = 0,
-				PenaltyAmount = 0,
-				ContractId = contractId,
-				DueDate = p.StartDate,
-				JsonData = new DormBedInvoiceJson { PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate }
-			}, ct);
-
-		PersianDateTime startDate = e.StartDate.ToPersian();
-		PersianDateTime endDate = e.EndDate.ToPersian();
-
-		decimal rent = bed.MonthlyRent;
-
-		int totalMonths = (endDate.Year - startDate.Year) * 12 + (endDate.Month - startDate.Month);
-		if (endDate.Day < startDate.Day) totalMonths--;
-
-		await db.Set<DormBedInvoiceEntity>().AddAsync(new DormBedInvoiceEntity {
-			Id = Guid.CreateVersion7(),
-			CreatorId = p.CreatorId ?? userData.Id,
-			CreatedAt = DateTime.UtcNow,
-			Tags = [TagDormBedInvoice.NotPaid, TagDormBedInvoice.Rent],
-			DebtAmount = rent,
-			CreditorAmount = 0,
-			PaidAmount = 0,
-			PenaltyAmount = 0,
-			ContractId = contractId,
-			DueDate = startDate.ToDateTime(),
-			JsonData = new DormBedInvoiceJson { PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate }
-		}, ct);
-
-		if (totalMonths >= 1) {
-			int remainingDaysInFirstMonth = PersianDateTime.DaysInMonth(startDate.Year, startDate.Month) - startDate.Day + 1;
-			int totalDaysInFirstMonth = PersianDateTime.DaysInMonth(startDate.Year, startDate.Month);
-			decimal proportionalPrice = remainingDaysInFirstMonth / (decimal)totalDaysInFirstMonth * rent;
-
-			await db.Set<DormBedInvoiceEntity>().AddAsync(new DormBedInvoiceEntity {
-				Id = Guid.CreateVersion7(),
-				CreatorId = p.CreatorId ?? userData.Id,
-				CreatedAt = DateTime.UtcNow,
-				Tags = [TagDormBedInvoice.NotPaid, TagDormBedInvoice.Rent],
-				DebtAmount = Math.Round(proportionalPrice, 2),
-				CreditorAmount = 0,
-				PaidAmount = 0,
-				PenaltyAmount = 0,
-				ContractId = contractId,
-				DueDate = startDate.AddMonths(1).ToDateTime(),
-				JsonData = new DormBedInvoiceJson { PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate }
-			}, ct);
-		}
-
-		for (int i = 2; i <= totalMonths; i++) {
-			PersianDateTime firstOfMonth = startDate.AddMonths(i).StartOfMonth;
-
-			await db.Set<DormBedInvoiceEntity>().AddAsync(new DormBedInvoiceEntity {
-				Id = Guid.CreateVersion7(),
-				CreatorId = p.CreatorId ?? userData.Id,
-				CreatedAt = DateTime.UtcNow,
-				Tags = [TagDormBedInvoice.NotPaid, TagDormBedInvoice.Rent],
-				DebtAmount = rent,
-				CreditorAmount = 0,
-				PaidAmount = 0,
-				PenaltyAmount = 0,
-				ContractId = contractId,
-				DueDate = firstOfMonth.ToDateTime(),
-				JsonData = new DormBedInvoiceJson { PenaltyPrecentEveryDate = p.PenaltyPrecentEveryDate }
-			}, ct);
-		}
+		if (e.Deposit >= 1) await db.Set<DormBedInvoiceEntity>().AddAsync(NewDormBedInvoice(e, p.CreatorId ?? userData.Id, [TagDormBedInvoice.NotPaid, TagDormBedInvoice.Deposit], e.Deposit, p.StartDate, p.PenaltyPrecentEveryDate), ct);
+		await AddRentInvoices(e, e.StartDate, e.EndDate, e.Rent, p.CreatorId ?? userData.Id, p.PenaltyPrecentEveryDate, ct);
 
 		await AddNotification(user.Id, TagNotification.InvoiceIssued, ls.Get("newInvoicesIssued"), bed.Room.Dorm.Title, ct);
 		await db.SaveChangesAsync(ct);
@@ -640,6 +569,7 @@ public class DormService(
 		if (p.EmergencyRelation != null) e.JsonData.EmergencyRelation = p.EmergencyRelation;
 
 		e.ApplyUpdateParam<DormBedContractEntity, TagDormBedContract, DormBedContractJson>(p);
+		if (e.EndDate <= e.StartDate) return new UResponse(Usc.BadRequest, ls.Get("endDateMustBeAfterStartDate"));
 		await db.SaveChangesAsync(ct);
 
 		return new UResponse();
@@ -806,7 +736,6 @@ public class DormService(
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("invoiceNotFound"));
 		if (!e.Tags.Contains(TagDormBedInvoice.NotPaid)) return new UResponse(Usc.Conflict, ls.Get("thisInvoiceHasAlreadyBeenPaid"));
 
-		// Claim NotPaid→PaidOnline atomically first so concurrent payments of the same invoice can't charge twice.
 		List<TagDormBedInvoice> unpaidTags = e.Tags.ToList();
 		List<TagDormBedInvoice> paidTags = [TagDormBedInvoice.PaidOnline];
 		int claimed = await db.Set<DormBedInvoiceEntity>().Where(x => x.Id == e.Id && x.Tags.Contains(TagDormBedInvoice.NotPaid)).ExecuteUpdateAsync(u => u.SetProperty(x => x.Tags, paidTags), ct);
@@ -871,20 +800,22 @@ public class DormService(
 		}
 
 		var rawData = await invoiceQuery
-			.GroupBy(x => x.CreatedAt.Month)
+			.Where(x => x.CreatedAt >= DateTime.UtcNow.AddMonths(-12))
+			.GroupBy(x => new { x.CreatedAt.Year, x.CreatedAt.Month })
 			.Select(g => new {
-				MonthNumber = g.Key,
+				g.Key.Year,
+				MonthNumber = g.Key.Month,
 				TotalDebt = g.Sum(x => x.DebtAmount),
 				TotalPaid = g.Sum(x => x.PaidAmount),
 				TotalPenalty = g.Sum(x => x.PenaltyAmount),
 				TotalRemaining = g.Sum(x => x.DebtAmount - x.PaidAmount),
 				InvoiceCount = g.Count()
 			})
-			.OrderBy(x => x.MonthNumber)
+			.OrderBy(x => x.Year).ThenBy(x => x.MonthNumber)
 			.ToListAsync(ct);
 
 		List<DormBedInvoiceChartResponse> chartData = rawData.Select(item => new DormBedInvoiceChartResponse {
-			Month = new DateTime(1, item.MonthNumber, 1).ToString("MMM"),
+			Month = new DateTime(item.Year, item.MonthNumber, 1).ToString("MMM yyyy"),
 			TotalDebt = item.TotalDebt,
 			TotalPaid = item.TotalPaid,
 			TotalPenalty = item.TotalPenalty,
@@ -913,6 +844,22 @@ public class DormService(
 		DueDate = dueDate,
 		JsonData = new DormBedInvoiceJson { PenaltyPrecentEveryDate = penaltyPercent }
 	};
+
+	private static bool Overlaps(IEnumerable<DormBedContractEntity> contracts, Guid? except, DateTime from, DateTime to) =>
+		contracts.Any(x => x.Id != except && !x.Tags.Contains(TagDormBedContract.Settled) && x.StartDate <= to && x.EndDate >= from);
+
+	private async Task AddRentInvoices(DormBedContractEntity e, DateTime from, DateTime to, decimal rent, Guid creatorId, int penaltyPercent, CancellationToken ct) {
+		PersianDateTime cursor = from.ToPersian();
+		while (cursor.ToDateTime().Date <= to.Date) {
+			PersianDateTime next = cursor.AddMonths(1).StartOfMonth;
+			DateTime periodEnd = next.ToDateTime().AddDays(-1) < to.Date ? next.ToDateTime().AddDays(-1) : to.Date;
+			int days = (periodEnd - cursor.ToDateTime().Date).Days + 1;
+			int monthDays = PersianDateTime.DaysInMonth(cursor.Year, cursor.Month);
+			decimal amount = days >= monthDays ? rent : Math.Round(rent * days / monthDays, 2);
+			await db.Set<DormBedInvoiceEntity>().AddAsync(NewDormBedInvoice(e, creatorId, [TagDormBedInvoice.NotPaid, TagDormBedInvoice.Rent], amount, cursor.ToDateTime(), penaltyPercent), ct);
+			cursor = next;
+		}
+	}
 
 	private async Task<DormBedContractEntity?> ContractForChange(Guid id, CancellationToken ct) =>
 		await db.Set<DormBedContractEntity>().AsTracking()
@@ -951,8 +898,9 @@ public class DormService(
 
 		DormBedInvoiceEntity? current = rents.LastOrDefault(x => x.DueDate <= end);
 		if (current != null) {
-			PersianDateTime start = current.DueDate.ToPersian();
-			decimal fraction = Math.Min(1, ((end.Date - current.DueDate.Date).Days + 1) / (decimal)PersianDateTime.DaysInMonth(start.Year, start.Month));
+			DateTime periodEnd = rents.FirstOrDefault(x => x.DueDate > current.DueDate)?.DueDate.Date.AddDays(-1) ?? e.EndDate.Date;
+			int periodDays = Math.Max(1, (periodEnd - current.DueDate.Date).Days + 1);
+			decimal fraction = Math.Clamp(((end.Date - current.DueDate.Date).Days + 1) / (decimal)periodDays, 0, 1);
 			if (current.Tags.Contains(TagDormBedInvoice.NotPaid)) {
 				current.DebtAmount = Math.Round(current.DebtAmount * fraction, 2);
 				await SyncDormBedInvoice(current, false, ct);
@@ -967,17 +915,19 @@ public class DormService(
 
 		decimal applied = 0;
 		foreach (DormBedInvoiceEntity u in e.Invoices.Where(x => x.Tags.Contains(TagDormBedInvoice.NotPaid) && db.Entry(x).State != EntityState.Deleted).OrderBy(x => x.DueDate).ToList()) {
+			if (pool <= 0) break;
 			decimal due = DueOf(u);
-			if (due <= 0 || pool < due) continue;
-			u.PaidAmount += due;
-			u.Tags = [..u.Tags.Where(x => x != TagDormBedInvoice.NotPaid), TagDormBedInvoice.Paid];
-			pool -= due;
-			applied += due;
+			if (due <= 0) continue;
+			decimal pay = Math.Min(due, pool);
+			u.PaidAmount += pay;
+			if (pay == due) u.Tags = [..u.Tags.Where(x => x != TagDormBedInvoice.NotPaid), TagDormBedInvoice.Paid];
+			pool -= pay;
+			applied += pay;
 			await SyncDormBedInvoice(u, false, ct);
 		}
 
 		if (pool < 0) {
-			DormBedInvoiceEntity extra = NewDormBedInvoice(e, userData.Id, [TagDormBedInvoice.NotPaid, TagDormBedInvoice.Service], -pool, DateTime.UtcNow, 0);
+			DormBedInvoiceEntity extra = NewDormBedInvoice(e, userData.Id, [TagDormBedInvoice.NotPaid, TagDormBedInvoice.Damage], -pool, DateTime.UtcNow, 0);
 			extra.Contract = e;
 			await db.Set<DormBedInvoiceEntity>().AddAsync(extra, ct);
 			await SyncDormBedInvoice(extra, false, ct);
@@ -1026,19 +976,11 @@ public class DormService(
 		if (!await CanAct(userData, e.Bed.Room.Dorm, TagUser.PermissionManageContracts, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		if (e.Tags.Contains(TagDormBedContract.Settled)) return new UResponse(Usc.Conflict, ls.Get("thisContractIsAlreadySettled"));
 		if (p.EndDate.Date <= e.EndDate.Date) return new UResponse(Usc.BadRequest, ls.Get("theNewEndDateMustBeAfterTheCurrentOne"));
+		if (Overlaps(await db.Set<DormBedContractEntity>().Where(x => x.BedId == e.BedId).ToListAsync(ct), e.Id, e.EndDate.AddDays(1), p.EndDate)) return new UResponse(Usc.Conflict, ls.Get("thisBedHasAnActiveContract"));
 
 		decimal rent = p.Rent ?? e.Rent;
 		int penaltyPercent = e.Invoices.OrderBy(x => x.CreatedAt).LastOrDefault()?.JsonData.PenaltyPrecentEveryDate ?? 0;
-		PersianDateTime cursor = e.EndDate.Date.AddDays(1).ToPersian();
-		while (cursor.ToDateTime() <= p.EndDate.Date) {
-			PersianDateTime next = cursor.AddMonths(1).StartOfMonth;
-			DateTime periodEnd = next.ToDateTime().AddDays(-1) < p.EndDate.Date ? next.ToDateTime().AddDays(-1) : p.EndDate.Date;
-			int days = (periodEnd - cursor.ToDateTime()).Days + 1;
-			int monthDays = PersianDateTime.DaysInMonth(cursor.Year, cursor.Month);
-			decimal amount = days >= monthDays ? rent : Math.Round(rent * days / monthDays, 2);
-			await db.Set<DormBedInvoiceEntity>().AddAsync(NewDormBedInvoice(e, userData.Id, [TagDormBedInvoice.NotPaid, TagDormBedInvoice.Rent], amount, cursor.ToDateTime(), penaltyPercent), ct);
-			cursor = next;
-		}
+		await AddRentInvoices(e, e.EndDate.Date.AddDays(1), p.EndDate, rent, userData.Id, penaltyPercent, ct);
 
 		e.EndDate = p.EndDate;
 		e.Rent = rent;
@@ -1062,7 +1004,7 @@ public class DormService(
 		if (to == null) return new UResponse(Usc.NotFound, ls.Get("dormBedNotFound"));
 		if (!await CanAct(userData, to.Room.Dorm, TagUser.PermissionManageContracts, ct)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		if (to.Room.Dorm.OrganizationId != e.Bed.Room.Dorm.OrganizationId) return new UResponse(Usc.Conflict, ls.Get("bedsOfAnotherOrganization"));
-		if (to.Contracts.Any(x => x.Id != e.Id && x.EndDate >= now && !x.Tags.Contains(TagDormBedContract.Settled))) return new UResponse(Usc.Conflict, ls.Get("thisBedHasAnActiveContract"));
+		if (Overlaps(to.Contracts, e.Id, p.Date ?? now, e.EndDate)) return new UResponse(Usc.Conflict, ls.Get("thisBedHasAnActiveContract"));
 
 		DateTime date = p.Date ?? now;
 		e.JsonData.BedHistory = [..e.JsonData.BedHistory, new ContractBedChange { BedId = e.BedId, From = e.JsonData.BedHistory.LastOrDefault()?.To ?? e.StartDate, To = date }];
@@ -1261,6 +1203,7 @@ public class DormService(
 			.ToListAsync(ct);
 		List<DormBedInvoiceChartResponse> monthlyRevenue = recentInvoices
 			.GroupBy(x => new { x.CreatedAt.Year, x.CreatedAt.Month })
+			.OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month)
 			.Select(g => new DormBedInvoiceChartResponse {
 				Month = new DateTime(g.Key.Year, g.Key.Month, 1).ToString("MMM yyyy"),
 				TotalDebt = g.Sum(x => x.DebtAmount),
@@ -1269,7 +1212,7 @@ public class DormService(
 				TotalRemaining = g.Sum(x => x.DebtAmount - x.PaidAmount),
 				InvoiceCount = g.Count()
 			})
-			.OrderBy(x => x.Month).ToList();
+			.ToList();
 
 		List<DormBedContractEntity> expiringEntities = await contracts
 			.Include(x => x.User).Include(x => x.Bed).ThenInclude(x => x.Room).ThenInclude(x => x.Dorm)
@@ -1340,7 +1283,8 @@ public class DormService(
 		});
 	}
 
-	public async Task<UResponse<List<KeyValue>?>> SeedDorms(CancellationToken ct = default) {
+	public async Task<UResponse<List<KeyValue>?>> SeedDorms(BaseParams p, CancellationToken ct) {
+		if (ts.ExtractClaims(p.Token) is not { IsSystemAdmin: true }) return new UResponse<List<KeyValue>?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 		Guid adminId = Core.App.Users.SystemAdmin.Id;
 		DateTime now = DateTime.UtcNow;
 		DateTime today = now.Date;
@@ -1373,8 +1317,6 @@ public class DormService(
 			JsonData = new CommentJson()
 		};
 
-		// ---------------------------------------------------------------- dorms
-		// Residents, amenities, meals and what the rent includes are tags; the Json only keeps texts and numbers.
 		(string Title, string City, string Address, string Phone, List<TagDorm> Tags, DormJson Json, (string Title, int Beds, decimal Rent, decimal Deposit, double Size, int Floor, List<TagDormRoom> Tags)[] Rooms)[] dormSeeds = [
 			("خوابگاه دخترانه‌ی نگین", "108012", "تهران، امیرآباد شمالی، خیابان چهارم", "02166001000",
 				[
@@ -1465,7 +1407,6 @@ public class DormService(
 					("اتاق دو نفره", 2, 2_000_000m, 8_000_000m, 15, 2, [TagDormRoom.Double, TagDormRoom.Desk, TagDormRoom.Heating])
 				]),
 
-			// Built without the Active tag to show the "hidden" state: the site and the app do not list it.
 			("خوابگاه دخترانه‌ی آرام کرج", "105009", "کرج، گوهردشت، فاز ۳", "02634700700",
 				[TagDorm.Girls, TagDorm.Inactive, TagDorm.Bachelor, TagDorm.Wifi, TagDorm.Garden, TagDorm.SharedKitchen],
 				new DormJson { Highlights = ["سی تخت", "حیاط بزرگ"], Description = "کوچک‌ترین مجموعه‌ی ما؛ سی تخت، حیاط و سکوت.", NearbyUniversity = "دانشگاه آزاد کرج", Latitude = 35.83, Longitude = 50.93 },
@@ -1501,7 +1442,6 @@ public class DormService(
 						JsonData = new DormBedJson { Description = "تخت با تشک طبی." }
 					});
 
-					// pattern per bed: 0 = active contract, 1 = expired contract, 2 = free (no contract); inactive dorms have none
 					int pattern = (b + roomNumber + dormIndex) % 3;
 					if (d.Tags.Contains(TagDorm.Inactive) || pattern == 2) continue;
 
@@ -1518,7 +1458,7 @@ public class DormService(
 						Id = Guid.CreateVersion7(), CreatedAt = start.AddDays(-5), CreatorId = adminId, Tags = [TagDormBedInvoice.Deposit, TagDormBedInvoice.Paid, TagDormBedInvoice.PaidOnline],
 						DebtAmount = r.Deposit, CreditorAmount = 0, PaidAmount = r.Deposit, PenaltyAmount = 0, ContractId = contractId, DueDate = start, JsonData = new DormBedInvoiceJson { PenaltyPrecentEveryDate = 1 }
 					});
-					bool lateResident = active && b == 0; // the first active resident of every room is late with the last rent
+					bool lateResident = active && b == 0;
 					for (int m = 0; start.AddMonths(m) < end; m++) {
 						DateTime due = start.AddMonths(m);
 						bool inPast = due < today;
@@ -2002,6 +1942,7 @@ public class DormService(
 		else {
 			if (p.StartAt == null) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("dateIsRequired"));
 			if (!manager && !await IsResidentOf(userId, dorm.Id, ct)) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youHaveNoActiveContractHere"));
+			if (!manager && p.StartAt < DateTime.UtcNow) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("theStartTimeIsInThePast"));
 			if (dorm.JsonData.LaundryMachines.Count != 0 && !dorm.JsonData.LaundryMachines.Contains(p.Resource ?? "")) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("selectALaundryMachine"));
 			e.EndAt = p.EndAt ?? e.StartAt.AddMinutes(dorm.JsonData.LaundrySlotMinutes ?? 60);
 			if (e.EndAt <= e.StartAt) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("endDateMustBeAfterStartDate"));

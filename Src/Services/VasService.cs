@@ -17,7 +17,7 @@ public class VasService(
 
 		VasEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
-			CreatorId = p.CreatorId ?? userData.Id,
+			CreatorId = userData.IsAdmin ? p.CreatorId ?? userData.Id : userData.Id,
 			Amount = p.Amount,
 			AuthorizeCode = p.AuthorizeCode,
 			BillId = p.BillId,
@@ -35,7 +35,13 @@ public class VasService(
 	}
 
 	public async Task<UResponse<IEnumerable<VasResponse>?>> Read(VasReadParams p, CancellationToken ct) {
+		JwtClaimData? userData = ts.ExtractClaims(p.Token);
+		if (userData == null) return new UResponse<IEnumerable<VasResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		IQueryable<VasEntity> q = db.Set<VasEntity>().ApplyReadParams(p);
+		if (!userData.IsAdmin) {
+			Guid uid = userData.Id;
+			q = q.Where(x => x.CreatorId == uid);
+		}
 
 		if (p.AuthorizeCode.IsNotNullOrEmpty()) q = q.Where(x => x.AuthorizeCode == p.AuthorizeCode);
 		if (p.BillId.IsNotNullOrEmpty()) q = q.Where(x => x.BillId == p.BillId);

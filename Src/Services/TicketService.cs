@@ -44,6 +44,10 @@ public class TicketService(
 		if (userData.IsExpired) return new UResponse<IEnumerable<TicketResponse>?>(null, Usc.ExpiredToken, ls.Get("authTokenIsExpired"));
 
 		IQueryable<TicketEntity> q = db.Set<TicketEntity>().ApplyReadParams(p);
+		if (!userData.IsAdmin) {
+			Guid uid = userData.Id;
+			q = q.Where(x => x.CreatorId == uid);
+		}
 		
 		IQueryable<TicketResponse> projected = q.Select(Projections.TicketSelector(p.SelectorArgs));
 		return await projected.ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
