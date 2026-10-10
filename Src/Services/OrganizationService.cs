@@ -551,7 +551,8 @@ public class OrganizationService(
 			if (p.Title.IsNullOrEmpty() || p.Title!.Trim().Length < 2) return new UResponse<SubscriptionBuyResponse?>(null, Usc.BadRequest, ls.Get("titleIsRequired"));
 			UserEntity? owner = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == u!.Id, ct);
 			if (owner == null) return new UResponse<SubscriptionBuyResponse?>(null, Usc.NotFound, ls.Get("accountNotFound"));
-			if (!SetFirstAdminPassword(owner, p.Password)) return new UResponse<SubscriptionBuyResponse?>(null, Usc.BadRequest, ls.Get("pleaseEnterAPassword"));
+			if (owner.FirstName.IsNullOrEmpty() || owner.LastName.IsNullOrEmpty() || owner.UserName == owner.PhoneNumber) return new UResponse<SubscriptionBuyResponse?>(null, Usc.BadRequest, ls.Get("completeYourAccountFirst"));
+			if (p.Password.IsNotNullOrEmpty()) owner.Password = UPasswordHasher.Hash(p.Password);
 			(string? card, string? account, string? iban, string? bankError) = Bank(p.CardNumber, p.AccountNumber, p.IBanNumber, true);
 			if (bankError != null) return new UResponse<SubscriptionBuyResponse?>(null, Usc.BadRequest, ls.Get(bankError));
 			org = await AddOrganization(Guid.CreateVersion7(), p.Title.Trim(), owner, owner.Id, [TagOrganization.Active], new OrganizationJson(), ct);
@@ -644,6 +645,7 @@ public class OrganizationService(
 	}
 
 	public async Task<bool> HasOrganizationPermission(JwtClaimData u, Guid? organizationId, TagUser permission, CancellationToken ct, TagModule? module = null) {
+		if (u.IsSystemAdmin) return true;
 		List<OrganizationEntity> organizations = await db.Set<OrganizationEntity>()
 			.Where(x => (organizationId == null || x.Id == organizationId) && !x.Tags.Contains(TagOrganization.Inactive) && (x.OwnerId == u.Id || x.AdminUserIds.Contains(u.Id)))
 			.ToListAsync(ct);

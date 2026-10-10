@@ -40,6 +40,9 @@ public class UserService(
 			: userData.HasPermission(TagUser.PermissionManageUsers) && p.Tags.All(userData.CanGrant);
 		if (!allowed) return new UResponse<Guid?>(null, Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
+		p.UserName = p.UserName.Trim();
+		if (await db.Set<UserEntity>().AnyAsync(x => x.UserName == p.UserName, ct)) return new UResponse<Guid?>(null, Usc.Conflict, ls.Get("thisUsernameIsAlreadyTaken"));
+
 		Guid userId = p.Id ?? Guid.CreateVersion7();
 		DateTime now = DateTime.UtcNow;
 		List<CategoryEntity>? categories = null;
@@ -135,6 +138,7 @@ public class UserService(
 			else p.SelectorArgs = new UserSelectorArgs();
 		}
 
+		if (p.Ids.Count == 0 && (p.Tags == null || !p.Tags.Contains(TagUser.Organization))) q = q.Where(u => !u.Tags.Contains(TagUser.Organization));
 		if (p.UserName.IsNotNullOrEmpty()) q = q.Where(u => u.UserName.Contains(p.UserName!));
 		if (p.FirstName.IsNotNullOrEmpty()) q = q.Where(u => (u.FirstName ?? "").Contains(p.FirstName!));
 		if (p.LastName.IsNotNullOrEmpty()) q = q.Where(u => (u.LastName ?? "").Contains(p.LastName!));
@@ -192,10 +196,14 @@ public class UserService(
 		List<TagUser> changedTags = newTags.Except(e.Tags).Concat(e.Tags.Except(newTags)).ToList();
 		if (IsTenant(userData) ? changedTags.Any(JwtClaimData.IsRoleTag) : !changedTags.All(userData.CanGrant)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
 
+		string? userName = p.UserName?.Trim();
+		if (userName.IsNotNullOrEmpty() && userName != e.UserName && await db.Set<UserEntity>().AnyAsync(x => x.UserName == userName && x.Id != e.Id, ct))
+			return new UResponse(Usc.Conflict, ls.Get("thisUsernameIsAlreadyTaken"));
+
 		if (p.Password.IsNotNullOrEmpty()) e.Password = UPasswordHasher.Hash(p.Password);
 		if (p.FirstName.IsNotNullOrEmpty()) e.FirstName = p.FirstName;
 		if (p.LastName.IsNotNullOrEmpty()) e.LastName = p.LastName;
-		if (p.UserName.IsNotNullOrEmpty()) e.UserName = p.UserName;
+		if (userName.IsNotNullOrEmpty()) e.UserName = userName!;
 		if (p.LandLine.IsNotNullOrEmpty()) e.LandLine = p.LandLine;
 		if (p.PhoneNumber.IsNotNullOrEmpty()) e.PhoneNumber = p.PhoneNumber;
 		if (p.Email.IsNotNullOrEmpty()) e.Email = p.Email;

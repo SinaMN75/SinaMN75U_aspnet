@@ -100,7 +100,9 @@ public class AuthService(
 		else if (p.UserName.IsNotNullOrEmpty()) users = users.Where(x => x.UserName == p.UserName);
 		else users = users.Where(x => x.Email == p.Email);
 		UserEntity? user = await users.FirstOrDefaultAsync(ct);
-		if (user == null || !UPasswordHasher.Verify(p.Password, user.Password)) {
+		if (user == null && p.UserName.IsNotNullOrEmpty() && PhoneForms(p.UserName).Count > 1) user = await ByPhone(db.Set<UserEntity>().AsTracking(), p.UserName).FirstOrDefaultAsync(ct);
+		bool otpDefault = user?.Email != null && user.Email == user.PhoneNumber && p.Password == user.PhoneNumber;
+		if (user == null || otpDefault || !UPasswordHasher.Verify(p.Password, user.Password)) {
 			RegisterFailedAttempt(lockKey);
 			return new UResponse<LoginResponse?>(null, Usc.NotFound, ls.Get("loginInformationIsWrong"));
 		}
@@ -170,11 +172,10 @@ public class AuthService(
 			Id = userId,
 			CreatedAt = now,
 			UserName = p.PhoneNumber,
-			Password = UPasswordHasher.Hash(p.PhoneNumber),
+			Password = UPasswordHasher.Hash(Guid.NewGuid().ToString()),
 			RefreshToken = ts.GenerateRefreshToken(),
 			RefreshTokenExpiresAt = ts.RefreshTokenExpiry(),
 			PhoneNumber = p.PhoneNumber,
-			Email = p.PhoneNumber,
 			JsonData = new UserJson(),
 			Tags = [],
 			CreatorId = Core.App.Users.SystemAdmin.Id,
