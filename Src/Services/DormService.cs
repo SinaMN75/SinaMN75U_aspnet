@@ -1852,6 +1852,10 @@ public class DormService(
 		if (u == null) return new UResponse<IEnumerable<DormMealResponse>?>(null, Usc.UnAuthorized, ls.Get("pleaseSignInToContinue"));
 		Guid uid = u.Id;
 		IQueryable<DormMealEntity> q = db.Set<DormMealEntity>().ApplyReadParams(p);
+		if (!OrganizationService.IsFull(u)) {
+			DateTime now = DateTime.UtcNow;
+			q = q.Where(x => x.Dorm.AdminUserIds.Contains(uid) || db.Set<DormBedContractEntity>().Any(c => c.UserId == uid && c.Bed.Room.DormId == x.DormId && c.EndDate >= now && !c.Tags.Contains(TagDormBedContract.Settled)));
+		}
 		if (p.DormId != null) q = q.Where(x => x.DormId == p.DormId);
 		if (p.FromDate != null) q = q.Where(x => x.Date >= p.FromDate);
 		if (p.ToDate != null) q = q.Where(x => x.Date <= p.ToDate);

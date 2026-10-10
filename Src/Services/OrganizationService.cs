@@ -151,7 +151,7 @@ public class OrganizationService(
 	}
 
 	private async Task<OrganizationEntity> AddOrganization(Guid id, string title, UserEntity owner, Guid creatorId, ICollection<TagOrganization> tags, OrganizationJson json, CancellationToken ct) {
-		if (!owner.Tags.Contains(TagUser.SuperAdmin)) owner.Tags = [..owner.Tags, TagUser.SuperAdmin];
+		if (Core.App.MultiTenant && !owner.Tags.Contains(TagUser.SuperAdmin)) owner.Tags = [..owner.Tags, TagUser.SuperAdmin];
 		DateTime now = DateTime.UtcNow;
 		await db.Set<UserEntity>().AddAsync(new UserEntity {
 			Id = id,
@@ -249,13 +249,13 @@ public class OrganizationService(
 			UserEntity? owner = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.OwnerId, ct);
 			if (owner == null) return new UResponse(Usc.NotFound, ls.Get("accountNotFound"));
 			if (!SetFirstAdminPassword(owner, p.OwnerPassword)) return new UResponse(Usc.BadRequest, ls.Get("pleaseEnterAPassword"));
-			if (!owner.Tags.Contains(TagUser.SuperAdmin)) owner.Tags = [..owner.Tags, TagUser.SuperAdmin];
+			if (Core.App.MultiTenant && !owner.Tags.Contains(TagUser.SuperAdmin)) owner.Tags = [..owner.Tags, TagUser.SuperAdmin];
 
 			Guid oldOwnerId = e.OwnerId;
 			e.OwnerId = owner.Id;
 			await ReplacePlaceAdmin(e.Id, oldOwnerId, owner.Id, ct);
 			UserEntity? oldOwner = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == oldOwnerId, ct);
-			if (oldOwner != null && !await db.Set<OrganizationEntity>().AnyAsync(x => x.Id != e.Id && x.OwnerId == oldOwnerId, ct))
+			if (Core.App.MultiTenant && oldOwner != null && !await db.Set<OrganizationEntity>().AnyAsync(x => x.Id != e.Id && x.OwnerId == oldOwnerId, ct))
 				oldOwner.Tags = oldOwner.Tags.Where(x => x != TagUser.SuperAdmin).ToList();
 		}
 
@@ -363,6 +363,7 @@ public class OrganizationService(
 		db.Set<T>().Where(x => x.OrganizationId == organizationId).ToDictionaryAsync(x => x.Id, x => x.Title, ct);
 
 	private async Task SyncMemberTags(UserEntity user, OrganizationEntity changed, CancellationToken ct) {
+		if (!Core.App.MultiTenant) return;
 		List<OrganizationEntity> organizations = await db.Set<OrganizationEntity>().Where(x => x.Id != changed.Id && x.AdminUserIds.Contains(user.Id)).ToListAsync(ct);
 		if (changed.AdminUserIds.Contains(user.Id)) organizations.Add(changed);
 		List<TagUser> tags = user.Tags.Where(x => x != TagUser.SubAdmin && (int)x is < 600 or >= 700).ToList();
@@ -540,6 +541,7 @@ public class OrganizationService(
 	}
 
 	public async Task<UResponse<SubscriptionBuyResponse?>> BuySubscription(SubscriptionBuyParams p, CancellationToken ct) {
+		if (!Core.App.MultiTenant) return new UResponse<SubscriptionBuyResponse?>(null, Usc.Forbidden, ls.Get("organizationsAreNotEnabledOnThisServer"));
 		(JwtClaimData? u, SubscriptionPlanEntity? plan, OrganizationEntity? org, UResponse? error) = await SubscriptionContext(p.Token, p.PlanId, p.OrganizationId, ct);
 		if (error != null) return new UResponse<SubscriptionBuyResponse?>(null, error.Status, error.Message);
 		DateTime now = DateTime.UtcNow;

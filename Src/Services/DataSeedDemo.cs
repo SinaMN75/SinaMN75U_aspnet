@@ -170,7 +170,7 @@ public partial class DataSeedService {
 		private async Task Users(IServiceProvider sp, CancellationToken ct) {
 			DbContext db = sp.GetRequiredService<DbContext>();
 			List<string> phones = People.Select(Phone).ToList();
-			Dictionary<string, Guid> existing = await db.Set<UserEntity>().Where(x => phones.Contains(x.UserName)).ToDictionaryAsync(x => x.UserName, x => x.Id, ct);
+			Dictionary<string, Guid> existing = await db.Set<UserEntity>().Where(x => x.PhoneNumber != null && phones.Contains(x.PhoneNumber)).ToDictionaryAsync(x => x.PhoneNumber!, x => x.Id, ct);
 			DateTime now = DateTime.UtcNow;
 			string password = UPasswordHasher.Hash(DemoPassword);
 			for (int i = 0; i < People.Length; i++) {
@@ -188,7 +188,7 @@ public partial class DataSeedService {
 					CreatorId = Core.App.Users.SystemAdmin.Id,
 					CreatedAt = now.AddDays(-200 + i),
 					Tags = [p.Male ? TagUser.Male : TagUser.Female, TagUser.Verified],
-					UserName = phone,
+					UserName = $"demo.{p.Key}",
 					Password = password,
 					RefreshToken = "",
 					PhoneNumber = phone,
