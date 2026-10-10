@@ -77,8 +77,6 @@ public class ChargeInternetService(
 
 	private enum TxnState { Success, Failed, Unknown }
 
-	// What the user pays for a predefined amount (amount + ChargeInternetTaxPercent), or null when the amount is not one of the
-	// operator's predefined amounts for that type. The amount itself is what is sent to Mobtakeran.
 	public static decimal? PayableAmount(string operatorId, decimal amount, bool isPin, string type = "0") {
 		ChargeInternet? op = Core.App.ChargeInternet.FirstOrDefault(x => ((int)x.Operator).ToString() == operatorId);
 		List<ChargeInternetPreDefinedAmounts> amounts = (isPin ? op?.PinAmountsList : op?.TopupAmountsList) ?? [];
@@ -86,7 +84,8 @@ public class ChargeInternetService(
 		List<ChargeInternetPreDefinedAmounts> forType = amounts.Where(x => x.Type == typeCode).ToList();
 		if (forType.Count == 0) forType = amounts.Where(x => x.Type == 0).ToList();
 		if (forType.All(x => x.Amount != amount)) return null;
-		return Math.Round(amount * (100 + Core.App.ChargeInternetTaxPercent) / 100, 0, MidpointRounding.AwayFromZero);
+		decimal taxPercent = isPin ? Core.App.ChargeInternetTaxPercent : op!.TopupTaxPercent;
+		return Math.Round(amount * (100 + taxPercent) / 100, 0, MidpointRounding.AwayFromZero);
 	}
 
 	public async Task<UResponse<ChargeInternetReserveResponse?>> Pin(ReserveChargeParams p, CancellationToken ct) {
@@ -126,7 +125,7 @@ public class ChargeInternetService(
 			ReservePath = "api/v2/Topup/Reserve",
 			ReserveAttachments = new Dictionary<string, string> {
 				{ "subscriber", subscriber },
-				{ "amount", p.OperatorId == "2" ? (p.Amount / 10).ToIntString() : p.Amount.ToIntString() },
+				{ "amount", payableAmount.Value.ToIntString() },
 				{ "operator_id", p.OperatorId },
 				{ "device", Device },
 				{ "type", type }

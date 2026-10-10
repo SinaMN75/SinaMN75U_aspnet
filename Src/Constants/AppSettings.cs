@@ -160,6 +160,7 @@ public sealed class ChargeInternet {
 	public required string Logo { get; set; }
 	public required List<ChargeInternetPreDefinedAmounts> PinAmountsList { get; set; }
 	public required List<ChargeInternetPreDefinedAmounts> TopupAmountsList { get; set; }
+	public decimal TopupTaxPercent { get; set; }
 }
 
 public sealed class ChargeInternetPreDefinedAmounts {

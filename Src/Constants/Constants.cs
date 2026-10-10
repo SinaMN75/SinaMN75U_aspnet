@@ -142,30 +142,22 @@ public class UChargeAmounts {
 		}
 	];
 
-	// Direct top-up amounts from the Mobtakeran document (rial, sent as is; the user pays them + ChargeInternetTaxPercent).
-
-	// MCI: 200,000 to 5,000,000, any multiple of 100. Youth and women charges use the same amounts.
 	public static readonly List<ChargeInternetPreDefinedAmounts> HamrahAvvalTopup = [
-		Item(200_000), Item(300_000), Item(400_000), Item(500_000), Item(1_000_000), Item(2_000_000), Item(5_000_000)
+		Item(200_000), Item(500_000), Item(1_000_000), Item(2_000_000), Item(5_000_000)
 	];
 
-	// Irancell: normal 200,000 to 10,000,000; amazing only 200,000.
 	public static readonly List<ChargeInternetPreDefinedAmounts> IranCellTopup = [
-		Item(200_000), Item(300_000), Item(400_000), Item(500_000), Item(1_000_000), Item(2_000_000), Item(5_000_000), Item(10_000_000),
+		Item(200_000), Item(500_000), Item(1_000_000), Item(2_000_000), Item(5_000_000),
 		Item(200_000, 1)
 	];
 
-	// Rightel: the official amounts (any amount above 100,000 up to 8,000,000 is also accepted); exciting 50,000 to 500,000.
 	public static readonly List<ChargeInternetPreDefinedAmounts> RightelTopup = [
-		Item(20_000), Item(50_000), Item(100_000), Item(200_000), Item(500_000), Item(1_000_000),
-		Item(50_000, 1), Item(100_000, 1), Item(200_000, 1), Item(500_000, 1)
+		Item(100_000), Item(200_000), Item(500_000), Item(1_000_000),
+		Item(100_000, 1), Item(200_000, 1), Item(500_000, 1)
 	];
 
-	// Shatel: only these amounts.
 	public static readonly List<ChargeInternetPreDefinedAmounts> ShatelTopup = [
-		Item(11_000), Item(22_000), Item(55_000), Item(110_000), Item(220_000), Item(330_000), Item(440_000), Item(550_000),
-		Item(660_000), Item(770_000), Item(880_000), Item(990_000), Item(1_100_000), Item(1_210_000), Item(1_320_000), Item(1_430_000),
-		Item(1_540_000), Item(1_650_000), Item(1_760_000), Item(1_870_000), Item(1_980_000), Item(2_090_000), Item(2_200_000)
+		Item(100_000), Item(200_000), Item(500_000), Item(1_000_000), Item(2_000_000), Item(5_000_000)
 	];
 
 	// Title in the same style as above, e.g. 200,000 rial -> "۲۰ هزار تومانی", 11,000 rial -> "۱,۱۰۰ تومانی".
