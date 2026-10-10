@@ -232,12 +232,20 @@ public partial class DataSeedService {
 			}
 		}
 
+		private static readonly Dictionary<string, (string Card, string Account, string Iban)> DemoBanks = new() {
+			["o1"] = ("6037991234567893", "0104512345678", "IR290120000000004512345678"),
+			["o2"] = ("6104339876543210", "8812345671", "IR530560000000008812345671"),
+			["o3"] = ("5892101122334457", "0217456998001", "IR290170000000002345678903"),
+			["o4"] = ("6273535566778892", "3456789014", "IR610150000000003456789014")
+		};
+
 		private async Task<Guid> Buy(IServiceProvider sp, string owner, string title, string plan, int months, CancellationToken ct) {
 			IOrganizationService os = sp.GetRequiredService<IOrganizationService>();
 			string token = await Token(sp, owner, ct);
 			bool trial = months == 0 && await sp.GetRequiredService<DbContext>().Set<SubscriptionPlanEntity>().AnyAsync(x => x.Id == _plan[plan] && x.JsonData.TrialDays > 0, ct);
 			SubscriptionBuyResponse? r = Ok(await os.BuySubscription(new SubscriptionBuyParams {
-				Token = token, PlanId = _plan[plan], Months = trial ? 0 : Math.Max(1, months), Trial = trial, Title = title, Password = DemoPassword, FromWallet = true
+				Token = token, PlanId = _plan[plan], Months = trial ? 0 : Math.Max(1, months), Trial = trial, Title = title, Password = DemoPassword, FromWallet = true,
+				CardNumber = DemoBanks[owner].Card, AccountNumber = DemoBanks[owner].Account, IBanNumber = DemoBanks[owner].Iban
 			}, ct), $"خرید اشتراک {title}");
 			return r?.OrganizationId ?? Guid.Empty;
 		}
@@ -836,7 +844,7 @@ public partial class DataSeedService {
 				decimal balance = await sp.GetRequiredService<DbContext>().Set<WalletEntity>().Where(x => x.CreatorId == _org["hotel"]).Select(x => x.Balance).FirstOrDefaultAsync(ct);
 				if (balance > 2_000_000)
 					Done(await acc.RequestOrganizationSettlement(new OrganizationSettlementRequestParams {
-						Token = await Token(sp, "o1", ct), OrganizationId = _org["hotel"], Amount = Math.Floor(balance / 2_000_000) * 1_000_000, Iban = "IR820540102680020817909002"
+						Token = await Token(sp, "o1", ct), OrganizationId = _org["hotel"], Amount = Math.Floor(balance / 2_000_000) * 1_000_000
 					}, ct), "درخواست تسویه با مجموعه");
 			}
 		}

@@ -98,6 +98,8 @@ public class OrganizationService(
 		UserEntity? owner = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.OwnerId, ct);
 		if (owner == null) return new UResponse<Guid?>(null, Usc.NotFound, ls.Get("accountNotFound"));
 		if (!SetFirstAdminPassword(owner, p.OwnerPassword)) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get("pleaseEnterAPassword"));
+		(string? card, string? account, string? iban, string? bankError) = Bank(p.CardNumber, p.AccountNumber, p.IBanNumber, true);
+		if (bankError != null) return new UResponse<Guid?>(null, Usc.BadRequest, ls.Get(bankError));
 
 		OrganizationEntity e = await AddOrganization(p.Id ?? Guid.CreateVersion7(), p.Title, owner, userData.Id, p.Tags, new OrganizationJson {
 			Detail1 = p.Detail1,
@@ -111,8 +113,41 @@ public class OrganizationService(
 			VatPercent = Math.Clamp(p.VatPercent ?? 0, 0, 100),
 			TaxServiceId = p.TaxServiceId
 		}, ct);
+		await SaveBankAccount(e.Id, card, account, iban, ct);
 		await db.SaveChangesAsync(ct);
 		return new UResponse<Guid?>(e.Id, Usc.Created);
+	}
+
+	private static string Latin(string s) => new(s.Trim().Select(c => char.IsDigit(c) ? (char)('0' + (int)char.GetNumericValue(c)) : c).ToArray());
+
+	private static (string? Card, string? Account, string? Iban, string? Error) Bank(string? card, string? account, string? iban, bool required) {
+		string? c = card == null ? null : Latin(card).Replace(" ", "").Replace("-", "");
+		string? a = account == null ? null : Latin(account);
+		string? i = iban == null ? null : Latin(iban).Replace(" ", "").ToUpperInvariant();
+		if (i is { Length: 24 } && i.All(char.IsAsciiDigit)) i = "IR" + i;
+		if (required && c.IsNullOrEmpty()) return (null, null, null, "cardNumberIsRequired");
+		if (required && a.IsNullOrEmpty()) return (null, null, null, "bankAccountIsRequired");
+		if (required && i.IsNullOrEmpty()) return (null, null, null, "iBanIsRequired");
+		if (c.IsNotNullOrEmpty() && !ValidCard(c!)) return (null, null, null, "cardNumberIsNotValid");
+		if (a.IsNotNullOrEmpty() && a!.Count(char.IsAsciiDigit) is < 5 or > 30) return (null, null, null, "bankAccountIsNotValid");
+		if (i.IsNotNullOrEmpty() && !ValidIban(i!)) return (null, null, null, "iBanIsInvalid");
+		return (c, a, i, null);
+	}
+
+	private static bool ValidCard(string c) => c.Length == 16 && c.All(char.IsAsciiDigit) && c.Select((x, k) => (x - '0') * (k % 2 == 0 ? 2 : 1)).Sum(d => d > 9 ? d - 9 : d) % 10 == 0;
+
+	private static bool ValidIban(string i) => i.Length == 26 && i.StartsWith("IR") && i[2..].All(char.IsAsciiDigit) && $"{i[4..]}1827{i[2..4]}".Aggregate(0, (r, x) => (r * 10 + x - '0') % 97) == 1;
+
+	private async Task SaveBankAccount(Guid organizationId, string? card, string? account, string? iban, CancellationToken ct) {
+		if (card.IsNullOrEmpty() && account.IsNullOrEmpty() && iban.IsNullOrEmpty()) return;
+		BankAccountEntity? b = await db.Set<BankAccountEntity>().AsTracking().Where(x => x.CreatorId == organizationId).OrderBy(x => x.CreatedAt).FirstOrDefaultAsync(ct);
+		if (b == null) {
+			b = new BankAccountEntity { Id = Guid.CreateVersion7(), CreatorId = organizationId, CreatedAt = DateTime.UtcNow, JsonData = new BankAccountJson(), Tags = [] };
+			await db.Set<BankAccountEntity>().AddAsync(b, ct);
+		}
+		if (card.IsNotNullOrEmpty()) b.CardNumber = card;
+		if (account.IsNotNullOrEmpty()) b.AccountNumber = account;
+		if (iban.IsNotNullOrEmpty()) b.IBanNumber = iban;
 	}
 
 	private async Task<OrganizationEntity> AddOrganization(Guid id, string title, UserEntity owner, Guid creatorId, ICollection<TagOrganization> tags, OrganizationJson json, CancellationToken ct) {
@@ -165,9 +200,33 @@ public class OrganizationService(
 			Balance = db.Set<WalletEntity>().Where(w => w.CreatorId == x.Id).Sum(w => (decimal?)w.Balance) ?? 0
 		}).ToPaginatedResponse(p.PageNumber, p.PageSize, ct);
 		DateTime now = DateTime.UtcNow;
-		foreach (OrganizationResponse o in r.Result ?? []) {
+		List<OrganizationResponse> list = r.Result?.ToList() ?? [];
+		foreach (OrganizationResponse o in list) {
 			o.Modules = ModulesOf(o.JsonData, now);
 			o.SubscriptionEndsAt = o.JsonData.Subscriptions.Where(x => IsLive(x, now)).Max(x => x.ExpiresAt);
+		}
+
+		List<Guid> mine = list.Where(o => IsFull(userData) || o.OwnerId == uid).Select(o => o.Id).ToList();
+		List<BankAccountResponse> banks = await db.Set<BankAccountEntity>().Where(x => mine.Contains(x.CreatorId)).OrderBy(x => x.CreatedAt).Select(Projections.BankAccountSelector(new BankAccountSelectorArgs())).ToListAsync(ct);
+		foreach (OrganizationResponse o in list) o.BankAccount = banks.FirstOrDefault(x => x.CreatorId == o.Id);
+
+		if (p.FromDate != null || p.ToDate != null) {
+			var rows = await db.Set<WalletTxnEntity>()
+				.Where(x => (mine.Contains(x.ReceiverId) || mine.Contains(x.SenderId)) && (p.FromDate == null || x.CreatedAt >= p.FromDate) && (p.ToDate == null || x.CreatedAt <= p.ToDate))
+				.Select(x => new { x.Amount, x.Tags, x.SenderId, x.ReceiverId })
+				.ToListAsync(ct);
+			foreach (OrganizationResponse o in list.Where(o => mine.Contains(o.Id))) {
+				var received = rows.Where(x => x.ReceiverId == o.Id && !x.Tags.Contains(TagWalletTxn.OrganizationSettlementRefund)).ToList();
+				var sent = rows.Where(x => x.SenderId == o.Id).ToList();
+				decimal returned = rows.Where(x => x.ReceiverId == o.Id && x.Tags.Contains(TagWalletTxn.OrganizationSettlementRefund)).Sum(x => x.Amount);
+				o.Payments = new OrganizationPaymentsResponse {
+					Received = received.Sum(x => x.Amount),
+					ReceivedCount = received.Count,
+					Commission = sent.Where(x => x.Tags.Contains(TagWalletTxn.PlatformCommission)).Sum(x => x.Amount),
+					Settled = sent.Where(x => x.Tags.Contains(TagWalletTxn.OrganizationSettlement)).Sum(x => x.Amount) - returned,
+					Refunded = sent.Where(x => !x.Tags.Contains(TagWalletTxn.PlatformCommission) && !x.Tags.Contains(TagWalletTxn.OrganizationSettlement)).Sum(x => x.Amount)
+				};
+			}
 		}
 
 		return r;
@@ -183,6 +242,8 @@ public class OrganizationService(
 
 		bool platformChange = p.OwnerId.HasValue && p.OwnerId != e.OwnerId || p.CommissionPercent.HasValue || p.Tags != null || p.AddTags != null || p.RemoveTags != null;
 		if (!userData.IsSystemAdmin && (e.OwnerId != userData.Id || platformChange)) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		(string? card, string? account, string? iban, string? bankError) = Bank(p.CardNumber, p.AccountNumber, p.IBanNumber, false);
+		if (bankError != null) return new UResponse(Usc.BadRequest, ls.Get(bankError));
 
 		if (p.OwnerId.HasValue && p.OwnerId != e.OwnerId) {
 			UserEntity? owner = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.OwnerId, ct);
@@ -207,6 +268,7 @@ public class OrganizationService(
 		if (p.EconomicCode != null) e.JsonData.EconomicCode = p.EconomicCode.NullIfEmpty();
 		if (p.VatPercent != null) e.JsonData.VatPercent = Math.Clamp(p.VatPercent.Value, 0, 100);
 		if (p.TaxServiceId != null) e.JsonData.TaxServiceId = p.TaxServiceId.NullIfEmpty();
+		await SaveBankAccount(e.Id, card, account, iban, ct);
 		e.ApplyUpdateParam<OrganizationEntity, TagOrganization, OrganizationJson>(p);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
@@ -490,7 +552,10 @@ public class OrganizationService(
 			UserEntity? owner = await db.Set<UserEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == u!.Id, ct);
 			if (owner == null) return new UResponse<SubscriptionBuyResponse?>(null, Usc.NotFound, ls.Get("accountNotFound"));
 			if (!SetFirstAdminPassword(owner, p.Password)) return new UResponse<SubscriptionBuyResponse?>(null, Usc.BadRequest, ls.Get("pleaseEnterAPassword"));
+			(string? card, string? account, string? iban, string? bankError) = Bank(p.CardNumber, p.AccountNumber, p.IBanNumber, true);
+			if (bankError != null) return new UResponse<SubscriptionBuyResponse?>(null, Usc.BadRequest, ls.Get(bankError));
 			org = await AddOrganization(Guid.CreateVersion7(), p.Title.Trim(), owner, owner.Id, [TagOrganization.Active], new OrganizationJson(), ct);
+			await SaveBankAccount(org.Id, card, account, iban, ct);
 		}
 
 		OrganizationSubscription s = NewSubscription(plan!.Id, plan.Title, plan.JsonData.Modules, plan.JsonData.Limits, u!.Id, now);

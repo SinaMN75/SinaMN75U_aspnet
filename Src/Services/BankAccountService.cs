@@ -19,7 +19,7 @@ public class BankAccountService(
 
 		BankAccountEntity e = new() {
 			Id = p.Id ?? Guid.CreateVersion7(),
-			CreatorId = p.CreatorId ?? userData.Id,
+			CreatorId = userData.IsAdmin ? p.CreatorId ?? userData.Id : userData.Id,
 			CreatedAt = DateTime.UtcNow,
 			JsonData = new BankAccountJson { Detail1 = p.Detail1, Detail2 = p.Detail2 },
 			Tags = p.Tags,

@@ -77,6 +77,7 @@ public sealed class OrganizationSettlement {
 	public DateTime? ProcessedAt { get; set; }
 	public bool? Approved { get; set; }
 	public string? Note { get; set; }
+	public string? TrackingCode { get; set; }
 }
 
 public sealed class OrganizationMember {

@@ -16,6 +16,9 @@ public sealed class OrganizationCreateParams : BaseCreateParams<TagOrganization>
 	public string? EconomicCode { get; set; }
 	public decimal? VatPercent { get; set; }
 	public string? TaxServiceId { get; set; }
+	public string? CardNumber { get; set; }
+	public string? AccountNumber { get; set; }
+	public string? IBanNumber { get; set; }
 }
 
 public sealed class OrganizationUpdateParams : BaseUpdateParams<TagOrganization> {
@@ -30,10 +33,15 @@ public sealed class OrganizationUpdateParams : BaseUpdateParams<TagOrganization>
 	public string? EconomicCode { get; set; }
 	public decimal? VatPercent { get; set; }
 	public string? TaxServiceId { get; set; }
+	public string? CardNumber { get; set; }
+	public string? AccountNumber { get; set; }
+	public string? IBanNumber { get; set; }
 }
 
 public sealed class OrganizationReadParams : BaseReadParams<TagOrganization> {
 	public string? Title { get; set; }
+	public DateTime? FromDate { get; set; }
+	public DateTime? ToDate { get; set; }
 }
 
 public sealed class OrganizationMemberParams : BaseParams {
@@ -180,6 +188,9 @@ public sealed class SubscriptionBuyParams : BaseParams {
 	public string? Title { get; set; }
 	public string? Password { get; set; }
 	public bool FromWallet { get; set; }
+	public string? CardNumber { get; set; }
+	public string? AccountNumber { get; set; }
+	public string? IBanNumber { get; set; }
 }
 
 public sealed class SubscriptionGrantParams : BaseParams {

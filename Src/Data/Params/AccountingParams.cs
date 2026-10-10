@@ -13,8 +13,10 @@ public sealed class OrganizationSettlementRequestParams : BaseParams {
 	[UValidationRequired("amountRequired")]
 	public decimal Amount { get; set; }
 
-	[UValidationRequired("iBanIsRequired")]
-	public string Iban { get; set; } = "";
+	public string? Iban { get; set; }
+	public string? TrackingCode { get; set; }
+	public DateTime? Date { get; set; }
+	public string? Note { get; set; }
 }
 
 public sealed class OrganizationSettlementProcessParams : BaseParams {
@@ -26,6 +28,8 @@ public sealed class OrganizationSettlementProcessParams : BaseParams {
 
 	public bool Approve { get; set; }
 	public string? Note { get; set; }
+	public string? TrackingCode { get; set; }
+	public DateTime? Date { get; set; }
 }
 
 public sealed class AccountCreateParams : BaseCreateParams<TagAccount> {

@@ -6,6 +6,16 @@ public sealed class OrganizationResponse : BaseResponse<TagOrganization, Organiz
 	public decimal Balance { get; set; }
 	public List<TagModule>? Modules { get; set; }
 	public DateTime? SubscriptionEndsAt { get; set; }
+	public BankAccountResponse? BankAccount { get; set; }
+	public OrganizationPaymentsResponse? Payments { get; set; }
+}
+
+public sealed class OrganizationPaymentsResponse {
+	public decimal Received { get; set; }
+	public int ReceivedCount { get; set; }
+	public decimal Commission { get; set; }
+	public decimal Refunded { get; set; }
+	public decimal Settled { get; set; }
 }
 
 public sealed class SubscriptionPlanResponse : BaseResponse<TagSubscriptionPlan, SubscriptionPlanJson> {

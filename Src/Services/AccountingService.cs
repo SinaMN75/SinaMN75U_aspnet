@@ -777,23 +777,39 @@ public class AccountingService(
 		OrganizationEntity? e = await db.Set<OrganizationEntity>().AsTracking().FirstOrDefaultAsync(x => x.Id == p.OrganizationId, ct);
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("organizationNotFound"));
 		if (!userData.IsSystemAdmin && e.OwnerId != userData.Id) return new UResponse(Usc.Forbidden, ls.Get("youDoNotHaveClearanceToDoThisAction"));
+		bool paid = userData.IsSystemAdmin;
+		if (paid && p.TrackingCode.IsNullOrEmpty()) return new UResponse(Usc.BadRequest, ls.Get("trackingCodeIsRequired"));
+		string iban = p.Iban.NullIfEmpty() ?? await db.Set<BankAccountEntity>().Where(x => x.CreatorId == e.Id).OrderBy(x => x.CreatedAt).Select(x => x.IBanNumber).FirstOrDefaultAsync(ct) ?? "";
+		if (iban.IsNullOrEmpty()) return new UResponse(Usc.BadRequest, ls.Get("iBanIsRequired"));
 
 		Guid id = Guid.CreateVersion7();
+		DateTime now = DateTime.UtcNow;
+		DateTime date = paid ? p.Date ?? now : now;
 		UResponse<WalletTxnResponse?> transfer = await ws.Transfer(new WalletTransferParams {
 			SenderId = e.Id,
 			ReceiverId = Core.App.Users.SystemAdmin.Id,
 			Amount = p.Amount,
 			Detail1 = ls.Get("organizationSettlement"),
-			KeyValues = [new KeyValue { Key = "iban", Value = p.Iban }, new KeyValue { Key = "settlementId", Value = id.ToString() }],
+			KeyValues = [new KeyValue { Key = "iban", Value = iban }, new KeyValue { Key = "settlementId", Value = id.ToString() }, ..(paid ? [new KeyValue { Key = "trackingCode", Value = p.TrackingCode! }] : Array.Empty<KeyValue>())],
 			TagWalletTxn = [TagWalletTxn.OrganizationSettlement]
 		}, ct);
 		if (transfer.Result == null) return new UResponse(transfer.Status, transfer.Message);
 
-		e.JsonData.Settlements = [..e.JsonData.Settlements, new OrganizationSettlement { Id = id, Amount = p.Amount, Iban = p.Iban, CreatedAt = DateTime.UtcNow }];
-		await Post(e.Id, TagVoucher.Payout, id, null, null, ls.Get("organizationSettlement", "fa"), DateTime.UtcNow, ct, new AccountingLeg(TagAccount.InTransit, p.Amount), new AccountingLeg(TagAccount.Wallet, -p.Amount));
+		e.JsonData.Settlements = [..e.JsonData.Settlements, new OrganizationSettlement {
+			Id = id, Amount = p.Amount, Iban = iban, CreatedAt = now, ProcessedAt = paid ? date : null, Approved = paid ? true : null, Note = p.Note, TrackingCode = paid ? p.TrackingCode : null
+		}];
+		if (paid) {
+			await Post(e.Id, TagVoucher.Payout, id, null, null, SettlementDescription(p.TrackingCode), date, ct, new AccountingLeg(TagAccount.Bank, p.Amount), new AccountingLeg(TagAccount.Wallet, -p.Amount));
+			await AddNotification(e.OwnerId, TagNotification.General, ls.Get("organizationSettlement"), $"{p.Amount.ToIntString()} - {p.TrackingCode}", ct);
+		}
+		else await Post(e.Id, TagVoucher.Payout, id, null, null, ls.Get("organizationSettlement", "fa"), now, ct, new AccountingLeg(TagAccount.InTransit, p.Amount), new AccountingLeg(TagAccount.Wallet, -p.Amount));
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
+
+	private string SettlementDescription(string? trackingCode) => trackingCode.IsNullOrEmpty()
+		? ls.Get("organizationSettlement", "fa")
+		: $"{ls.Get("organizationSettlement", "fa")} - {ls.Get("trackingCode", "fa")} {trackingCode}";
 
 	public async Task<UResponse> ProcessOrganizationSettlement(OrganizationSettlementProcessParams p, CancellationToken ct) {
 		JwtClaimData? userData = ts.ExtractClaims(p.Token);
@@ -804,6 +820,8 @@ public class AccountingService(
 		if (e == null) return new UResponse(Usc.NotFound, ls.Get("organizationNotFound"));
 		OrganizationSettlement? s = e.JsonData.Settlements.FirstOrDefault(x => x.Id == p.SettlementId && x.Approved == null);
 		if (s == null) return new UResponse(Usc.NotFound, ls.Get("settlementNotFound"));
+		if (p.Approve && p.TrackingCode.IsNullOrEmpty()) return new UResponse(Usc.BadRequest, ls.Get("trackingCodeIsRequired"));
+		DateTime date = p.Date ?? DateTime.UtcNow;
 
 		if (!p.Approve) {
 			UResponse<WalletTxnResponse?> transfer = await ws.Transfer(new WalletTransferParams {
@@ -819,10 +837,10 @@ public class AccountingService(
 		}
 
 		e.JsonData.Settlements = e.JsonData.Settlements.Select(x => x.Id != s.Id ? x : new OrganizationSettlement {
-			Id = x.Id, Amount = x.Amount, Iban = x.Iban, CreatedAt = x.CreatedAt, ProcessedAt = DateTime.UtcNow, Approved = p.Approve, Note = p.Note
+			Id = x.Id, Amount = x.Amount, Iban = x.Iban, CreatedAt = x.CreatedAt, ProcessedAt = date, Approved = p.Approve, Note = p.Note, TrackingCode = p.Approve ? p.TrackingCode : null
 		}).ToList();
-		await Post(e.Id, TagVoucher.Payout, s.Id, null, null, ls.Get("organizationSettlement", "fa"), DateTime.UtcNow, ct, new AccountingLeg(p.Approve ? TagAccount.Bank : TagAccount.Wallet, s.Amount), new AccountingLeg(TagAccount.InTransit, -s.Amount));
-		await AddNotification(e.OwnerId, TagNotification.General, ls.Get("organizationSettlement"), p.Approve ? s.Amount.ToIntString() : p.Note ?? "", ct);
+		await Post(e.Id, TagVoucher.Payout, s.Id, null, null, SettlementDescription(p.Approve ? p.TrackingCode : null), date, ct, new AccountingLeg(p.Approve ? TagAccount.Bank : TagAccount.Wallet, s.Amount), new AccountingLeg(TagAccount.InTransit, -s.Amount));
+		await AddNotification(e.OwnerId, TagNotification.General, ls.Get("organizationSettlement"), p.Approve ? $"{s.Amount.ToIntString()} - {p.TrackingCode}" : p.Note ?? "", ct);
 		await db.SaveChangesAsync(ct);
 		return new UResponse();
 	}
