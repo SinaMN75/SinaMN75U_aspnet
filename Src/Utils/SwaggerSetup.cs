@@ -1,5 +1,3 @@
-using Microsoft.OpenApi;
-
 namespace SinaMN75U.Utils;
 
 public static class SwaggerSetup {

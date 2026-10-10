@@ -1,5 +1,3 @@
-using System.Net.Mail;
-
 namespace SinaMN75U.InnerServices;
 
 public interface IEmailService {

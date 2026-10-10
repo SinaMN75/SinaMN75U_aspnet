@@ -1,6 +1,4 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
-
-namespace SinaMN75U.Services;
+﻿namespace SinaMN75U.Services;
 
 public interface ITerminalService {
 	Task<UResponse<Guid?>> CreateMerchant(MerchantCreateParams p, CancellationToken ct);

@@ -1,6 +1,3 @@
-using Microsoft.IdentityModel.Protocols;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-
 namespace SinaMN75U.InnerServices;
 
 public sealed class GoogleUser {

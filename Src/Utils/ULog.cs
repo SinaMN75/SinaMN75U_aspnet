@@ -1,8 +1,5 @@
 namespace SinaMN75U.Utils;
 
-using System;
-using System.Collections.Concurrent;
-
 public static class ULog {
 	private static readonly ConcurrentQueue<string> Buffer = new();
 

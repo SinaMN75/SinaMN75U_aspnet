@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.SignalR;
-
 namespace SinaMN75U.InnerServices;
 
 /// <summary>

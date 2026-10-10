@@ -1,5 +1,3 @@
-using System.Threading.Channels;
-
 namespace SinaMN75U.InnerServices;
 
 public interface IApiLogQueue {

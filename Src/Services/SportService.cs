@@ -1,5 +1,3 @@
-using SixLabors.ImageSharp.PixelFormats;
-
 namespace SinaMN75U.Services;
 
 public interface ISportService {

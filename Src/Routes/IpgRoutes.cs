@@ -1,6 +1,3 @@
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.Primitives;
-
 namespace SinaMN75U.Routes;
 
 public static class IpgRoutes {
